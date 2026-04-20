@@ -38,11 +38,7 @@ export const Route = createRootRoute({
     ],
   }),
   shellComponent: RootShell,
-  component: () => (
-    <AppLayout>
-      <Outlet />
-    </AppLayout>
-  ),
+  component: () => <AppLayout />,
   notFoundComponent: NotFoundComponent,
 });
 
