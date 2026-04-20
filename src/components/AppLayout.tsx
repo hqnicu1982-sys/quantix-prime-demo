@@ -163,7 +163,7 @@ function Breadcrumb() {
     "/calculator": "Calculator",
     "/projects": "All Projects",
     "/projects/fitzrovia": "Hotel Fitzrovia",
-    "/projects/fitzrovia/boq": "Costed BoQ",
+    "/costed-boq": "Costed BoQ",
     "/price-intelligence": "Price Intelligence",
     "/price-lists/upload": "Price List Upload",
     "/calloffs": "Call-offs",
