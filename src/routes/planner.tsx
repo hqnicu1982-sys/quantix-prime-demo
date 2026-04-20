@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ganttRows } from "@/lib/mockData";
 import { Calendar, Download, Plus, AlertCircle } from "lucide-react";
 
-export const Route = createFileRoute("/planner")({ component: Planner };
+export const Route = createFileRoute("/planner")({ component: Planner });
 
 const colorMap: Record<string, string> = {
   blue: "bg-[var(--accent-500)]",
