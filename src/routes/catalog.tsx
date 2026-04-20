@@ -1,23 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { catalogSystems, catalogCategories } from "@/lib/mockData";
-import { Search, Plus, Flame, Waves, ArrowRight } from "lucide-react";
+import { Sparkles, Calculator, ArrowUpRight, Flame, Volume2, Ruler, Search } from "lucide-react";
 
 export const Route = createFileRoute("/catalog")({ component: Catalog });
 
-const dotColor: Record<string, string> = {
-  blue: "bg-[var(--accent-500)]",
-  purple: "bg-purple-500",
-  green: "bg-[var(--green-600)]",
-  amber: "bg-[var(--amber-500)]",
-  red: "bg-[var(--red-500)]",
-  navy: "bg-white",
+const tint: Record<string, { bg: string; ink: string; chip: string }> = {
+  blue:   { bg: "bg-[var(--accent-100)]",                ink: "text-[var(--accent-500)]", chip: "bg-[var(--accent-500)]" },
+  purple: { bg: "bg-purple-100",                         ink: "text-purple-700",          chip: "bg-purple-500" },
+  green:  { bg: "bg-emerald-50",                         ink: "text-emerald-700",         chip: "bg-[var(--green-600)]" },
+  amber:  { bg: "bg-amber-50",                           ink: "text-amber-700",           chip: "bg-[var(--amber-500)]" },
+  red:    { bg: "bg-rose-50",                            ink: "text-rose-700",            chip: "bg-[var(--red-500)]" },
+  navy:   { bg: "bg-slate-100",                          ink: "text-[var(--navy-900)]",   chip: "bg-[var(--navy-900)]" },
 };
+
+// Bento sizing — feature first, then varied tiles
+const tileClass = [
+  "md:col-span-4 md:row-span-2", // hero / feature
+  "md:col-span-2",
+  "md:col-span-2",
+  "md:col-span-3",
+  "md:col-span-3",
+  "md:col-span-4",
+];
 
 function Catalog() {
   const [active, setActive] = useState("all");
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<string | null>("C-48/70");
 
   const filtered = catalogSystems.filter((s) => {
     const matchesCat = active === "all" || s.category === active;
@@ -25,207 +35,174 @@ function Catalog() {
     return matchesCat && matchesQ;
   });
 
-  const sel = catalogSystems.find((s) => s.code === selected) ?? filtered[0];
-
   return (
-    <div className="-m-6 min-h-[calc(100vh-3.5rem)] bg-[var(--navy-950)] p-6 text-white md:-m-8 md:p-8">
-      {/* Top meta strip */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4 font-mono-num text-[10.5px] uppercase tracking-[0.18em] text-white/50">
-        <div className="flex items-center gap-3">
-          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--green-600)]" />
-          <span>SYS_CATALOG / v2.4 / live</span>
-          <span className="hidden text-white/30 md:inline">·</span>
-          <span className="hidden md:inline">Indexed 2,847 · Updated 04:12 UTC</span>
-        </div>
-        <span>BG ↔ Knauf ↔ Siniat</span>
-      </div>
-
-      {/* Massive title block */}
-      <div className="grid grid-cols-1 gap-8 border-b border-white/10 py-10 md:grid-cols-[1fr_auto] md:items-end md:py-14">
+    <div className="space-y-10">
+      {/* Magazine masthead */}
+      <header className="grid grid-cols-1 items-end gap-6 border-b border-[var(--ink-200)] pb-8 md:grid-cols-[1fr_auto]">
         <div>
-          <p className="font-mono-num text-[11px] uppercase tracking-[0.2em] text-[var(--accent-500)]">
-            §01 — Systems index
-          </p>
-          <h1 className="font-display mt-3 text-[64px] font-semibold leading-[0.95] tracking-tight md:text-[96px]">
-            The <span className="italic text-white/50">spec</span><br />
-            library.
+          <div className="font-mono-num flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-[var(--ink-500)]">
+            <span className="h-px w-8 bg-[var(--ink-500)]" />
+            Issue 04 · Spring 2026
+          </div>
+          <h1 className="font-display mt-4 text-[52px] font-semibold leading-[0.95] tracking-tight text-[var(--ink-900)] md:text-[72px]">
+            Catalogue of<br />
+            <span className="italic text-[var(--accent-500)]">build-ups</span> &amp; systems.
           </h1>
         </div>
-        <div className="grid w-full grid-cols-3 gap-8 md:w-auto md:gap-12">
-          <Metric k="2,847" l="Build-ups" />
-          <Metric k="98%" l="Acoustic" />
-          <Metric k="100%" l="Fire-rated" />
+        <div className="flex flex-wrap items-end gap-3 md:flex-col md:items-end">
+          <p className="max-w-xs text-right text-[13px] leading-relaxed text-[var(--ink-700)]">
+            A curated mosaic of <strong className="text-[var(--ink-900)]">2,847</strong> drylining systems —
+            indexed, fire-rated, and priced for instant call-off.
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm"><Sparkles className="mr-1.5 h-3.5 w-3.5" /> Recommend</Button>
+            <Button size="sm"><Calculator className="mr-1.5 h-3.5 w-3.5" /> Calculator</Button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Toolbar */}
-      <div className="flex flex-col gap-4 border-b border-white/10 py-5 md:flex-row md:items-center">
-        <div className="flex flex-1 items-center gap-3 border border-white/15 bg-white/5 px-3 py-2.5">
-          <Search className="h-4 w-4 text-white/40" />
+      {/* Sticky filter row */}
+      <div className="sticky top-0 z-10 -mx-6 flex flex-col gap-3 border-b border-[var(--ink-200)] bg-[var(--background)]/85 px-6 py-3 backdrop-blur md:-mx-8 md:flex-row md:items-center md:px-8">
+        <div className="flex flex-1 items-center gap-2 rounded-full border border-[var(--ink-200)] bg-card px-4 py-2">
+          <Search className="h-4 w-4 text-[var(--ink-500)]" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="grep systems — code, name, rating…"
-            className="font-mono-num w-full bg-transparent text-[12.5px] text-white placeholder:text-white/30 focus:outline-none"
+            placeholder="Find a system…"
+            className="w-full bg-transparent text-[13px] placeholder:text-[var(--ink-500)] focus:outline-none"
           />
-          <span className="font-mono-num text-[10.5px] text-white/30">⌘K</span>
         </div>
-        <div className="flex flex-wrap gap-2 overflow-x-auto">
-          {catalogCategories.slice(0, 6).map((c) => {
+        <div className="flex flex-wrap gap-1.5 overflow-x-auto">
+          {catalogCategories.slice(0, 7).map((c) => {
             const isA = active === c.id;
             return (
               <button
                 key={c.id}
                 onClick={() => setActive(c.id)}
-                className={`font-mono-num whitespace-nowrap border px-3 py-2 text-[10.5px] uppercase tracking-wider transition-colors ${
+                className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-colors ${
                   isA
-                    ? "border-[var(--accent-500)] bg-[var(--accent-500)] text-white"
-                    : "border-white/15 text-white/60 hover:border-white/40 hover:text-white"
+                    ? "bg-[var(--ink-900)] text-white"
+                    : "border border-[var(--ink-200)] bg-card text-[var(--ink-700)] hover:border-[var(--ink-900)]"
                 }`}
               >
-                {c.label} <span className="ml-1 opacity-50">{c.count}</span>
+                {c.label}
+                <span className={`font-mono-num ml-1.5 text-[10.5px] ${isA ? "opacity-60" : "opacity-50"}`}>
+                  {c.count.toLocaleString()}
+                </span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Split: list / detail */}
-      <div className="grid grid-cols-1 gap-0 lg:grid-cols-[1.3fr_1fr]">
-        {/* List */}
-        <div className="divide-y divide-white/10 border-b border-white/10 lg:border-b-0 lg:border-r lg:border-white/10">
-          {/* List header */}
-          <div className="font-mono-num grid grid-cols-[24px_1fr_auto_auto] items-center gap-4 px-1 py-3 text-[10px] uppercase tracking-[0.15em] text-white/40">
-            <span>#</span>
-            <span>System</span>
-            <span className="text-right">Fire / dB</span>
-            <span className="text-right">£/m²</span>
-          </div>
+      {/* Bento mosaic */}
+      <div className="grid auto-rows-[180px] grid-cols-1 gap-4 md:grid-cols-6">
+        {filtered.map((s, i) => {
+          const t = tint[s.iconColor];
+          const isFeature = i === 0;
+          const cls = tileClass[i % tileClass.length];
 
-          {filtered.map((s, i) => {
-            const isSel = s.code === sel?.code;
-            return (
-              <button
-                key={s.code}
-                onClick={() => setSelected(s.code)}
-                className={`group grid w-full grid-cols-[24px_1fr_auto_auto] items-center gap-4 px-1 py-5 text-left transition-colors ${
-                  isSel ? "bg-white/[0.04]" : "hover:bg-white/[0.02]"
+          return (
+            <article
+              key={s.code}
+              className={`group relative flex flex-col justify-between overflow-hidden rounded-[18px] border border-[var(--ink-200)] p-6 transition-all hover:-translate-y-0.5 hover:border-[var(--ink-900)] hover:shadow-[0_10px_30px_-12px_rgba(15,40,71,0.18)] ${cls} ${
+                isFeature ? t.bg : "bg-card"
+              }`}
+            >
+              {/* Background giant numeral */}
+              <span
+                aria-hidden
+                className={`font-display pointer-events-none absolute -right-2 -top-6 select-none text-[140px] font-semibold leading-none tracking-tighter ${
+                  isFeature ? t.ink + " opacity-20" : "text-[var(--ink-50)]"
                 }`}
               >
-                <span className="font-mono-num text-[10.5px] text-white/30">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2.5">
-                    <span className={`h-2 w-2 rounded-full ${dotColor[s.iconColor]}`} />
-                    <h3 className="font-display truncate text-[20px] font-semibold leading-tight tracking-tight">
-                      {s.name}
-                    </h3>
-                  </div>
-                  <p className="font-mono-num mt-1 pl-[18px] text-[11px] uppercase tracking-wider text-white/40">
-                    {s.code} · {s.badge}
-                  </p>
-                </div>
-                <div className="font-mono-num text-right text-[11.5px] text-white/70">
-                  <p>{s.fire}</p>
-                  <p className="text-white/40">{s.acoustic}</p>
-                </div>
-                <div className="font-mono-num text-right text-[16px] font-semibold tabular-nums">
-                  £{s.price.toFixed(2)}
-                </div>
-              </button>
-            );
-          })}
+                {String(i + 1).padStart(2, "0")}
+              </span>
 
-          {filtered.length === 0 && (
-            <div className="py-16 text-center font-mono-num text-[11px] uppercase tracking-wider text-white/40">
-              ∅ no_results — try another category
-            </div>
-          )}
-        </div>
-
-        {/* Detail panel */}
-        {sel && (
-          <aside className="lg:sticky lg:top-6 lg:self-start lg:p-8">
-            <div className="border border-white/15 bg-black/30 p-6 md:p-8">
-              <div className="flex items-center justify-between font-mono-num text-[10px] uppercase tracking-[0.18em] text-white/40">
-                <span>Selected · {sel.category}</span>
-                <span className={`flex items-center gap-1.5`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${dotColor[sel.iconColor]}`} />
-                  {sel.badge}
+              {/* Header chip */}
+              <div className="relative flex items-start justify-between">
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider ${
+                  isFeature ? "bg-white/70 text-[var(--ink-900)]" : "bg-[var(--ink-50)] text-[var(--ink-700)]"
+                }`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${t.chip}`} />
+                  {s.badge}
                 </span>
+                <button className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
+                  isFeature
+                    ? "bg-white text-[var(--ink-900)] hover:bg-[var(--ink-900)] hover:text-white"
+                    : "border border-[var(--ink-200)] text-[var(--ink-500)] group-hover:border-[var(--ink-900)] group-hover:bg-[var(--ink-900)] group-hover:text-white"
+                }`}>
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </button>
               </div>
 
-              <h2 className="font-display mt-5 text-[40px] font-semibold leading-[1] tracking-tight">
-                {sel.name}
-              </h2>
-              <p className="font-mono-num mt-2 text-[12px] tracking-wider text-white/50">
-                {sel.code}
-              </p>
-
-              {/* Stat lines */}
-              <dl className="mt-7 divide-y divide-white/10 border-y border-white/10">
-                <Row icon={<Flame className="h-3.5 w-3.5" />} k="Fire integrity" v={sel.fire} />
-                <Row icon={<Waves className="h-3.5 w-3.5" />} k="Acoustic Rw" v={sel.acoustic} />
-                <Row icon={<Plus className="h-3.5 w-3.5" />} k={sel.spec_label} v={sel.spec} />
-              </dl>
-
-              {/* Price */}
-              <div className="mt-7 flex items-end justify-between">
-                <div>
-                  <p className="font-mono-num text-[10px] uppercase tracking-[0.18em] text-white/40">
-                    From
-                  </p>
-                  <p className="font-display mt-1 text-[44px] font-semibold leading-none tracking-tight">
-                    £{sel.price.toFixed(2)}
-                    <span className="font-mono-num ml-1 text-[12px] font-normal text-white/40">/m²</span>
-                  </p>
-                </div>
-                <p className="font-mono-num text-right text-[10.5px] uppercase tracking-wider text-white/40">
-                  ex. VAT<br />
-                  CCF list
+              {/* Body */}
+              <div className="relative">
+                <h3 className={`font-display font-semibold leading-[1.05] tracking-tight ${
+                  isFeature ? "text-[42px] md:text-[52px]" : "text-[24px]"
+                } text-[var(--ink-900)]`}>
+                  {s.name}
+                </h3>
+                <p className="font-mono-num mt-1.5 text-[11px] uppercase tracking-wider text-[var(--ink-500)]">
+                  {s.code}
                 </p>
-              </div>
 
-              {/* CTAs */}
-              <div className="mt-7 flex flex-col gap-2">
-                <button className="group flex items-center justify-between border border-[var(--accent-500)] bg-[var(--accent-500)] px-5 py-3.5 text-[12px] font-semibold uppercase tracking-[0.15em] transition-colors hover:bg-[var(--accent-500)]/85">
-                  Quote in calculator
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </button>
-                <button className="border border-white/20 px-5 py-3.5 text-[12px] font-semibold uppercase tracking-[0.15em] text-white/80 transition-colors hover:border-white/40 hover:text-white">
-                  View datasheet ↗
-                </button>
-              </div>
-            </div>
+                {/* Spec strip */}
+                <div className={`mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] ${
+                  isFeature ? "text-[var(--ink-700)]" : "text-[var(--ink-700)]"
+                }`}>
+                  <Spec icon={<Flame className="h-3 w-3" />} v={s.fire} />
+                  <Spec icon={<Volume2 className="h-3 w-3" />} v={s.acoustic} />
+                  <Spec icon={<Ruler className="h-3 w-3" />} v={s.spec} label={s.spec_label} />
+                </div>
 
-            <p className="font-mono-num mt-4 px-2 text-[10px] uppercase tracking-[0.15em] text-white/30">
-              Cross-ref: BG_handbook §4.2 · last_sync 04:12 UTC
-            </p>
-          </aside>
+                {/* Footer */}
+                <div className={`mt-4 flex items-end justify-between border-t pt-3 ${
+                  isFeature ? "border-[var(--ink-900)]/15" : "border-[var(--ink-200)]"
+                }`}>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">From</p>
+                    <p className={`font-mono-num font-semibold leading-none tracking-tight text-[var(--ink-900)] ${
+                      isFeature ? "text-[28px]" : "text-[18px]"
+                    }`}>
+                      £{s.price.toFixed(2)}
+                      <span className="ml-1 text-[11px] font-normal text-[var(--ink-500)]">/m²</span>
+                    </p>
+                  </div>
+                  <span className={`font-mono-num text-[10.5px] uppercase tracking-wider ${t.ink}`}>
+                    {s.category}
+                  </span>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+
+        {filtered.length === 0 && (
+          <div className="md:col-span-6 rounded-[18px] border border-dashed border-[var(--ink-200)] p-16 text-center">
+            <p className="font-display text-[22px] text-[var(--ink-700)]">Nothing matches.</p>
+            <p className="mt-1 text-[12.5px] text-[var(--ink-500)]">Try clearing the filter or searching another code.</p>
+          </div>
         )}
       </div>
+
+      {/* Footer ribbon */}
+      <footer className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-dashed border-[var(--ink-200)] bg-card px-6 py-5">
+        <p className="font-mono-num text-[11px] uppercase tracking-[0.18em] text-[var(--ink-500)]">
+          End of issue · {filtered.length} of {catalogSystems.length} demo systems shown
+        </p>
+        <Button variant="outline" size="sm">Browse all 2,847 →</Button>
+      </footer>
     </div>
   );
 }
 
-function Metric({ k, l }: { k: string; l: string }) {
+function Spec({ icon, v, label }: { icon: React.ReactNode; v: string; label?: string }) {
   return (
-    <div>
-      <p className="font-display text-[36px] font-semibold leading-none tracking-tight md:text-[44px]">{k}</p>
-      <p className="font-mono-num mt-2 text-[10px] uppercase tracking-[0.15em] text-white/40">{l}</p>
-    </div>
-  );
-}
-
-function Row({ icon, k, v }: { icon: React.ReactNode; k: string; v: string }) {
-  return (
-    <div className="flex items-center justify-between py-3.5">
-      <span className="flex items-center gap-2 text-[12px] text-white/60">
-        <span className="text-white/40">{icon}</span>
-        {k}
-      </span>
-      <span className="font-mono-num text-[14px] font-semibold tabular-nums">{v}</span>
-    </div>
+    <span className="inline-flex items-center gap-1.5">
+      <span className="text-[var(--ink-500)]">{icon}</span>
+      {label && <span className="text-[var(--ink-500)]">{label}</span>}
+      <span className="font-mono-num font-semibold text-[var(--ink-900)]">{v}</span>
+    </span>
   );
 }
