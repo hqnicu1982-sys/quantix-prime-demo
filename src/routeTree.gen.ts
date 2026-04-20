@@ -9,10 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WeeklyPlanRouteImport } from './routes/weekly-plan'
-import { Route as PricesRouteImport } from './routes/prices'
-import { Route as MaterialsRouteImport } from './routes/materials'
-import { Route as LabourRouteImport } from './routes/labour'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as IntegrationsRouteImport } from './routes/integrations'
 import { Route as FinancialRouteImport } from './routes/financial'
@@ -20,26 +16,6 @@ import { Route as DailyReportRouteImport } from './routes/daily-report'
 import { Route as CostedBoqRouteImport } from './routes/costed-boq'
 import { Route as IndexRouteImport } from './routes/index'
 
-const WeeklyPlanRoute = WeeklyPlanRouteImport.update({
-  id: '/weekly-plan',
-  path: '/weekly-plan',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PricesRoute = PricesRouteImport.update({
-  id: '/prices',
-  path: '/prices',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MaterialsRoute = MaterialsRouteImport.update({
-  id: '/materials',
-  path: '/materials',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LabourRoute = LabourRouteImport.update({
-  id: '/labour',
-  path: '/labour',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const InvoicesRoute = InvoicesRouteImport.update({
   id: '/invoices',
   path: '/invoices',
@@ -78,10 +54,6 @@ export interface FileRoutesByFullPath {
   '/financial': typeof FinancialRoute
   '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRoute
-  '/labour': typeof LabourRoute
-  '/materials': typeof MaterialsRoute
-  '/prices': typeof PricesRoute
-  '/weekly-plan': typeof WeeklyPlanRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -90,10 +62,6 @@ export interface FileRoutesByTo {
   '/financial': typeof FinancialRoute
   '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRoute
-  '/labour': typeof LabourRoute
-  '/materials': typeof MaterialsRoute
-  '/prices': typeof PricesRoute
-  '/weekly-plan': typeof WeeklyPlanRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -103,10 +71,6 @@ export interface FileRoutesById {
   '/financial': typeof FinancialRoute
   '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRoute
-  '/labour': typeof LabourRoute
-  '/materials': typeof MaterialsRoute
-  '/prices': typeof PricesRoute
-  '/weekly-plan': typeof WeeklyPlanRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,10 +81,6 @@ export interface FileRouteTypes {
     | '/financial'
     | '/integrations'
     | '/invoices'
-    | '/labour'
-    | '/materials'
-    | '/prices'
-    | '/weekly-plan'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -129,10 +89,6 @@ export interface FileRouteTypes {
     | '/financial'
     | '/integrations'
     | '/invoices'
-    | '/labour'
-    | '/materials'
-    | '/prices'
-    | '/weekly-plan'
   id:
     | '__root__'
     | '/'
@@ -141,10 +97,6 @@ export interface FileRouteTypes {
     | '/financial'
     | '/integrations'
     | '/invoices'
-    | '/labour'
-    | '/materials'
-    | '/prices'
-    | '/weekly-plan'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -154,42 +106,10 @@ export interface RootRouteChildren {
   FinancialRoute: typeof FinancialRoute
   IntegrationsRoute: typeof IntegrationsRoute
   InvoicesRoute: typeof InvoicesRoute
-  LabourRoute: typeof LabourRoute
-  MaterialsRoute: typeof MaterialsRoute
-  PricesRoute: typeof PricesRoute
-  WeeklyPlanRoute: typeof WeeklyPlanRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/weekly-plan': {
-      id: '/weekly-plan'
-      path: '/weekly-plan'
-      fullPath: '/weekly-plan'
-      preLoaderRoute: typeof WeeklyPlanRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/prices': {
-      id: '/prices'
-      path: '/prices'
-      fullPath: '/prices'
-      preLoaderRoute: typeof PricesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/materials': {
-      id: '/materials'
-      path: '/materials'
-      fullPath: '/materials'
-      preLoaderRoute: typeof MaterialsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/labour': {
-      id: '/labour'
-      path: '/labour'
-      fullPath: '/labour'
-      preLoaderRoute: typeof LabourRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/invoices': {
       id: '/invoices'
       path: '/invoices'
@@ -242,10 +162,6 @@ const rootRouteChildren: RootRouteChildren = {
   FinancialRoute: FinancialRoute,
   IntegrationsRoute: IntegrationsRoute,
   InvoicesRoute: InvoicesRoute,
-  LabourRoute: LabourRoute,
-  MaterialsRoute: MaterialsRoute,
-  PricesRoute: PricesRoute,
-  WeeklyPlanRoute: WeeklyPlanRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
