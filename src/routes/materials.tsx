@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, ChevronDown, ChevronRight, Check, X, Clock } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight, Check } from "lucide-react";
 import { materialReadiness, type MaterialItem, type Status } from "@/lib/mockData";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useProject } from "@/lib/ProjectContext";
