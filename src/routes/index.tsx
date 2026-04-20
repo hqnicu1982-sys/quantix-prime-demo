@@ -1,285 +1,186 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, AreaChart, Area } from "recharts";
-import { Users, Truck, ListChecks, TrendingUp, AlertTriangle, ArrowDownRight, ArrowRight, ChevronDown, HardHat, LineChart as LineIcon } from "lucide-react";
-import { useState } from "react";
-import {
-  todayKpis, roadblocks, marginTrend, commercialActions, labourVsBoq,
-  supplierConcentration, monthlyMini,
-} from "@/lib/mockData";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useProject } from "@/lib/ProjectContext";
-import { EmptyProjectState } from "@/components/EmptyProjectState";
+import { Button } from "@/components/ui/button";
+import {
+  briefing, dashboardKpis, focusToday, marginTrend, weather,
+  onSiteToday, deliveriesToday,
+} from "@/lib/mockData";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { Cloud, Download, FilePlus, ArrowRight, Clock, CheckCircle2, Truck } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Dashboard — Quantix Prime" },
-      { name: "description", content: "Live site and commercial overview for the active UK construction project." },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Dashboard — Quantix Prime" }] }),
   component: Dashboard,
 });
 
-function KpiCard({ icon: Icon, label, value, sub, tone = "default" }: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string; value: string; sub?: string;
-  tone?: "default" | "success" | "warning" | "danger";
-}) {
-  const toneClass = tone === "success" ? "text-success" : tone === "warning" ? "text-warning-foreground" : tone === "danger" ? "text-danger" : "text-foreground";
-  return (
-    <Card className="p-3.5">
-      <div className="flex items-start justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
-        <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
-      </div>
-      <div className={cn("mt-1.5 text-xl font-bold", toneClass)}>{value}</div>
-      {sub && <div className="mt-0.5 text-[11px] text-muted-foreground leading-tight">{sub}</div>}
-    </Card>
-  );
-}
-
-function ProgressBar() {
-  const segs = [
-    { label: "Programme", pct: 44, color: "bg-accent" },
-    { label: "Spend", pct: 41, color: "bg-warning" },
-    { label: "Margin", pct: 14.2, target: 18, color: "bg-danger" },
-  ];
-  return (
-    <Card className="p-4">
-      <div className="grid gap-4 sm:grid-cols-3">
-        {segs.map((s) => (
-          <div key={s.label}>
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{s.label}</span>
-              <span className="text-sm font-bold tabular-nums">{s.pct}%{s.target && <span className="ml-1 text-xs font-normal text-muted-foreground">/ {s.target}%</span>}</span>
-            </div>
-            <div className="mt-1.5 h-2 w-full rounded-full bg-secondary">
-              <div className={cn("h-2 rounded-full", s.color)} style={{ width: `${Math.min(s.pct, 100)}%` }} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
 function Dashboard() {
-  const { current } = useProject();
-  const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
-
-  if (!current.hasFullData) return <EmptyProjectState screen="dashboard" />;
+  const [range, setRange] = useState<"30d" | "8w" | "life">("8w");
 
   return (
-    <div className="space-y-5">
-      {/* Project header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{current.name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {current.contractValue} contract · {current.mainContractor} · Week {current.weekCurrent} of {current.weekTotal}
-        </p>
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          <Chip>Phase: {current.phase}</Chip>
-          <Chip>Start: {current.startDate}</Chip>
-          <Chip>Programmed completion: {current.endDate}</Chip>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-[12px] font-medium uppercase tracking-wider text-[var(--ink-500)]">
+            Morning briefing · {briefing.date}
+          </p>
+          <h1 className="font-display mt-2 text-[32px] font-semibold leading-tight tracking-tight text-[var(--ink-900)]">
+            {briefing.greeting}
+          </h1>
+          <p className="mt-2 max-w-2xl text-[14px] text-[var(--ink-700)]">
+            Hotel Fitzrovia is <strong className="text-[var(--green-600)]">3 days ahead</strong> on the upper floors but{" "}
+            <strong className="text-[var(--red-500)]">£14.2k over</strong> on labour. Three things need your eyes today.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm"><Download className="mr-1.5 h-3.5 w-3.5" />Export brief</Button>
+          <Button size="sm"><FilePlus className="mr-1.5 h-3.5 w-3.5" />Log site update</Button>
         </div>
       </div>
 
-      <ProgressBar />
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        {dashboardKpis.map((k) => (
+          <Kpi key={k.label} label={k.label} value={k.value} delta={k.delta} tone={k.tone} trend={k.trend} />
+        ))}
+      </div>
 
-      {/* Two columns */}
-      <div className="grid gap-5 xl:grid-cols-2">
-        {/* SITE MANAGER */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <HardHat className="h-5 w-5 text-accent" aria-hidden />
-              <h2 className="text-lg font-semibold">Site Manager view</h2>
-            </div>
-            <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-accent">
-              Field
-            </span>
-          </div>
-
-          <Card className="p-4">
-            <div className="mb-3 flex items-baseline justify-between">
-              <h3 className="font-semibold">Today on site</h3>
-              <p className="text-xs text-muted-foreground">{today}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-2.5">
-              <KpiCard icon={Users} label="Operatives" value={`${todayKpis.operatives}`} sub={`Day cost £${todayKpis.dayCost.toLocaleString()}`} />
-              <KpiCard icon={Truck} label="Deliveries" value={`${todayKpis.deliveries.length}`} sub="SIG 10:00 · CCF 14:00 · Knauf 16:00" />
-              <KpiCard icon={ListChecks} label="Tasks ready" value={`${todayKpis.tasksReady}/${todayKpis.tasksTotal}`} sub="3 at risk" />
-              <KpiCard icon={TrendingUp} label="PPC" value={`${todayKpis.ppc}%`} sub="Percent Plan Complete" tone="success" />
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
+          <Card>
+            <CardHead
+              title="Focus today"
+              subtitle="3 actions prioritised by margin impact"
+              right={<Link to="/" className="text-[12px] font-medium text-[var(--accent-500)] hover:underline">View all 11 →</Link>}
+            />
+            <div className="divide-y divide-[var(--ink-200)]">
+              {focusToday.map((a) => <FocusRow key={a.id} action={a} />)}
             </div>
           </Card>
 
-          <Card className="overflow-hidden p-0">
-            <div className="flex items-center gap-2 border-l-4 border-warning bg-warning/5 px-4 py-3">
-              <AlertTriangle className="h-4 w-4 text-warning-foreground" aria-hidden />
-              <h3 className="font-semibold">Active roadblocks</h3>
-            </div>
-            <ul className="divide-y">
-              {roadblocks.map((r) => <RoadblockItem key={r.id} r={r} />)}
-            </ul>
-          </Card>
-
-          <Card className="overflow-hidden">
-            <div className="border-b p-4">
-              <h3 className="font-semibold">This week's labour</h3>
-              <p className="text-xs text-muted-foreground">Hours logged vs BoQ allowance</p>
-            </div>
-            <div className="divide-y text-sm">
-              <div className="hidden grid-cols-4 gap-3 bg-secondary/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground sm:grid">
-                <span>Task</span><span className="text-right">Hours</span><span className="text-right">Allowance</span><span className="text-right">Variance</span>
-              </div>
-              {labourVsBoq.slice(0, 3).map((r) => (
-                <div key={r.task} className="grid grid-cols-4 items-center gap-3 px-4 py-2.5">
-                  <span className="font-medium">{r.task}</span>
-                  <span className="text-right tabular-nums">{r.hours}h</span>
-                  <span className="text-right tabular-nums text-muted-foreground">{r.allowance}h</span>
-                  <span className={cn("text-right font-semibold tabular-nums", r.variance < 0 ? "text-success" : "text-danger")}>
-                    {r.variance < 0 ? "−" : "+"}£{Math.abs(r.variance)}
-                  </span>
+          <Card>
+            <CardHead
+              title="Margin trend"
+              subtitle="Actual vs budgeted (8 weeks)"
+              right={
+                <div className="flex gap-1 rounded-md bg-[var(--ink-50)] p-0.5">
+                  {(["30d", "8w", "life"] as const).map((r) => (
+                    <button key={r} onClick={() => setRange(r)} className={cn(
+                      "rounded px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors",
+                      range === r ? "bg-white text-[var(--ink-900)] shadow-sm" : "text-[var(--ink-500)]",
+                    )}>{r}</button>
+                  ))}
                 </div>
-              ))}
-              <div className="grid grid-cols-4 gap-3 bg-secondary/40 px-4 py-2.5 text-xs font-semibold">
-                <span>Week total</span>
-                <span className="text-right tabular-nums">96h</span>
-                <span className="text-right tabular-nums text-muted-foreground">96h</span>
-                <span className="text-right tabular-nums text-success">+£24 net</span>
-              </div>
-            </div>
-          </Card>
-        </section>
-
-        {/* COMMERCIAL */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <LineIcon className="h-5 w-5 text-primary" aria-hidden />
-              <h2 className="text-lg font-semibold">Commercial Manager view</h2>
-            </div>
-            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-              Office
-            </span>
-          </div>
-
-          <Card className="p-5">
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Project margin</p>
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="text-4xl font-bold tracking-tight">14.2%</span>
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-danger">
-                    <ArrowDownRight className="h-3.5 w-3.5" /> 3.8 pts
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">Down from 18.0% tender</p>
-              </div>
-              <Button size="sm" variant="outline">Investigate <ArrowRight className="ml-1 h-3 w-3" /></Button>
-            </div>
-            <div className="mt-3 h-32">
+              }
+            />
+            <div className="h-[280px] p-4">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={marginTrend} margin={{ top: 6, right: 4, bottom: 0, left: -28 }}>
-                  <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="week" stroke="var(--color-muted-foreground)" tick={{ fontSize: 10 }} />
-                  <YAxis stroke="var(--color-muted-foreground)" tick={{ fontSize: 10 }} domain={[12, 20]} />
-                  <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 11 }} formatter={(v: number) => `${v}%`} />
-                  <Line type="monotone" dataKey="target" stroke="var(--color-warning)" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
-                  <Line type="monotone" dataKey="margin" stroke="var(--color-accent)" strokeWidth={2.5} dot={{ r: 3 }} />
+                <LineChart data={marginTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--ink-200)" />
+                  <XAxis dataKey="week" tick={{ fontSize: 11, fill: "var(--ink-500)" }} />
+                  <YAxis tick={{ fontSize: 11, fill: "var(--ink-500)" }} domain={[18, 30]} unit="%" />
+                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Line type="monotone" dataKey="budgeted" stroke="var(--ink-500)" strokeDasharray="4 4" strokeWidth={1.5} name="Budgeted" dot={false} />
+                  <Line type="monotone" dataKey="actual" stroke="var(--accent-500)" strokeWidth={2.5} name="Actual" dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </Card>
+        </div>
 
-          <Card className="p-4">
-            <h3 className="mb-3 font-semibold">Action required</h3>
-            <ul className="space-y-2">
-              {commercialActions.map((a) => (
-                <li key={a.id} className="flex items-start justify-between gap-3 rounded-md border border-l-4 border-l-accent bg-card p-3">
-                  <div>
-                    <p className="text-sm font-semibold">{a.title}</p>
-                    <p className="text-xs text-muted-foreground">{a.detail}</p>
-                  </div>
-                  <Button size="sm" variant="ghost" className="shrink-0">{a.action}</Button>
-                </li>
-              ))}
-            </ul>
+        <div className="space-y-5">
+          <Card className="overflow-hidden bg-gradient-to-br from-[#E0F2FE] to-[#BAE6FD]">
+            <div className="p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-[#0C4A6E]">{weather.location}</p>
+                  <p className="font-display mt-2 text-[36px] font-semibold leading-none text-[#0C4A6E]">{weather.temperature}</p>
+                  <p className="mt-1 text-[12px] text-[#075985]">{weather.conditions}</p>
+                </div>
+                <Cloud className="h-10 w-10 text-[#0369A1]" />
+              </div>
+              <div className="mt-4 rounded-md border border-[var(--amber-500)]/30 bg-white/60 p-2.5 text-[12px]">
+                <StatusBadge tone="warning" dot>Rain risk</StatusBadge>
+                <p className="mt-1.5 text-[#0C4A6E]">{weather.alert}</p>
+              </div>
+            </div>
           </Card>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="p-4">
-              <h3 className="text-sm font-semibold">This month</h3>
-              <div className="mt-2 space-y-1.5 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Revenue</span><span className="font-semibold tabular-nums">£184k</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Cost</span><span className="font-semibold tabular-nums">£158k</span></div>
-                <div className="flex justify-between border-t pt-1.5"><span className="font-semibold">Margin</span><span className="font-bold text-success tabular-nums">£26k (14.1%)</span></div>
-              </div>
-              <div className="mt-3 h-16">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={monthlyMini} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
-                    <Area type="monotone" dataKey="revenue" stroke="var(--color-accent)" fill="var(--color-accent)" fillOpacity={0.15} strokeWidth={1.5} />
-                    <Area type="monotone" dataKey="cost" stroke="var(--color-primary)" fill="var(--color-primary)" fillOpacity={0.1} strokeWidth={1.5} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <h3 className="text-sm font-semibold">Supplier spend</h3>
-              <p className="text-[11px] text-muted-foreground">£204k total · concentration</p>
-              <div className="mt-2.5 space-y-1.5">
-                {supplierConcentration.map((s) => (
-                  <div key={s.supplier}>
-                    <div className="flex justify-between text-xs">
-                      <span className="font-medium">{s.supplier}</span>
-                      <span className="tabular-nums text-muted-foreground">{s.pct}%</span>
-                    </div>
-                    <div className="mt-0.5 h-1.5 w-full rounded-full bg-secondary">
-                      <div className="h-1.5 rounded-full bg-accent" style={{ width: `${s.pct}%` }} />
-                    </div>
+          <Card>
+            <CardHead title="On site today" subtitle="3 crews · checked in" />
+            <div className="divide-y divide-[var(--ink-200)]">
+              {onSiteToday.map((c) => (
+                <div key={c.id} className="flex items-center gap-3 px-5 py-3">
+                  <Avatar name={c.name} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-semibold">{c.name}</p>
+                    <p className="text-[11px] text-[var(--ink-500)]">{c.count} {c.role} · {c.level} · in {c.time}</p>
                   </div>
-                ))}
-              </div>
-              <p className="mt-3 text-[11px] text-muted-foreground">£86k SIG exposure — consider CCF diversification</p>
-            </Card>
-          </div>
-        </section>
+                  <StatusBadge tone={c.status === "late" ? "warning" : "success"}>{c.status === "late" ? "Late" : "On time"}</StatusBadge>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-[var(--ink-200)] bg-[var(--ink-50)] px-5 py-2.5 text-[11px] text-[var(--ink-500)]">
+              Total hours today: <strong className="text-[var(--ink-900)]">96h planned · 48h logged</strong>
+            </div>
+          </Card>
+
+          <Card>
+            <CardHead title="Deliveries today" subtitle="2 inbound" />
+            <div className="divide-y divide-[var(--ink-200)]">
+              {deliveriesToday.map((d) => (
+                <div key={d.id} className="flex items-start gap-3 px-5 py-3">
+                  <div className={cn("mt-0.5 flex h-7 w-7 items-center justify-center rounded-md",
+                    d.status === "done" ? "bg-[var(--green-600)]/10 text-[var(--green-600)]" : "bg-[var(--accent-500)]/10 text-[var(--accent-500)]")}>
+                    {d.status === "done" ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Truck className="h-3.5 w-3.5" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-medium">{d.supplier} · {d.item}</p>
+                    <p className="mt-0.5 text-[11px] text-[var(--ink-500)]"><Clock className="mr-1 inline h-3 w-3" />{d.eta} · {d.level}</p>
+                  </div>
+                  <StatusBadge tone={d.status === "done" ? "success" : "info"} dot>{d.status === "done" ? "Done" : "Inbound"}</StatusBadge>
+                </div>
+              ))}
+            </div>
+            <Link to="/" className="block border-t border-[var(--ink-200)] px-5 py-2.5 text-[12px] font-medium text-[var(--accent-500)] hover:underline">
+              Next 7 days (12 deliveries) →
+            </Link>
+          </Card>
+        </div>
       </div>
     </div>
   );
 }
 
-function Chip({ children }: { children: React.ReactNode }) {
-  return <span className="inline-flex items-center rounded-md border bg-card px-2 py-0.5 text-xs font-medium text-muted-foreground">{children}</span>;
+function FocusRow({ action }: { action: typeof focusToday[number] }) {
+  const borderColor = action.tone === "danger" ? "border-l-[var(--red-500)]"
+    : action.tone === "warning" ? "border-l-[var(--amber-500)]"
+    : "border-l-[var(--accent-500)]";
+  return (
+    <div className={cn("border-l-4 px-5 py-4", borderColor)}>
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusBadge tone={action.tone}>{action.badge}</StatusBadge>
+        <span className="text-[11px] font-medium text-[var(--ink-500)]">{action.impact}</span>
+      </div>
+      <h4 className="mt-2 text-[14px] font-semibold text-[var(--ink-900)]">{action.title}</h4>
+      <p className="mt-1 text-[13px] text-[var(--ink-700)]">{action.body}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Link to={action.primary.to}>
+          <Button size="sm">{action.primary.label}<ArrowRight className="ml-1 h-3.5 w-3.5" /></Button>
+        </Link>
+        {action.secondary && <Button size="sm" variant="outline">{action.secondary.label}</Button>}
+      </div>
+    </div>
+  );
 }
 
-function RoadblockItem({ r }: { r: typeof roadblocks[number] }) {
-  const [open, setOpen] = useState(false);
+function Avatar({ name }: { name: string }) {
+  const initials = name.split(" ").slice(0, 2).map((p) => p[0]).join("").toUpperCase();
   return (
-    <li>
-      <button onClick={() => setOpen((v) => !v)} className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left hover:bg-secondary/30">
-        <div className="flex items-start gap-2.5">
-          <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", r.severity === "BLOCKED" ? "bg-danger" : "bg-warning")} />
-          <div>
-            <p className="text-sm font-medium leading-snug">{r.title}</p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">{r.when} · owner {r.owner}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <StatusBadge status={r.severity} />
-          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
-        </div>
-      </button>
-      {open && (
-        <div className="bg-secondary/20 px-4 pb-3 pt-1 text-xs text-muted-foreground">
-          <p><strong className="text-foreground">Reason for variance:</strong> {r.reason}</p>
-          <p className="mt-1"><strong className="text-foreground">Affected tasks:</strong> {r.affected.join(", ")}</p>
-        </div>
-      )}
-    </li>
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--navy-800)] to-[var(--accent-500)] text-[11px] font-bold text-white">
+      {initials}
+    </div>
   );
 }

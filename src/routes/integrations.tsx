@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Card } from "@/components/ui/card";
+import { Section, Card } from "@/components/Primitives";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Check, Plug, Info, RefreshCw, Settings as SettingsIcon } from "lucide-react";
 import { integrations } from "@/lib/mockData";
+import { Plug, RefreshCw, Settings as SettingsIcon, Check, Info } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/integrations")({
   head: () => ({ meta: [{ title: "Integrations — Quantix Prime" }] }),
@@ -12,46 +12,37 @@ export const Route = createFileRoute("/integrations")({
 });
 
 function Integrations() {
+  const cats = ["Accounting", "Programme", "Main contractor", "Collaboration"];
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Integrations</h1>
-        <p className="text-sm text-muted-foreground">Connect Quantix Prime to the tools your business already uses</p>
-      </div>
-
-      {["Accounting", "Programme", "Main Contractor", "Comms"].map((cat) => {
+    <Section title="Integrations" subtitle="Connect Quantix Prime to the tools your business already uses">
+      {cats.map((cat) => {
         const items = integrations.filter((i) => i.category === cat);
+        if (!items.length) return null;
         return (
-          <section key={cat}>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{cat}</h2>
+          <section key={cat} className="space-y-3">
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{cat}</h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {items.map((int) => (
-                <Card key={int.name} className="p-4">
+                <Card key={int.id} className="p-4">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary text-xs font-bold">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[var(--ink-50)] text-[12px] font-bold text-[var(--ink-700)]">
                       {int.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
                     </div>
                     {int.connected && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[10px] font-bold uppercase text-success">
-                        <Check className="h-2.5 w-2.5" /> Connected
-                      </span>
+                      <StatusBadge tone="success"><Check className="h-2.5 w-2.5" /> Connected</StatusBadge>
                     )}
                   </div>
-                  <p className="mt-3 font-semibold">{int.name}</p>
+                  <p className="font-display mt-3 text-[15px] font-semibold">{int.name}</p>
                   {int.note && (
-                    <p className="mt-1 inline-flex items-start gap-1 text-[11px] text-muted-foreground">
+                    <p className="mt-1 inline-flex items-start gap-1 text-[11px] text-[var(--ink-500)]">
                       <Info className="mt-0.5 h-3 w-3 shrink-0" />{int.note}
                     </p>
                   )}
                   {int.connected && int.lastSync && (
-                    <p className="mt-1 text-[11px] text-muted-foreground">Last sync: {int.lastSync}</p>
+                    <p className="mt-1 text-[11px] text-[var(--ink-500)]">Last sync: {int.lastSync}</p>
                   )}
                   {int.connected && int.stats && (
-                    <div className="mt-2 space-y-0.5 text-[11px] text-muted-foreground">
-                      <p>{int.stats.pos} POs synced</p>
-                      <p>{int.stats.invoices} invoices synced</p>
-                      <p className={cn(int.stats.errors > 0 && "text-warning-foreground font-medium")}>{int.stats.errors} errors</p>
-                    </div>
+                    <p className="mt-1 text-[11px] text-[var(--ink-500)]">{int.stats}</p>
                   )}
                   <div className="mt-3 flex gap-2">
                     {int.connected ? (
@@ -64,7 +55,7 @@ function Integrations() {
                         </Button>
                       </>
                     ) : (
-                      <Button size="sm" className="w-full" onClick={() => toast.success(`Connecting to ${int.name}...`, { description: "OAuth flow would start here" })}>
+                      <Button size="sm" className="w-full" onClick={() => toast.success(`Connecting to ${int.name}...`)}>
                         <Plug className="mr-1 h-3.5 w-3.5" />Connect
                       </Button>
                     )}
@@ -75,6 +66,6 @@ function Integrations() {
           </section>
         );
       })}
-    </div>
+    </Section>
   );
 }
