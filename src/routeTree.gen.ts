@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TeamRouteImport } from './routes/team'
 import { Route as ReadinessRouteImport } from './routes/readiness'
-import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as PriceIntelligenceRouteImport } from './routes/price-intelligence'
 import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as InvoicesRouteImport } from './routes/invoices'
@@ -23,6 +22,7 @@ import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CalloffsRouteImport } from './routes/calloffs'
 import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as ProjectsFitzroviaRouteImport } from './routes/projects.fitzrovia'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
 
@@ -34,11 +34,6 @@ const TeamRoute = TeamRouteImport.update({
 const ReadinessRoute = ReadinessRouteImport.update({
   id: '/readiness',
   path: '/readiness',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProjectsRoute = ProjectsRouteImport.update({
-  id: '/projects',
-  path: '/projects',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PriceIntelligenceRoute = PriceIntelligenceRouteImport.update({
@@ -96,10 +91,15 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProjectsFitzroviaRoute = ProjectsFitzroviaRouteImport.update({
-  id: '/fitzrovia',
-  path: '/fitzrovia',
-  getParentRoute: () => ProjectsRoute,
+  id: '/projects/fitzrovia',
+  path: '/projects/fitzrovia',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PriceListsUploadRoute = PriceListsUploadRouteImport.update({
   id: '/price-lists/upload',
@@ -119,11 +119,11 @@ export interface FileRoutesByFullPath {
   '/invoices': typeof InvoicesRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
-  '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/team': typeof TeamRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaRoute
+  '/projects/': typeof ProjectsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -137,11 +137,11 @@ export interface FileRoutesByTo {
   '/invoices': typeof InvoicesRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
-  '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/team': typeof TeamRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaRoute
+  '/projects': typeof ProjectsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -156,11 +156,11 @@ export interface FileRoutesById {
   '/invoices': typeof InvoicesRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
-  '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/team': typeof TeamRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaRoute
+  '/projects/': typeof ProjectsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -176,11 +176,11 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/planner'
     | '/price-intelligence'
-    | '/projects'
     | '/readiness'
     | '/team'
     | '/price-lists/upload'
     | '/projects/fitzrovia'
+    | '/projects/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -194,11 +194,11 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/planner'
     | '/price-intelligence'
-    | '/projects'
     | '/readiness'
     | '/team'
     | '/price-lists/upload'
     | '/projects/fitzrovia'
+    | '/projects'
   id:
     | '__root__'
     | '/'
@@ -212,11 +212,11 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/planner'
     | '/price-intelligence'
-    | '/projects'
     | '/readiness'
     | '/team'
     | '/price-lists/upload'
     | '/projects/fitzrovia'
+    | '/projects/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -231,10 +231,11 @@ export interface RootRouteChildren {
   InvoicesRoute: typeof InvoicesRoute
   PlannerRoute: typeof PlannerRoute
   PriceIntelligenceRoute: typeof PriceIntelligenceRoute
-  ProjectsRoute: typeof ProjectsRouteWithChildren
   ReadinessRoute: typeof ReadinessRoute
   TeamRoute: typeof TeamRoute
   PriceListsUploadRoute: typeof PriceListsUploadRoute
+  ProjectsFitzroviaRoute: typeof ProjectsFitzroviaRoute
+  ProjectsIndexRoute: typeof ProjectsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -251,13 +252,6 @@ declare module '@tanstack/react-router' {
       path: '/readiness'
       fullPath: '/readiness'
       preLoaderRoute: typeof ReadinessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/projects': {
-      id: '/projects'
-      path: '/projects'
-      fullPath: '/projects'
-      preLoaderRoute: typeof ProjectsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/price-intelligence': {
@@ -337,12 +331,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/projects/': {
+      id: '/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof ProjectsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/projects/fitzrovia': {
       id: '/projects/fitzrovia'
-      path: '/fitzrovia'
+      path: '/projects/fitzrovia'
       fullPath: '/projects/fitzrovia'
       preLoaderRoute: typeof ProjectsFitzroviaRouteImport
-      parentRoute: typeof ProjectsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/price-lists/upload': {
       id: '/price-lists/upload'
@@ -353,18 +354,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface ProjectsRouteChildren {
-  ProjectsFitzroviaRoute: typeof ProjectsFitzroviaRoute
-}
-
-const ProjectsRouteChildren: ProjectsRouteChildren = {
-  ProjectsFitzroviaRoute: ProjectsFitzroviaRoute,
-}
-
-const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
-  ProjectsRouteChildren,
-)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -378,10 +367,11 @@ const rootRouteChildren: RootRouteChildren = {
   InvoicesRoute: InvoicesRoute,
   PlannerRoute: PlannerRoute,
   PriceIntelligenceRoute: PriceIntelligenceRoute,
-  ProjectsRoute: ProjectsRouteWithChildren,
   ReadinessRoute: ReadinessRoute,
   TeamRoute: TeamRoute,
   PriceListsUploadRoute: PriceListsUploadRoute,
+  ProjectsFitzroviaRoute: ProjectsFitzroviaRoute,
+  ProjectsIndexRoute: ProjectsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
