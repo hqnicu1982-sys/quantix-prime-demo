@@ -122,38 +122,39 @@ function Materials() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filtered.map((m) => {
+              {filtered.flatMap((m) => {
                 const open = expanded === m.id;
-                return (
-                  <>
-                    <tr key={m.id} className={cn(rowTone[m.status], "transition-colors hover:bg-secondary/30")}>
-                      <td className="px-3 py-3">
-                        <button onClick={() => setExpanded(open ? null : m.id)} aria-label="Expand">
-                          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
-                        </button>
-                      </td>
-                      <td className="px-3 py-3 font-medium">{m.task}</td>
-                      <td className="px-3 py-3 text-muted-foreground tabular-nums">{m.start}</td>
-                      <td className="px-3 py-3 text-xs text-muted-foreground">{m.system}</td>
-                      <td className="px-3 py-3"><span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase", poBadge(m.po))}>{m.po}</span></td>
-                      <td className="px-3 py-3"><span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase", dlBadge(m.delivery))}>{m.delivery}</span></td>
-                      <td className="px-3 py-3"><StatusBadge status={m.status} /></td>
-                      <td className="px-3 py-3">
-                        {m.po === "none" ? <Button size="sm" onClick={() => toast.success("PO drafted", { description: "Sent to Sarah Williams for approval" })}>Raise PO</Button> : <Button size="sm" variant="ghost">View</Button>}
+                const rows = [
+                  <tr key={m.id} className={cn(rowTone[m.status], "transition-colors hover:bg-secondary/30")}>
+                    <td className="px-3 py-3">
+                      <button onClick={() => setExpanded(open ? null : m.id)} aria-label="Expand">
+                        <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+                      </button>
+                    </td>
+                    <td className="px-3 py-3 font-medium">{m.task}</td>
+                    <td className="px-3 py-3 text-muted-foreground tabular-nums">{m.start}</td>
+                    <td className="px-3 py-3 text-xs text-muted-foreground">{m.system}</td>
+                    <td className="px-3 py-3"><span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase", poBadge(m.po))}>{m.po}</span></td>
+                    <td className="px-3 py-3"><span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase", dlBadge(m.delivery))}>{m.delivery}</span></td>
+                    <td className="px-3 py-3"><StatusBadge status={m.status} /></td>
+                    <td className="px-3 py-3">
+                      {m.po === "none" ? <Button size="sm" onClick={() => toast.success("PO drafted", { description: "Sent to Sarah Williams for approval" })}>Raise PO</Button> : <Button size="sm" variant="ghost">View</Button>}
+                    </td>
+                  </tr>,
+                ];
+                if (open) {
+                  rows.push(
+                    <tr key={`${m.id}-detail`} className={rowTone[m.status]}>
+                      <td colSpan={8} className="px-12 py-3">
+                        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Materials required</p>
+                        <ul className="divide-y">
+                          {m.materials.map((mat, i) => <MaterialDetail key={i} m={mat} />)}
+                        </ul>
                       </td>
                     </tr>
-                    {open && (
-                      <tr key={`${m.id}-detail`} className={rowTone[m.status]}>
-                        <td colSpan={8} className="px-12 py-3">
-                          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Materials required</p>
-                          <ul className="divide-y">
-                            {m.materials.map((mat, i) => <MaterialDetail key={i} m={mat} />)}
-                          </ul>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                );
+                  );
+                }
+                return rows;
               })}
             </tbody>
           </table>
