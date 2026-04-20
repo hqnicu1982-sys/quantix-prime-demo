@@ -116,7 +116,7 @@ function Invoices() {
           </div>
 
           <div className="mt-4 flex items-center gap-2 rounded-md bg-secondary/40 px-3 py-2 text-[11px]">
-            <span className="rounded bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold text-white">XERO</span>
+            <span className="rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">XERO</span>
             <span className="text-muted-foreground">Will sync to Xero on approval</span>
           </div>
 
