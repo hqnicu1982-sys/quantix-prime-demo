@@ -14,7 +14,10 @@ import { Route as PricesRouteImport } from './routes/prices'
 import { Route as MaterialsRouteImport } from './routes/materials'
 import { Route as LabourRouteImport } from './routes/labour'
 import { Route as InvoicesRouteImport } from './routes/invoices'
+import { Route as IntegrationsRouteImport } from './routes/integrations'
 import { Route as FinancialRouteImport } from './routes/financial'
+import { Route as DailyReportRouteImport } from './routes/daily-report'
+import { Route as CostedBoqRouteImport } from './routes/costed-boq'
 import { Route as IndexRouteImport } from './routes/index'
 
 const WeeklyPlanRoute = WeeklyPlanRouteImport.update({
@@ -42,9 +45,24 @@ const InvoicesRoute = InvoicesRouteImport.update({
   path: '/invoices',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IntegrationsRoute = IntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FinancialRoute = FinancialRouteImport.update({
   id: '/financial',
   path: '/financial',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DailyReportRoute = DailyReportRouteImport.update({
+  id: '/daily-report',
+  path: '/daily-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CostedBoqRoute = CostedBoqRouteImport.update({
+  id: '/costed-boq',
+  path: '/costed-boq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -55,7 +73,10 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/costed-boq': typeof CostedBoqRoute
+  '/daily-report': typeof DailyReportRoute
   '/financial': typeof FinancialRoute
+  '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRoute
   '/labour': typeof LabourRoute
   '/materials': typeof MaterialsRoute
@@ -64,7 +85,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/costed-boq': typeof CostedBoqRoute
+  '/daily-report': typeof DailyReportRoute
   '/financial': typeof FinancialRoute
+  '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRoute
   '/labour': typeof LabourRoute
   '/materials': typeof MaterialsRoute
@@ -74,7 +98,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/costed-boq': typeof CostedBoqRoute
+  '/daily-report': typeof DailyReportRoute
   '/financial': typeof FinancialRoute
+  '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRoute
   '/labour': typeof LabourRoute
   '/materials': typeof MaterialsRoute
@@ -85,7 +112,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/costed-boq'
+    | '/daily-report'
     | '/financial'
+    | '/integrations'
     | '/invoices'
     | '/labour'
     | '/materials'
@@ -94,7 +124,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/costed-boq'
+    | '/daily-report'
     | '/financial'
+    | '/integrations'
     | '/invoices'
     | '/labour'
     | '/materials'
@@ -103,7 +136,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/costed-boq'
+    | '/daily-report'
     | '/financial'
+    | '/integrations'
     | '/invoices'
     | '/labour'
     | '/materials'
@@ -113,7 +149,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CostedBoqRoute: typeof CostedBoqRoute
+  DailyReportRoute: typeof DailyReportRoute
   FinancialRoute: typeof FinancialRoute
+  IntegrationsRoute: typeof IntegrationsRoute
   InvoicesRoute: typeof InvoicesRoute
   LabourRoute: typeof LabourRoute
   MaterialsRoute: typeof MaterialsRoute
@@ -158,11 +197,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InvoicesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/integrations': {
+      id: '/integrations'
+      path: '/integrations'
+      fullPath: '/integrations'
+      preLoaderRoute: typeof IntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/financial': {
       id: '/financial'
       path: '/financial'
       fullPath: '/financial'
       preLoaderRoute: typeof FinancialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/daily-report': {
+      id: '/daily-report'
+      path: '/daily-report'
+      fullPath: '/daily-report'
+      preLoaderRoute: typeof DailyReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/costed-boq': {
+      id: '/costed-boq'
+      path: '/costed-boq'
+      fullPath: '/costed-boq'
+      preLoaderRoute: typeof CostedBoqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -177,7 +237,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CostedBoqRoute: CostedBoqRoute,
+  DailyReportRoute: DailyReportRoute,
   FinancialRoute: FinancialRoute,
+  IntegrationsRoute: IntegrationsRoute,
   InvoicesRoute: InvoicesRoute,
   LabourRoute: LabourRoute,
   MaterialsRoute: MaterialsRoute,
@@ -187,12 +250,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
