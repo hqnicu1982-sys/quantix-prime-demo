@@ -28,7 +28,7 @@ const navGroups: NavGroup[] = [
     { to: "/projects/fitzrovia", label: "Hotel Fitzrovia", icon: HardHat },
   ]},
   { label: "Commercial", persona: "commercial", items: [
-    { to: "/projects/fitzrovia/boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true },
+    { to: "/costed-boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true },
     { to: "/price-intelligence", label: "Price Intelligence", icon: BarChart3 },
     { to: "/price-lists/upload", label: "Price List Upload", icon: Upload },
     { to: "/calloffs", label: "Call-offs", icon: ShoppingCart },
@@ -163,7 +163,7 @@ function Breadcrumb() {
     "/calculator": "Calculator",
     "/projects": "All Projects",
     "/projects/fitzrovia": "Hotel Fitzrovia",
-    "/projects/fitzrovia/boq": "Costed BoQ",
+    "/costed-boq": "Costed BoQ",
     "/price-intelligence": "Price Intelligence",
     "/price-lists/upload": "Price List Upload",
     "/calloffs": "Call-offs",
