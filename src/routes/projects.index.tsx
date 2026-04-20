@@ -4,7 +4,7 @@ import { getHealthBadge } from "@/components/HealthBadge";
 import { projects, projectsKpi, fmtMoney } from "@/lib/mockData";
 import { ChevronRight } from "lucide-react";
 
-export const Route = createFileRoute("/projects")({ component: ProjectsList });
+export const Route = createFileRoute("/projects/")({ component: ProjectsList });
 
 function ProjectsList() {
   return (
