@@ -1,30 +1,46 @@
-import type { Status } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
-const styles: Record<Status, string> = {
-  READY: "bg-success/10 text-success border-success/20",
-  AT_RISK: "bg-warning/15 text-warning-foreground border-warning/30",
-  BLOCKED: "bg-danger/10 text-danger border-danger/20",
-  OVERDUE: "bg-danger/10 text-danger border-danger/20",
+type Tone = "success" | "warning" | "danger" | "info" | "neutral" | "accent";
+
+const toneStyles: Record<Tone, string> = {
+  success: "bg-[var(--green-600)]/10 text-[var(--green-600)] border-[var(--green-600)]/20",
+  warning: "bg-[var(--amber-500)]/10 text-[var(--amber-500)] border-[var(--amber-500)]/20",
+  danger: "bg-[var(--red-500)]/10 text-[var(--red-500)] border-[var(--red-500)]/20",
+  info: "bg-[var(--accent-500)]/10 text-[var(--accent-500)] border-[var(--accent-500)]/20",
+  accent: "bg-[var(--accent-500)]/10 text-[var(--accent-500)] border-[var(--accent-500)]/20",
+  neutral: "bg-[var(--ink-50)] text-[var(--ink-700)] border-[var(--ink-200)]",
 };
 
-const labels: Record<Status, string> = {
-  READY: "Ready",
-  AT_RISK: "At risk",
-  BLOCKED: "Blocked",
-  OVERDUE: "Overdue",
+const dotColor: Record<Tone, string> = {
+  success: "bg-[var(--green-600)]",
+  warning: "bg-[var(--amber-500)]",
+  danger: "bg-[var(--red-500)]",
+  info: "bg-[var(--accent-500)]",
+  accent: "bg-[var(--accent-500)]",
+  neutral: "bg-[var(--ink-500)]",
 };
 
-export function StatusBadge({ status, className }: { status: Status; className?: string }) {
+export function StatusBadge({
+  tone = "neutral",
+  children,
+  dot = false,
+  className,
+}: {
+  tone?: Tone;
+  children: React.ReactNode;
+  dot?: boolean;
+  className?: string;
+}) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium",
-        styles[status],
+        "inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider border",
+        toneStyles[tone],
         className,
       )}
     >
-      {labels[status]}
+      {dot && <span className={cn("h-1.5 w-1.5 rounded-full", dotColor[tone])} />}
+      {children}
     </span>
   );
 }

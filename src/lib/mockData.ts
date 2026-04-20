@@ -1,423 +1,693 @@
-// Quantix Prime — mock data
+// Quantix Prime — comprehensive mock data (v2)
+// All data is hardcoded for the demo. Active project = Hotel Fitzrovia.
 
-export type Status = "READY" | "AT_RISK" | "BLOCKED" | "OVERDUE";
+// ==================================================================
+// USER & TEAM
+// ==================================================================
+export const currentUser = {
+  id: "na",
+  name: "Nick Andrei",
+  role: "Site Manager",
+  tier: "Pro",
+  initials: "NA",
+};
 
-// ====================== PROJECTS ======================
+export type Persona = "site" | "commercial";
+
+export type TeamMember = {
+  id: string;
+  name: string;
+  role: string;
+  tier: "Admin" | "Pro Control" | "Pro" | "Site User" | "Operative";
+  initials: string;
+  email?: string;
+  joined: string;
+  projects: number;
+  capability: string;
+  lastActive: string;
+  status?: "pending" | "active";
+};
+
+export const team: TeamMember[] = [
+  { id: "na", name: "Nick Andrei", role: "Site Manager", tier: "Pro", initials: "NA", joined: "Jan 2026", projects: 6, capability: "Upload price lists, create call-offs, log deliveries, raise dayworks", lastActive: "now", status: "active" },
+  { id: "sm", name: "Sarah Mitchell", role: "Commercial QS", tier: "Pro Control", initials: "SM", joined: "Feb 2026", projects: 11, capability: "Approves call-offs, manages BoQ, signs invoices, owns financials", lastActive: "2h ago", status: "active" },
+  { id: "dp", name: "David Park", role: "Managing Director", tier: "Admin", initials: "DP", joined: "Jan 2026", projects: 11, capability: "Full access, billing, user management", lastActive: "yesterday", status: "active" },
+  { id: "mk", name: "Marcin Kowalski", role: "Lead Dryliner", tier: "Operative", initials: "MK", joined: "Mar 2026", projects: 2, capability: "View tasks, confirm labour hours", lastActive: "3h ago", status: "active" },
+  { id: "ro", name: "Rachel Okonkwo", role: "Estimator", tier: "Pro", initials: "RO", joined: "Feb 2026", projects: 5, capability: "Builds BoQ, uses Calculator, read-only financials", lastActive: "yesterday", status: "active" },
+  { id: "aj", name: "Andy Jones", role: "Lead Taper", tier: "Operative", initials: "AJ", joined: "Mar 2026", projects: 1, capability: "View tasks, confirm labour", lastActive: "1d ago", status: "active" },
+  { id: "pw", name: "Paweł Wilkowski", role: "Foreman", tier: "Site User", initials: "PW", joined: "Mar 2026", projects: 3, capability: "View + log daily reports", lastActive: "4h ago", status: "active" },
+  { id: "bd", name: "ben@drywallcrew.co.uk", role: "Pending invite", tier: "Site User", initials: "B", joined: "invited 18 Apr", projects: 0, capability: "—", lastActive: "—", status: "pending" },
+];
+
+// ==================================================================
+// PROJECTS
+// ==================================================================
+export type Health = "healthy" | "watch" | "risk" | "starting";
+
 export type Project = {
   id: string;
   name: string;
-  contractValue: string;
-  contractValueNum: number;
+  subtitle: string;
   mainContractor: string;
+  contractValue: number;
+  margin: number;
+  progress: number;
+  health: Health;
   startDate: string;
   endDate: string;
-  phase: string;
-  weekCurrent: number;
-  weekTotal: number;
-  status: "active" | "completed";
   hasFullData: boolean;
 };
 
 export const projects: Project[] = [
-  { id: "fitzrovia", name: "Hotel Fitzrovia", contractValue: "£2.1M", contractValueNum: 2100000, mainContractor: "Kier Construction", startDate: "05/01/2026", endDate: "28/08/2026", phase: "Internal Fit-out", weekCurrent: 14, weekTotal: 32, status: "active", hasFullData: true },
-  { id: "canary", name: "Office Refurb Canary Wharf", contractValue: "£890k", contractValueNum: 890000, mainContractor: "Skanska", startDate: "10/02/2026", endDate: "18/06/2026", phase: "Strip-out & framing", weekCurrent: 8, weekTotal: 18, status: "active", hasFullData: false },
-  { id: "westfield", name: "Retail Fit-Out Westfield", contractValue: "£340k", contractValueNum: 340000, mainContractor: "ISG", startDate: "02/09/2025", endDate: "20/12/2025", phase: "Completed", weekCurrent: 16, weekTotal: 16, status: "completed", hasFullData: false },
+  { id: "fitzrovia", name: "Hotel Fitzrovia", subtitle: "Drylining · W1T 4JQ · Lvl 4–6", mainContractor: "Kier Construction", contractValue: 2100000, margin: 23.8, progress: 67, health: "healthy", startDate: "04/02/2026", endDate: "19/12/2026", hasFullData: true },
+  { id: "trafalgar", name: "Trafalgar Wharf — Blocks A & B", subtitle: "Fit-out · E16 · 148 units", mainContractor: "Wates Group", contractValue: 1840000, margin: 11.2, progress: 42, health: "risk", startDate: "12/11/2025", endDate: "30/10/2026", hasFullData: false },
+  { id: "bermondsey", name: "Bermondsey Lofts", subtitle: "Specialty partitions · SE1 · 9 lofts", mainContractor: "ISG plc", contractValue: 680000, margin: 14.8, progress: 88, health: "watch", startDate: "08/09/2025", endDate: "30/05/2026", hasFullData: false },
+  { id: "greenwich", name: "Greenwich Peninsula Phase 3", subtitle: "Drylining shell · SE10 · 212 units", mainContractor: "Multiplex Construction", contractValue: 1950000, margin: 26.4, progress: 31, health: "healthy", startDate: "06/01/2026", endDate: "15/01/2027", hasFullData: false },
+  { id: "stratford", name: "Stratford Commercial Tower", subtitle: "Office fit-out · E15 · 18 floors", mainContractor: "Mace Group", contractValue: 1120000, margin: 28.7, progress: 94, health: "healthy", startDate: "20/05/2025", endDate: "15/06/2026", hasFullData: false },
+  { id: "camden", name: "Camden Market Redevelopment", subtitle: "Acoustic partitions · NW1 · 28 units", mainContractor: "Kier Construction", contractValue: 495000, margin: 24.1, progress: 18, health: "starting", startDate: "10/03/2026", endDate: "30/09/2026", hasFullData: false },
 ];
 
-// Backwards compat
-export const project = {
-  name: projects[0].name,
-  contractValue: projects[0].contractValue,
-  mainContractor: projects[0].mainContractor,
-  startDate: projects[0].startDate,
-  endDate: projects[0].endDate,
+export const projectsKpi = {
+  totalValue: 8420000,
+  weightedMargin: 22.1,
+  marginDeltaQoQ: 0.4,
+  atRisk: 2,
+  mainContractors: 5,
 };
 
-// ====================== TEAM ======================
-export const team = [
-  { id: "np", name: "Nick Popescu", role: "Site Manager", initials: "NP" },
-  { id: "js", name: "John Smith", role: "Commercial Manager / QS", initials: "JS" },
-  { id: "sw", name: "Sarah Williams", role: "Buyer", initials: "SW" },
-  { id: "mt", name: "Mike Thompson", role: "Foreman", initials: "MT" },
-];
-
-// ====================== TODAY KPIs ======================
-export const todayKpis = {
-  operatives: 14,
-  dayCost: 3640,
-  deliveries: [
-    { supplier: "SIG", time: "10:00" },
-    { supplier: "CCF", time: "14:00" },
-    { supplier: "Knauf", time: "16:00" },
-  ],
-  tasksReady: 11,
-  tasksTotal: 14,
-  weeklyMargin: 1240,
-  ppc: 82,
+// ==================================================================
+// HOTEL FITZROVIA — DETAIL
+// ==================================================================
+export const fitzrovia = {
+  id: "fitzrovia",
+  name: "Hotel Fitzrovia",
+  contractValue: 2100000,
+  spent: 1070000,
+  spentPct: 51,
+  forecastMargin: 23.8,
+  forecastProfit: 499000,
+  progress: 67,
+  programmeAhead: 3,
+  estimatedBoq: 1599200,
+  pricedBoq: 1548700,
+  actualToDate: 1069400,
+  savedVsEstimate: 50500,
 };
 
-// ====================== ROADBLOCKS ======================
-export const roadblocks = [
-  { id: 1, title: "Ceiling grid Level 2 — SIG delivery slipped 3 days", severity: "AT_RISK" as Status, when: "2 days ago", reason: "Supplier transport delay; replacement order placed with CCF", affected: ["MF Ceiling L2 — Zone B"], owner: "Sarah Williams" },
-  { id: 2, title: "Fire-rated board shortage — no PO raised for FireLine 15mm", severity: "BLOCKED" as Status, when: "today", reason: "Procurement gap — risers due to start Wed 23/04", affected: ["Fire stopping L2", "Riser cupboards L2"], owner: "Sarah Williams" },
-  { id: 3, title: "Level 4 electrical first fix — waiting on MC clearance", severity: "AT_RISK" as Status, when: "yesterday", reason: "Kier pending sign-off on services route revision", affected: ["Boarding L4 — Corridor"], owner: "Nick Popescu" },
+export const fitzroviaSystems = [
+  { name: "GypWall CLASSIC (C-48/70)", area: "2,840 m²", value: 198400, readiness: 96, color: "blue" as const },
+  { name: "CasoLine MF ceilings", area: "4,120 m²", value: 162800, readiness: 100, color: "green" as const },
+  { name: "ShaftWall (Knauf)", area: "410 m²", value: 87240, readiness: 62, color: "amber" as const },
+  { name: "GypWall ROBUST (impact)", area: "340 m²", value: 34200, readiness: 100, color: "purple" as const },
 ];
 
-// ====================== MARGIN TREND ======================
+export const fitzroviaHealth = [
+  { label: "Programme", value: 85, status: "healthy" as Health, note: "Ahead +3d" },
+  { label: "Budget", value: 62, status: "watch" as Health, note: "Over +£14k labour" },
+  { label: "Quality (snag rate)", value: 93, status: "healthy" as Health, note: "1.8% · low" },
+  { label: "Safety (near-misses)", value: 100, status: "healthy" as Health, note: "2 logged · open 0" },
+];
+
+export const fitzroviaActivity = [
+  { id: 1, title: "Call-off #247 approved", who: "Sarah Mitchell QS", when: "today 09:14", tone: "success" as const },
+  { id: 2, title: "BoQ rev 3.2 published", who: "Rachel Okonkwo", when: "yesterday 17:22", tone: "info" as const },
+  { id: 3, title: "Price list uploaded — Minster (152 items, 3 review)", who: "Nick Andrei", when: "yesterday 14:48", tone: "info" as const },
+  { id: 4, title: "Site delay: L5 ceilings rain 1.5d", who: "Nick Andrei", when: "Fri 17 Apr", tone: "warning" as const },
+];
+
+// ==================================================================
+// DASHBOARD — MORNING BRIEFING
+// ==================================================================
+export const briefing = {
+  date: "Monday 20 April 2026",
+  greeting: "Good morning, Nick.",
+  summary: "Hotel Fitzrovia is **3 days ahead** on the upper floors but **£14.2k over** on labour. Three things need your eyes today.",
+};
+
+export const dashboardKpis = [
+  { label: "Project margin (today)", value: "23.8%", delta: "+1.2pp vs last week", trend: "up" as const, tone: "success" as const },
+  { label: "Contract value remaining", value: "£1.42m", delta: "67.4% complete · £2.1m contract", trend: "flat" as const, tone: "neutral" as const },
+  { label: "Labour vs BoQ (this week)", value: "+£14.2k", delta: "Level 4 drylining overspend", trend: "up" as const, tone: "danger" as const },
+  { label: "Readiness next 2 weeks", value: "94%", delta: "18 of 19 tasks green", trend: "flat" as const, tone: "success" as const },
+];
+
+export const focusToday = [
+  {
+    id: 1,
+    tone: "danger" as const,
+    badge: "High impact",
+    impact: "Est. £18k margin risk",
+    title: "Approve Level 5 Knauf board call-off",
+    body: "Site needs boards by 24 Apr. Order window closes in 1 day, 4 hours. Chosen supplier: Minster (£8.20/m² — £0.30 cheaper than CCF).",
+    primary: { label: "Review & approve", to: "/calloffs" as const },
+    secondary: { label: "Snooze" },
+  },
+  {
+    id: 2,
+    tone: "warning" as const,
+    badge: "Reconcile",
+    impact: "£1,247 variance",
+    title: "Reconcile CCF invoice #CCF-10824",
+    body: "Invoiced £8,340 vs PO £7,093. Likely cause: price uplift not reflected on PO.",
+    primary: { label: "Open reconciliation", to: "/invoices" as const },
+  },
+  {
+    id: 3,
+    tone: "accent" as const,
+    badge: "Investigate",
+    impact: "Labour overrun",
+    title: "Level 4 dryliners running 22% over BoQ hours",
+    body: "Marcin's crew: planned 248h, burned 302h at 76% complete. Either re-baseline or raise a dayworks variation with Kier.",
+    primary: { label: "View labour detail", to: "/projects/fitzrovia" as const },
+    secondary: { label: "Raise dayworks" },
+  },
+];
+
 export const marginTrend = [
-  { week: "W7", margin: 18.0, target: 18 },
-  { week: "W8", margin: 17.4, target: 18 },
-  { week: "W9", margin: 16.9, target: 18 },
-  { week: "W10", margin: 16.2, target: 18 },
-  { week: "W11", margin: 15.8, target: 18 },
-  { week: "W12", margin: 15.1, target: 18 },
-  { week: "W13", margin: 14.6, target: 18 },
-  { week: "W14", margin: 14.2, target: 18 },
+  { week: "W7", budgeted: 26, actual: 28.2 },
+  { week: "W8", budgeted: 26, actual: 27.4 },
+  { week: "W9", budgeted: 26, actual: 25.1 },
+  { week: "W10", budgeted: 26, actual: 22.8 },
+  { week: "W11", budgeted: 26, actual: 21.9 },
+  { week: "W12", budgeted: 26, actual: 22.4 },
+  { week: "W13", budgeted: 26, actual: 22.6 },
+  { week: "W14", budgeted: 26, actual: 23.8 },
 ];
 
-export const commercialActions = [
-  { id: 1, title: "4 invoices need review", detail: "£890 total variance flagged", action: "Review" },
-  { id: 2, title: "SIG board price up 4%", detail: "Compare with CCF alternative — potential £620 saving", action: "Compare" },
-  { id: 3, title: "Labour over budget on Level 3", detail: "+£420 vs BoQ allowance", action: "Investigate" },
-];
-
-export const supplierConcentration = [
-  { supplier: "SIG", pct: 42, amount: 86000 },
-  { supplier: "CCF", pct: 28, amount: 57400 },
-  { supplier: "Jewson", pct: 18, amount: 36900 },
-  { supplier: "British Gypsum", pct: 8, amount: 16400 },
-  { supplier: "Other", pct: 4, amount: 8200 },
-];
-
-export const monthlyMini = [
-  { week: "W11", revenue: 42000, cost: 36500 },
-  { week: "W12", revenue: 46000, cost: 39800 },
-  { week: "W13", revenue: 48000, cost: 41200 },
-  { week: "W14", revenue: 48000, cost: 40500 },
-];
-
-// ====================== WEEKLY TASKS ======================
-export type Task = {
-  id: number;
-  title: string;
-  crew: string;
-  operatives: number;
-  duration: string;
-  day: number; // 0..9 (2 weeks)
-  span: number;
-  system: "L3 Partitions" | "L2 Partitions" | "L3 Ceilings";
-  status: Status;
-  constraints: { materials: boolean; labour: boolean; preceding: boolean; permits: boolean };
-  reasonForVariance?: string;
+export const weather = {
+  location: "Fitzrovia W1T",
+  temperature: "12°C",
+  conditions: "Overcast · wind 14 mph",
+  alert: "External board install Thu — Rain risk 68%",
 };
 
-export const weeklyTasks: Task[] = [
-  { id: 1, title: "Partitions L3 — Grid 1-5", crew: "Crew A", operatives: 4, duration: "2 days", day: 0, span: 2, system: "L3 Partitions", status: "READY", constraints: { materials: true, labour: true, preceding: true, permits: true } },
-  { id: 2, title: "MF Ceiling L2 — Zone B", crew: "Crew B", operatives: 3, duration: "3 days", day: 0, span: 3, system: "L3 Ceilings", status: "AT_RISK", constraints: { materials: false, labour: true, preceding: true, permits: true }, reasonForVariance: "SIG delivery slipped 3 days; CCF substitution underway" },
-  { id: 3, title: "Boarding L4 — Corridor", crew: "Crew C", operatives: 3, duration: "2 days", day: 2, span: 2, system: "L3 Partitions", status: "READY", constraints: { materials: true, labour: true, preceding: true, permits: true } },
-  { id: 4, title: "Fire stopping L2 risers", crew: "Crew D", operatives: 2, duration: "1 day", day: 3, span: 1, system: "L2 Partitions", status: "BLOCKED", constraints: { materials: false, labour: true, preceding: false, permits: true }, reasonForVariance: "FireLine 15mm — no PO raised; predecessor incomplete" },
-  { id: 5, title: "Skim coat L1 lobby", crew: "Crew A", operatives: 2, duration: "1 day", day: 2, span: 1, system: "L3 Partitions", status: "READY", constraints: { materials: true, labour: true, preceding: true, permits: true } },
-  { id: 6, title: "Bulkheads L3", crew: "Crew B", operatives: 2, duration: "2 days", day: 3, span: 2, system: "L3 Ceilings", status: "READY", constraints: { materials: true, labour: true, preceding: true, permits: true } },
-  { id: 7, title: "Tape & joint L4", crew: "Crew C", operatives: 3, duration: "2 days", day: 0, span: 2, system: "L3 Partitions", status: "READY", constraints: { materials: true, labour: true, preceding: true, permits: true } },
-  { id: 8, title: "Riser cupboards L2", crew: "Crew D", operatives: 2, duration: "1 day", day: 4, span: 1, system: "L2 Partitions", status: "AT_RISK", constraints: { materials: true, labour: true, preceding: true, permits: false }, reasonForVariance: "Hot works permit pending" },
-  { id: 9, title: "Acoustic batt insulation L3", crew: "Crew A", operatives: 2, duration: "1 day", day: 9, span: 1, system: "L3 Partitions", status: "READY", constraints: { materials: true, labour: true, preceding: true, permits: true } },
-  { id: 10, title: "Track set out L5", crew: "Crew E", operatives: 2, duration: "1 day", day: 5, span: 1, system: "L3 Partitions", status: "READY", constraints: { materials: true, labour: true, preceding: true, permits: true } },
-  { id: 11, title: "Wet area boarding L2", crew: "Crew B", operatives: 3, duration: "2 days", day: 7, span: 2, system: "L2 Partitions", status: "READY", constraints: { materials: true, labour: true, preceding: true, permits: true } },
-  { id: 12, title: "Door linings L3", crew: "Crew C", operatives: 2, duration: "1 day", day: 9, span: 1, system: "L3 Partitions", status: "READY", constraints: { materials: true, labour: true, preceding: true, permits: true } },
-  { id: 13, title: "Suspended ceiling L1", crew: "Crew D", operatives: 3, duration: "2 days", day: 6, span: 2, system: "L3 Ceilings", status: "READY", constraints: { materials: true, labour: true, preceding: true, permits: true } },
-  { id: 14, title: "MF perimeter L4", crew: "Crew E", operatives: 2, duration: "1 day", day: 8, span: 1, system: "L3 Ceilings", status: "READY", constraints: { materials: true, labour: true, preceding: true, permits: true } },
+export const onSiteToday = [
+  { id: "marcin", name: "Marcin's Crew", count: 6, role: "dryliners", level: "L4", time: "07:12", status: "on-time" as const },
+  { id: "andy", name: "Andy Jones Taper", count: 2, role: "tapers", level: "L3", time: "07:05", status: "on-time" as const },
+  { id: "pawel", name: "Paweł's Crew", count: 4, role: "fixers", level: "L5", time: "08:14", status: "late" as const },
 ];
 
-// ====================== OPERATIVES ======================
-export const operatives = [
-  { id: 1, name: "James Whittaker", role: "Charge hand", crew: "Crew A", clockIn: "07:02", dayRate: 280 },
-  { id: 2, name: "Liam O'Connor", role: "Dryliner", crew: "Crew A", clockIn: "07:05", dayRate: 240 },
-  { id: 3, name: "Daniel Pereira", role: "Dryliner", crew: "Crew A", clockIn: "07:01", dayRate: 240 },
-  { id: 4, name: "Marcus Johnson", role: "Charge hand", crew: "Crew B", clockIn: "06:58", dayRate: 280 },
-  { id: 5, name: "Sean Murphy", role: "Ceiling fixer", crew: "Crew B", clockIn: "07:10", dayRate: 250 },
-  { id: 6, name: "Andrei Popescu", role: "Dryliner", crew: "Crew C", clockIn: "07:00", dayRate: 240 },
-  { id: 7, name: "Tomasz Kowalski", role: "Tape & joint", crew: "Crew C", clockIn: "07:03", dayRate: 230 },
-  { id: 8, name: "David Hughes", role: "Labourer", crew: "Crew D", clockIn: "07:15", dayRate: 200 },
-  { id: 9, name: "Ryan Patel", role: "Dryliner", crew: "Crew D", clockIn: "07:08", dayRate: 240 },
-  { id: 10, name: "Connor Walsh", role: "Ceiling fixer", crew: "Crew E", clockIn: "07:12", dayRate: 250 },
-  { id: 11, name: "Aleksy Nowak", role: "Dryliner", crew: "Crew E", clockIn: "07:04", dayRate: 240 },
-  { id: 12, name: "Owen Davies", role: "Labourer", crew: "Crew A", clockIn: "07:20", dayRate: 200 },
-  { id: 13, name: "Kieran Brown", role: "Dryliner", crew: "Crew B", clockIn: "07:06", dayRate: 240 },
-  { id: 14, name: "Filip Janowski", role: "Tape & joint", crew: "Crew C", clockIn: "07:09", dayRate: 230 },
+export const deliveriesToday = [
+  { id: 1, supplier: "CCF", item: "220× Gyproc WallBoard", eta: "ETA 11:30", level: "Level 5", status: "inbound" as const },
+  { id: 2, supplier: "Minster", item: "Rockwool RW3", eta: "Received 08:42 · signed AJ", level: "—", status: "done" as const },
 ];
 
-// ====================== LABOUR vs BoQ ======================
-export const labourVsBoq = [
-  { task: "Partitions L3", hours: 48, allowance: 52, variance: -120, progress: "60m² of 240m²", pct: 25 },
-  { task: "Ceilings L2", hours: 36, allowance: 28, variance: 240, progress: "40m² of 180m²", pct: 22 },
-  { task: "Firestopping L3", hours: 12, allowance: 16, variance: -96, progress: "15 of 22 penetrations", pct: 68 },
-  { task: "Tape & joint L4", hours: 18, allowance: 20, variance: -50, progress: "32m² of 90m²", pct: 36 },
-  { task: "Skim L1 lobby", hours: 9, allowance: 8, variance: 30, progress: "Complete", pct: 100 },
+// ==================================================================
+// SYSTEM CATALOG (British Gypsum systems)
+// ==================================================================
+export type CatalogSystem = {
+  code: string;
+  name: string;
+  category: string;
+  fire: string;
+  acoustic: string;
+  spec: string;
+  spec_label: string;
+  price: number;
+  badge: string;
+  badgeTone: "success" | "info" | "neutral" | "warning" | "danger";
+  iconColor: "blue" | "purple" | "green" | "amber" | "red" | "navy";
+};
+
+export const catalogCategories = [
+  { id: "all", label: "All categories", count: 2847 },
+  { id: "walls", label: "Walls", count: 714 },
+  { id: "lining", label: "Wall lining", count: 328 },
+  { id: "shaft", label: "ShaftWall", count: 186 },
+  { id: "ceilings", label: "Ceilings", count: 562 },
+  { id: "floors", label: "Floors", count: 241 },
+  { id: "external", label: "External sheathing", count: 174 },
+  { id: "plaster", label: "Plaster systems", count: 396 },
+  { id: "steel", label: "Steel protection", count: 246 },
 ];
 
-export const dayworks = [
-  { id: 1, supplier: "MTech Electrical", description: "3 operatives × 2 days", amount: 1440, status: "approved", approver: "John Smith (QS)" },
-  { id: 2, supplier: "Heritage Joinery", description: "2 operatives × 1 day", amount: 520, status: "pending" },
-  { id: 3, supplier: "ABC Firestopping", description: "1 operative × 0.5 day", amount: 140, status: "pending" },
+export const catalogSystems: CatalogSystem[] = [
+  { code: "C-48/70", name: "GypWall CLASSIC", category: "walls", fire: "60 min", acoustic: "43 Rw dB", spec_label: "Height", spec: "4.2 m", price: 42.80, badge: "Popular", badgeTone: "success", iconColor: "blue" },
+  { code: "C-70 IMP", name: "GypWall ROBUST", category: "walls", fire: "60 min", acoustic: "48 Rw dB", spec_label: "Impact", spec: "SD2", price: 56.40, badge: "Impact-rated", badgeTone: "info", iconColor: "purple" },
+  { code: "MF-SUS", name: "CasoLine MF", category: "ceilings", fire: "30 min", acoustic: "37 Rw dB", spec_label: "Span", spec: "1.4 m", price: 34.20, badge: "Acoustic", badgeTone: "neutral", iconColor: "green" },
+  { code: "S-CW", name: "ShaftWall S-CW", category: "shaft", fire: "120 min", acoustic: "52 Rw dB", spec_label: "Height", spec: "8.1 m", price: 78.60, badge: "120 min fire", badgeTone: "info", iconColor: "amber" },
+  { code: "C-92/146", name: "GypWall QUIET", category: "walls", fire: "60 min", acoustic: "63 Rw dB", spec_label: "Height", spec: "5.8 m", price: 68.20, badge: "63 Rw dB", badgeTone: "success", iconColor: "amber" },
+  { code: "FC-S", name: "FireCase S", category: "steel", fire: "240 min", acoustic: "—", spec_label: "Section", spec: "UB/UC", price: 92.40, badge: "240 min", badgeTone: "danger", iconColor: "red" },
 ];
 
-// ====================== BoQ ======================
-export const boqItems = [
-  "100mm partitions Level 3 — £45/m² — 240m²",
-  "70mm partitions Level 2 — £42/m² — 160m²",
-  "MF Ceiling Level 2 — £38/m² — 180m²",
-  "Boarding Level 4 — £18/m² — 320m²",
-  "Tape & joint Level 4 — £9/m² — 90m²",
-  "Fire stopping Level 3 — £24/lm — 22 penetrations",
-  "Skim coat Level 1 lobby — £12/m² — 60m²",
-  "Suspended ceiling Level 1 — £35/m² — 220m²",
-];
+// ==================================================================
+// CALCULATOR — sample pre-fill
+// ==================================================================
+export const calculatorPreset = {
+  system: { code: "C-48/70", name: "GypWall CLASSIC", subtitle: "Single layer · 60 min fire · 43 Rw dB" },
+  area: 2840,
+  height: 3.2,
+  board: "Gyproc WallBoard 15 mm (standard)",
+  insulation: "Rockwool RW3 50mm",
+  sides: "Two layer × 2 sides",
+  labourRate: 24.50,
+  wastage: 7,
+};
 
-// ====================== COSTED BoQ (full) ======================
+export const calculatorResults = {
+  material: 108420,
+  labour: 89840,
+  total: 198260,
+  perM2: 69.81,
+  breakdown: [
+    { name: "Gyproc WallBoard 15mm", detail: "12,168 m²", cost: 48672, color: "blue" as const },
+    { name: "Gypframe C-48/70 studs", detail: "1,894 m", cost: 22348, color: "purple" as const },
+    { name: "Rockwool RW3 50mm", detail: "2,840 m²", cost: 26106, color: "amber" as const },
+    { name: "Jointing tape + compound", detail: "kit", cost: 8124, color: "green" as const },
+    { name: "Screws + ancillaries", detail: "—", cost: 3170, color: "navy" as const },
+  ],
+  saving: 4380,
+};
+
+// ==================================================================
+// COSTED BoQ
+// ==================================================================
 export type BoqRow = {
   code: string;
-  description: string;
+  name: string;
+  subtitle: string;
   qty: number;
   unit: string;
   rate: number;
-  value: number;
-  cheapest: number;
-  costVar: number;
-  marginImpact: number;
-  system: "L3 Partitions" | "L2 Partitions" | "L3 Ceilings" | "Firestopping" | "Miscellaneous";
+  ccf: number | null;
+  minster: number | null;
+  best: "ccf" | "minster" | "review";
+  reviewNote?: string;
+  saving: number;
 };
 
-export const costedBoq: BoqRow[] = [
-  // L3 Partitions (8)
-  { code: "P3.01", description: "100mm metal stud partition, 1x12.5mm board both sides", qty: 240, unit: "m²", rate: 45, value: 10800, cheapest: 41.20, costVar: -912, marginImpact: 912, system: "L3 Partitions" },
-  { code: "P3.02", description: "Plasterboard wallboard 12.5mm 1200x2400", qty: 380, unit: "sht", rate: 5.85, value: 2223, cheapest: 5.62, costVar: -87, marginImpact: 87, system: "L3 Partitions" },
-  { code: "P3.03", description: "Metal stud 70mm x 2.7m", qty: 280, unit: "lm", rate: 3.20, value: 896, cheapest: 2.95, costVar: -70, marginImpact: 70, system: "L3 Partitions" },
-  { code: "P3.04", description: "Acoustic batt insulation 50mm", qty: 240, unit: "m²", rate: 12.80, value: 3072, cheapest: 12.20, costVar: -144, marginImpact: 144, system: "L3 Partitions" },
-  { code: "P3.05", description: "Skirting & shadow gap detail", qty: 180, unit: "lm", rate: 8.50, value: 1530, cheapest: 8.20, costVar: -54, marginImpact: 54, system: "L3 Partitions" },
-  { code: "P3.06", description: "Drywall screws 25mm 1000pk", qty: 12, unit: "box", rate: 9.80, value: 117.60, cheapest: 9.40, costVar: -4.80, marginImpact: 5, system: "L3 Partitions" },
-  { code: "P3.07", description: "Tape & joint Level 5 finish", qty: 480, unit: "m²", rate: 9, value: 4320, cheapest: 8.80, costVar: -96, marginImpact: 96, system: "L3 Partitions" },
-  { code: "P3.08", description: "Door lining sets — single FD30", qty: 22, unit: "set", rate: 145, value: 3190, cheapest: 138, costVar: -154, marginImpact: 154, system: "L3 Partitions" },
-  // L2 Partitions (5)
-  { code: "P2.01", description: "70mm metal stud partition, 1x12.5mm board", qty: 160, unit: "m²", rate: 42, value: 6720, cheapest: 39.50, costVar: -400, marginImpact: 400, system: "L2 Partitions" },
-  { code: "P2.02", description: "Aquapanel 12.5mm wet areas", qty: 90, unit: "sht", rate: 18.40, value: 1656, cheapest: 17.95, costVar: -41, marginImpact: 41, system: "L2 Partitions" },
-  { code: "P2.03", description: "Riser shaft wall 92mm", qty: 48, unit: "m²", rate: 58, value: 2784, cheapest: 56, costVar: -96, marginImpact: 96, system: "L2 Partitions" },
-  { code: "P2.04", description: "Acoustic mineral wool 100mm", qty: 160, unit: "m²", rate: 14.20, value: 2272, cheapest: 13.80, costVar: -64, marginImpact: 64, system: "L2 Partitions" },
-  { code: "P2.05", description: "Angle bead 2.4m galv", qty: 220, unit: "lm", rate: 1.45, value: 319, cheapest: 1.38, costVar: -15.40, marginImpact: 15, system: "L2 Partitions" },
-  // L3 Ceilings (6)
-  { code: "C3.01", description: "MF suspended ceiling system", qty: 180, unit: "m²", rate: 38, value: 6840, cheapest: 36.50, costVar: -270, marginImpact: 270, system: "L3 Ceilings" },
-  { code: "C3.02", description: "MF5 channel 3.6m", qty: 320, unit: "lm", rate: 2.10, value: 672, cheapest: 2.05, costVar: -16, marginImpact: 16, system: "L3 Ceilings" },
-  { code: "C3.03", description: "Primary channel & soffit brackets", qty: 180, unit: "m²", rate: 4.20, value: 756, cheapest: 4.05, costVar: -27, marginImpact: 27, system: "L3 Ceilings" },
-  { code: "C3.04", description: "Tegular tile 600x600 mineral fibre", qty: 220, unit: "m²", rate: 14.80, value: 3256, cheapest: 14.20, costVar: -132, marginImpact: 132, system: "L3 Ceilings" },
-  { code: "C3.05", description: "Bulkhead detail with curved corner", qty: 42, unit: "lm", rate: 28, value: 1176, cheapest: 26.50, costVar: -63, marginImpact: 63, system: "L3 Ceilings" },
-  { code: "C3.06", description: "Access panels 600x600 — fire-rated", qty: 18, unit: "no", rate: 92, value: 1656, cheapest: 88, costVar: -72, marginImpact: 72, system: "L3 Ceilings" },
-  // Firestopping (3)
-  { code: "F.01", description: "Firestopping collars 110mm", qty: 22, unit: "no", rate: 38, value: 836, cheapest: 36, costVar: -44, marginImpact: 44, system: "Firestopping" },
-  { code: "F.02", description: "Gyproc FireLine 15mm 1200x2400", qty: 80, unit: "sht", rate: 11.20, value: 896, cheapest: 10.85, costVar: -28, marginImpact: 28, system: "Firestopping" },
-  { code: "F.03", description: "Intumescent sealant 310ml", qty: 24, unit: "tube", rate: 8.40, value: 201.60, cheapest: 8.10, costVar: -7.20, marginImpact: 7, system: "Firestopping" },
-  // Miscellaneous (2)
-  { code: "M.01", description: "Door linings — fire-rated FD60", qty: 8, unit: "set", rate: 195, value: 1560, cheapest: 188, costVar: -56, marginImpact: 56, system: "Miscellaneous" },
-  { code: "M.02", description: "Access panel — service riser 450x450", qty: 12, unit: "no", rate: 64, value: 768, cheapest: 60, costVar: -48, marginImpact: 48, system: "Miscellaneous" },
+export const costedBoqRows: BoqRow[] = [
+  { code: "BQ-014", name: "Gyproc WallBoard 15mm tapered edge", subtitle: "GypWall CLASSIC · single layer", qty: 12168, unit: "m²", rate: 4.25, ccf: 4.18, minster: 3.92, best: "minster", saving: 4015 },
+  { code: "BQ-015", name: "Gypframe stud C48/70 0.5mm", subtitle: "2.4m length · pre-galvanised", qty: 1894, unit: "m", rate: 12.40, ccf: 11.80, minster: 12.20, best: "ccf", saving: 1136 },
+  { code: "BQ-022", name: "Rockwool RW3 50mm", subtitle: "Acoustic infill 1200×600", qty: 2840, unit: "m²", rate: 9.40, ccf: 9.05, minster: 9.68, best: "ccf", saving: 994 },
+  { code: "BQ-031", name: "Gyproc SoundBloc 15mm", subtitle: "GypWall QUIET · acoustic grade", qty: 680, unit: "m²", rate: 6.80, ccf: 6.45, minster: 6.28, best: "minster", saving: 354 },
+  { code: "BQ-044", name: "Glasroc F FireCase 20mm", subtitle: "Review: 2 possible matches", qty: 410, unit: "m²", rate: 18.60, ccf: null, minster: 17.85, best: "review", reviewNote: "2 possible matches", saving: 0 },
+  { code: "BQ-051", name: "Drywall screws 3.5×35mm", subtitle: "Self-tapping · 1000 pack", qty: 24, unit: "pack", rate: 8.20, ccf: 7.40, minster: 7.90, best: "ccf", saving: 12 },
+  { code: "BQ-058", name: "Joint tape + compound (kit)", subtitle: "Gyproc ProMix · 20L", qty: 48, unit: "kit", rate: 14.80, ccf: 14.20, minster: 13.65, best: "minster", saving: 55 },
 ];
 
-// ====================== MATERIAL READINESS ======================
-export type MaterialItem = {
-  name: string;
-  qty: string;
-  poStatus: "raised" | "pending" | "none";
-  poDate?: string;
-  deliveryStatus: "confirmed" | "expected" | "late" | "missing";
-  deliveryDate?: string;
+export const costedBoqKpi = {
+  estimated: 1599200,
+  cheapest: 1548700,
+  singleSupplier: 1583400,
+  notPriced: 4,
+  coverage: 95,
+  totalSaving: 50466,
 };
 
-export type MaterialTask = {
+// ==================================================================
+// PRICE INTELLIGENCE
+// ==================================================================
+export const priceIntelKpi = {
+  itemsTracked: 234,
+  ccfItems: 82,
+  minsterItems: 152,
+  avgUplift: 2.4,
+  marketAvg: 1.1,
+  bestSaving: 4015,
+  marketCoverage: 2,
+  marketTotal: 5,
+};
+
+export const priceTrend = [
+  { week: "W7", ccf: 4.20, minster: 4.10 },
+  { week: "W8", ccf: 4.18, minster: 4.10 },
+  { week: "W9", ccf: 4.15, minster: 4.15 },
+  { week: "W10", ccf: 4.22, minster: 4.10 },
+  { week: "W11", ccf: 4.20, minster: 4.05 },
+  { week: "W12", ccf: 4.21, minster: 3.98 },
+  { week: "W13", ccf: 4.19, minster: 3.95 },
+  { week: "W14", ccf: 4.18, minster: 3.92 },
+];
+
+export const topMovers = [
+  { item: "Gyproc FireLine 15mm", supplier: "CCF", was: 6.84, now: 7.58, pct: 10.8, dir: "up" as const },
+  { item: "Rockwool RW3 100mm", supplier: "Minster", was: 14.20, now: 15.10, pct: 6.3, dir: "up" as const },
+  { item: "Gyproc WallBoard 15mm", supplier: "Minster", was: 4.10, now: 3.92, pct: 4.4, dir: "down" as const },
+  { item: "Gypframe U-track 50mm", supplier: "CCF", was: 2.84, now: 2.72, pct: 4.2, dir: "down" as const },
+];
+
+export const priceAlerts = [
+  { id: 1, tone: "warning" as const, title: "FireLine 15mm up 10.8% at CCF", body: "Your Hotel Fitzrovia BoQ has 340m² of this. New price adds £440 to budget. Minster still at £6.84 — consider switching.", action: "Review" },
+  { id: 2, tone: "info" as const, title: "WallBoard 15mm now cheaper at Minster", body: "Dropped from £4.10 to £3.92. Your outstanding orders (1,850m²) would save £333 if switched.", action: "Switch" },
+];
+
+// ==================================================================
+// PRICE LIST UPLOADS
+// ==================================================================
+export const priceListUploads = [
+  { id: 1, name: "Minster Price List April 2026.xlsx", date: "18 Apr 14:48", items: 152, matched: 149, review: 3, status: "ok" as const },
+  { id: 2, name: "CCF Catalogue Q2 2026.pdf", date: "17 Apr 09:15", items: 82, matched: 76, review: 4, historical: 2, status: "ok" as const },
+  { id: 3, name: "Travis Perkins Price Sheet.pdf", date: "12 Apr", items: 48, matched: 29, review: 19, status: "review" as const },
+];
+
+export const ambiguousMatches = [
+  {
+    id: 1,
+    raw: "GLASROC F 20MM FIRECASE BRD",
+    options: [
+      { match: "Glasroc F FireCase 20mm", confidence: 68 },
+      { match: "Glasroc S Multi-Board 20mm", confidence: 52 },
+    ],
+  },
+];
+
+export const livePreview = [
+  { raw: "GYPROC WALLBD 15MM TE 1200X2400", matched: "Gyproc WallBoard 15mm tapered edge 1200×2400", confidence: 94, boqRef: "#14" },
+  { raw: "GYPFRAME C48 STUD 2.4M PG", matched: "Gypframe stud C48/70 0.5mm 2.4m", confidence: 92, boqRef: "#15" },
+  { raw: "ROCKWL RW3 50MM 1200X600", matched: "Rockwool RW3 50mm 1200×600", confidence: 91, boqRef: "#22" },
+];
+
+// ==================================================================
+// CALL-OFFS
+// ==================================================================
+export type CallOffState = "draft" | "submitted" | "reviewed" | "approved" | "po-sent" | "in-delivery" | "closed" | "review-needed";
+
+export type CallOff = {
+  ref: string;
+  item: string;
+  subtitle: string;
+  supplier: "CCF" | "Minster";
+  qty: string;
+  value: number;
+  state: CallOffState;
+  needBy: string;
+  needByOverdue?: boolean;
+};
+
+export const callOffs: CallOff[] = [
+  { ref: "CO-247", item: "Gyproc WallBoard 15mm", subtitle: "Level 5 Apartment walls", supplier: "Minster", qty: "1,850 m²", value: 7252, state: "approved", needBy: "24 Apr 2026" },
+  { ref: "CO-246", item: "Rockwool RW3 50mm", subtitle: "L4 acoustic infill", supplier: "CCF", qty: "840 m²", value: 7602, state: "review-needed", needBy: "22 Apr 2026", needByOverdue: true },
+  { ref: "CO-245", item: "Gypframe studs C48/70", subtitle: "L5+L6", supplier: "CCF", qty: "1,200 m", value: 14160, state: "in-delivery", needBy: "21 Apr · partial" },
+  { ref: "CO-244", item: "Gyproc SoundBloc 15mm", subtitle: "GypWall QUIET · L3", supplier: "Minster", qty: "680 m²", value: 4270, state: "draft", needBy: "28 Apr 2026" },
+  { ref: "CO-243", item: "MF ceiling kit (CasoLine)", subtitle: "L2 ceiling grid", supplier: "CCF", qty: "420 m²", value: 5124, state: "po-sent", needBy: "26 Apr 2026" },
+];
+
+export const callOffTabs = [
+  { id: "all", label: "All", count: 47 },
+  { id: "draft", label: "Draft", count: 5 },
+  { id: "submitted", label: "Submitted", count: 3 },
+  { id: "reviewed", label: "Reviewed", count: 2 },
+  { id: "approved", label: "Approved", count: 4 },
+  { id: "in-delivery", label: "In delivery", count: 8 },
+  { id: "closed", label: "Closed", count: 25 },
+];
+
+export const callOffStateMachine = [
+  { id: "draft", label: "Draft", who: "NA", when: "18 Apr 09:14", status: "done" as const },
+  { id: "submitted", label: "Submitted", who: "NA", when: "18 Apr 11:02", status: "done" as const },
+  { id: "reviewed", label: "Reviewed", who: "Sarah M", when: "18 Apr 14:28", status: "done" as const },
+  { id: "approved", label: "Approved", who: "Sarah M", when: "today 09:14", status: "current" as const },
+  { id: "po-sent", label: "PO sent", who: "—", when: "pending", status: "pending" as const },
+  { id: "delivered", label: "Delivered", who: "—", when: "ETA 24 Apr", status: "pending" as const },
+  { id: "closed", label: "Closed", who: "—", when: "—", status: "pending" as const },
+];
+
+// ==================================================================
+// INVOICES
+// ==================================================================
+export type Invoice = {
+  id: string;
+  supplier: "CCF" | "Minster";
+  state: "matched" | "needs-review" | "disputed";
+  received: string;
+  matchedAt?: string;
+  poRef: string;
+  callOffRef: string;
+  invoiced: number;
+  expected: number;
+  variance: number;
+  variancePct: number;
+  lineDetail: string;
+  alert?: string;
+};
+
+export const invoices: Invoice[] = [
+  {
+    id: "CCF-10821",
+    supplier: "CCF",
+    state: "matched",
+    received: "18 Apr",
+    matchedAt: "18 Apr 15:32",
+    poRef: "PO-00247",
+    callOffRef: "CO-247",
+    invoiced: 7252,
+    expected: 7252,
+    variance: 0,
+    variancePct: 0,
+    lineDetail: "1,850 m² Gyproc WallBoard @ £3.92",
+  },
+  {
+    id: "CCF-10824",
+    supplier: "CCF",
+    state: "needs-review",
+    received: "today 09:42",
+    poRef: "PO-00248",
+    callOffRef: "CO-249",
+    invoiced: 8340,
+    expected: 7093,
+    variance: 1247,
+    variancePct: 17.6,
+    lineDetail: "840 m² Rockwool @ £9.93 invoice vs £8.45 PO",
+    alert: "Price uplift not reflected on PO. Likely supplier forgot to apply agreed Q2 contract rate.",
+  },
+  {
+    id: "MIN-8472",
+    supplier: "Minster",
+    state: "disputed",
+    received: "15 Apr",
+    matchedAt: "Disputed 16 Apr",
+    poRef: "PO-00245",
+    callOffRef: "CO-243",
+    invoiced: 5684,
+    expected: 5124,
+    variance: 560,
+    variancePct: 10.9,
+    lineDetail: "Over-delivery: invoice shows 445 m² delivered, PO was 420 m². Site confirmed only 420 m² received — possible short-pick error. Awaiting Minster credit note.",
+  },
+];
+
+export const invoiceKpi = {
+  total: 34,
+  autoMatched: 28,
+  flagged: 4,
+  flaggedVariance: 2148,
+  disputed: 2,
+};
+
+export const reconFlow = [
+  { id: 1, label: "BoQ estimate", value: 1599200, tone: "neutral" as const },
+  { id: 2, label: "Costed BoQ (priced)", value: 1548700, tone: "info" as const },
+  { id: 3, label: "PO / Call-off (approved)", value: 1480000, tone: "warning" as const, suffix: "committed" },
+  { id: 4, label: "Invoice (actual)", value: 1069400, tone: "success" as const, suffix: "paid" },
+];
+
+// ==================================================================
+// FINANCIAL DASHBOARD
+// ==================================================================
+export const financialKpi = {
+  revenueMtd: 342180,
+  revenueTarget: 320000,
+  revenueDeltaPct: 6.9,
+  cogsMtd: 268420,
+  cogsRevenuePct: 78.4,
+  cogsBudgetPct: 76,
+  margin: 73760,
+  marginPct: 21.6,
+  marginBudgetPct: 24,
+  cashRunway: 14.2,
+  cashCurrent: 482000,
+};
+
+export const projectMargins = projects.map((p) => ({
+  name: p.name.split(" ").slice(0, 2).join(" "),
+  margin: p.margin,
+  health: p.health,
+}));
+
+export const pnlSummary = {
+  revenue: [
+    { label: "Contract billings", value: 342180 },
+    { label: "Dayworks variations", value: 8240 },
+    { label: "Retention released", value: 4800 },
+  ],
+  revenueTotal: 355220,
+  costs: [
+    { label: "Materials", value: 168200 },
+    { label: "Labour (subcontract)", value: 88400 },
+    { label: "Plant & tools", value: 6420 },
+    { label: "Site expenses", value: 5400 },
+  ],
+  costsTotal: 268420,
+  grossProfit: 86800,
+  grossPct: 24.4,
+  overheads: [
+    { label: "Office", value: 12400 },
+    { label: "Insurance", value: 3200 },
+    { label: "Vehicles", value: 5800 },
+    { label: "Software", value: 840 },
+  ],
+  overheadsTotal: 22240,
+  netProfit: 64560,
+  netPct: 18.2,
+};
+
+export const cashflow30 = [
+  { d: 1, cash: 380 }, { d: 5, cash: 410 }, { d: 10, cash: 420 }, { d: 15, cash: 460 },
+  { d: 20, cash: 472 }, { d: 25, cash: 478 }, { d: 30, cash: 482 },
+];
+
+export const topSuppliersSpend = [
+  { name: "CCF", value: 68000 },
+  { name: "Minster", value: 52000 },
+  { name: "Travis Perkins", value: 14000 },
+  { name: "Wickes", value: 8000 },
+  { name: "Jewson", value: 6000 },
+];
+
+export const retentionHeld = [
+  { mc: "Kier", value: 42000 },
+  { mc: "Wates", value: 18000 },
+  { mc: "Multiplex", value: 24000 },
+];
+
+// ==================================================================
+// PLANNER (GANTT)
+// ==================================================================
+export type GanttRow = {
+  id: number;
+  level: string;
+  task: string;
+  crew: string;
+  startDay: number; // 0..20 (Apr 20 = 0)
+  duration: number;
+  progress: number;
+  color: "blue" | "green" | "amber" | "red" | "purple" | "grey";
+  alert?: string;
+  isMilestone?: boolean;
+};
+
+export const ganttRows: GanttRow[] = [
+  { id: 1, level: "Level 5", task: "Framing", crew: "Marcin's Crew", startDay: 1, duration: 5, progress: 100, color: "blue" },
+  { id: 2, level: "Level 5", task: "Boarding", crew: "Marcin's Crew", startDay: 4, duration: 7, progress: 40, color: "blue" },
+  { id: 3, level: "Level 5", task: "Taping", crew: "Andy Jones", startDay: 9, duration: 6, progress: 0, color: "green" },
+  { id: 4, level: "Level 6", task: "Framing", crew: "Paweł's Crew", startDay: 6, duration: 6, progress: 0, color: "blue" },
+  { id: 5, level: "Level 6", task: "Boarding", crew: "Marcin's Crew", startDay: 10, duration: 7, progress: 0, color: "blue", alert: "Material readiness: Rockwool short" },
+  { id: 6, level: "Level 6", task: "Taping", crew: "Andy Jones", startDay: 15, duration: 6, progress: 0, color: "green" },
+  { id: 7, level: "ShaftWall A", task: "Framing", crew: "Paweł's Crew", startDay: 2, duration: 7, progress: 60, color: "amber" },
+  { id: 8, level: "ShaftWall A", task: "Boarding", crew: "Paweł's Crew", startDay: 7, duration: 8, progress: 0, color: "amber" },
+  { id: 9, level: "ShaftWall B", task: "Framing (delayed)", crew: "Paweł's Crew", startDay: 4, duration: 8, progress: 0, color: "red" },
+  { id: 10, level: "Ceilings L4", task: "MF grid", crew: "MF subcontractor", startDay: 1, duration: 6, progress: 80, color: "purple" },
+  { id: 11, level: "Ceilings L5", task: "MF grid", crew: "MF subcontractor", startDay: 8, duration: 5, progress: 0, color: "purple" },
+  { id: 12, level: "Inspection", task: "Taping checkpoint", crew: "Kier QA", startDay: 14, duration: 1, progress: 0, color: "grey", isMilestone: true },
+  { id: 13, level: "Milestone", task: "Lvl 5 handover", crew: "—", startDay: 16, duration: 1, progress: 0, color: "grey", isMilestone: true },
+  { id: 14, level: "Snag", task: "Snag list closeout", crew: "Marcin's Crew", startDay: 17, duration: 3, progress: 0, color: "grey" },
+];
+
+// ==================================================================
+// MATERIAL READINESS
+// ==================================================================
+export type ReadinessRow = {
   id: number;
   task: string;
   start: string;
-  system: string;
-  materials: MaterialItem[];
-  po: "raised" | "pending" | "none" | "mixed";
-  delivery: "confirmed" | "expected" | "late" | "missing" | "—";
-  status: Status;
+  crew: string;
+  status: "READY" | "AT_RISK" | "BLOCKED";
+  required: { name: string; qty: string }[];
+  note: string;
+  action?: string;
 };
 
-export const materialReadiness: MaterialTask[] = [
-  { id: 1, task: "Partitions L3 Grid 1-5", start: "21/04/2026", system: "L3 Partitions", po: "raised", delivery: "confirmed", status: "READY",
-    materials: [
-      { name: "Plasterboard 12.5mm Wallboard 1200x2400", qty: "120 sht", poStatus: "raised", poDate: "15/04/2026", deliveryStatus: "confirmed", deliveryDate: "20/04/2026" },
-      { name: "Metal stud 70mm x 2.7m", qty: "280 lm", poStatus: "raised", poDate: "15/04/2026", deliveryStatus: "confirmed", deliveryDate: "20/04/2026" },
-      { name: "Acoustic batt 50mm", qty: "60 m²", poStatus: "raised", poDate: "15/04/2026", deliveryStatus: "confirmed", deliveryDate: "20/04/2026" },
-    ]},
-  { id: 2, task: "MF Ceiling L2 Zone B", start: "21/04/2026", system: "L3 Ceilings", po: "raised", delivery: "late", status: "AT_RISK",
-    materials: [
-      { name: "MF5 channel 3.6m", qty: "120 lm", poStatus: "raised", poDate: "12/04/2026", deliveryStatus: "late", deliveryDate: "23/04/2026" },
-      { name: "Primary channel", qty: "60 lm", poStatus: "raised", poDate: "12/04/2026", deliveryStatus: "late", deliveryDate: "23/04/2026" },
-      { name: "Soffit brackets", qty: "180 no", poStatus: "raised", poDate: "12/04/2026", deliveryStatus: "confirmed", deliveryDate: "20/04/2026" },
-    ]},
-  { id: 3, task: "Fire stopping L2 risers", start: "22/04/2026", system: "Firestopping", po: "none", delivery: "missing", status: "BLOCKED",
-    materials: [
-      { name: "Gyproc FireLine 15mm 1200x2400", qty: "80 sht", poStatus: "none", deliveryStatus: "missing" },
-      { name: "Firestopping collars 110mm", qty: "22 no", poStatus: "none", deliveryStatus: "missing" },
-    ]},
-  { id: 4, task: "Boarding L4 Corridor", start: "23/04/2026", system: "L3 Partitions", po: "raised", delivery: "confirmed", status: "READY",
-    materials: [
-      { name: "Plasterboard 12.5mm 1200x2400", qty: "240 sht", poStatus: "raised", poDate: "16/04/2026", deliveryStatus: "confirmed", deliveryDate: "22/04/2026" },
-      { name: "Drywall screws 25mm 1000pk", qty: "8 box", poStatus: "raised", poDate: "16/04/2026", deliveryStatus: "confirmed", deliveryDate: "22/04/2026" },
-    ]},
-  { id: 5, task: "Skim coat L1 lobby", start: "23/04/2026", system: "L3 Partitions", po: "raised", delivery: "confirmed", status: "READY",
-    materials: [{ name: "Thistle MultiFinish 25kg", qty: "18 bag", poStatus: "raised", poDate: "16/04/2026", deliveryStatus: "confirmed", deliveryDate: "22/04/2026" }]},
-  { id: 6, task: "Bulkheads L3", start: "24/04/2026", system: "L3 Ceilings", po: "pending", delivery: "expected", status: "AT_RISK",
-    materials: [
-      { name: "Angle bead 2.4m galv", qty: "60 lm", poStatus: "pending", deliveryStatus: "expected" },
-      { name: "12.5mm wallboard", qty: "30 sht", poStatus: "pending", deliveryStatus: "expected" },
-    ]},
-  { id: 7, task: "Wet area boarding L2", start: "24/04/2026", system: "L2 Partitions", po: "raised", delivery: "confirmed", status: "READY",
-    materials: [{ name: "Aquapanel 12.5mm", qty: "90 sht", poStatus: "raised", poDate: "17/04/2026", deliveryStatus: "confirmed", deliveryDate: "23/04/2026" }]},
-  { id: 8, task: "Riser cupboards L2", start: "25/04/2026", system: "L2 Partitions", po: "raised", delivery: "expected", status: "AT_RISK",
-    materials: [
-      { name: "Fire-rated FireLine 15mm", qty: "40 sht", poStatus: "raised", poDate: "16/04/2026", deliveryStatus: "expected", deliveryDate: "28/04/2026" },
-    ]},
-  { id: 9, task: "Door linings L3", start: "25/04/2026", system: "L3 Partitions", po: "raised", delivery: "confirmed", status: "READY",
-    materials: [{ name: "MDF lining sets — FD30", qty: "22 set", poStatus: "raised", poDate: "17/04/2026", deliveryStatus: "confirmed", deliveryDate: "24/04/2026" }]},
-  { id: 10, task: "Suspended ceiling L1", start: "28/04/2026", system: "L3 Ceilings", po: "raised", delivery: "confirmed", status: "READY",
-    materials: [
-      { name: "Tegular tiles 600x600", qty: "220 no", poStatus: "raised", poDate: "16/04/2026", deliveryStatus: "confirmed", deliveryDate: "27/04/2026" },
-      { name: "T-grid 24mm", qty: "180 lm", poStatus: "raised", poDate: "16/04/2026", deliveryStatus: "confirmed", deliveryDate: "27/04/2026" },
-    ]},
-  { id: 11, task: "L4 services bulkheads", start: "18/04/2026", system: "L3 Ceilings", po: "raised", delivery: "missing", status: "OVERDUE",
-    materials: [{ name: "Angle bead 2.4m galv", qty: "40 lm", poStatus: "raised", poDate: "10/04/2026", deliveryStatus: "missing" }]},
-  { id: 12, task: "Acoustic batt L3", start: "30/04/2026", system: "L3 Partitions", po: "none", delivery: "missing", status: "BLOCKED",
-    materials: [{ name: "Acoustic mineral wool 100mm", qty: "60 m²", poStatus: "none", deliveryStatus: "missing" }]},
+export const readinessRows: ReadinessRow[] = [
+  { id: 1, task: "Level 5 Boarding", start: "Thu 23 Apr", crew: "Marcin's Crew", status: "READY",
+    required: [
+      { name: "Gyproc WallBoard 15mm", qty: "1,850 m²" },
+      { name: "Gypframe studs C48", qty: "620 m" },
+      { name: "Drywall screws", qty: "—" },
+    ],
+    note: "All materials confirmed on site or inbound · Order placed CO-247 · Delivery ETA 24 Apr 11:30" },
+  { id: 2, task: "Level 6 Boarding", start: "Wed 29 Apr", crew: "Marcin's Crew", status: "AT_RISK",
+    required: [
+      { name: "Gyproc WallBoard 15mm", qty: "1,200 m²" },
+      { name: "Gypframe studs", qty: "520 m" },
+      { name: "Rockwool RW3 50mm", qty: "680 m²" },
+    ],
+    note: "Rockwool shortage — only 420m² on site, need 680m², lead time 5 days. Raise call-off for 260m² Rockwool today to meet start date.",
+    action: "Create call-off" },
+  { id: 3, task: "ShaftWall Core A Boarding", start: "Mon 27 Apr", crew: "Paweł's Crew", status: "READY",
+    required: [{ name: "Glasroc F FireCase 20mm", qty: "410 m²" }],
+    note: "Confirmed on site" },
+  { id: 4, task: "Ceilings L5 MF Grid", start: "Tue 28 Apr", crew: "MF subcontractor", status: "READY",
+    required: [{ name: "MF ceiling kit (CasoLine)", qty: "—" }],
+    note: "CO-243 approved, PO sent" },
+  { id: 5, task: "Level 6 Framing", start: "Sat 26 Apr", crew: "Paweł's Crew", status: "READY",
+    required: [
+      { name: "Gypframe studs", qty: "620 m" },
+      { name: "U-track", qty: "180 m" },
+    ],
+    note: "CO-245 in delivery, partial received" },
 ];
 
-// ====================== PRICE COMPARISON ======================
-export const priceComparison = [
-  { item: "Plasterboard 12.5mm Wallboard 1200x2400", category: "Plasterboard", qty: 380, unit: "/sht", sig: 4.80, ccf: 4.65, jewson: 4.95, bg: 5.10 },
-  { item: "Plasterboard 15mm Wallboard 1200x2400", category: "Plasterboard", qty: 60, unit: "/sht", sig: 6.20, ccf: 6.05, jewson: 6.40, bg: 6.50 },
-  { item: "Gyproc FireLine 15mm 1200x2400", category: "Fire protection", qty: 80, unit: "/sht", sig: 9.40, ccf: 9.60, jewson: 9.20, bg: 9.55 },
-  { item: "Gyproc SoundBloc 12.5mm", category: "Plasterboard", qty: 40, unit: "/sht", sig: 7.80, ccf: 7.60, jewson: 7.95, bg: 8.10 },
-  { item: "Aquapanel 12.5mm 1200x900", category: "Plasterboard", qty: 90, unit: "/sht", sig: 18.40, ccf: 17.95, jewson: 18.80, bg: 18.60 },
-  { item: "Metal stud 70mm x 2.7m", category: "Metal framing", qty: 280, unit: "/lm", sig: 3.20, ccf: 2.95, jewson: 3.35, bg: 3.40 },
-  { item: "Metal stud 92mm x 2.7m", category: "Metal framing", qty: 120, unit: "/lm", sig: 4.10, ccf: 3.95, jewson: 4.20, bg: 4.25 },
-  { item: "Metal stud 146mm x 3m", category: "Metal framing", qty: 80, unit: "/lm", sig: 5.40, ccf: 5.15, jewson: 5.50, bg: 0 },
-  { item: "U-track 70mm", category: "Metal framing", qty: 220, unit: "/lm", sig: 2.40, ccf: 2.20, jewson: 2.55, bg: 2.50 },
-  { item: "MF5 channel 3.6m", category: "Metal framing", qty: 320, unit: "/lm", sig: 2.10, ccf: 2.05, jewson: 2.20, bg: 2.18 },
-  { item: "Acoustic batt 50mm", category: "Insulation", qty: 240, unit: "/m²", sig: 12.80, ccf: 0, jewson: 13.20, bg: 12.95 },
-  { item: "Acoustic mineral wool 100mm", category: "Insulation", qty: 160, unit: "/m²", sig: 14.40, ccf: 13.80, jewson: 14.60, bg: 0 },
-  { item: "Thistle MultiFinish 25kg", category: "Accessories", qty: 18, unit: "/bag", sig: 8.20, ccf: 7.95, jewson: 8.40, bg: 8.30 },
-  { item: "Drywall screws 25mm 1000pk", category: "Accessories", qty: 12, unit: "/box", sig: 9.80, ccf: 9.40, jewson: 10.10, bg: 9.95 },
-  { item: "Angle bead 2.4m galv", category: "Accessories", qty: 220, unit: "/lm", sig: 1.45, ccf: 1.38, jewson: 1.52, bg: 1.48 },
-  { item: "Firestopping collars 110mm", category: "Fire protection", qty: 22, unit: "/no", sig: 38, ccf: 36, jewson: 39, bg: 0 },
-  { item: "Intumescent sealant 310ml", category: "Fire protection", qty: 24, unit: "/tube", sig: 8.40, ccf: 8.10, jewson: 8.60, bg: 0 },
-  { item: "Tegular tile 600x600 mineral fibre", category: "Accessories", qty: 220, unit: "/m²", sig: 14.80, ccf: 14.20, jewson: 14.95, bg: 0 },
-];
-
-// ====================== INVOICES ======================
-export type InvoiceStatus = "matched" | "flagged" | "disputed";
-export const invoices: { id: string; supplier: string; date: string; total: number; status: InvoiceStatus; variance: number }[] = [
-  { id: "INV-1042", supplier: "SIG", date: "14/04/2026", total: 4280.50, status: "matched", variance: 0 },
-  { id: "INV-1043", supplier: "CCF", date: "14/04/2026", total: 2960.00, status: "matched", variance: 0 },
-  { id: "INV-1044", supplier: "Jewson", date: "15/04/2026", total: 1825.20, status: "matched", variance: 0 },
-  { id: "INV-1045", supplier: "MTech Electrical", date: "15/04/2026", total: 1720.00, status: "flagged", variance: 129 },
-  { id: "INV-1046", supplier: "British Gypsum", date: "16/04/2026", total: 3210.00, status: "matched", variance: 0 },
-  { id: "INV-1047", supplier: "CCF", date: "16/04/2026", total: 1495.50, status: "matched", variance: 0 },
-  { id: "INV-1048", supplier: "SIG", date: "17/04/2026", total: 2780.00, status: "flagged", variance: 320 },
-  { id: "INV-1049", supplier: "Knauf", date: "17/04/2026", total: 4120.40, status: "matched", variance: 0 },
-  { id: "INV-1050", supplier: "Jewson", date: "18/04/2026", total: 980.00, status: "flagged", variance: 145 },
-  { id: "INV-1051", supplier: "SIG", date: "18/04/2026", total: 6240.00, status: "matched", variance: 0 },
-  { id: "INV-1052", supplier: "CCF", date: "19/04/2026", total: 2150.00, status: "matched", variance: 0 },
-  { id: "INV-1053", supplier: "Heritage Joinery", date: "19/04/2026", total: 4480.00, status: "disputed", variance: 1200 },
-];
-
-export const invoiceLines: Record<string, { supplier: string; date: string; total: number; variance: number; note: string; lines: { invoice: string; po: string; boq: string; match: boolean }[] }> = {
-  "INV-1045": {
-    supplier: "MTech Electrical",
-    date: "15/04/2026",
-    total: 1720.00,
-    variance: 129,
-    note: "3 hours not in signed dayworks log — query with supplier",
-    lines: [
-      { invoice: "Electrical first fix labour — 40h @ £43", po: "37h @ £43", boq: "L3 electrical first fix — £1,800 allowance", match: false },
-      { invoice: "Cable tray brackets — 24 no @ £4.20", po: "24 no @ £4.20", boq: "24 no in BoQ", match: true },
-    ],
-  },
-  "INV-1048": {
-    supplier: "SIG",
-    date: "17/04/2026",
-    total: 2780.00,
-    variance: 320,
-    note: "Quantity discrepancy — 8 extra sheets billed beyond PO",
-    lines: [
-      { invoice: "FireLine 15mm — 88 sht @ £9.40", po: "80 sht @ £9.40", boq: "80 sht (allowance)", match: false },
-      { invoice: "Drywall screws — 6 box @ £9.80", po: "6 box @ £9.80", boq: "6 box", match: true },
-      { invoice: "Delivery charge", po: "—", boq: "—", match: true },
-    ],
-  },
-  "INV-1050": {
-    supplier: "Jewson",
-    date: "18/04/2026",
-    total: 980.00,
-    variance: 145,
-    note: "Unit price £0.20 higher than agreed call-off rate",
-    lines: [
-      { invoice: "Tegular tile 600x600 — 60 m² @ £15.00", po: "60 m² @ £14.80", boq: "60 m² in BoQ", match: false },
-    ],
-  },
-  "INV-1053": {
-    supplier: "Heritage Joinery",
-    date: "19/04/2026",
-    total: 4480.00,
-    variance: 1200,
-    note: "Major variance — 4 extra days claimed, no signed dayworks tickets attached",
-    lines: [
-      { invoice: "Joinery dayworks — 6 days @ £520", po: "2 days @ £520", boq: "Provisional sum £2,000", match: false },
-      { invoice: "Materials — ironmongery", po: "—", boq: "Included in main contract", match: false },
-    ],
-  },
+// ==================================================================
+// DAILY SITE REPORT
+// ==================================================================
+export const dailyReport = {
+  date: "Monday 20 April 2026",
+  weather: "Overcast 12°C / wind 14 mph",
+  hours: "07:00 → 16:30",
+  mainContractor: "Kier Construction",
+  projectRef: "KC-FZR-2026",
+  signedIn: 13,
+  signedOut: 11,
+  labour: [
+    { crew: "Marcin Kowalski + 5 dryliners", inTime: "07:12", outTime: "16:30", hours: 9.3, work: "L4 + L5 boarding" },
+    { crew: "Andy Jones + 2 tapers", inTime: "07:05", outTime: "16:30", hours: 9.4, work: "L4 taping & jointing" },
+    { crew: "Paweł Wilkowski + 3 fixers", inTime: "08:14", outTime: "16:30", hours: 8.3, work: "L6 framing setup", late: true },
+  ],
+  materials: [
+    { ref: "DN-88421", supplier: "Minster", item: "220 × Rockwool RW3 50mm (1,560m²)", time: "08:42", signed: "AJ", status: "ok" as const },
+    { ref: "—", supplier: "CCF", item: "220 × Gyproc WallBoard", time: "expected 11:30", signed: "—", status: "pending" as const },
+  ],
+  workDone: [
+    "Level 4 taping: completed rooms 4.12 to 4.18 (120m², 62% of total L4 taping now done)",
+    "Level 5 framing: completed corridor grid (42m run)",
+    "Level 6: setup + RAMS review with Paweł's crew",
+    "Snag closure: 4 items signed off from last week's inspection",
+  ],
+  issues: [
+    "Near-miss logged: trip hazard from temporary cabling L4 stair — resolved, photo attached",
+    "Dayworks raised: 4.5h overtime on Saturday for rain make-up, sent to QS",
+  ],
+  tomorrow: [
+    "Level 5 framing continues (L5 main corridor)",
+    "Level 4 taping completion",
+    "Deliveries expected: Gyproc tape + compound, CCF",
+    "Inspection 14:00 by Kier site manager (Alex P)",
+  ],
+  submittedBy: "Nick Andrei",
+  submittedAt: "17:24 (draft)",
 };
 
-// ====================== FINANCIAL ======================
-export const financialBoq = [
-  { line: "100mm partition L3", est: 18450, buyer: 18120, actual: 19690, varPct: 6.7 },
-  { line: "70mm partition L2", est: 14200, buyer: 13980, actual: 14110, varPct: -0.6 },
-  { line: "MF Ceiling L2", est: 9650, buyer: 9550, actual: 10120, varPct: 4.9 },
-  { line: "Boarding L4", est: 8200, buyer: 8100, actual: 8050, varPct: -1.8 },
-  { line: "Tape & joint", est: 5400, buyer: 5300, actual: 5520, varPct: 2.2 },
-  { line: "Fire stopping L3", est: 4800, buyer: 4700, actual: 5100, varPct: 6.3 },
-  { line: "Skim coat L1", est: 3200, buyer: 3150, actual: 3120, varPct: -2.5 },
-  { line: "Suspended ceiling L1", est: 6400, buyer: 6280, actual: 6310, varPct: -1.4 },
-  { line: "Acoustic batt L3", est: 3072, buyer: 2950, actual: 2980, varPct: -3.0 },
-  { line: "Door linings FD30", est: 3190, buyer: 3036, actual: 3120, varPct: -2.2 },
-];
-
-export const monthlyPnl = [
-  { month: "Jan", revenue: 84000, cost: 70000, margin: 14000 },
-  { month: "Feb", revenue: 142000, cost: 116440, margin: 25560 },
-  { month: "Mar", revenue: 268000, cost: 222000, margin: 46000 },
-  { month: "Apr", revenue: 184000, cost: 158000, margin: 26000 },
-];
-
-export const marginAlerts = [
-  { id: 1, title: "Level 3 partitions leaking £1,240", detail: "SIG 12.5mm board price up 4% — not passed on to client" },
-  { id: 2, title: "Ceiling grid overage — 8 sheets extra", detail: "Investigate L2 ceiling allowance vs actual usage" },
-  { id: 3, title: "Labour over on firestopping", detail: "4h over BoQ allowance — flag with foreman" },
-];
-
-// ====================== DAILY SITE REPORTS ======================
-export const dailyReportHistory = [
-  { date: "21/04/2026", weather: "Cloudy 14°C", operatives: 14, incidents: 0 },
-  { date: "18/04/2026", weather: "Rain 11°C", operatives: 12, incidents: 1 },
-  { date: "17/04/2026", weather: "Cloudy 13°C", operatives: 14, incidents: 0 },
-  { date: "16/04/2026", weather: "Sunny 16°C", operatives: 14, incidents: 0 },
-];
-
-// ====================== INTEGRATIONS ======================
+// ==================================================================
+// INTEGRATIONS
+// ==================================================================
 export const integrations = [
-  { name: "Xero", category: "Accounting", connected: true, lastSync: "5 minutes ago", stats: { pos: 24, invoices: 18, errors: 2 } },
-  { name: "QuickBooks", category: "Accounting", connected: false },
-  { name: "Sage 50", category: "Accounting", connected: false },
-  { name: "Asta Powerproject", category: "Programme", connected: true, lastSync: "1 hour ago" },
-  { name: "MS Project", category: "Programme", connected: false },
-  { name: "Procore", category: "Main Contractor", connected: false, note: "For main contractors who mandate Procore" },
-  { name: "Slack", category: "Comms", connected: false },
-  { name: "Microsoft Teams", category: "Comms", connected: false },
+  { id: "xero", name: "Xero", category: "Accounting", connected: true, lastSync: "5 minutes ago", stats: "24 POs · 18 invoices · 2 errors" },
+  { id: "qb", name: "QuickBooks", category: "Accounting", connected: false },
+  { id: "sage", name: "Sage 50", category: "Accounting", connected: false },
+  { id: "asta", name: "Asta Powerproject", category: "Programme", connected: true, lastSync: "1 hour ago" },
+  { id: "msp", name: "MS Project", category: "Programme", connected: false },
+  { id: "procore", name: "Procore", category: "Main contractor", connected: false, note: "For main contractors who mandate Procore" },
+  { id: "slack", name: "Slack", category: "Collaboration", connected: false },
+  { id: "teams", name: "Microsoft Teams", category: "Collaboration", connected: false },
 ];
+
+// ==================================================================
+// HELPERS
+// ==================================================================
+export function fmtMoney(n: number, opts: { compact?: boolean; prefix?: boolean } = {}): string {
+  const { compact = false, prefix = true } = opts;
+  if (compact && Math.abs(n) >= 1_000_000) return `${prefix ? "£" : ""}${(n / 1_000_000).toFixed(2)}m`;
+  if (compact && Math.abs(n) >= 1_000) return `${prefix ? "£" : ""}${Math.round(n / 1_000)}k`;
+  return `${prefix ? "£" : ""}${n.toLocaleString("en-GB", { maximumFractionDigits: 0 })}`;
+}

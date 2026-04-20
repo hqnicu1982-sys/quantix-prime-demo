@@ -24,17 +24,14 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Quantix Prime — AI commercial control for UK contractors" },
-      { name: "description", content: "AI-powered commercial control platform for UK specialty contractors. Site to profit, on one platform." },
-      {
-        rel: "preconnect",
-        href: "https://fonts.googleapis.com",
-      },
+      { title: "Quantix Prime — UK construction intelligence platform" },
+      { name: "description", content: "Real-time profit visibility from site to books for UK specialty contractors. Drylining, fit-out, ceilings." },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&display=swap" },
     ],
   }),
   shellComponent: RootShell,
