@@ -1,61 +1,76 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import {
-  LayoutDashboard, Calendar, Users, Package, BarChart3, Receipt, TrendingUp, Settings,
-  Menu, X, Bell, ClipboardList, FileSpreadsheet, Plug, Users2, HardHat, LineChart, Check,
+  LayoutDashboard, Calendar, Package, ClipboardList, FileSpreadsheet, Plug, Users2,
+  Menu, X, Bell, Search, Settings, HardHat, LineChart, Check, FolderKanban, Library,
+  Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Hammer,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Toaster } from "@/components/ui/sonner";
 import { ProjectProvider, useProject } from "@/lib/ProjectContext";
 import { cn } from "@/lib/utils";
 
-type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; primary?: boolean };
+type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean };
+type NavGroup = { label: string; persona?: "site" | "commercial"; items: NavItem[] };
 
-const navGroups: { label: string; items: NavItem[] }[] = [
-  { label: "Overview", items: [
-    { to: "/", label: "Dashboard", icon: LayoutDashboard, primary: true },
+const navGroups: NavGroup[] = [
+  { label: "Top", items: [
+    { to: "/", label: "Dashboard", icon: LayoutDashboard, mobile: true },
   ]},
-  { label: "Site Manager", items: [
-    { to: "/weekly-plan", label: "Weekly Work Plan", icon: Calendar, primary: true },
-    { to: "/labour", label: "Labour Tracking", icon: Users, primary: true },
-    { to: "/materials", label: "Material Readiness", icon: Package, primary: true },
-    { to: "/daily-report", label: "Daily Site Report", icon: ClipboardList },
+  { label: "Specification", items: [
+    { to: "/catalog", label: "System Catalog", icon: Library },
+    { to: "/calculator", label: "Calculator", icon: Calculator },
   ]},
-  { label: "Commercial", items: [
-    { to: "/prices", label: "Price Comparison", icon: BarChart3 },
-    { to: "/costed-boq", label: "Costed BoQ", icon: FileSpreadsheet },
-    { to: "/invoices", label: "Invoice Reconciliation", icon: Receipt },
-    { to: "/financial", label: "Financial Dashboard", icon: TrendingUp },
+  { label: "Projects", items: [
+    { to: "/projects", label: "All Projects", icon: FolderKanban, mobile: true },
+    { to: "/projects/fitzrovia", label: "Hotel Fitzrovia", icon: HardHat },
   ]},
-  { label: "Settings", items: [
+  { label: "Commercial", persona: "commercial", items: [
+    { to: "/projects/fitzrovia/boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true },
+    { to: "/price-intelligence", label: "Price Intelligence", icon: BarChart3 },
+    { to: "/price-lists/upload", label: "Price List Upload", icon: Upload },
+    { to: "/calloffs", label: "Call-offs", icon: ShoppingCart },
+    { to: "/invoices", label: "Invoice Recon", icon: Receipt, badge: "BETA" },
+    { to: "/financial", label: "Financial", icon: TrendingUp },
+  ]},
+  { label: "Execution", persona: "site", items: [
+    { to: "/planner", label: "Planner", icon: Calendar, mobile: true },
+    { to: "/readiness", label: "Material Readiness", icon: Package },
+    { to: "/daily-report", label: "Daily Site Report", icon: ClipboardList, mobile: true },
+  ]},
+  { label: "Admin", items: [
+    { to: "/team", label: "Team & Roles", icon: Users2 },
     { to: "/integrations", label: "Integrations", icon: Plug },
   ]},
 ];
 
-const allItems = navGroups.flatMap((g) => g.items);
-const primaryItems = allItems.filter((i) => i.primary);
+const mobileItems = navGroups.flatMap((g) => g.items).filter((i) => i.mobile).slice(0, 5);
 
-function ProjectSwitcher() {
-  const { current, setCurrent, all } = useProject();
+function PersonaToggle() {
+  const { persona, setPersona } = useProject();
   return (
-    <Select value={current.id} onValueChange={setCurrent}>
-      <SelectTrigger className="h-9 w-[280px] border-border bg-card text-sm font-medium">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {all.map((p) => (
-          <SelectItem key={p.id} value={p.id}>
-            <div className="flex flex-col">
-              <span className="font-medium">{p.name}</span>
-              <span className="text-xs text-muted-foreground">{p.contractValue} · {p.mainContractor}</span>
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="mx-3 mb-2 mt-1 grid grid-cols-2 rounded-md border border-white/10 bg-white/5 p-0.5 text-[11px] font-medium">
+      <button
+        onClick={() => setPersona("site")}
+        className={cn(
+          "flex items-center justify-center gap-1.5 rounded px-2 py-1.5 transition-colors",
+          persona === "site" ? "bg-white text-[var(--navy-950)]" : "text-white/60 hover:text-white/90",
+        )}
+      >
+        <Hammer className="h-3 w-3" /> Site
+      </button>
+      <button
+        onClick={() => setPersona("commercial")}
+        className={cn(
+          "flex items-center justify-center gap-1.5 rounded px-2 py-1.5 transition-colors",
+          persona === "commercial" ? "bg-white text-[var(--navy-950)]" : "text-white/60 hover:text-white/90",
+        )}
+      >
+        <LineChart className="h-3 w-3" /> Commercial
+      </button>
+    </div>
   );
 }
 
@@ -68,51 +83,119 @@ function NavLinkItem({ item, onClick }: { item: NavItem; onClick?: () => void })
       to={item.to}
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+        "group relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",
         active
-          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-          : "text-sidebar-foreground/75 hover:bg-white/5 hover:text-sidebar-foreground",
+          ? "bg-white/10 text-white"
+          : "text-white/55 hover:bg-white/5 hover:text-white/90",
       )}
     >
-      <Icon className="h-4 w-4" />
-      <span>{item.label}</span>
+      {active && <span className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r bg-[var(--accent-500)]" />}
+      <Icon className="h-[15px] w-[15px] shrink-0" />
+      <span className="flex-1 truncate">{item.label}</span>
+      {item.badge && (
+        <span className="rounded bg-[var(--accent-500)]/20 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent-100)]">
+          {item.badge}
+        </span>
+      )}
     </Link>
   );
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const { persona } = useProject();
   return (
     <>
-      {navGroups.map((group) => (
-        <div key={group.label} className="px-3 pb-2 pt-3">
-          <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/40">
-            {group.label}
-          </p>
-          <nav className="space-y-0.5">
-            {group.items.map((item) => (
-              <NavLinkItem key={item.to} item={item} onClick={onNavigate} />
-            ))}
-          </nav>
+      <PersonaToggle />
+      <div className="flex-1 overflow-y-auto py-1">
+        {navGroups.map((group) => {
+          const emphasised = group.persona === persona;
+          const dimmed = group.persona && group.persona !== persona;
+          return (
+            <div
+              key={group.label}
+              className={cn(
+                "px-3 py-2 transition-opacity",
+                dimmed && "opacity-55",
+              )}
+            >
+              {group.label !== "Top" && (
+                <div className="mb-1 flex items-center gap-2 px-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">
+                    {group.label}
+                  </p>
+                  {emphasised && <span className="h-1 w-1 rounded-full bg-[var(--accent-500)]" />}
+                </div>
+              )}
+              <nav className="space-y-0.5">
+                {group.items.map((item) => (
+                  <NavLinkItem key={item.to} item={item} onClick={onNavigate} />
+                ))}
+              </nav>
+            </div>
+          );
+        })}
+      </div>
+      <div className="border-t border-white/10 p-3">
+        <div className="flex items-center gap-2.5 rounded-md px-2 py-1.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-500)] to-[var(--teal-500)] text-[11px] font-bold text-white">
+            NA
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[12px] font-semibold text-white">Nick Andrei</p>
+            <p className="truncate text-[10.5px] text-white/50">Site Manager · Pro</p>
+          </div>
+          <button className="rounded p-1 text-white/40 hover:bg-white/5 hover:text-white/80" aria-label="Settings">
+            <Settings className="h-3.5 w-3.5" />
+          </button>
         </div>
-      ))}
-      <div className="mt-auto border-t border-sidebar-border p-3">
-        <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/75 hover:bg-white/5">
-          <Settings className="h-4 w-4" />
-          Settings
-        </button>
-        <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/75 hover:bg-white/5">
-          <Users2 className="h-4 w-4" />
-          Team
-        </button>
       </div>
     </>
   );
 }
 
+function Breadcrumb() {
+  const location = useLocation();
+  const { current } = useProject();
+  const path = location.pathname;
+  const labelMap: Record<string, string> = {
+    "/": "Dashboard",
+    "/catalog": "System Catalog",
+    "/calculator": "Calculator",
+    "/projects": "All Projects",
+    "/projects/fitzrovia": "Hotel Fitzrovia",
+    "/projects/fitzrovia/boq": "Costed BoQ",
+    "/price-intelligence": "Price Intelligence",
+    "/price-lists/upload": "Price List Upload",
+    "/calloffs": "Call-offs",
+    "/invoices": "Invoice Reconciliation",
+    "/financial": "Financial Dashboard",
+    "/planner": "Planner",
+    "/readiness": "Material Readiness",
+    "/daily-report": "Daily Site Report",
+    "/team": "Team & Roles",
+    "/integrations": "Integrations",
+  };
+  return (
+    <nav className="hidden items-center gap-1.5 text-[12.5px] text-[var(--ink-500)] md:flex" aria-label="Breadcrumb">
+      <span className="font-semibold text-[var(--ink-700)]">Quantix Prime</span>
+      <span className="text-[var(--ink-200)]">/</span>
+      <span>{current.name}</span>
+      {labelMap[path] && labelMap[path] !== current.name && (
+        <>
+          <span className="text-[var(--ink-200)]">/</span>
+          <span className="font-medium text-[var(--ink-700)]">{labelMap[path]}</span>
+        </>
+      )}
+    </nav>
+  );
+}
+
 function WelcomeModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const navigate = useNavigate();
-  const dismiss = (to?: string) => {
-    if (typeof window !== "undefined") localStorage.setItem("qp-welcome-seen-v2", "1");
+  const { setPersona } = useProject();
+  const dismiss = (to?: string, p?: "site" | "commercial") => {
+    if (typeof window !== "undefined") localStorage.setItem("qp-welcome-seen-v3", "1");
+    if (p) setPersona(p);
     onOpenChange(false);
     if (to) navigate({ to });
   };
@@ -120,31 +203,33 @@ function WelcomeModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-xl">Welcome to Quantix Prime</DialogTitle>
-          <DialogDescription className="pt-1 text-sm">
-            A live demo of UK specialty contractor commercial control
+          <DialogTitle className="font-display text-[22px] font-semibold tracking-tight">
+            Welcome to <span className="italic font-normal text-[var(--accent-500)]">Quantix Prime</span>
+          </DialogTitle>
+          <DialogDescription className="pt-1 text-[13px]">
+            A business preview of UK construction intelligence
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
+        <div className="space-y-3 text-[13px] leading-relaxed text-[var(--ink-500)]">
           <p>
-            This interactive prototype shows how a drylining contractor manages <strong className="text-foreground">Hotel Fitzrovia</strong> — a £2.1M fit-out for Kier Construction — from site to profit.
+            This is a real project — <strong className="text-[var(--ink-900)]">Hotel Fitzrovia</strong>, a £2.1m drylining package for Kier Construction — populated with realistic UK construction data.
           </p>
           <p>
-            You'll see two perspectives: <strong className="text-foreground">Site Manager</strong> (field operations, materials, labour) and <strong className="text-foreground">Commercial Manager</strong> (margins, invoices, price intelligence). Use the sidebar to explore either.
+            Toggle between <strong className="text-[var(--ink-900)]">Site Manager</strong> and <strong className="text-[var(--ink-900)]">Commercial Manager</strong> in the sidebar to see different personas.
           </p>
         </div>
         <DialogFooter className="flex-col gap-2 sm:flex-col">
           <div className="grid w-full gap-2 sm:grid-cols-2">
-            <Button variant="outline" className="w-full" onClick={() => dismiss("/weekly-plan")}>
+            <Button variant="outline" className="w-full" onClick={() => dismiss("/daily-report", "site")}>
               <HardHat className="mr-2 h-4 w-4" /> Start as Site Manager
             </Button>
-            <Button variant="outline" className="w-full" onClick={() => dismiss("/financial")}>
+            <Button variant="outline" className="w-full" onClick={() => dismiss("/financial", "commercial")}>
               <LineChart className="mr-2 h-4 w-4" /> Start as Commercial Manager
             </Button>
           </div>
-          <Button className="w-full" onClick={() => dismiss("/")}>
-            Continue to Dashboard <Check className="ml-2 h-4 w-4" />
-          </Button>
+          <button onClick={() => dismiss("/")} className="w-full text-[12.5px] text-[var(--ink-500)] hover:text-[var(--ink-900)]">
+            Continue to Dashboard <Check className="ml-1 inline h-3.5 w-3.5" />
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -157,91 +242,82 @@ function LayoutInner() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!localStorage.getItem("qp-welcome-seen-v2")) setWelcomeOpen(true);
+    if (!localStorage.getItem("qp-welcome-seen-v3")) setWelcomeOpen(true);
   }, []);
 
   return (
-    <div className="min-h-screen bg-[var(--brand-light)] text-foreground">
+    <div className="min-h-screen bg-[var(--background)] text-foreground">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col bg-sidebar text-sidebar-foreground lg:flex">
-        <div className="flex h-16 items-center border-b border-sidebar-border px-5">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[232px] flex-col bg-[var(--navy-950)] text-white sidebar-dot-pattern lg:flex">
+        <div className="flex h-[60px] items-center border-b border-white/10 px-5">
           <Logo light />
         </div>
-        <div className="flex flex-1 flex-col overflow-y-auto py-2">
-          <SidebarContent />
-        </div>
+        <SidebarContent />
       </aside>
 
       {/* Mobile sidebar overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 flex w-64 flex-col bg-sidebar text-sidebar-foreground">
-            <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-5">
+          <aside className="absolute inset-y-0 left-0 flex w-[260px] flex-col bg-[var(--navy-950)] text-white">
+            <div className="flex h-[60px] items-center justify-between border-b border-white/10 px-5">
               <Logo light />
               <button onClick={() => setMobileOpen(false)} aria-label="Close menu">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="flex flex-1 flex-col overflow-y-auto py-2">
-              <SidebarContent onNavigate={() => setMobileOpen(false)} />
-            </div>
+            <SidebarContent onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
 
       {/* Main */}
-      <div className="lg:pl-60">
-        <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
-          <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
+      <div className="lg:pl-[232px]">
+        <header className="sticky top-0 z-20 border-b border-[var(--ink-200)] bg-white/92 backdrop-blur">
+          <div className="flex h-[60px] items-center gap-3 px-5 sm:px-7">
             <button className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Menu">
               <Menu className="h-5 w-5" />
             </button>
             <div className="lg:hidden">
               <Logo compact />
             </div>
-            <div className="hidden lg:block">
-              <ProjectSwitcher />
-            </div>
-            <div className="ml-auto flex items-center gap-2 sm:gap-3">
-              <span className="rounded-md bg-warning/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-warning-foreground">
-                Demo
+            <Breadcrumb />
+            <div className="ml-auto flex items-center gap-2">
+              <span className="hidden items-center gap-1.5 rounded border border-[var(--accent-500)]/30 bg-[var(--accent-500)]/10 px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--accent-500)] sm:inline-flex">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-500)]" />
+                Business Preview
               </span>
-              <button className="relative rounded-md p-2 hover:bg-secondary" aria-label="Notifications">
-                <Bell className="h-4 w-4" />
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-danger" />
+              <button className="rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]" aria-label="Search">
+                <Search className="h-4 w-4" />
               </button>
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                NP
-              </div>
+              <button className="relative rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]" aria-label="Notifications">
+                <Bell className="h-4 w-4" />
+                <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--red-500)]" />
+              </button>
             </div>
-          </div>
-          {/* Project switcher mobile row */}
-          <div className="border-t px-4 py-2 lg:hidden">
-            <ProjectSwitcher />
           </div>
         </header>
 
-        <main className="px-4 pb-24 pt-6 sm:px-6 lg:pb-10 lg:pt-8">
+        <main className="mx-auto max-w-[1400px] px-5 pb-24 pt-7 sm:px-7 lg:pb-10">
           <Outlet />
         </main>
       </div>
 
       {/* Mobile bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t bg-background lg:hidden">
-        {primaryItems.map((item) => {
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--ink-200)] bg-white lg:hidden">
+        {mobileItems.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.to}
               to={item.to}
-              activeProps={{ className: "text-accent" }}
-              inactiveProps={{ className: "text-muted-foreground" }}
+              activeProps={{ className: "text-[var(--accent-500)]" }}
+              inactiveProps={{ className: "text-[var(--ink-500)]" }}
               activeOptions={{ exact: true }}
               className="flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium"
             >
-              <Icon className="h-5 w-5" />
-              <span>{item.label.split(" ")[0]}</span>
+              <Icon className="h-[18px] w-[18px]" />
+              <span className="truncate">{item.label.split(" ")[0]}</span>
             </Link>
           );
         })}
