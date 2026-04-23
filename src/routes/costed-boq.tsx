@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { costedBoqRows, costedBoqKpi, fmtMoney, type BoqRow } from "@/lib/mockData";
 import { History, FileDown, Sparkles, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/costed-boq")({
   head: () => ({ meta: [{ title: "Costed BoQ — Quantix Prime" }] }),
@@ -28,9 +29,9 @@ function CostedBoq() {
       subtitle="82 items · 2 active price lists (CCF + Minster) · 14 mappings confirmed · 6 need review"
       right={
         <>
-          <Button variant="outline" size="sm"><History className="mr-1.5 h-3.5 w-3.5" />Revisions</Button>
-          <Button variant="outline" size="sm"><FileDown className="mr-1.5 h-3.5 w-3.5" />Export CSV</Button>
-          <Button size="sm"><Sparkles className="mr-1.5 h-3.5 w-3.5" />Optimise split</Button>
+          <Button variant="outline" size="sm" onClick={() => toast("Revisions", { description: "BoQ rev 3.2 · 4 prior revisions available" })}><History className="mr-1.5 h-3.5 w-3.5" />Revisions</Button>
+          <Button variant="outline" size="sm" onClick={() => toast.success("Export ready", { description: "costed-boq-fitzrovia.csv downloaded" })}><FileDown className="mr-1.5 h-3.5 w-3.5" />Export CSV</Button>
+          <Button size="sm" onClick={() => toast.success("Optimised split calculated", { description: `Saving £${costedBoqKpi.totalSaving.toLocaleString()} by splitting CCF/Minster` })}><Sparkles className="mr-1.5 h-3.5 w-3.5" />Optimise split</Button>
         </>
       }
     >
@@ -88,7 +89,7 @@ function CostedBoq() {
                   <strong className="font-mono text-[14px] text-[var(--green-600)]">–{fmtMoney(costedBoqKpi.totalSaving)} saved</strong>
                 </td>
                 <td colSpan={2} className="px-4 py-3 text-right">
-                  <Button size="sm">Generate call-offs</Button>
+                  <Button size="sm" onClick={() => toast.success("Call-offs generated", { description: "7 draft call-offs created · awaiting QS review" })}>Generate call-offs</Button>
                 </td>
               </tr>
             </tfoot>

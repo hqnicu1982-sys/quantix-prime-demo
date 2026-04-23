@@ -3,25 +3,29 @@ import { Card, CardHead, Kpi, Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { fitzrovia, fitzroviaSystems, fitzroviaHealth, fitzroviaActivity, fmtMoney } from "@/lib/mockData";
 import { Share2, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/projects/fitzrovia")({ component: ProjectDetail });
 
 function ProjectDetail() {
+  const [tab, setTab] = useState("Overview");
+  const tabs = ["Overview", "Specification", "Costed BoQ", "Planner", "Call-offs", "Invoices", "Labour", "Reports", "Team"];
   return (
     <Section
       title="Hotel Fitzrovia"
       subtitle="Kier Construction · Fitzrovia W1T 4JQ · 04 Feb 2026 → 19 Dec 2026 · £2,100,000 contract"
       right={
         <>
-          <Button variant="outline" size="sm"><Share2 className="mr-1.5 h-3.5 w-3.5" /> Share</Button>
-          <Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off</Button>
+          <Button variant="outline" size="sm" onClick={() => { navigator.clipboard?.writeText(window.location.href); toast.success("Link copied", { description: "Project URL copied to clipboard" }); }}><Share2 className="mr-1.5 h-3.5 w-3.5" /> Share</Button>
+          <Button size="sm" onClick={() => toast.success("New call-off", { description: "Draft created for Hotel Fitzrovia" })}><Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off</Button>
         </>
       }
     >
       <div className="border-b border-[var(--ink-200)]">
         <nav className="flex gap-6 overflow-x-auto text-[13px] font-medium">
-          {["Overview", "Specification", "Costed BoQ", "Planner", "Call-offs", "Invoices", "Labour", "Reports", "Team"].map((t, i) => (
-            <button key={t} className={`-mb-px whitespace-nowrap border-b-2 py-2.5 ${i === 0 ? "border-[var(--accent-500)] text-[var(--ink-900)]" : "border-transparent text-[var(--ink-500)] hover:text-[var(--ink-900)]"}`}>
+          {tabs.map((t) => (
+            <button key={t} onClick={() => setTab(t)} className={`-mb-px whitespace-nowrap border-b-2 py-2.5 ${tab === t ? "border-[var(--accent-500)] text-[var(--ink-900)]" : "border-transparent text-[var(--ink-500)] hover:text-[var(--ink-900)]"}`}>
               {t}{t === "Call-offs" && <span className="ml-1.5 rounded-full bg-[var(--accent-500)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-500)]">3</span>}
             </button>
           ))}

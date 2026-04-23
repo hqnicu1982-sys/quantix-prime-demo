@@ -7,6 +7,8 @@ import {
 } from "@/lib/mockData";
 import { BarChart, Bar, XAxis, YAxis, Cell, ResponsiveContainer, AreaChart, Area, Tooltip } from "recharts";
 import { Calendar, Download } from "lucide-react";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/financial")({
   head: () => ({ meta: [{ title: "Financial Dashboard — Quantix Prime" }] }),
@@ -21,14 +23,21 @@ const HEALTH_COLOR: Record<string, string> = {
 };
 
 function Financial() {
+  const [period, setPeriod] = useState<"This month" | "Last month" | "QTD" | "YTD">("This month");
+  const cyclePeriod = () => {
+    const opts = ["This month", "Last month", "QTD", "YTD"] as const;
+    const next = opts[(opts.indexOf(period) + 1) % opts.length];
+    setPeriod(next);
+    toast(`Period: ${next}`);
+  };
   return (
     <Section
       title="Financial Dashboard"
       subtitle="Real-time P&L · margin trending · variance analysis across all active projects"
       right={
         <>
-          <Button variant="outline" size="sm"><Calendar className="mr-1.5 h-3.5 w-3.5" />This month</Button>
-          <Button variant="outline" size="sm"><Download className="mr-1.5 h-3.5 w-3.5" />Export</Button>
+          <Button variant="outline" size="sm" onClick={cyclePeriod}><Calendar className="mr-1.5 h-3.5 w-3.5" />{period}</Button>
+          <Button variant="outline" size="sm" onClick={() => toast.success("Financials exported", { description: `${period} P&L · XLSX downloaded` })}><Download className="mr-1.5 h-3.5 w-3.5" />Export</Button>
         </>
       }
     >

@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { team } from "@/lib/mockData";
 import { Plus, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/team")({ component: Team });
 
@@ -22,8 +23,8 @@ function Team() {
       subtitle="Role-based permissions · per-project membership · full audit trail of who did what"
       right={
         <>
-          <Button variant="outline" size="sm"><FileText className="mr-1.5 h-3.5 w-3.5" /> Audit log</Button>
-          <Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" /> Invite member</Button>
+          <Button variant="outline" size="sm" onClick={() => toast("Audit log", { description: "Opening last 30 days · 247 events" })}><FileText className="mr-1.5 h-3.5 w-3.5" /> Audit log</Button>
+          <Button size="sm" onClick={() => toast.success("Invite sent", { description: "Enter email to add a new team member" })}><Plus className="mr-1.5 h-3.5 w-3.5" /> Invite member</Button>
         </>
       }
     >

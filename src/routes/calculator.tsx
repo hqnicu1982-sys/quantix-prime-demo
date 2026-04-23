@@ -3,6 +3,8 @@ import { Card, CardHead, Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { calculatorPreset, calculatorResults, fmtMoney } from "@/lib/mockData";
 import { Save, Plus, Info } from "lucide-react";
+import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
@@ -15,14 +17,15 @@ const dotColor: Record<string, string> = {
 };
 
 function Calculator() {
+  const navigate = useNavigate();
   return (
     <Section
       title="Calculator"
       subtitle="Quantify materials and labour for a BG system with live results. Pulls price intelligence from your active price lists."
       right={
         <>
-          <Button variant="outline" size="sm"><Save className="mr-1.5 h-3.5 w-3.5" /> Save as estimate</Button>
-          <Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" /> Add to BoQ</Button>
+          <Button variant="outline" size="sm" onClick={() => toast.success("Estimate saved", { description: `${calculatorPreset.system.code} · ${fmtMoney(calculatorResults.total)}` })}><Save className="mr-1.5 h-3.5 w-3.5" /> Save as estimate</Button>
+          <Button size="sm" onClick={() => { toast.success("Added to BoQ", { description: "Opening Costed BoQ…" }); navigate({ to: "/costed-boq" }); }}><Plus className="mr-1.5 h-3.5 w-3.5" /> Add to BoQ</Button>
         </>
       }
     >

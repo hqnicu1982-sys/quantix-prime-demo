@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { readinessRows } from "@/lib/mockData";
 import { AlertCircle, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/readiness")({ component: Readiness });
 
@@ -60,7 +61,7 @@ function Readiness() {
                     <span>{r.note}</span>
                   </p>
                 </div>
-                {r.action && <Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" /> {r.action}</Button>}
+                {r.action && <Button size="sm" onClick={() => toast.success(r.action!, { description: `${r.task} · ${r.crew}` })}><Plus className="mr-1.5 h-3.5 w-3.5" /> {r.action}</Button>}
               </div>
             </Card>
           );

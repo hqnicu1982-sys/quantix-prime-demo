@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { callOffs, callOffStateMachine, callOffTabs, fmtMoney } from "@/lib/mockData";
 import { ChevronRight, ShieldCheck, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/calloffs")({ component: CallOffs });
 
@@ -23,7 +24,7 @@ function CallOffs() {
     <Section
       title="Call-offs"
       subtitle="7-state workflow · full audit trail · Site manager requests, QS approves, PO fires on green light."
-      right={<Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off</Button>}
+      right={<Button size="sm" onClick={() => toast.success("New call-off draft", { description: "Pick a BoQ item to call off against" })}><Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off</Button>}
     >
       <Card>
         <CardHead title="Call-off #247 (Gyproc WallBoard, 1,850m²)" subtitle="State machine · live audit trail" />
