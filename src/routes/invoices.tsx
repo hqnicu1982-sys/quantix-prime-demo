@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { invoices, invoiceKpi, reconFlow, fmtMoney, type Invoice } from "@/lib/mockData";
 import { Upload, Plus, ArrowRight, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/invoices")({
   head: () => ({ meta: [{ title: "Invoice Reconciliation — Quantix Prime" }] }),
@@ -25,8 +26,8 @@ function Invoices() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm"><Upload className="mr-1.5 h-3.5 w-3.5" />Upload invoice</Button>
-          <Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" />New reconciliation</Button>
+          <Button variant="outline" size="sm" onClick={() => toast("Upload invoice", { description: "Drop a PDF/XLSX — we'll match it to a PO automatically" })}><Upload className="mr-1.5 h-3.5 w-3.5" />Upload invoice</Button>
+          <Button size="sm" onClick={() => toast.success("New reconciliation started", { description: "Select supplier and invoice to begin matching" })}><Plus className="mr-1.5 h-3.5 w-3.5" />New reconciliation</Button>
         </div>
       </div>
 
@@ -109,9 +110,9 @@ function InvoiceCard({ inv }: { inv: Invoice }) {
         {inv.state === "matched" && <StatusBadge tone="success">Ready to pay</StatusBadge>}
         {inv.state === "needs-review" && (
           <div className="flex flex-wrap gap-1.5">
-            <Button size="sm" variant="outline" className="h-7 text-[11px]">Accept</Button>
-            <Button size="sm" variant="outline" className="h-7 text-[11px]">Dispute</Button>
-            <Button size="sm" className="h-7 text-[11px]">Request credit</Button>
+            <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => toast.success(`Invoice ${inv.id} accepted`, { description: `£${inv.invoiced.toLocaleString()} approved for payment` })}>Accept</Button>
+            <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => toast.error(`Invoice ${inv.id} disputed`, { description: `Notifying ${inv.supplier} of variance` })}>Dispute</Button>
+            <Button size="sm" className="h-7 text-[11px]" onClick={() => toast.success("Credit request sent", { description: `Asking ${inv.supplier} for £${inv.variance.toLocaleString()} credit note` })}>Request credit</Button>
           </div>
         )}
       </div>

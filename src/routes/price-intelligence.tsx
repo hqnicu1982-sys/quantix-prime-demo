@@ -4,18 +4,21 @@ import { Button } from "@/components/ui/button";
 import { priceIntelKpi, priceTrend, topMovers, priceAlerts, fmtMoney } from "@/lib/mockData";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 import { Bell, Upload, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/price-intelligence")({ component: PriceIntel });
 
 function PriceIntel() {
+  const navigate = useNavigate();
   return (
     <Section
       title="Price Intelligence"
       subtitle="Watching 234 items across 2 suppliers. We'll flag uplifts, surface trends, and remember your wins."
       right={
         <>
-          <Button variant="outline" size="sm"><Bell className="mr-1.5 h-3.5 w-3.5" /> Alerts (3)</Button>
-          <Button size="sm"><Upload className="mr-1.5 h-3.5 w-3.5" /> Upload new price list</Button>
+          <Button variant="outline" size="sm" onClick={() => toast("3 active alerts", { description: "WallBoard +4.2%, Insulation +2.1%, Plasterboard −1.8%" })}><Bell className="mr-1.5 h-3.5 w-3.5" /> Alerts (3)</Button>
+          <Button size="sm" onClick={() => navigate({ to: "/price-lists/upload" })}><Upload className="mr-1.5 h-3.5 w-3.5" /> Upload new price list</Button>
         </>
       }
     >
@@ -74,7 +77,7 @@ function PriceIntel() {
                 <p className="text-[13px] font-semibold">{a.title}</p>
                 <p className="mt-1 text-[12.5px] text-[var(--ink-700)]">{a.body}</p>
               </div>
-              <Button size="sm" variant={a.tone === "warning" ? "outline" : "default"}>{a.action}</Button>
+              <Button size="sm" variant={a.tone === "warning" ? "outline" : "default"} onClick={() => toast.success(a.action, { description: a.title })}>{a.action}</Button>
             </div>
           ))}
         </div>

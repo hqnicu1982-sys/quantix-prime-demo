@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { catalogSystems, catalogCategories } from "@/lib/mockData";
 import { Sparkles, Calculator, ArrowUpRight, Flame, Volume2, Ruler, Search } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/catalog")({ component: Catalog });
 
@@ -28,6 +29,7 @@ const tileClass = [
 function Catalog() {
   const [active, setActive] = useState("all");
   const [query, setQuery] = useState("");
+  const navigate = useNavigate();
 
   const filtered = catalogSystems.filter((s) => {
     const matchesCat = active === "all" || s.category === active;
@@ -55,8 +57,8 @@ function Catalog() {
             indexed, fire-rated, and priced for instant call-off.
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm"><Sparkles className="mr-1.5 h-3.5 w-3.5" /> Recommend</Button>
-            <Button size="sm"><Calculator className="mr-1.5 h-3.5 w-3.5" /> Calculator</Button>
+            <Button variant="outline" size="sm" onClick={() => toast("AI recommendations", { description: "Tell us your fire/acoustic targets — we'll surface 3 systems" })}><Sparkles className="mr-1.5 h-3.5 w-3.5" /> Recommend</Button>
+            <Button size="sm" onClick={() => navigate({ to: "/calculator" })}><Calculator className="mr-1.5 h-3.5 w-3.5" /> Calculator</Button>
           </div>
         </div>
       </header>
@@ -131,7 +133,7 @@ function Catalog() {
                   isFeature
                     ? "bg-white text-[var(--ink-900)] hover:bg-[var(--ink-900)] hover:text-white"
                     : "border border-[var(--ink-200)] text-[var(--ink-500)] group-hover:border-[var(--ink-900)] group-hover:bg-[var(--ink-900)] group-hover:text-white"
-                }`}>
+                }`} onClick={() => toast(`${s.name}`, { description: `${s.code} · opening system spec sheet` })}>
                   <ArrowUpRight className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -191,7 +193,7 @@ function Catalog() {
         <p className="font-mono-num text-[11px] uppercase tracking-[0.18em] text-[var(--ink-500)]">
           End of issue · {filtered.length} of {catalogSystems.length} demo systems shown
         </p>
-        <Button variant="outline" size="sm">Browse all 2,847 →</Button>
+        <Button variant="outline" size="sm" onClick={() => toast("Full catalogue", { description: "2,847 systems · loading paged view" })}>Browse all 2,847 →</Button>
       </footer>
     </div>
   );

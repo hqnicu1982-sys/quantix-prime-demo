@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { dailyReport } from "@/lib/mockData";
 import { Download, Send, Cloud, Clock } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/daily-report")({
   head: () => ({ meta: [{ title: "Daily Site Report — Quantix Prime" }] }),
@@ -17,8 +18,8 @@ function DailyReport() {
       subtitle="Unified view of site activity · submitted to main contractor at end of day"
       right={
         <>
-          <Button variant="outline" size="sm"><Download className="mr-1.5 h-3.5 w-3.5" />Preview PDF</Button>
-          <Button size="sm"><Send className="mr-1.5 h-3.5 w-3.5" />Submit to Kier</Button>
+          <Button variant="outline" size="sm" onClick={() => toast("PDF preview", { description: `Daily report ${dailyReport.date} ready` })}><Download className="mr-1.5 h-3.5 w-3.5" />Preview PDF</Button>
+          <Button size="sm" onClick={() => toast.success("Submitted to Kier", { description: `Daily report ${dailyReport.date} sent to ${dailyReport.mainContractor}` })}><Send className="mr-1.5 h-3.5 w-3.5" />Submit to Kier</Button>
         </>
       }
     >

@@ -3,6 +3,7 @@ import { Card, CardHead, Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { ganttRows } from "@/lib/mockData";
 import { Calendar, Download, Plus, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/planner")({ component: Planner });
 
@@ -24,9 +25,9 @@ function Planner() {
       subtitle="Look-ahead 2-3 weeks · constraint-aware · auto-syncs material readiness"
       right={
         <>
-          <Button variant="outline" size="sm"><Calendar className="mr-1.5 h-3.5 w-3.5" /> Today</Button>
-          <Button variant="outline" size="sm"><Download className="mr-1.5 h-3.5 w-3.5" /> Export PDF</Button>
-          <Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" /> New task</Button>
+          <Button variant="outline" size="sm" onClick={() => toast("Centred on today")}><Calendar className="mr-1.5 h-3.5 w-3.5" /> Today</Button>
+          <Button variant="outline" size="sm" onClick={() => toast.success("Planner exported", { description: "gantt-fitzrovia.pdf downloaded" })}><Download className="mr-1.5 h-3.5 w-3.5" /> Export PDF</Button>
+          <Button size="sm" onClick={() => toast.success("New task added", { description: "Draft task created · assign crew to schedule" })}><Plus className="mr-1.5 h-3.5 w-3.5" /> New task</Button>
         </>
       }
     >

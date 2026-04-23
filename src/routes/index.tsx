@@ -10,6 +10,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Cloud, Download, FilePlus, ArrowRight, Clock, CheckCircle2, Truck } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "Dashboard — Quantix Prime" }] }),
@@ -35,8 +36,8 @@ function Dashboard() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><Download className="mr-1.5 h-3.5 w-3.5" />Export brief</Button>
-          <Button size="sm"><FilePlus className="mr-1.5 h-3.5 w-3.5" />Log site update</Button>
+          <Button variant="outline" size="sm" onClick={() => toast.success("Brief exported", { description: "Morning briefing PDF saved to /downloads" })}><Download className="mr-1.5 h-3.5 w-3.5" />Export brief</Button>
+          <Button size="sm" onClick={() => toast.success("Site update logged", { description: "Posted to Hotel Fitzrovia activity feed" })}><FilePlus className="mr-1.5 h-3.5 w-3.5" />Log site update</Button>
         </div>
       </div>
 
@@ -170,7 +171,7 @@ function FocusRow({ action }: { action: typeof focusToday[number] }) {
         <Link to={action.primary.to}>
           <Button size="sm">{action.primary.label}<ArrowRight className="ml-1 h-3.5 w-3.5" /></Button>
         </Link>
-        {action.secondary && <Button size="sm" variant="outline">{action.secondary.label}</Button>}
+        {action.secondary && <Button size="sm" variant="outline" onClick={() => toast(action.secondary!.label, { description: "Action queued" })}>{action.secondary.label}</Button>}
       </div>
     </div>
   );
