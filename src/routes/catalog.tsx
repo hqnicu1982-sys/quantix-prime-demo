@@ -1,10 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { catalogSystems, catalogCategories } from "@/lib/mockData";
 import { Sparkles, Calculator, ArrowUpRight, Flame, Volume2, Ruler, Search } from "lucide-react";
 import { toast } from "sonner";
-import { Link, useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/catalog")({ component: Catalog });
 
