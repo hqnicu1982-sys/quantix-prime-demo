@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard, Calendar, Package, ClipboardList, FileSpreadsheet, Plug, Users2,
   Menu, X, Bell, Search, Settings, HardHat, LineChart, Check, FolderKanban, Library,
-  Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Hammer,
+  Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Hammer, Sun, Moon,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -239,11 +239,23 @@ function WelcomeModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
 function LayoutInner() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!localStorage.getItem("qp-welcome-seen-v3")) setWelcomeOpen(true);
+    const stored = localStorage.getItem("qp-theme") as "light" | "dark" | null;
+    const initial = stored ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    setTheme(initial);
+    document.documentElement.classList.toggle("dark", initial === "dark");
   }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.classList.toggle("dark", next === "dark");
+    if (typeof window !== "undefined") localStorage.setItem("qp-theme", next);
+  };
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-foreground">
@@ -273,7 +285,7 @@ function LayoutInner() {
 
       {/* Main */}
       <div className="lg:pl-[232px]">
-        <header className="sticky top-0 z-20 border-b border-[var(--ink-200)] bg-white/92 backdrop-blur">
+        <header className="sticky top-0 z-20 border-b border-[var(--ink-200)] bg-[var(--card)]/92 backdrop-blur">
           <div className="flex h-[60px] items-center gap-3 px-5 sm:px-7">
             <button className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Menu">
               <Menu className="h-5 w-5" />
@@ -290,6 +302,13 @@ function LayoutInner() {
               <button className="rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]" aria-label="Search">
                 <Search className="h-4 w-4" />
               </button>
+              <button
+                onClick={toggleTheme}
+                className="rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]"
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
               <button className="relative rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]" aria-label="Notifications">
                 <Bell className="h-4 w-4" />
                 <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--red-500)]" />
@@ -304,7 +323,7 @@ function LayoutInner() {
       </div>
 
       {/* Mobile bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--ink-200)] bg-white lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--ink-200)] bg-[var(--card)] lg:hidden">
         {mobileItems.map((item) => {
           const Icon = item.icon;
           return (
