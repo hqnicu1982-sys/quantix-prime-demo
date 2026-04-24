@@ -239,11 +239,23 @@ function WelcomeModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
 function LayoutInner() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!localStorage.getItem("qp-welcome-seen-v3")) setWelcomeOpen(true);
+    const stored = localStorage.getItem("qp-theme") as "light" | "dark" | null;
+    const initial = stored ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    setTheme(initial);
+    document.documentElement.classList.toggle("dark", initial === "dark");
   }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.classList.toggle("dark", next === "dark");
+    if (typeof window !== "undefined") localStorage.setItem("qp-theme", next);
+  };
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-foreground">
@@ -289,6 +301,13 @@ function LayoutInner() {
               </span>
               <button className="rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]" aria-label="Search">
                 <Search className="h-4 w-4" />
+              </button>
+              <button
+                onClick={toggleTheme}
+                className="rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]"
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
               <button className="relative rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]" aria-label="Notifications">
                 <Bell className="h-4 w-4" />
