@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard, Calendar, Package, ClipboardList, FileSpreadsheet, Plug, Users2,
   Menu, X, Bell, Search, Settings, HardHat, LineChart, Check, FolderKanban, Library,
-  Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Hammer,
+  Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Hammer, Sun, Moon,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
