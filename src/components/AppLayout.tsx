@@ -285,7 +285,7 @@ function LayoutInner() {
 
       {/* Main */}
       <div className="lg:pl-[232px]">
-        <header className="sticky top-0 z-20 border-b border-[var(--ink-200)] bg-white/92 backdrop-blur">
+        <header className="sticky top-0 z-20 border-b border-[var(--ink-200)] bg-[var(--card)]/92 backdrop-blur">
           <div className="flex h-[60px] items-center gap-3 px-5 sm:px-7">
             <button className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Menu">
               <Menu className="h-5 w-5" />
@@ -323,7 +323,7 @@ function LayoutInner() {
       </div>
 
       {/* Mobile bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--ink-200)] bg-white lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--ink-200)] bg-[var(--card)] lg:hidden">
         {mobileItems.map((item) => {
           const Icon = item.icon;
           return (
