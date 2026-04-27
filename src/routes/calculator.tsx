@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import {
   Search, Sparkles, Download, Shield, Layers, Ruler, Volume2, Flame,
   ArrowRight, Wand2, RotateCcw, GitCompare, Check, ArrowDown, ArrowUp, Minus, Lightbulb,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
 import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste } from "@/lib/boardSizing";
 import { fireTier, acousticTier, heightTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
 import { TierMetric as TierChip } from "@/components/TierMetric";
+import { validateGeometry, hasErrors } from "@/lib/calcValidation";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
@@ -252,6 +254,8 @@ function SingleView({
   navigate: ReturnType<typeof useNavigate>;
 }) {
   const sys = LIBRARY.find(s => s.code === activeCode) ?? LIBRARY[0];
+  const errs = validateGeometry(length, height, waste);
+  const invalid = hasErrors(errs);
   const totals = scaledTotals(sys, area, wasteFactor);
 
   // Recommendation: pick the smallest board ≥ wall height to minimise off-cuts.
@@ -324,8 +328,8 @@ function SingleView({
         <section className="glass-card rounded-2xl p-6">
           <SectionTitle n="02" label="Geometry & finish" />
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <Field label="Length (m)" value={length} onChange={setLength} />
-            <Field label="Height (m)" value={height} onChange={setHeight} />
+            <Field label="Length" unit="m" value={length} onChange={setLength} error={errs.length} hint="Wall length, e.g. 12.5" />
+            <Field label="Height" unit="m" value={height} onChange={setHeight} error={errs.height} hint="Floor to ceiling, 1.5–12 m" />
             <Select label="Stud Centres" options={["400 mm","600 mm","Other"]} defaultValue="600 mm" />
             <div>
               <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Board Size</p>
@@ -386,7 +390,19 @@ function SingleView({
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            <Button size="lg" className="flex-1 min-w-[200px] gap-2" onClick={() => toast.success("BoQ calculated", { description: `${sys.code} · ${area} m²` })}>
+            <Button
+              size="lg"
+              className="flex-1 min-w-[200px] gap-2"
+              disabled={invalid}
+              onClick={() => {
+                if (invalid) {
+                  const first = errs.length || errs.height || errs.waste;
+                  toast.error("Please fix the highlighted fields", { description: first ?? undefined });
+                  return;
+                }
+                toast.success("BoQ calculated", { description: `${sys.code} · ${area.toLocaleString()} m²` });
+              }}
+            >
               <Sparkles className="h-4 w-4" /> Calculate BoQ
             </Button>
             <Button size="lg" variant="outline" onClick={() => { setLength("50"); setHeight("4"); setWaste(5); toast("Reset to defaults"); }}>
@@ -408,19 +424,25 @@ function SingleView({
           <div className="border-b border-[var(--ink-200)]/60 bg-gradient-to-br from-[var(--accent-500)]/10 to-transparent px-5 py-4">
             <div className="flex items-center justify-between">
               <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Live summary</p>
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--green-600)]">
-                <span className="glow-pulse h-1.5 w-1.5 rounded-full bg-[var(--green-600)]" /> live
-              </span>
+              {invalid ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--tier-critical)]">
+                  <AlertCircle className="h-3 w-3" /> check inputs
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--green-600)]">
+                  <span className="glow-pulse h-1.5 w-1.5 rounded-full bg-[var(--green-600)]" /> live
+                </span>
+              )}
             </div>
             <p className="font-mono-num mt-1 text-[12px] font-semibold text-[var(--accent-500)]">{sys.code}</p>
           </div>
 
           <div className="border-b border-[var(--ink-200)]/60 px-5 py-5">
             <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">Wall area</p>
-            <p className="font-display impact-number mt-1 text-[44px] font-bold leading-none tracking-tight">
-              {area.toLocaleString()}<span className="ml-1 text-[16px] font-medium text-[var(--ink-500)]">m²</span>
+            <p className={"font-display mt-1 text-[44px] font-bold leading-none tracking-tight " + (invalid ? "text-[var(--ink-500)]" : "impact-number")}>
+              {invalid ? "—" : area.toLocaleString()}<span className="ml-1 text-[16px] font-medium text-[var(--ink-500)]">m²</span>
             </p>
-            <p className="mt-1 text-[11.5px] text-[var(--ink-500)]">{length} m × {height} m · waste {waste}%</p>
+            <p className="mt-1 text-[11.5px] text-[var(--ink-500)]">{length || "—"} m × {height || "—"} m · waste {waste}%</p>
           </div>
 
           <div className="border-b border-[var(--ink-200)]/60 px-5 py-4">
@@ -450,10 +472,10 @@ function SingleView({
           </div>
 
           <div className="space-y-2 border-t border-[var(--ink-200)]/60 bg-[var(--ink-50)]/40 p-4">
-            <Button className="w-full gap-2" size="lg" onClick={() => toast.success("BoQ exported", { description: "CSV ready" })}>
+            <Button className="w-full gap-2" size="lg" disabled={invalid} onClick={() => toast.success("BoQ exported", { description: "CSV ready" })}>
               <Download className="h-4 w-4" /> Export BoQ
             </Button>
-            <Button className="w-full" variant="outline" onClick={() => { toast.success("Added to project BoQ"); navigate({ to: "/costed-boq" }); }}>
+            <Button className="w-full" variant="outline" disabled={invalid} onClick={() => { toast.success("Added to project BoQ"); navigate({ to: "/costed-boq" }); }}>
               Add to Costed BoQ
             </Button>
           </div>
@@ -536,8 +558,8 @@ function CompareView({
             </p>
           </div>
           <div className="ml-auto flex flex-wrap items-end gap-3">
-            <div className="w-24"><Field label="Length (m)" value={length} onChange={setLength} /></div>
-            <div className="w-24"><Field label="Height (m)" value={height} onChange={setHeight} /></div>
+            <div className="w-28"><Field label="Length" unit="m" value={length} onChange={setLength} error={validateGeometry(length, height, waste).length} /></div>
+            <div className="w-28"><Field label="Height" unit="m" value={height} onChange={setHeight} error={validateGeometry(length, height, waste).height} /></div>
             <div className="w-32">
               <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Waste {waste}%</p>
               <input type="range" min={0} max={20} value={waste} onChange={e => setWaste(+e.target.value)} className="w-full accent-[var(--accent-500)]" />
@@ -766,16 +788,49 @@ function SectionTitle({ n, label }: { n: string; label: string }) {
   );
 }
 
-function Field({ label, value, onChange, placeholder }: { label: string; value?: string; onChange?: (v: string) => void; placeholder?: string }) {
+function Field({
+  label, value, onChange, placeholder, unit, error, hint,
+}: {
+  label: string;
+  value?: string;
+  onChange?: (v: string) => void;
+  placeholder?: string;
+  unit?: string;
+  error?: string | null;
+  hint?: string;
+}) {
+  const invalid = !!error;
   return (
     <div>
-      <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
-      <input
-        value={value}
-        onChange={e => onChange?.(e.target.value)}
-        placeholder={placeholder}
-        className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium placeholder:text-[var(--ink-500)]"
-      />
+      <div className="mb-1 flex items-baseline justify-between">
+        <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
+        {unit && <span className="font-mono-num text-[10.5px] font-medium text-[var(--ink-500)]">{unit}</span>}
+      </div>
+      <div className="relative">
+        <input
+          value={value}
+          onChange={e => onChange?.(e.target.value)}
+          placeholder={placeholder}
+          aria-invalid={invalid}
+          aria-describedby={invalid ? `${label}-err` : undefined}
+          className={
+            "glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium placeholder:text-[var(--ink-500)] transition-shadow " +
+            (invalid
+              ? "border-[var(--tier-critical)] shadow-[0_0_0_4px_color-mix(in_oklab,var(--tier-critical)_18%,transparent)]"
+              : "")
+          }
+        />
+        {invalid && (
+          <AlertCircle className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--tier-critical)]" />
+        )}
+      </div>
+      {invalid ? (
+        <p id={`${label}-err`} className="mt-1 flex items-center gap-1 text-[11px] font-medium text-[var(--tier-critical)]">
+          <AlertCircle className="h-3 w-3" /> {error}
+        </p>
+      ) : hint ? (
+        <p className="mt-1 text-[11px] text-[var(--ink-500)]">{hint}</p>
+      ) : null}
     </div>
   );
 }
