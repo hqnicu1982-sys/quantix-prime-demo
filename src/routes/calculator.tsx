@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Search, Sparkles, Download, Shield, Layers, Ruler, Volume2, Flame,
-  ArrowRight, Wand2, RotateCcw, GitCompare, Check, ArrowDown, ArrowUp, Minus,
+  ArrowRight, Wand2, RotateCcw, GitCompare, Check, ArrowDown, ArrowUp, Minus, Lightbulb,
 } from "lucide-react";
 import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
@@ -117,6 +117,9 @@ function Calculator() {
   // Active system shown in SingleView (By code / Recommend)
   const [activeCode, setActiveCode] = useState<string>(LIBRARY[0].code);
 
+  // Board sizing — "auto" lets us derive the best board from height to minimise waste.
+  const [boardSize, setBoardSize] = useState<string>("auto");
+
   // On mount: if URL says ?mode=compare or the tray has slots, switch to compare
   // and hydrate left/right from the tray. Then keep them in sync with the tray.
   useEffect(() => {
@@ -218,6 +221,7 @@ function Calculator() {
             length={length} setLength={setLength}
             height={height} setHeight={setHeight}
             waste={waste}   setWaste={setWaste}
+            boardSize={boardSize} setBoardSize={setBoardSize}
             area={area} wasteFactor={wasteFactor}
             navigate={navigate}
           />
@@ -233,17 +237,26 @@ function Calculator() {
 function SingleView({
   activeCode, setActiveCode,
   length, setLength, height, setHeight, waste, setWaste,
+  boardSize, setBoardSize,
   area, wasteFactor, navigate,
 }: {
   activeCode: string; setActiveCode: (v: string) => void;
   length: string; setLength: (v: string) => void;
   height: string; setHeight: (v: string) => void;
   waste: number;  setWaste: (v: number) => void;
+  boardSize: string; setBoardSize: (v: string) => void;
   area: number;   wasteFactor: number;
   navigate: ReturnType<typeof useNavigate>;
 }) {
   const sys = LIBRARY.find(s => s.code === activeCode) ?? LIBRARY[0];
   const totals = scaledTotals(sys, area, wasteFactor);
+
+  // Recommendation: pick the smallest board ≥ wall height to minimise off-cuts.
+  // Wall height in mm; board catalogue (W × H, mm).
+  const heightMm = Math.round((+height || 0) * 1000);
+  const recommended = recommendBoard(heightMm);
+  const effectiveBoard = boardSize === "auto" ? recommended.label : boardSize;
+  const cutWastePct = boardOffcutWaste(heightMm, effectiveBoard);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
@@ -297,17 +310,62 @@ function SingleView({
             <Field label="Length (m)" value={length} onChange={setLength} />
             <Field label="Height (m)" value={height} onChange={setHeight} />
             <Select label="Stud Centres" options={["400 mm","600 mm","Other"]} defaultValue="600 mm" />
-            <Select label="Board Size"   options={["1200 × 2400","1200 × 3000","900 × 1800"]} defaultValue="1200 × 2400" />
+            <div>
+              <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Board Size</p>
+              <select
+                value={boardSize}
+                onChange={e => setBoardSize(e.target.value)}
+                className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium"
+              >
+                <option value="auto">Auto — recommended</option>
+                {BOARD_LIBRARY.map(b => (
+                  <option key={b.label} value={b.label}>{b.label}</option>
+                ))}
+              </select>
+            </div>
             <Select label="Finish" options={["Tape & Joint","Skim","Direct decorate"]} defaultValue="Tape & Joint" />
             <Select label="Stage"  options={["Both","Frame only","Board only"]} defaultValue="Both" />
           </div>
 
+          {/* Board recommendation chip — derives the smallest board ≥ wall height */}
+          {heightMm > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--accent-500)]/25 bg-[var(--accent-500)]/5 px-4 py-3 text-[12.5px]">
+              <Lightbulb className="h-4 w-4 shrink-0 text-[var(--accent-500)]" />
+              <span className="text-[var(--ink-700)]">
+                {boardSize === "auto" ? (
+                  <>For <strong>{(+height).toFixed(2)} m</strong> wall we recommend <strong className="font-mono-num">{recommended.label}</strong> — {recommended.reason.toLowerCase()}.</>
+                ) : (
+                  <>Using <strong className="font-mono-num">{effectiveBoard}</strong>. Auto would pick <strong className="font-mono-num">{recommended.label}</strong>.</>
+                )}
+              </span>
+              <span className="ml-auto inline-flex items-center gap-1.5">
+                <span className="font-mono-num rounded-md bg-[var(--card)] px-2 py-0.5 text-[11px] font-semibold text-[var(--ink-700)]">
+                  Cut waste {cutWastePct}%
+                </span>
+                {recommended.needsHorizontalJoint && (
+                  <span className="font-mono-num rounded-md bg-[var(--amber-500)]/15 px-2 py-0.5 text-[11px] font-semibold text-[var(--amber-500)]">
+                    + horizontal joint
+                  </span>
+                )}
+                {boardSize !== "auto" && boardSize !== recommended.label && (
+                  <button
+                    onClick={() => { setBoardSize("auto"); toast.success("Switched to recommended board", { description: recommended.label }); }}
+                    className="rounded-md bg-[var(--accent-500)] px-2 py-0.5 text-[11px] font-semibold text-white hover:opacity-90"
+                  >
+                    Use recommended
+                  </button>
+                )}
+              </span>
+            </div>
+          )}
+
           <div className="mt-5">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Waste %</p>
+              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Handling waste %</p>
               <span className="font-mono-num rounded-md bg-[var(--accent-500)]/10 px-2 py-0.5 text-[12px] font-semibold text-[var(--accent-500)]">{waste}%</span>
             </div>
             <input type="range" min={0} max={20} value={waste} onChange={e => setWaste(+e.target.value)} className="w-full accent-[var(--accent-500)]" />
+            <p className="mt-1 text-[11px] text-[var(--ink-500)]">Adds on top of cut waste — covers damage, mistakes and offcuts that can't be reused.</p>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2">
@@ -736,4 +794,56 @@ function compareNum(a: number, b: number, higherBetter: boolean): "left" | "righ
   if (b === 0) return "left";
   if (higherBetter) return a > b ? "left" : "right";
   return a < b ? "left" : "right";
+}
+
+// =============================================================================
+// Board sizing — picks the smallest board ≥ wall height to minimise off-cut waste.
+// Boards are stocked at 1200 mm wide × {1800, 2400, 3000, 3600} mm long.
+// Vertical orientation: board length must cover wall height.
+// =============================================================================
+const BOARD_LIBRARY: { label: string; width: number; height: number }[] = [
+  { label: "900 × 1800",  width:  900, height: 1800 },
+  { label: "1200 × 2400", width: 1200, height: 2400 },
+  { label: "1200 × 3000", width: 1200, height: 3000 },
+  { label: "1200 × 3600", width: 1200, height: 3600 },
+];
+
+export function recommendBoard(wallHeightMm: number): {
+  label: string;
+  height: number;
+  reason: string;
+  needsHorizontalJoint: boolean;
+} {
+  if (!wallHeightMm || wallHeightMm <= 0) {
+    return { label: "1200 × 2400", height: 2400, reason: "Default size", needsHorizontalJoint: false };
+  }
+  const single = BOARD_LIBRARY.find(b => b.height >= wallHeightMm);
+  if (single) {
+    const offcut = single.height - wallHeightMm;
+    return {
+      label: single.label,
+      height: single.height,
+      reason: `Single board covers ${wallHeightMm} mm with ${offcut} mm off-cut`,
+      needsHorizontalJoint: false,
+    };
+  }
+  // Wall taller than tallest board → use tallest + horizontal joint.
+  const tallest = BOARD_LIBRARY[BOARD_LIBRARY.length - 1];
+  return {
+    label: tallest.label,
+    height: tallest.height,
+    reason: `Wall exceeds ${tallest.height} mm — adds horizontal joint`,
+    needsHorizontalJoint: true,
+  };
+}
+
+export function boardOffcutWaste(wallHeightMm: number, boardLabel: string): number {
+  const board = BOARD_LIBRARY.find(b => b.label === boardLabel);
+  if (!board || !wallHeightMm) return 0;
+  if (wallHeightMm > board.height) {
+    // Two boards needed — second board's offcut.
+    const remainder = wallHeightMm - board.height;
+    return Math.round((1 - remainder / board.height) * 100);
+  }
+  return Math.round(((board.height - wallHeightMm) / board.height) * 100);
 }
