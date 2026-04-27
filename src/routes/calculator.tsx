@@ -255,6 +255,7 @@ function SingleView({
   activeCode, setActiveCode,
   length, setLength, height, setHeight, waste, setWaste,
   boardSize, setBoardSize,
+  reuseOffcuts, setReuseOffcuts,
   area, wasteFactor, navigate,
 }: {
   activeCode: string; setActiveCode: (v: string) => void;
@@ -262,6 +263,7 @@ function SingleView({
   height: string; setHeight: (v: string) => void;
   waste: number;  setWaste: (v: number) => void;
   boardSize: string; setBoardSize: (v: string) => void;
+  reuseOffcuts: boolean; setReuseOffcuts: (v: boolean) => void;
   area: number;   wasteFactor: number;
   navigate: ReturnType<typeof useNavigate>;
 }) {
@@ -273,10 +275,13 @@ function SingleView({
   // Recommendation: pick the smallest board ≥ wall height to minimise off-cuts.
   // Wall height in mm; board catalogue (W × H, mm).
   const heightMm = Math.round((+height || 0) * 1000);
+  const lengthMm = Math.round((+length || 0) * 1000);
   const availableBoards = getAvailableBoards(sys.availableBoards);
-  const recommended = recommendBoard(heightMm, sys.availableBoards);
+  const recommended = recommendBoardSmart(heightMm, lengthMm, sys.availableBoards, reuseOffcuts);
   const effectiveBoard = boardSize === "auto" ? recommended.label : boardSize;
-  const cutWastePct = boardOffcutWaste(heightMm, effectiveBoard);
+  const cutWastePct = reuseOffcuts
+    ? boardNetWasteWithReuse(heightMm, lengthMm, effectiveBoard)
+    : boardOffcutWaste(heightMm, effectiveBoard);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
