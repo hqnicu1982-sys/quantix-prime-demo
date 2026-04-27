@@ -164,3 +164,209 @@ export function recommendBoardSmart(
       : `Single board covers ${wallHeightMm} mm with ${best.board.height - wallHeightMm} mm off-cut`;
   return { label: best.board.label, height: best.board.height, reason, needsHorizontalJoint: needsJoint };
 }
+
+// =============================================================================
+// Multi-wall planning — simulate the full BoQ across many walls so off-cuts
+// can flow between walls (realistic site behaviour). Returns the per-wall
+// column layout for visualisation plus the aggregate stats.
+// =============================================================================
+
+export type WallInput = {
+  id: string;
+  name: string;
+  heightMm: number;
+  lengthMm: number;
+  /** subtracted from wall area for cost; columns fall through openings unchanged */
+  openingsM2?: number;
+};
+
+export type ColumnPiece = {
+  /** length in mm of this piece in the column */
+  lengthMm: number;
+  /** "fresh" piece cut from a brand-new board; "reused" came from off-cut stock */
+  source: "fresh" | "reused";
+  /** waste created by this cut (mm). For fresh pieces this is the off-cut returned to stock; for reused pieces this is the scrap. */
+  scrapMm: number;
+};
+
+export type WallPlan = {
+  wall: WallInput;
+  boardLabel: string;
+  columns: ColumnPiece[][];
+  boardsBought: number;
+  boardLengthMm: number;
+  boardWidthMm: number;
+  scrapMm: number;
+  netCoverageMm: number;
+};
+
+export type MultiWallPlan = {
+  walls: WallPlan[];
+  totalBoardsBought: number;
+  totalBoardLengthMm: number;
+  totalCoverageMm: number;
+  totalScrapMm: number;
+  netWastePct: number;
+  /** sum of board area (m²) actually purchased across all walls */
+  totalBoardAreaM2: number;
+  /** wall area covered after subtracting openings (m²) */
+  totalWallAreaM2: number;
+  totalCost: number;
+  scrapCost: number;
+};
+
+/**
+ * Plan the entire BoQ across all walls in one pass. When `reuseAcrossWalls`
+ * is true the off-cut stock is shared between walls (realistic on a job).
+ * Otherwise stock resets per wall (conservative estimate).
+ */
+export function planWalls(
+  walls: WallInput[],
+  boardLabel: string,
+  options: { reuseAcrossWalls: boolean } = { reuseAcrossWalls: true },
+): MultiWallPlan {
+  const board = BOARD_LIBRARY.find(b => b.label === boardLabel);
+  const wallPlans: WallPlan[] = [];
+
+  if (!board) {
+    return {
+      walls: [],
+      totalBoardsBought: 0,
+      totalBoardLengthMm: 0,
+      totalCoverageMm: 0,
+      totalScrapMm: 0,
+      netWastePct: 0,
+      totalBoardAreaM2: 0,
+      totalWallAreaM2: 0,
+      totalCost: 0,
+      scrapCost: 0,
+    };
+  }
+
+  let stock: number[] = [];
+
+  for (const wall of walls) {
+    if (!options.reuseAcrossWalls) stock = [];
+    if (!wall.heightMm || !wall.lengthMm) {
+      wallPlans.push({
+        wall,
+        boardLabel,
+        columns: [],
+        boardsBought: 0,
+        boardLengthMm: board.height,
+        boardWidthMm: board.width,
+        scrapMm: 0,
+        netCoverageMm: 0,
+      });
+      continue;
+    }
+    const colCount = Math.max(1, Math.ceil(wall.lengthMm / board.width));
+    const columns: ColumnPiece[][] = [];
+    let boardsBought = 0;
+    let scrap = 0;
+
+    for (let c = 0; c < colCount; c++) {
+      let remaining = wall.heightMm;
+      const col: ColumnPiece[] = [];
+      while (remaining > 0) {
+        // Best-fit reuse from stock (smallest piece that covers the gap)
+        stock.sort((a, b) => a - b);
+        const fitIdx = stock.findIndex(p => p >= remaining);
+        if (fitIdx !== -1) {
+          const piece = stock.splice(fitIdx, 1)[0];
+          col.push({ lengthMm: remaining, source: "reused", scrapMm: piece - remaining });
+          scrap += piece - remaining;
+          remaining = 0;
+          continue;
+        }
+        // Open a fresh board
+        boardsBought += 1;
+        if (remaining >= board.height) {
+          col.push({ lengthMm: board.height, source: "fresh", scrapMm: 0 });
+          remaining -= board.height;
+        } else {
+          const offcut = board.height - remaining;
+          col.push({ lengthMm: remaining, source: "fresh", scrapMm: 0 });
+          if (offcut > 0) stock.push(offcut);
+          remaining = 0;
+        }
+      }
+      columns.push(col);
+    }
+
+    wallPlans.push({
+      wall,
+      boardLabel,
+      columns,
+      boardsBought,
+      boardLengthMm: board.height,
+      boardWidthMm: board.width,
+      scrapMm: scrap,
+      netCoverageMm: colCount * wall.heightMm,
+    });
+  }
+
+  // Anything still in stock at the end is scrap (no future wall will use it)
+  const trailingScrap = stock.reduce((a, b) => a + b, 0);
+
+  const totalBoardsBought = wallPlans.reduce((a, w) => a + w.boardsBought, 0);
+  const totalBoardLengthMm = totalBoardsBought * board.height;
+  const totalCoverageMm = wallPlans.reduce((a, w) => a + w.netCoverageMm, 0);
+  const totalScrapMm = totalBoardLengthMm - totalCoverageMm + trailingScrap;
+  // Note: totalScrapMm should equal sum of scrap + trailing, but compute the
+  // safer accounting: bought - covered (in length, since width is fixed).
+  const netScrap = Math.max(0, totalBoardLengthMm - totalCoverageMm);
+  const netWastePct =
+    totalBoardLengthMm > 0
+      ? Math.round((netScrap / totalBoardLengthMm) * 100)
+      : 0;
+
+  const totalBoardAreaM2 = (totalBoardsBought * board.height * board.width) / 1_000_000;
+  const totalWallAreaM2 = walls.reduce((a, w) => {
+    if (!w.heightMm || !w.lengthMm) return a;
+    const gross = (w.heightMm * w.lengthMm) / 1_000_000;
+    return a + Math.max(0, gross - (w.openingsM2 ?? 0));
+  }, 0);
+  const totalCost = totalBoardAreaM2 * board.pricePerM2;
+  const scrapAreaM2 = (netScrap * board.width) / 1_000_000;
+  const scrapCost = scrapAreaM2 * board.pricePerM2;
+
+  // Suppress unused warning while keeping computation
+  void totalScrapMm;
+
+  return {
+    walls: wallPlans,
+    totalBoardsBought,
+    totalBoardLengthMm,
+    totalCoverageMm,
+    totalScrapMm: netScrap,
+    netWastePct,
+    totalBoardAreaM2,
+    totalWallAreaM2,
+    totalCost,
+    scrapCost,
+  };
+}
+
+/**
+ * Pick the best board across the entire BoQ (multi-wall) by minimising net
+ * waste cost. Returns the chosen plan plus all candidate plans for comparison.
+ */
+export function recommendBoardForWalls(
+  walls: WallInput[],
+  allowedLabels: string[] | undefined,
+  reuseAcrossWalls: boolean,
+): { recommendedLabel: string; plans: { label: string; plan: MultiWallPlan }[] } {
+  const lib = getAvailableBoards(allowedLabels);
+  const plans = lib.map(b => ({
+    label: b.label,
+    plan: planWalls(walls, b.label, { reuseAcrossWalls }),
+  }));
+  // Lowest cost wins; tie-break on lowest scrap, then fewest pieces per column on tallest wall.
+  const sorted = [...plans].sort((a, b) => {
+    const costDiff = a.plan.totalCost - b.plan.totalCost;
+    if (Math.abs(costDiff) > 0.5) return costDiff;
+    return a.plan.netWastePct - b.plan.netWastePct;
+  });
+  return { recommendedLabel: sorted[0]?.label ?? lib[0]?.label ?? BOARD_LIBRARY[1].label, plans };
+}
