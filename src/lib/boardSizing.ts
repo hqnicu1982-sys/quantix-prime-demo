@@ -128,12 +128,9 @@ export function boardNetWasteWithReuse(
     }
   }
 
-  const bought = boardsBought * board.height * columns; // total board length across columns
-  // Above is wrong dimensionally — we summed per column. Fix: total length bought = boardsBought * board.height.
   const totalBoardLength = boardsBought * board.height;
-  const wallLength = columns * wallHeightMm;
-  const waste = Math.max(0, totalBoardLength - wallLength);
-  void bought;
+  const wallLengthCovered = columns * wallHeightMm;
+  const waste = Math.max(0, totalBoardLength - wallLengthCovered);
   return Math.round((waste / Math.max(1, totalBoardLength)) * 100);
 }
 
