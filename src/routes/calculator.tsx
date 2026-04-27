@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, Outlet, useChildMatches } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,14 @@ import { fireTier, acousticTier, heightTier, bestTier, tierColorVar, type Tier }
 import { TierMetric as TierChip } from "@/components/TierMetric";
 import { validateGeometry, hasErrors } from "@/lib/calcValidation";
 
-export const Route = createFileRoute("/calculator")({ component: Calculator });
+export const Route = createFileRoute("/calculator")({ component: CalculatorLayout });
+
+function CalculatorLayout() {
+  // If a child route (e.g. /calculator/advanced) is active, render only the child.
+  const childMatches = useChildMatches();
+  if (childMatches.length > 0) return <Outlet />;
+  return <Calculator />;
+}
 
 // =============================================================================
 // SYSTEM LIBRARY (structured for compare)
