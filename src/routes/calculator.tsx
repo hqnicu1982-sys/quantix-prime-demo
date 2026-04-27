@@ -758,6 +758,17 @@ function SectionTitle({ n, label }: { n: string; label: string }) {
   );
 }
 
+function TierMetric({ icon, label, value, tier }: { icon: React.ReactNode; label: string; value: string; tier: Tier }) {
+  return (
+    <span className="tier-chip" data-tier={tier}>
+      <span className="tier-dot" />
+      {icon}
+      <span className="opacity-80">{label}</span>
+      <span className="font-bold">{value}</span>
+    </span>
+  );
+}
+
 function Field({ label, value, onChange, placeholder }: { label: string; value?: string; onChange?: (v: string) => void; placeholder?: string }) {
   return (
     <div>
