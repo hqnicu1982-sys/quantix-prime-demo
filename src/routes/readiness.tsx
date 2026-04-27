@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { readinessRows } from "@/lib/mockData";
 import { AlertCircle, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { ProjectBanner } from "@/components/ProjectBanner";
 
 export const Route = createFileRoute("/readiness")({ component: Readiness });
 
@@ -16,6 +17,7 @@ function Readiness() {
       title="Material Readiness"
       subtitle={`2-3 week look-ahead · ${readinessRows.length} upcoming tasks · ${ready} green · ${atRisk} needs attention`}
     >
+      <ProjectBanner scope="Material Readiness" />
       <div className="flex justify-center">
         <Card className="flex items-center gap-6 p-6">
           <div className="relative h-28 w-28">

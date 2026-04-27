@@ -9,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, Cell, ResponsiveContainer, AreaChart, Area
 import { Calendar, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { ProjectBanner } from "@/components/ProjectBanner";
 
 export const Route = createFileRoute("/financial")({
   head: () => ({ meta: [{ title: "Financial Dashboard — Quantix Prime" }] }),
@@ -41,6 +42,7 @@ function Financial() {
         </>
       }
     >
+      <ProjectBanner scope="Financial" />
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Revenue MTD" value={fmtMoney(financialKpi.revenueMtd)} delta={`vs target £${(financialKpi.revenueTarget / 1000).toFixed(0)}k (+${financialKpi.revenueDeltaPct}%)`} tone="success" trend="up" />
         <Kpi label="COGS MTD" value={fmtMoney(financialKpi.cogsMtd)} delta={`${financialKpi.cogsRevenuePct}% of revenue (vs ${financialKpi.cogsBudgetPct}% budget)`} tone="danger" />

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { dailyReport } from "@/lib/mockData";
 import { Download, Send, Cloud, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { ProjectBanner } from "@/components/ProjectBanner";
 
 export const Route = createFileRoute("/daily-report")({
   head: () => ({ meta: [{ title: "Daily Site Report — Quantix Prime" }] }),
@@ -23,6 +24,7 @@ function DailyReport() {
         </>
       }
     >
+      <ProjectBanner scope="Daily Report" />
       {/* Site header */}
       <Card className="overflow-hidden bg-[var(--navy-950)] text-white">
         <div className="grid gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4">
