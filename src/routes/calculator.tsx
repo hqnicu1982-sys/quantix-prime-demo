@@ -16,6 +16,8 @@ import { TierMetric as TierChip } from "@/components/TierMetric";
 import { validateGeometry, hasErrors } from "@/lib/calcValidation";
 import { ColumnDiagram } from "@/components/calculator/ColumnDiagram";
 import { WallEditor } from "@/components/calculator/WallEditor";
+import { BrandSelector } from "@/components/calculator/BrandSelector";
+import { getBrand, readActiveBrand, subscribeBrand, type BrandId } from "@/lib/systemBrands";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
