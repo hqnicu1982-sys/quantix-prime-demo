@@ -117,6 +117,9 @@ function Calculator() {
   // Active system shown in SingleView (By code / Recommend)
   const [activeCode, setActiveCode] = useState<string>(LIBRARY[0].code);
 
+  // Board sizing — "auto" lets us derive the best board from height to minimise waste.
+  const [boardSize, setBoardSize] = useState<string>("auto");
+
   // On mount: if URL says ?mode=compare or the tray has slots, switch to compare
   // and hydrate left/right from the tray. Then keep them in sync with the tray.
   useEffect(() => {
@@ -218,6 +221,7 @@ function Calculator() {
             length={length} setLength={setLength}
             height={height} setHeight={setHeight}
             waste={waste}   setWaste={setWaste}
+            boardSize={boardSize} setBoardSize={setBoardSize}
             area={area} wasteFactor={wasteFactor}
             navigate={navigate}
           />
