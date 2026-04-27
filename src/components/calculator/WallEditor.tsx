@@ -94,8 +94,13 @@ export function WallEditor({
                     <input
                       type="number"
                       step="0.5"
-                      value={(w.openingsM2 ?? 0).toString()}
-                      onChange={e => update(w.id, { openingsM2: Math.max(0, +e.target.value || 0) })}
+                      min="0"
+                      value={w.openingsM2 ?? 0}
+                      onFocus={e => e.target.select()}
+                      onChange={e => {
+                        const v = e.target.value;
+                        update(w.id, { openingsM2: v === "" ? 0 : Math.max(0, +v) });
+                      }}
                       className="glass-input font-mono-num w-full rounded-md px-2 py-1 text-right text-[12.5px]"
                     />
                   </td>
