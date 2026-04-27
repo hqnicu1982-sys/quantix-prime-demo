@@ -326,6 +326,7 @@ function SingleView({
   // ─── Plan all walls (drawer): multi-wall, off-cut re-use cross-wall, cost ──
   const [planOpen, setPlanOpen] = useState(false);
   const [extraWalls, setExtraWalls] = useState<WallInput[]>([]);
+  const [currentWallOpenings, setCurrentWallOpenings] = useState(0);
   const [reuseAcrossWalls, setReuseAcrossWalls] = useState(true);
 
   // Always include the current wall as "Wall 1" — synced from the main inputs.
@@ -335,10 +336,10 @@ function SingleView({
       name: "Wall 1 (current)",
       heightMm,
       lengthMm,
-      openingsM2: 0,
+      openingsM2: currentWallOpenings,
     };
     return [w1, ...extraWalls];
-  }, [heightMm, lengthMm, extraWalls]);
+  }, [heightMm, lengthMm, currentWallOpenings, extraWalls]);
 
   const projectPlan = useMemo(
     () =>
@@ -651,7 +652,12 @@ function SingleView({
                     <WallEditor
                       walls={allWalls}
                       onChange={(next) => {
-                        // Wall 1 is locked (synced to main inputs); only persist extras.
+                        const current = next.find(w => w.id === "wall-current");
+                        if (current) {
+                          setLength((current.lengthMm / 1000).toString());
+                          setHeight((current.heightMm / 1000).toString());
+                          setCurrentWallOpenings(current.openingsM2 ?? 0);
+                        }
                         setExtraWalls(next.filter(w => w.id !== "wall-current"));
                       }}
                     />
