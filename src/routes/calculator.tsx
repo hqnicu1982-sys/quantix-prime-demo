@@ -131,6 +131,10 @@ function Calculator() {
 
   // Board sizing — "auto" lets us derive the best board from height to minimise waste.
   const [boardSize, setBoardSize] = useState<string>("auto");
+  // When true, the recommender and waste table assume off-cuts that still carry a
+  // factory edge will be re-used in subsequent columns / walls. Reflects realistic
+  // site practice where large off-cuts top a column near the ceiling/skirting.
+  const [reuseOffcuts, setReuseOffcuts] = useState<boolean>(false);
 
   // On mount: if URL says ?mode=compare or the tray has slots, switch to compare
   // and hydrate left/right from the tray. Then keep them in sync with the tray.
@@ -234,6 +238,7 @@ function Calculator() {
             height={height} setHeight={setHeight}
             waste={waste}   setWaste={setWaste}
             boardSize={boardSize} setBoardSize={setBoardSize}
+            reuseOffcuts={reuseOffcuts} setReuseOffcuts={setReuseOffcuts}
             area={area} wasteFactor={wasteFactor}
             navigate={navigate}
           />
