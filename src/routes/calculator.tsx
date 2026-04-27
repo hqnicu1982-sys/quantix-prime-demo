@@ -191,21 +191,10 @@ function Calculator() {
           </div>
 
           {/* Mode toggle */}
-          <div className="flex items-center gap-2">
-            <div className="glass-card inline-flex rounded-full p-1">
-              <ModeBtn active={mode === "code"}      onClick={() => setMode("code")}      icon={<Search className="h-3.5 w-3.5" />}      label="By code" />
-              <ModeBtn active={mode === "recommend"} onClick={() => setMode("recommend")} icon={<Sparkles className="h-3.5 w-3.5" />}    label="Recommend" />
-              <ModeBtn active={mode === "compare"}   onClick={() => setMode("compare")}   icon={<GitCompare className="h-3.5 w-3.5" />}  label="Compare" />
-            </div>
-            <Link
-              to="/calculator/advanced"
-              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ink-200)] bg-[var(--card)] px-3.5 py-2 text-[12px] font-semibold text-[var(--ink-700)] transition-colors hover:border-[var(--accent-500)] hover:text-[var(--accent-500)]"
-              title="Multi-wall planning, off-cut re-use and cutting strategy"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              Advanced
-              <ArrowRight className="h-3 w-3" />
-            </Link>
+          <div className="glass-card inline-flex rounded-full p-1">
+            <ModeBtn active={mode === "code"}      onClick={() => setMode("code")}      icon={<Search className="h-3.5 w-3.5" />}      label="By code" />
+            <ModeBtn active={mode === "recommend"} onClick={() => setMode("recommend")} icon={<Sparkles className="h-3.5 w-3.5" />}    label="Recommend" />
+            <ModeBtn active={mode === "compare"}   onClick={() => setMode("compare")}   icon={<GitCompare className="h-3.5 w-3.5" />}  label="Compare" />
           </div>
         </header>
 
