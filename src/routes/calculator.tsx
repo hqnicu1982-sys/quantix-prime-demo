@@ -328,8 +328,8 @@ function SingleView({
         <section className="glass-card rounded-2xl p-6">
           <SectionTitle n="02" label="Geometry & finish" />
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <Field label="Length" unit="m" value={length} onChange={setLength} error={errs.length} hint="Wall length, e.g. 12.5" />
-            <Field label="Height" unit="m" value={height} onChange={setHeight} error={errs.height} hint="Floor to ceiling, 1.5–12 m" />
+            <Field label="Length" unit="m" value={length} onChange={setLength} error={errs.length} hint="Required — wall length, e.g. 12.5" />
+            <Field label="Height" unit="m" value={height} onChange={setHeight} error={errs.height} hint="Required — floor to ceiling, e.g. 3.0" />
             <Select label="Stud Centres" options={["400 mm","600 mm","Other"]} defaultValue="600 mm" />
             <div>
               <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Board Size</p>

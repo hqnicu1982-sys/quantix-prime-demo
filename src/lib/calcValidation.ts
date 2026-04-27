@@ -2,23 +2,22 @@ import { z } from "zod";
 
 /**
  * Validation rules for calculator geometry.
- * Length / Height: meters, accepts integers or decimals.
+ * Length / Height: meters, accepts any positive number (no upper limit) —
+ * we only require the user to enter a value so the BoQ can be computed.
  * Waste: integer percent 0–20 (UI is a slider, but we still guard the value).
  */
 const numericString = (label: string) =>
   z
     .string()
     .trim()
-    .min(1, { message: `${label} is required` })
+    .min(1, { message: `Enter ${label.toLowerCase()} to calculate BoQ` })
     .regex(/^\d+(\.\d+)?$/, { message: `${label} must be a number` });
 
 export const lengthSchema = numericString("Length")
-  .refine((v) => +v > 0,    { message: "Length must be greater than 0 m" })
-  .refine((v) => +v <= 200, { message: "Length is unrealistically large (max 200 m)" });
+  .refine((v) => +v > 0, { message: "Length must be greater than 0 m" });
 
 export const heightSchema = numericString("Height")
-  .refine((v) => +v >= 1.5, { message: "Height must be at least 1.5 m" })
-  .refine((v) => +v <= 12,  { message: "Height exceeds the tallest BG system (max 12 m)" });
+  .refine((v) => +v > 0, { message: "Height must be greater than 0 m" });
 
 export const wasteSchema = z
   .number({ message: "Waste must be a number" })
