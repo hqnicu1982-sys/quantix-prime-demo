@@ -231,16 +231,18 @@ function Calculator() {
 // SINGLE-SYSTEM VIEW (existing layout, scaled to area)
 // =============================================================================
 function SingleView({
+  activeCode, setActiveCode,
   length, setLength, height, setHeight, waste, setWaste,
   area, wasteFactor, navigate,
 }: {
+  activeCode: string; setActiveCode: (v: string) => void;
   length: string; setLength: (v: string) => void;
   height: string; setHeight: (v: string) => void;
   waste: number;  setWaste: (v: number) => void;
   area: number;   wasteFactor: number;
   navigate: ReturnType<typeof useNavigate>;
 }) {
-  const sys = LIBRARY[0];
+  const sys = LIBRARY.find(s => s.code === activeCode) ?? LIBRARY[0];
   const totals = scaledTotals(sys, area, wasteFactor);
 
   return (
