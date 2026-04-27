@@ -1,210 +1,197 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { Card, CardHead, Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { catalogSystems, catalogCategories } from "@/lib/mockData";
-import { Sparkles, Calculator, ArrowUpRight, Flame, Volume2, Ruler, Search } from "lucide-react";
+import { Check, Sparkles, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/catalog")({ component: Catalog });
 
-const tint: Record<string, { bg: string; ink: string; chip: string }> = {
-  blue:   { bg: "bg-[var(--accent-100)]",                ink: "text-[var(--accent-500)]", chip: "bg-[var(--accent-500)]" },
-  purple: { bg: "bg-purple-100",                         ink: "text-purple-700",          chip: "bg-purple-500" },
-  green:  { bg: "bg-emerald-50",                         ink: "text-emerald-700",         chip: "bg-[var(--green-600)]" },
-  amber:  { bg: "bg-amber-50",                           ink: "text-amber-700",           chip: "bg-[var(--amber-500)]" },
-  red:    { bg: "bg-rose-50",                            ink: "text-rose-700",            chip: "bg-[var(--red-500)]" },
-  navy:   { bg: "bg-slate-100",                          ink: "text-[var(--navy-900)]",   chip: "bg-[var(--navy-900)]" },
+type Family = {
+  id: string;
+  name: string;
+  blurb: string;
+  status: "live" | "beta" | "roadmap";
 };
 
-// Bento sizing — feature first, then varied tiles
-const tileClass = [
-  "md:col-span-4 md:row-span-2", // hero / feature
-  "md:col-span-2",
-  "md:col-span-2",
-  "md:col-span-3",
-  "md:col-span-3",
-  "md:col-span-4",
+const families: Family[] = [
+  { id: "walls",    name: "Partitions & Walls", blurb: "Internal partition systems.",      status: "live" },
+  { id: "lining",   name: "Wall Linings",       blurb: "Independent & direct linings.",   status: "live" },
+  { id: "shaft",    name: "Shaftwalls",         blurb: "Fire rated systems.",              status: "live" },
+  { id: "steel",    name: "Steel Protection",   blurb: "Board & coating fire protection.", status: "roadmap" },
+  { id: "ceilings", name: "Ceilings",           blurb: "MF ceilings and horizontal shaftwalls.", status: "beta" },
+  { id: "floors",   name: "Floors",             blurb: "Floating and acoustic floors.",   status: "roadmap" },
+  { id: "external", name: "External Walls",     blurb: "Lightweight external wall systems.", status: "roadmap" },
+  { id: "plasters", name: "Plasters",           blurb: "Skim & undercoat plaster systems.", status: "roadmap" },
+];
+
+// Pretend matched results when user clicks Recommend
+const matches = [
+  { code: "GIWL-146-I-80-1L-DL15 (B)", name: "Independent lining · DuraLine 15", height: "7.2 m", fire: "—",     rw: "—",   centres: "600 mm" },
+  { code: "GIWL-92-C-50-2L-WB12.5",    name: "Independent lining · 2× WallBoard 12.5", height: "5.4 m", fire: "60 min", rw: "44 dB", centres: "600 mm" },
+  { code: "GDWL-DL15-1L",              name: "Direct lining · DuraLine 15 (dabs)", height: "3.6 m", fire: "—",     rw: "—",   centres: "—" },
 ];
 
 function Catalog() {
-  const [active, setActive] = useState("all");
-  const [query, setQuery] = useState("");
   const navigate = useNavigate();
+  const [picked, setPicked] = useState<string>("walls");
+  const [showResults, setShowResults] = useState(false);
 
-  const filtered = catalogSystems.filter((s) => {
-    const matchesCat = active === "all" || s.category === active;
-    const matchesQ = !query || `${s.name} ${s.code}`.toLowerCase().includes(query.toLowerCase());
-    return matchesCat && matchesQ;
-  });
+  const statusBadge = (s: Family["status"]) => {
+    const map = {
+      live:    { t: "LIVE",    cls: "bg-[var(--green-600)]/15 text-[var(--green-600)]" },
+      beta:    { t: "BETA",    cls: "bg-[var(--amber-500)]/15 text-[var(--amber-500)]" },
+      roadmap: { t: "ROADMAP", cls: "bg-[var(--ink-200)] text-[var(--ink-700)]" },
+    }[s];
+    return <span className={`rounded-full px-2 py-0.5 text-[9.5px] font-bold tracking-wider ${map.cls}`}>{map.t}</span>;
+  };
 
   return (
-    <div className="space-y-10">
-      {/* Magazine masthead */}
-      <header className="grid grid-cols-1 items-end gap-6 border-b border-[var(--ink-200)] pb-8 md:grid-cols-[1fr_auto]">
-        <div>
-          <div className="font-mono-num flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-[var(--ink-500)]">
-            <span className="h-px w-8 bg-[var(--ink-500)]" />
-            Issue 04 · Spring 2026
-          </div>
-          <h1 className="font-display mt-4 text-[52px] font-semibold leading-[0.95] tracking-tight text-[var(--ink-900)] md:text-[72px]">
-            Catalogue of<br />
-            <span className="italic text-[var(--accent-500)]">build-ups</span> &amp; systems.
-          </h1>
-        </div>
-        <div className="flex flex-wrap items-end gap-3 md:flex-col md:items-end">
-          <p className="max-w-xs text-right text-[13px] leading-relaxed text-[var(--ink-700)]">
-            A curated mosaic of <strong className="text-[var(--ink-900)]">2,847</strong> drylining systems —
-            indexed, fire-rated, and priced for instant call-off.
-          </p>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => toast("AI recommendations", { description: "Tell us your fire/acoustic targets — we'll surface 3 systems" })}><Sparkles className="mr-1.5 h-3.5 w-3.5" /> Recommend</Button>
-            <Button size="sm" onClick={() => navigate({ to: "/calculator" })}><Calculator className="mr-1.5 h-3.5 w-3.5" /> Calculator</Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Sticky filter row */}
-      <div className="sticky top-0 z-10 -mx-6 flex flex-col gap-3 border-b border-[var(--ink-200)] bg-[var(--background)]/85 px-6 py-3 backdrop-blur md:-mx-8 md:flex-row md:items-center md:px-8">
-        <div className="flex flex-1 items-center gap-2 rounded-full border border-[var(--ink-200)] bg-card px-4 py-2">
-          <Search className="h-4 w-4 text-[var(--ink-500)]" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Find a system…"
-            className="w-full bg-transparent text-[13px] placeholder:text-[var(--ink-500)] focus:outline-none"
-          />
-        </div>
-        <div className="flex flex-wrap gap-1.5 overflow-x-auto">
-          {catalogCategories.slice(0, 7).map((c) => {
-            const isA = active === c.id;
+    <Section
+      title="Guided Selection"
+      subtitle="Select compatible BG systems for your project. Pick a family, set requirements, and we'll match the right systems."
+      right={
+        <Button size="sm" onClick={() => navigate({ to: "/calculator" })}>
+          Open calculator <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+        </Button>
+      }
+    >
+      {/* System type grid */}
+      <div>
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+          System type — choose which BG system family you want to work with
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {families.map(f => {
+            const isPicked = picked === f.id;
+            const disabled = f.status === "roadmap";
             return (
               <button
-                key={c.id}
-                onClick={() => setActive(c.id)}
-                className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-colors ${
-                  isA
-                    ? "bg-[var(--ink-900)] text-white"
-                    : "border border-[var(--ink-200)] bg-card text-[var(--ink-700)] hover:border-[var(--ink-900)]"
+                key={f.id}
+                disabled={disabled}
+                onClick={() => !disabled && setPicked(f.id)}
+                className={`group relative flex flex-col rounded-[12px] border p-4 text-left transition-all ${
+                  disabled
+                    ? "cursor-not-allowed border-[var(--ink-200)] bg-[var(--ink-50)] opacity-60"
+                    : isPicked
+                    ? "border-[var(--accent-500)] bg-[var(--accent-500)]/5 shadow-[0_4px_18px_-8px_rgba(37,99,235,0.4)]"
+                    : "border-[var(--ink-200)] bg-card hover:border-[var(--ink-900)]"
                 }`}
               >
-                {c.label}
-                <span className={`font-mono-num ml-1.5 text-[10.5px] ${isA ? "opacity-60" : "opacity-50"}`}>
-                  {c.count.toLocaleString()}
-                </span>
+                <div className="flex items-start justify-between">
+                  <span
+                    className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+                      isPicked
+                        ? "border-[var(--accent-500)] bg-[var(--accent-500)] text-white"
+                        : "border-[var(--ink-200)] bg-card"
+                    }`}
+                  >
+                    {isPicked && <Check className="h-3 w-3" />}
+                  </span>
+                  {statusBadge(f.status)}
+                </div>
+                <p className="mt-4 text-[15px] font-semibold leading-tight text-[var(--ink-900)]">{f.name}</p>
+                <p className="mt-1 text-[12px] text-[var(--ink-500)]">{f.blurb}</p>
+                <p className={`mt-4 text-[12px] font-semibold ${
+                  disabled ? "text-[var(--ink-500)]" : isPicked ? "text-[var(--accent-500)]" : "text-[var(--ink-700)] group-hover:text-[var(--accent-500)]"
+                }`}>
+                  {disabled ? "Coming soon" : `Select ${f.name}`}
+                </p>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Bento mosaic */}
-      <div className="grid auto-rows-[180px] grid-cols-1 gap-4 md:grid-cols-6">
-        {filtered.map((s, i) => {
-          const t = tint[s.iconColor];
-          const isFeature = i === 0;
-          const cls = tileClass[i % tileClass.length];
+      {/* Calculator inputs (filter the family) */}
+      <Card>
+        <CardHead title="Calculator inputs" subtitle="Filters are optional. Empty fields won't constrain results." />
+        <div className="space-y-4 p-5">
+          <div className="grid gap-3 md:grid-cols-4">
+            <ReqField label="Min height (m)" placeholder="e.g. 3.6" />
+            <ReqField label="Min Rw (dB)"    placeholder="e.g. 50" />
+            <ReqField label="Min Fire (min)" placeholder="e.g. 60" />
+            <ReqField label="Max thickness (mm)" placeholder="e.g. 150" />
+            <ReqSelect label="Duty rating" options={["Any","SD1","SD2","SD3","SD4"]} />
+            <ReqSelect label="Board type"  options={["Any","WallBoard","DuraLine","SoundBloc","FireLine","Glasroc F"]} />
+            <ReqSelect label="Stud size"   options={["Any","48","70","92","146"]} />
+            <div className="flex items-end">
+              <Button className="w-full" onClick={() => { setShowResults(true); toast.success("3 systems matched"); }}>
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Recommend systems
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
 
-          return (
-            <article
-              key={s.code}
-              className={`group relative flex flex-col justify-between overflow-hidden rounded-[18px] border border-[var(--ink-200)] p-6 transition-all hover:-translate-y-0.5 hover:border-[var(--ink-900)] hover:shadow-[0_10px_30px_-12px_rgba(15,40,71,0.18)] ${cls} ${
-                isFeature ? t.bg : "bg-card"
-              }`}
-            >
-              {/* Background giant numeral */}
-              <span
-                aria-hidden
-                className={`font-display pointer-events-none absolute -right-2 -top-6 select-none text-[140px] font-semibold leading-none tracking-tighter ${
-                  isFeature ? t.ink + " opacity-20" : "text-[var(--ink-50)]"
-                }`}
-              >
-                {String(i + 1).padStart(2, "0")}
-              </span>
-
-              {/* Header chip */}
-              <div className="relative flex items-start justify-between">
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider ${
-                  isFeature ? "bg-white/70 text-[var(--ink-900)]" : "bg-[var(--ink-50)] text-[var(--ink-700)]"
-                }`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${t.chip}`} />
-                  {s.badge}
-                </span>
-                <button className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
-                  isFeature
-                    ? "bg-white text-[var(--ink-900)] hover:bg-[var(--ink-900)] hover:text-white"
-                    : "border border-[var(--ink-200)] text-[var(--ink-500)] group-hover:border-[var(--ink-900)] group-hover:bg-[var(--ink-900)] group-hover:text-white"
-                }`} onClick={() => toast(`${s.name}`, { description: `${s.code} · opening system spec sheet` })}>
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="relative">
-                <h3 className={`font-display font-semibold leading-[1.05] tracking-tight ${
-                  isFeature ? "text-[42px] md:text-[52px]" : "text-[24px]"
-                } text-[var(--ink-900)]`}>
-                  {s.name}
-                </h3>
-                <p className="font-mono-num mt-1.5 text-[11px] uppercase tracking-wider text-[var(--ink-500)]">
-                  {s.code}
-                </p>
-
-                {/* Spec strip */}
-                <div className={`mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] ${
-                  isFeature ? "text-[var(--ink-700)]" : "text-[var(--ink-700)]"
-                }`}>
-                  <Spec icon={<Flame className="h-3 w-3" />} v={s.fire} />
-                  <Spec icon={<Volume2 className="h-3 w-3" />} v={s.acoustic} />
-                  <Spec icon={<Ruler className="h-3 w-3" />} v={s.spec} label={s.spec_label} />
+      {/* Results */}
+      <Card>
+        <CardHead
+          title={showResults ? `${matches.length} matching systems` : "No matching systems"}
+          subtitle={showResults ? "Sorted by best match — load any to the calculator." : "Adjust your filters and try again."}
+          right={
+            <select className="rounded-md border border-[var(--ink-200)] bg-card px-3 py-1.5 text-[12px] font-medium">
+              <option>Best match</option>
+              <option>Lowest cost</option>
+              <option>Tallest height</option>
+            </select>
+          }
+        />
+        {showResults ? (
+          <div className="divide-y divide-[var(--ink-200)]">
+            {matches.map(m => (
+              <div key={m.code} className="flex flex-wrap items-center gap-4 px-5 py-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-mono-num text-[12px] font-semibold text-[var(--accent-500)]">{m.code}</p>
+                  <p className="mt-0.5 text-[13px] font-semibold text-[var(--ink-900)]">{m.name}</p>
                 </div>
-
-                {/* Footer */}
-                <div className={`mt-4 flex items-end justify-between border-t pt-3 ${
-                  isFeature ? "border-[var(--ink-900)]/15" : "border-[var(--ink-200)]"
-                }`}>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">From</p>
-                    <p className={`font-mono-num font-semibold leading-none tracking-tight text-[var(--ink-900)] ${
-                      isFeature ? "text-[28px]" : "text-[18px]"
-                    }`}>
-                      £{s.price.toFixed(2)}
-                      <span className="ml-1 text-[11px] font-normal text-[var(--ink-500)]">/m²</span>
-                    </p>
-                  </div>
-                  <span className={`font-mono-num text-[10.5px] uppercase tracking-wider ${t.ink}`}>
-                    {s.category}
-                  </span>
+                <div className="flex flex-wrap gap-x-5 gap-y-1 text-[11.5px]">
+                  <Stat k="Height" v={m.height} />
+                  <Stat k="Fire"   v={m.fire} />
+                  <Stat k="Rw"     v={m.rw} />
+                  <Stat k="Centres" v={m.centres} />
                 </div>
+                <Button size="sm" variant="outline" onClick={() => { toast.success("Loaded into calculator", { description: m.code }); navigate({ to: "/calculator" }); }}>
+                  Load <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                </Button>
               </div>
-            </article>
-          );
-        })}
-
-        {filtered.length === 0 && (
-          <div className="md:col-span-6 rounded-[18px] border border-dashed border-[var(--ink-200)] p-16 text-center">
-            <p className="font-display text-[22px] text-[var(--ink-700)]">Nothing matches.</p>
-            <p className="mt-1 text-[12.5px] text-[var(--ink-500)]">Try clearing the filter or searching another code.</p>
+            ))}
+          </div>
+        ) : (
+          <div className="px-5 py-12 text-center">
+            <p className="text-[13px] text-[var(--ink-500)]">No systems match the current filters.</p>
           </div>
         )}
-      </div>
+      </Card>
+    </Section>
+  );
+}
 
-      {/* Footer ribbon */}
-      <footer className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-dashed border-[var(--ink-200)] bg-card px-6 py-5">
-        <p className="font-mono-num text-[11px] uppercase tracking-[0.18em] text-[var(--ink-500)]">
-          End of issue · {filtered.length} of {catalogSystems.length} demo systems shown
-        </p>
-        <Button variant="outline" size="sm" onClick={() => toast("Full catalogue", { description: "2,847 systems · loading paged view" })}>Browse all 2,847 →</Button>
-      </footer>
+function Stat({ k, v }: { k: string; v: string }) {
+  return (
+    <span className="inline-flex items-baseline gap-1">
+      <span className="text-[var(--ink-500)]">{k}</span>
+      <span className="font-mono-num font-semibold text-[var(--ink-900)]">{v}</span>
+    </span>
+  );
+}
+
+function ReqField({ label, placeholder }: { label: string; placeholder: string }) {
+  return (
+    <div>
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
+      <input placeholder={placeholder} className="w-full rounded-md border border-[var(--ink-200)] bg-card px-3 py-2 text-[13px] placeholder:text-[var(--ink-500)] focus:border-[var(--accent-500)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-500)]/20" />
     </div>
   );
 }
 
-function Spec({ icon, v, label }: { icon: React.ReactNode; v: string; label?: string }) {
+function ReqSelect({ label, options }: { label: string; options: string[] }) {
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="text-[var(--ink-500)]">{icon}</span>
-      {label && <span className="text-[var(--ink-500)]">{label}</span>}
-      <span className="font-mono-num font-semibold text-[var(--ink-900)]">{v}</span>
-    </span>
+    <div>
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
+      <select className="w-full rounded-md border border-[var(--ink-200)] bg-card px-3 py-2 text-[13px] font-medium focus:border-[var(--accent-500)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-500)]/20">
+        {options.map(o => <option key={o}>{o}</option>)}
+      </select>
+    </div>
   );
 }
