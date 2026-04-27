@@ -1,56 +1,30 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { z } from "zod";
 import { useEffect, useMemo, useState } from "react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Sparkles, Download, Shield, Layers, Ruler, Volume2, Flame,
+  Search, Sparkles, Download, Shield, Layers, Ruler, Volume2, Flame,
   ArrowRight, Wand2, RotateCcw, GitCompare, Check, ArrowDown, ArrowUp, Minus, Lightbulb,
-  AlertCircle, Search, Link2, Info, PoundSterling, BarChart3,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
-import { BOARD_LIBRARY, getAvailableBoards, planWalls, recommendBoardForWalls, type WallInput } from "@/lib/boardSizing";
+import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste, getAvailableBoards, piecesPerColumn, boardNetWasteWithReuse, recommendBoardSmart } from "@/lib/boardSizing";
 import { fireTier, acousticTier, heightTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
 import { TierMetric as TierChip } from "@/components/TierMetric";
-import { ColumnDiagram } from "@/components/calculator/ColumnDiagram";
-import { WallEditor } from "@/components/calculator/WallEditor";
+import { validateGeometry, hasErrors } from "@/lib/calcValidation";
 
-// =============================================================================
-// SEARCH PARAMS — calculator state lives in the URL so it can be shared
-// =============================================================================
-const searchSchema = z.object({
-  mode:    fallback(z.enum(["code", "recommend", "compare"]), "code").default("code"),
-  sys:     fallback(z.string(), "").default(""),
-  left:    fallback(z.string(), "").default(""),
-  right:   fallback(z.string(), "").default(""),
-  board:   fallback(z.string(), "auto").default("auto"),
-  reuse:   fallback(z.boolean(), false).default(false),
-  waste:   fallback(z.number().int().min(0).max(20), 5).default(5),
-  // Walls: encoded as JSON in `w` to keep URLs sane.
-  // Each wall: { n: name, l: length-mm, h: height-mm, o?: openings-m² }
-  w:       fallback(z.string(), "").default(""),
-  // Filters for Recommend mode
-  minH:    fallback(z.number().min(0).max(20).optional(), undefined),
-  minRw:   fallback(z.number().int().min(0).max(80).optional(), undefined),
-  minFire: fallback(z.number().int().min(0).max(240).optional(), undefined),
-});
-
-export const Route = createFileRoute("/calculator")({
-  validateSearch: zodValidator(searchSchema),
-  component: Calculator,
-});
+export const Route = createFileRoute("/calculator")({ component: Calculator });
 
 // =============================================================================
 // SYSTEM LIBRARY (structured for compare)
 // =============================================================================
 type Perf = {
-  weight: number;
-  maxHeight: number;
-  studCentres: number;
-  fire: number;
-  rw: number;
+  weight: number;     // kg/m²
+  maxHeight: number;  // mm
+  studCentres: number;// mm
+  fire: number;       // minutes (0 = none)
+  rw: number;         // dB     (0 = none)
 };
 type Totals = Record<string, { qty: number; unit: string }>;
 type SystemDef = {
@@ -59,7 +33,10 @@ type SystemDef = {
   desc: string;
   buildUp: { k: string; v: string }[];
   perf: Perf;
+  // qty is per m² of wall — multiplied by area in render
   totalsPerM2: Totals;
+  // Board sizes the manufacturer actually supplies for this system.
+  // Subset of BOARD_LIBRARY labels. If omitted, all boards are assumed available.
   availableBoards?: string[];
 };
 
@@ -76,7 +53,7 @@ const LIBRARY: SystemDef[] = [
       { k: "Suggested stud length", v: "4.2 m" },
     ],
     perf: { weight: 14, maxHeight: 7200, studCentres: 600, fire: 0, rw: 0 },
-    availableBoards: ["1200 × 2400", "1200 × 3000"],
+    availableBoards: ["1200 × 2400", "1200 × 3000"], // DuraLine 15: no 3600 in this thickness
     totalsPerM2: {
       "Gypframe Stud (4.2m)":                                            { qty: 0.42,  unit: "lengths" },
       "Gypframe 62 FEC 50 Folded Edge Floor & Ceiling Channel (3.6m)":   { qty: 0.14,  unit: "lengths" },
@@ -98,7 +75,7 @@ const LIBRARY: SystemDef[] = [
       { k: "Suggested stud length", v: "3.0 m" },
     ],
     perf: { weight: 22, maxHeight: 5400, studCentres: 600, fire: 60, rw: 44 },
-    availableBoards: ["1200 × 2400", "1200 × 3000", "1200 × 3600"],
+    availableBoards: ["1200 × 2400", "1200 × 3000", "1200 × 3600"], // WallBoard 12.5: full range
     totalsPerM2: {
       "Gypframe Stud (3.0m)":                                            { qty: 0.42,  unit: "lengths" },
       "Gypframe 62 FEC 50 Folded Edge Floor & Ceiling Channel (3.6m)":   { qty: 0.14,  unit: "lengths" },
@@ -120,7 +97,7 @@ const LIBRARY: SystemDef[] = [
       { k: "Suggested stud length", v: "4.2 m" },
     ],
     perf: { weight: 28, maxHeight: 7200, studCentres: 600, fire: 90, rw: 58 },
-    availableBoards: ["1200 × 2400", "1200 × 3000"],
+    availableBoards: ["1200 × 2400", "1200 × 3000"], // SoundBloc 15: heavier, no 3600
     totalsPerM2: {
       "Gypframe Stud (4.2m)":                                            { qty: 0.42,  unit: "lengths" },
       "Gypframe 62 FEC 50 Folded Edge Floor & Ceiling Channel (3.6m)":   { qty: 0.14,  unit: "lengths" },
@@ -134,93 +111,67 @@ const LIBRARY: SystemDef[] = [
 ];
 
 // =============================================================================
-// Walls encoding helpers
-// =============================================================================
-const DEFAULT_WALLS: WallInput[] = [
-  { id: "w-1", name: "Wall 1", lengthMm: 50000, heightMm: 4000, openingsM2: 0 },
-];
-
-function encodeWalls(walls: WallInput[]): string {
-  return JSON.stringify(walls.map(w => ({ n: w.name, l: w.lengthMm, h: w.heightMm, o: w.openingsM2 ?? 0 })));
-}
-function decodeWalls(s: string): WallInput[] {
-  if (!s) return DEFAULT_WALLS;
-  try {
-    const parsed = JSON.parse(s) as Array<{ n: string; l: number; h: number; o?: number }>;
-    if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_WALLS;
-    return parsed.map((p, i) => ({
-      id: `w-${i + 1}`,
-      name: p.n || `Wall ${i + 1}`,
-      lengthMm: Math.max(0, p.l || 0),
-      heightMm: Math.max(0, p.h || 0),
-      openingsM2: Math.max(0, p.o || 0),
-    }));
-  } catch {
-    return DEFAULT_WALLS;
-  }
-}
-
-// =============================================================================
 // COMPONENT
 // =============================================================================
+type Mode = "code" | "recommend" | "compare";
+
 function Calculator() {
-  const navigate = useNavigate({ from: "/calculator" });
-  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<Mode>("code");
+  const [length, setLength] = useState("50");
+  const [height, setHeight] = useState("4");
+  const [waste, setWaste]   = useState(5);
 
-  // Hydrate from URL
-  const mode = search.mode;
-  const activeCode = search.sys && LIBRARY.some(s => s.code === search.sys) ? search.sys : LIBRARY[0].code;
-  const leftCode = search.left && LIBRARY.some(s => s.code === search.left) ? search.left : LIBRARY[0].code;
-  const rightCode = search.right && LIBRARY.some(s => s.code === search.right) ? search.right : LIBRARY[1].code;
-  const boardSize = search.board;
-  const reuseOffcuts = search.reuse;
-  const waste = search.waste;
-  const walls = useMemo(() => decodeWalls(search.w), [search.w]);
+  // Compare-mode state
+  const [leftCode,  setLeftCode]  = useState<string>(LIBRARY[0].code);
+  const [rightCode, setRightCode] = useState<string>(LIBRARY[1].code);
 
-  // Setters that write to URL
-  const set = (patch: Record<string, unknown>) =>
-    navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, ...patch }), replace: true });
+  // Active system shown in SingleView (By code / Recommend)
+  const [activeCode, setActiveCode] = useState<string>(LIBRARY[0].code);
 
-  // Sync compare slots from tray
+  // Board sizing — "auto" lets us derive the best board from height to minimise waste.
+  const [boardSize, setBoardSize] = useState<string>("auto");
+  // When true, the recommender and waste table assume off-cuts that still carry a
+  // factory edge will be re-used in subsequent columns / walls. Reflects realistic
+  // site practice where large off-cuts top a column near the ceiling/skirting.
+  const [reuseOffcuts, setReuseOffcuts] = useState<boolean>(false);
+
+  // On mount: if URL says ?mode=compare or the tray has slots, switch to compare
+  // and hydrate left/right from the tray. Then keep them in sync with the tray.
   useEffect(() => {
+    const url = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
     const slots = readSlots();
-    const updates: Partial<typeof search> = {};
-    if (slots.A && LIBRARY.some(x => x.code === slots.A) && slots.A !== leftCode) updates.left = slots.A;
-    if (slots.B && LIBRARY.some(x => x.code === slots.B) && slots.B !== rightCode) updates.right = slots.B;
-    if (Object.keys(updates).length) set(updates);
+    const wantsCompare = url?.get("mode") === "compare" || !!(slots.A && slots.B);
+    if (wantsCompare) setMode("compare");
+    if (slots.A && LIBRARY.some(s => s.code === slots.A)) setLeftCode(slots.A);
+    if (slots.B && LIBRARY.some(s => s.code === slots.B)) setRightCode(slots.B);
+
     return subscribe(() => {
       const s = readSlots();
-      const u: Partial<typeof search> = {};
-      if (s.A && LIBRARY.some(x => x.code === s.A)) u.left = s.A;
-      if (s.B && LIBRARY.some(x => x.code === s.B)) u.right = s.B;
-      if (Object.keys(u).length) set(u);
+      if (s.A && LIBRARY.some(x => x.code === s.A)) setLeftCode(s.A);
+      if (s.B && LIBRARY.some(x => x.code === s.B)) setRightCode(s.B);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const setLeftAndSync = (v: string) => { set({ left: v }); setSlot("A", v); };
-  const setRightAndSync = (v: string) => { set({ right: v }); setSlot("B", v); };
+  // When the user changes a picker in compare view, mirror it back to the tray.
+  const setLeftAndSync = (v: string) => { setLeftCode(v); setSlot("A", v); };
+  const setRightAndSync = (v: string) => { setRightCode(v); setSlot("B", v); };
 
-  const totalAreaGross = walls.reduce((a, w) => a + (w.heightMm * w.lengthMm) / 1_000_000, 0);
-  const totalOpenings = walls.reduce((a, w) => a + (w.openingsM2 ?? 0), 0);
-  const area = Math.max(0, totalAreaGross - totalOpenings);
+  const area = +length * +height;
   const wasteFactor = 1 + waste / 100;
 
+  // Promote one side of the comparison into the single-system calculator.
   const promoteToCalculator = (code: string, label?: string) => {
-    set({ sys: code, mode: "code" });
+    setActiveCode(code);
+    setMode("code");
     toast.success(label ?? "Loaded into calculator", { description: code });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const copyShareLink = () => {
-    if (typeof window === "undefined") return;
-    navigator.clipboard.writeText(window.location.href);
-    toast.success("Link copied", { description: "Share this calculation with your team" });
   };
 
   return (
     <div className="glass-bg -m-6 min-h-[calc(100vh-4rem)] p-6 md:-m-8 md:p-10">
       <div className="relative space-y-8">
+        {/* Hero */}
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="pop-in">
             <p className="font-mono-num flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[var(--ink-500)]">
@@ -236,49 +187,60 @@ function Calculator() {
             </p>
           </div>
 
-          <div className="flex flex-col items-end gap-2">
-            <div className="glass-card inline-flex rounded-full p-1">
-              <ModeBtn active={mode === "code"}      onClick={() => set({ mode: "code" })}      icon={<Search className="h-3.5 w-3.5" />}      label="By code" />
-              <ModeBtn active={mode === "recommend"} onClick={() => set({ mode: "recommend" })} icon={<Sparkles className="h-3.5 w-3.5" />}    label="Recommend" />
-              <ModeBtn active={mode === "compare"}   onClick={() => set({ mode: "compare" })}   icon={<GitCompare className="h-3.5 w-3.5" />}  label="Compare" />
-            </div>
-            <button
-              onClick={copyShareLink}
-              className="inline-flex items-center gap-1.5 rounded-md border border-[var(--ink-200)] bg-[var(--card)]/60 px-3 py-1 text-[11px] font-medium text-[var(--ink-700)] hover:border-[var(--accent-500)] hover:text-[var(--accent-500)]"
-              title="Copy a shareable URL with all current inputs"
-            >
-              <Link2 className="h-3 w-3" /> Share link
-            </button>
+          {/* Mode toggle */}
+          <div className="glass-card inline-flex rounded-full p-1">
+            <ModeBtn active={mode === "code"}      onClick={() => setMode("code")}      icon={<Search className="h-3.5 w-3.5" />}      label="By code" />
+            <ModeBtn active={mode === "recommend"} onClick={() => setMode("recommend")} icon={<Sparkles className="h-3.5 w-3.5" />}    label="Recommend" />
+            <ModeBtn active={mode === "compare"}   onClick={() => setMode("compare")}   icon={<GitCompare className="h-3.5 w-3.5" />}  label="Compare" />
           </div>
         </header>
 
+        {/* Recommend bar (fold-out) */}
         {mode === "recommend" && (
-          <RecommendBar
-            search={search}
-            onApply={(filters) => set(filters)}
-            onLoad={(code) => set({ mode: "code", sys: code })}
-          />
+          <div className="glass-card rounded-2xl p-5">
+            <div className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-[var(--accent-500)]" />
+              <p className="text-[12px] font-semibold uppercase tracking-wider text-[var(--ink-700)]">Match by requirements</p>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-4">
+              <Field label="Min height (m)" placeholder="3.6" />
+              <Field label="Min Rw (dB)"    placeholder="50" />
+              <Field label="Min Fire (min)" placeholder="60" />
+              <Field label="Max thickness (mm)" placeholder="150" />
+              <Select label="Duty rating" options={["Any","SD1","SD2","SD3","SD4"]} />
+              <Select label="Board type"  options={["Any","WallBoard","DuraLine","SoundBloc","FireLine"]} />
+              <Select label="Stud size"   options={["Any","48","70","92","146"]} />
+              <div className="flex items-end">
+                <Button className="w-full gap-1.5" onClick={() => { setMode("code"); toast.success("Loaded best match", { description: LIBRARY[0].code }); }}>
+                  Recommend & load <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
+        {/* ===================== COMPARE MODE ===================== */}
         {mode === "compare" ? (
           <CompareView
             leftCode={leftCode}  setLeftCode={setLeftAndSync}
             rightCode={rightCode} setRightCode={setRightAndSync}
-            walls={walls} setWalls={(w) => set({ w: encodeWalls(w) })}
-            waste={waste} setWaste={(v) => set({ waste: v })}
+            length={length} setLength={setLength}
+            height={height} setHeight={setHeight}
+            waste={waste}   setWaste={setWaste}
             area={area} wasteFactor={wasteFactor}
             onPromote={promoteToCalculator}
           />
         ) : (
+          /* ===================== SINGLE-SYSTEM MODE ===================== */
           <SingleView
-            activeCode={activeCode} setActiveCode={(v) => set({ sys: v })}
-            walls={walls} setWalls={(w) => set({ w: encodeWalls(w) })}
-            waste={waste} setWaste={(v) => set({ waste: v })}
-            boardSize={boardSize} setBoardSize={(v) => set({ board: v })}
-            reuseOffcuts={reuseOffcuts} setReuseOffcuts={(v) => set({ reuse: v })}
+            activeCode={activeCode} setActiveCode={setActiveCode}
+            length={length} setLength={setLength}
+            height={height} setHeight={setHeight}
+            waste={waste}   setWaste={setWaste}
+            boardSize={boardSize} setBoardSize={setBoardSize}
+            reuseOffcuts={reuseOffcuts} setReuseOffcuts={setReuseOffcuts}
             area={area} wasteFactor={wasteFactor}
             navigate={navigate}
-            onReset={() => set({ w: encodeWalls(DEFAULT_WALLS), waste: 5, board: "auto", reuse: false })}
           />
         )}
       </div>
@@ -287,138 +249,39 @@ function Calculator() {
 }
 
 // =============================================================================
-// RECOMMEND MODE — actually filters
-// =============================================================================
-function RecommendBar({
-  search,
-  onApply,
-  onLoad,
-}: {
-  search: { minH?: number; minRw?: number; minFire?: number };
-  onApply: (patch: { minH?: number; minRw?: number; minFire?: number }) => void;
-  onLoad: (code: string) => void;
-}) {
-  const [minH, setMinH] = useState(search.minH?.toString() ?? "");
-  const [minRw, setMinRw] = useState(search.minRw?.toString() ?? "");
-  const [minFire, setMinFire] = useState(search.minFire?.toString() ?? "");
-
-  const matches = useMemo(() => {
-    const h = +minH || 0;
-    const rw = +minRw || 0;
-    const f = +minFire || 0;
-    return LIBRARY.filter(s =>
-      s.perf.maxHeight / 1000 >= h &&
-      s.perf.rw >= rw &&
-      s.perf.fire >= f,
-    );
-  }, [minH, minRw, minFire]);
-
-  const apply = () => {
-    onApply({
-      minH: minH ? +minH : undefined,
-      minRw: minRw ? +minRw : undefined,
-      minFire: minFire ? +minFire : undefined,
-    });
-    if (matches.length === 0) {
-      toast.error("No system matches these criteria");
-    } else {
-      toast.success(`${matches.length} match${matches.length === 1 ? "" : "es"} found`);
-    }
-  };
-
-  return (
-    <div className="glass-card rounded-2xl p-5">
-      <div className="flex items-center gap-2">
-        <Wand2 className="h-4 w-4 text-[var(--accent-500)]" />
-        <p className="text-[12px] font-semibold uppercase tracking-wider text-[var(--ink-700)]">Match by requirements</p>
-      </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-4">
-        <Field label="Min height (m)" placeholder="3.6" value={minH} onChange={setMinH} />
-        <Field label="Min Rw (dB)"    placeholder="50"  value={minRw} onChange={setMinRw} />
-        <Field label="Min Fire (min)" placeholder="60"  value={minFire} onChange={setMinFire} />
-        <div className="flex items-end">
-          <Button className="w-full gap-1.5" onClick={apply}>
-            Apply filters <ArrowRight className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </div>
-
-      {matches.length > 0 && (
-        <div className="mt-4 space-y-2">
-          <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
-            {matches.length} matching system{matches.length === 1 ? "" : "s"}
-          </p>
-          <div className="grid gap-2 md:grid-cols-2">
-            {matches.map(s => (
-              <button
-                key={s.code}
-                onClick={() => onLoad(s.code)}
-                className="group flex items-start justify-between gap-3 rounded-xl border border-[var(--ink-200)] bg-[var(--card)]/60 px-3 py-2.5 text-left transition-all hover:border-[var(--accent-500)] hover:shadow-sm"
-              >
-                <div>
-                  <p className="font-mono-num text-[12px] font-semibold text-[var(--ink-900)]">{s.code}</p>
-                  <p className="text-[11.5px] text-[var(--ink-500)]">{s.shortName}</p>
-                  <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10.5px] text-[var(--ink-700)]">
-                    <span className="rounded-md bg-[var(--ink-100)] px-1.5 py-0.5">H {s.perf.maxHeight}mm</span>
-                    {s.perf.fire > 0 && <span className="rounded-md bg-[var(--ink-100)] px-1.5 py-0.5">{s.perf.fire}' fire</span>}
-                    {s.perf.rw > 0 && <span className="rounded-md bg-[var(--ink-100)] px-1.5 py-0.5">{s.perf.rw} dB Rw</span>}
-                  </div>
-                </div>
-                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[var(--ink-500)] group-hover:text-[var(--accent-500)]" />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      {matches.length === 0 && (minH || minRw || minFire) && (
-        <p className="mt-4 rounded-md border border-dashed border-[var(--tier-critical)]/40 bg-[var(--tier-critical)]/5 px-3 py-2 text-[12px] text-[var(--tier-critical)]">
-          No systems match these requirements. Try relaxing the constraints.
-        </p>
-      )}
-    </div>
-  );
-}
-
-// =============================================================================
-// SINGLE-SYSTEM VIEW
+// SINGLE-SYSTEM VIEW (existing layout, scaled to area)
 // =============================================================================
 function SingleView({
   activeCode, setActiveCode,
-  walls, setWalls, waste, setWaste,
+  length, setLength, height, setHeight, waste, setWaste,
   boardSize, setBoardSize,
   reuseOffcuts, setReuseOffcuts,
-  area, wasteFactor, navigate, onReset,
+  area, wasteFactor, navigate,
 }: {
   activeCode: string; setActiveCode: (v: string) => void;
-  walls: WallInput[]; setWalls: (w: WallInput[]) => void;
+  length: string; setLength: (v: string) => void;
+  height: string; setHeight: (v: string) => void;
   waste: number;  setWaste: (v: number) => void;
   boardSize: string; setBoardSize: (v: string) => void;
   reuseOffcuts: boolean; setReuseOffcuts: (v: boolean) => void;
   area: number;   wasteFactor: number;
   navigate: ReturnType<typeof useNavigate>;
-  onReset: () => void;
 }) {
   const sys = LIBRARY.find(s => s.code === activeCode) ?? LIBRARY[0];
+  const errs = validateGeometry(length, height, waste);
+  const invalid = hasErrors(errs);
   const totals = scaledTotals(sys, area, wasteFactor);
+
+  // Recommendation: pick the smallest board ≥ wall height to minimise off-cuts.
+  // Wall height in mm; board catalogue (W × H, mm).
+  const heightMm = Math.round((+height || 0) * 1000);
+  const lengthMm = Math.round((+length || 0) * 1000);
   const availableBoards = getAvailableBoards(sys.availableBoards);
-
-  // Recommendation across the entire BoQ (multi-wall aware)
-  const { recommendedLabel, plans } = useMemo(
-    () => recommendBoardForWalls(walls, sys.availableBoards, reuseOffcuts),
-    [walls, sys.availableBoards, reuseOffcuts],
-  );
-  const effectiveBoard = boardSize === "auto" ? recommendedLabel : boardSize;
-  const activePlan = useMemo(
-    () => planWalls(walls, effectiveBoard, { reuseAcrossWalls: reuseOffcuts }),
-    [walls, effectiveBoard, reuseOffcuts],
-  );
-
-  const invalid = walls.some(w => w.heightMm <= 0 || w.lengthMm <= 0);
-  const tallestWall = walls.reduce((a, w) => (w.heightMm > a ? w.heightMm : a), 0);
-  const recommendedPlan = plans.find(p => p.label === recommendedLabel)?.plan;
-  const needsHorizontalJoint = recommendedPlan
-    ? recommendedPlan.walls.some(w => w.columns.some(col => col.length > 1))
-    : false;
+  const recommended = recommendBoardSmart(heightMm, lengthMm, sys.availableBoards, reuseOffcuts);
+  const effectiveBoard = boardSize === "auto" ? recommended.label : boardSize;
+  const cutWastePct = reuseOffcuts
+    ? boardNetWasteWithReuse(heightMm, lengthMm, effectiveBoard)
+    : boardOffcutWaste(heightMm, effectiveBoard);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
@@ -450,6 +313,7 @@ function SingleView({
               <GitCompare className="h-4 w-4" /> Send to Compare
             </Button>
           </div>
+          <p className="mt-3 text-[12px] text-[var(--ink-500)]">Type a code and press Load. Data comes from the live System Catalog.</p>
 
           {(() => {
             const tF = fireTier(sys.perf.fire);
@@ -480,39 +344,56 @@ function SingleView({
         </section>
 
         <section className="glass-card rounded-2xl p-6">
-          <SectionTitle n="02" label="Walls" />
-          <p className="mt-2 text-[12px] text-[var(--ink-500)]">
-            Add every wall built in this system. Off-cuts can be re-used across walls when the toggle is on — exactly as on site.
-          </p>
-          <div className="mt-4">
-            <WallEditor walls={walls} onChange={setWalls} />
+          <SectionTitle n="02" label="Geometry & finish" />
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Field label="Length" unit="m" value={length} onChange={setLength} error={errs.length} hint="Required — wall length, e.g. 12.5" />
+            <Field label="Height" unit="m" value={height} onChange={setHeight} error={errs.height} hint="Required — floor to ceiling, e.g. 3.0" />
+            <Select label="Stud Centres" options={["400 mm","600 mm","Other"]} defaultValue="600 mm" />
+            <div>
+              <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Board Size</p>
+              <select
+                value={boardSize}
+                onChange={e => setBoardSize(e.target.value)}
+                className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium"
+              >
+                <option value="auto">Auto — recommended</option>
+                {availableBoards.map(b => (
+                  <option key={b.label} value={b.label}>{b.label}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-[11px] text-[var(--ink-500)]">
+                {availableBoards.length} size{availableBoards.length === 1 ? "" : "s"} supplied for {sys.shortName}
+              </p>
+            </div>
+            <Select label="Finish" options={["Tape & Joint","Skim","Direct decorate"]} defaultValue="Tape & Joint" />
+            <Select label="Stage"  options={["Both","Frame only","Board only"]} defaultValue="Both" />
           </div>
 
-          {/* Recommendation chip */}
+          {/* Board recommendation chip — always visible, hints user when height is missing */}
           <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--accent-500)]/25 bg-[var(--accent-500)]/5 px-4 py-3 text-[12.5px]">
             <Lightbulb className="h-4 w-4 shrink-0 text-[var(--accent-500)]" />
             <span className="text-[var(--ink-700)]">
-              {tallestWall <= 0 ? (
-                <>Enter wall <strong>height</strong> & <strong>length</strong> to get a board recommendation that minimises off-cut waste.</>
+              {heightMm <= 0 ? (
+                <>Enter a wall <strong>height</strong> and we'll auto-pick the board size that minimises off-cut waste.</>
               ) : boardSize === "auto" ? (
-                <>For your BoQ ({walls.length} wall{walls.length === 1 ? "" : "s"}, {area.toFixed(1)} m²) we recommend <strong className="font-mono-num">{recommendedLabel}</strong> — lowest total cost.</>
+                <>For <strong>{(+height).toFixed(2)} m</strong> wall we recommend <strong className="font-mono-num">{recommended.label}</strong> — {recommended.reason.toLowerCase()}.</>
               ) : (
-                <>Using <strong className="font-mono-num">{effectiveBoard}</strong>. Auto would pick <strong className="font-mono-num">{recommendedLabel}</strong>.</>
+                <>Using <strong className="font-mono-num">{effectiveBoard}</strong>. Auto would pick <strong className="font-mono-num">{recommended.label}</strong>.</>
               )}
             </span>
-            {tallestWall > 0 && (
+            {heightMm > 0 && (
               <span className="ml-auto inline-flex items-center gap-1.5">
                 <span className="font-mono-num rounded-md bg-[var(--card)] px-2 py-0.5 text-[11px] font-semibold text-[var(--ink-700)]">
-                  Net waste {activePlan.netWastePct}%
+                  Cut waste {cutWastePct}%
                 </span>
-                {needsHorizontalJoint && (
+                {recommended.needsHorizontalJoint && (
                   <span className="font-mono-num rounded-md bg-[var(--amber-500)]/15 px-2 py-0.5 text-[11px] font-semibold text-[var(--amber-500)]">
                     + horizontal joint
                   </span>
                 )}
-                {boardSize !== "auto" && boardSize !== recommendedLabel && (
+                {boardSize !== "auto" && boardSize !== recommended.label && (
                   <button
-                    onClick={() => { setBoardSize("auto"); toast.success("Switched to recommended board", { description: recommendedLabel }); }}
+                    onClick={() => { setBoardSize("auto"); toast.success("Switched to recommended board", { description: recommended.label }); }}
                     className="rounded-md bg-[var(--accent-500)] px-2 py-0.5 text-[11px] font-semibold text-white hover:opacity-90"
                   >
                     Use recommended
@@ -522,56 +403,61 @@ function SingleView({
             )}
           </div>
 
-          {/* Board comparison table */}
-          {tallestWall > 0 && availableBoards.length > 1 && (
+          {/* Board comparison table — shows waste for every size the manufacturer supplies */}
+          {heightMm > 0 && availableBoards.length > 1 && (
             <div className="mt-3 overflow-hidden rounded-xl border border-[var(--ink-200)]">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ink-200)] bg-[var(--ink-100)]/50 px-3 py-2">
+              <div className="flex items-center justify-between border-b border-[var(--ink-200)] bg-[var(--ink-100)]/50 px-3 py-2">
                 <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
-                  Board comparison · {sys.shortName}
+                  Available boards for {sys.shortName}
                 </p>
-                <label className="flex cursor-pointer items-center gap-2 text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
-                  <input
-                    type="checkbox"
-                    checked={reuseOffcuts}
-                    onChange={e => setReuseOffcuts(e.target.checked)}
-                    className="h-3.5 w-3.5 accent-[var(--accent-500)]"
-                  />
-                  Account for off-cut reuse across all walls
-                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex cursor-pointer items-center gap-2 text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+                    <input
+                      type="checkbox"
+                      checked={reuseOffcuts}
+                      onChange={e => setReuseOffcuts(e.target.checked)}
+                      className="h-3.5 w-3.5 accent-[var(--accent-500)]"
+                    />
+                    Account for off-cut reuse
+                  </label>
+                  <p className="text-[10.5px] text-[var(--ink-500)]">Wall {(+height).toFixed(2)} m × {(+length || 0).toFixed(2)} m</p>
+                </div>
               </div>
               <table className="w-full text-[12.5px]">
                 <thead className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
                   <tr className="border-b border-[var(--ink-200)]">
                     <th className="px-3 py-2 text-left font-semibold">Board size</th>
-                    <th className="px-3 py-2 text-right font-semibold">Boards</th>
-                    <th className="px-3 py-2 text-right font-semibold">{reuseOffcuts ? "Net waste" : "Off-cut waste"}</th>
-                    <th className="px-3 py-2 text-right font-semibold">Material cost</th>
-                    <th className="px-3 py-2 text-right font-semibold">Wasted £</th>
+                    <th className="px-3 py-2 text-right font-semibold">Pieces / column</th>
+                    <th className="px-3 py-2 text-right font-semibold">{reuseOffcuts ? "Net waste (after reuse)" : "Off-cut waste"}</th>
+                    <th className="px-3 py-2 text-right font-semibold">Notes</th>
                     <th className="px-3 py-2 text-right font-semibold sr-only">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {plans.map(({ label, plan }) => {
-                    const isRecommended = label === recommendedLabel;
-                    const isSelected = effectiveBoard === label;
+                  {availableBoards.map(b => {
+                    const w = reuseOffcuts
+                      ? boardNetWasteWithReuse(heightMm, lengthMm, b.label)
+                      : boardOffcutWaste(heightMm, b.label);
+                    const pieces = piecesPerColumn(heightMm, b.label);
+                    const isRecommended = b.label === recommended.label;
+                    const isSelected = effectiveBoard === b.label;
+                    const needsJoint = pieces > 1;
                     const tone =
-                      plan.netWastePct <= 5  ? "var(--tier-good)"
-                      : plan.netWastePct <= 15 ? "var(--accent-500)"
-                      : plan.netWastePct <= 25 ? "var(--amber-500)"
+                      w <= 5  ? "var(--tier-good)"
+                      : w <= 15 ? "var(--accent-500)"
+                      : w <= 25 ? "var(--amber-500)"
                       :           "var(--tier-critical)";
-                    const board = BOARD_LIBRARY.find(b => b.label === label);
                     return (
                       <tr
-                        key={label}
+                        key={b.label}
                         className={
                           "border-b border-[var(--ink-200)] last:border-b-0 " +
                           (isSelected ? "bg-[var(--accent-500)]/5" : "")
                         }
-                        title={`${plan.totalBoardsBought} boards × ${board?.height}mm = ${(plan.totalBoardLengthMm / 1000).toFixed(1)}m of ${board?.label}\nWall coverage needed: ${(plan.totalCoverageMm / 1000).toFixed(1)}m\nScrap: ${(plan.totalScrapMm / 1000).toFixed(1)}m`}
                       >
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono-num font-semibold text-[var(--ink-900)]">{label}</span>
+                            <span className="font-mono-num font-semibold text-[var(--ink-900)]">{b.label}</span>
                             {isRecommended && (
                               <span className="rounded-full bg-[var(--accent-500)]/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-500)]">
                                 Recommended
@@ -579,7 +465,7 @@ function SingleView({
                             )}
                           </div>
                         </td>
-                        <td className="font-mono-num px-3 py-2 text-right text-[var(--ink-700)]">{plan.totalBoardsBought}</td>
+                        <td className="font-mono-num px-3 py-2 text-right text-[var(--ink-700)]">{pieces}</td>
                         <td className="px-3 py-2 text-right">
                           <span
                             className="font-mono-num inline-block rounded-md px-2 py-0.5 text-[11.5px] font-semibold"
@@ -588,21 +474,18 @@ function SingleView({
                               background: `color-mix(in oklab, ${tone} 12%, transparent)`,
                             }}
                           >
-                            {plan.netWastePct}%
+                            {w}%
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-right font-mono-num text-[12px] tabular-nums text-[var(--ink-900)]">
-                          £{Math.round(plan.totalCost).toLocaleString()}
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono-num text-[11.5px] tabular-nums text-[var(--tier-critical)]">
-                          –£{Math.round(plan.scrapCost).toLocaleString()}
+                        <td className="px-3 py-2 text-right text-[11.5px] text-[var(--ink-500)]">
+                          {needsJoint ? `${pieces} pieces stacked + horizontal joint` : "Single piece, no joint"}
                         </td>
                         <td className="px-3 py-2 text-right">
                           {isSelected ? (
                             <span className="text-[11px] font-semibold text-[var(--accent-500)]">In use</span>
                           ) : (
                             <button
-                              onClick={() => setBoardSize(label)}
+                              onClick={() => setBoardSize(b.label)}
                               className="rounded-md border border-[var(--ink-200)] px-2 py-0.5 text-[11px] font-medium text-[var(--ink-700)] hover:border-[var(--accent-500)] hover:text-[var(--accent-500)]"
                             >
                               Use
@@ -614,44 +497,9 @@ function SingleView({
                   })}
                 </tbody>
               </table>
-              <div className="border-t border-[var(--ink-200)] bg-[var(--ink-50)]/50 px-3 py-2 text-[10.5px] text-[var(--ink-500)]">
-                <Info className="mr-1 inline h-3 w-3" />
-                Hover any row for the breakdown. Cost uses indicative rates; replace with your active price list for project pricing.
-              </div>
             </div>
           )}
-        </section>
 
-        {/* Visualisation */}
-        {tallestWall > 0 && (
-          <section className="glass-card rounded-2xl p-6">
-            <SectionTitle n="03" label="Cutting strategy" />
-            <p className="mt-2 text-[12px] text-[var(--ink-500)]">
-              Schematic of how <strong className="font-mono-num text-[var(--ink-900)]">{effectiveBoard}</strong> is used per wall — one typical column and (when relevant) one column with a re-used off-cut. Diagonal stripes mark scrap.
-            </p>
-            <div className="mt-4 space-y-5">
-              {activePlan.walls.map(wp => (
-                <div key={wp.wall.id}>
-                  <div className="mb-2 flex items-baseline justify-between">
-                    <p className="text-[12.5px] font-semibold text-[var(--ink-900)]">{wp.wall.name}</p>
-                    <p className="font-mono-num text-[10.5px] text-[var(--ink-500)]">
-                      {wp.boardsBought} boards · {wp.scrapMm > 0 ? `${(wp.scrapMm / 1000).toFixed(2)} m scrap` : "no scrap"}
-                    </p>
-                  </div>
-                  <ColumnDiagram plan={wp} />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Handling waste */}
-        <section className="glass-card rounded-2xl p-6">
-          <SectionTitle n="04" label="Handling waste & finish" />
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <Select label="Stud Centres" options={["400 mm","600 mm","Other"]} defaultValue="600 mm" />
-            <Select label="Finish" options={["Tape & Joint","Skim","Direct decorate"]} defaultValue="Tape & Joint" />
-          </div>
           <div className="mt-5">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Handling waste %</p>
@@ -668,15 +516,16 @@ function SingleView({
               disabled={invalid}
               onClick={() => {
                 if (invalid) {
-                  toast.error("Please fix wall dimensions first");
+                  const first = errs.length || errs.height || errs.waste;
+                  toast.error("Please fix the highlighted fields", { description: first ?? undefined });
                   return;
                 }
-                toast.success("BoQ calculated", { description: `${sys.code} · ${area.toFixed(1)} m² across ${walls.length} wall${walls.length === 1 ? "" : "s"}` });
+                toast.success("BoQ calculated", { description: `${sys.code} · ${area.toLocaleString()} m²` });
               }}
             >
               <Sparkles className="h-4 w-4" /> Calculate BoQ
             </Button>
-            <Button size="lg" variant="outline" onClick={onReset}>
+            <Button size="lg" variant="outline" onClick={() => { setLength("50"); setHeight("4"); setWaste(5); toast("Reset to defaults"); }}>
               <RotateCcw className="h-4 w-4" />
             </Button>
           </div>
@@ -709,26 +558,11 @@ function SingleView({
           </div>
 
           <div className="border-b border-[var(--ink-200)]/60 px-5 py-5">
-            <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">Net wall area</p>
+            <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">Wall area</p>
             <p className={"font-display mt-1 text-[44px] font-bold leading-none tracking-tight " + (invalid ? "text-[var(--ink-500)]" : "impact-number")}>
-              {invalid ? "—" : area.toFixed(1)}<span className="ml-1 text-[16px] font-medium text-[var(--ink-500)]">m²</span>
+              {invalid ? "—" : area.toLocaleString()}<span className="ml-1 text-[16px] font-medium text-[var(--ink-500)]">m²</span>
             </p>
-            <p className="mt-1 text-[11.5px] text-[var(--ink-500)]">
-              {walls.length} wall{walls.length === 1 ? "" : "s"} · {totalAreaGrossOf(walls).toFixed(1)} m² gross − {sumOpenings(walls).toFixed(1)} m² openings · waste {waste}%
-            </p>
-          </div>
-
-          <div className="border-b border-[var(--ink-200)]/60 px-5 py-4">
-            <div className="flex items-center justify-between">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Board cost</p>
-              <PoundSterling className="h-3 w-3 text-[var(--ink-500)]" />
-            </div>
-            <p className="font-mono-num mt-1 text-[20px] font-semibold tabular-nums text-[var(--ink-900)]">
-              £{Math.round(activePlan.totalCost).toLocaleString()}
-            </p>
-            <p className="mt-0.5 text-[11px] text-[var(--ink-500)]">
-              {activePlan.totalBoardsBought} × <span className="font-mono-num">{effectiveBoard}</span> · –£{Math.round(activePlan.scrapCost).toLocaleString()} in scrap
-            </p>
+            <p className="mt-1 text-[11.5px] text-[var(--ink-500)]">{length || "—"} m × {height || "—"} m · waste {waste}%</p>
           </div>
 
           <div className="border-b border-[var(--ink-200)]/60 px-5 py-4">
@@ -758,23 +592,10 @@ function SingleView({
           </div>
 
           <div className="space-y-2 border-t border-[var(--ink-200)]/60 bg-[var(--ink-50)]/40 p-4">
-            <Button
-              className="w-full gap-2"
-              size="lg"
-              disabled={invalid}
-              onClick={() => exportBoQCsv(sys, walls, totals, activePlan)}
-            >
-              <Download className="h-4 w-4" /> Export BoQ CSV
+            <Button className="w-full gap-2" size="lg" disabled={invalid} onClick={() => toast.success("BoQ exported", { description: "CSV ready" })}>
+              <Download className="h-4 w-4" /> Export BoQ
             </Button>
-            <Button
-              className="w-full"
-              variant="outline"
-              disabled={invalid}
-              onClick={() => {
-                toast.success("Added to project BoQ", { description: `${totals.length} line items · £${Math.round(activePlan.totalCost).toLocaleString()} board cost` });
-                navigate({ to: "/costed-boq" });
-              }}
-            >
+            <Button className="w-full" variant="outline" disabled={invalid} onClick={() => { toast.success("Added to project BoQ"); navigate({ to: "/costed-boq" }); }}>
               Add to Costed BoQ
             </Button>
           </div>
@@ -789,12 +610,13 @@ function SingleView({
 // =============================================================================
 function CompareView({
   leftCode, setLeftCode, rightCode, setRightCode,
-  walls, setWalls, waste, setWaste,
+  length, setLength, height, setHeight, waste, setWaste,
   area, wasteFactor, onPromote,
 }: {
   leftCode: string;  setLeftCode: (v: string) => void;
   rightCode: string; setRightCode: (v: string) => void;
-  walls: WallInput[]; setWalls: (w: WallInput[]) => void;
+  length: string;    setLength: (v: string) => void;
+  height: string;    setHeight: (v: string) => void;
   waste: number;     setWaste: (v: number) => void;
   area: number;      wasteFactor: number;
   onPromote: (code: string, label?: string) => void;
@@ -803,6 +625,7 @@ function CompareView({
   const right = LIBRARY.find(s => s.code === rightCode) ?? LIBRARY[1];
   const sameSystem = left.code === right.code;
 
+  // Perf rows for diff (higher = better unless noted)
   const perfRows = useMemo(() => ([
     { k: "Max Height",   unit: "mm",    icon: <Ruler   className="h-3 w-3" />, l: left.perf.maxHeight,   r: right.perf.maxHeight,   higherBetter: true  },
     { k: "Fire",         unit: "min",   icon: <Flame   className="h-3 w-3" />, l: left.perf.fire,        r: right.perf.fire,        higherBetter: true  },
@@ -811,23 +634,16 @@ function CompareView({
     { k: "Weight",       unit: "kg/m²", icon: <Layers  className="h-3 w-3" />, l: left.perf.weight,      r: right.perf.weight,      higherBetter: false },
   ]), [left, right]);
 
-  // Score perf rows + flag "decisive" gaps (>20% delta)
-  const perfDecorated = useMemo(() => perfRows.map(row => {
-    const winner = compareNum(row.l, row.r, row.higherBetter);
-    const max = Math.max(row.l, row.r);
-    const min = Math.min(row.l, row.r);
-    const decisive = max > 0 && (max - min) / max >= 0.2;
-    return { ...row, winner, decisive };
-  }), [perfRows]);
-
+  // Tally perf wins to suggest a default winner. Ties don't count.
   const tally = useMemo(() => {
     let l = 0, r = 0;
-    for (const row of perfDecorated) {
-      if (row.winner === "left")  l++;
-      else if (row.winner === "right") r++;
+    for (const row of perfRows) {
+      const w = compareNum(row.l, row.r, row.higherBetter);
+      if (w === "left") l++;
+      else if (w === "right") r++;
     }
     return { l, r, winner: l === r ? null : l > r ? ("left" as const) : ("right" as const) };
-  }, [perfDecorated]);
+  }, [perfRows]);
 
   const winnerCode =
     tally.winner === "left"  ? left.code  :
@@ -841,14 +657,18 @@ function CompareView({
     return items.map(item => {
       const a = lT.find(t => t.item === item);
       const b = rT.find(t => t.item === item);
-      return { item, unit: a?.unit ?? b?.unit ?? "", l: a?.qty ?? 0, r: b?.qty ?? 0 };
+      return {
+        item,
+        unit: a?.unit ?? b?.unit ?? "",
+        l: a?.qty ?? 0,
+        r: b?.qty ?? 0,
+      };
     });
   }, [left, right, area, wasteFactor]);
 
-  const firstWall = walls[0];
-
   return (
     <div className="space-y-6">
+      {/* Geometry — shared inputs */}
       <section className="glass-card rounded-2xl p-5">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex items-center gap-2">
@@ -858,39 +678,24 @@ function CompareView({
             </p>
           </div>
           <div className="ml-auto flex flex-wrap items-end gap-3">
-            <div className="w-28">
-              <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Length (m)</p>
-              <input
-                type="number" step="0.1"
-                value={firstWall ? (firstWall.lengthMm / 1000).toString() : ""}
-                onChange={e => setWalls([{ ...(firstWall ?? DEFAULT_WALLS[0]), lengthMm: Math.round((+e.target.value || 0) * 1000) }])}
-                className="glass-input font-mono-num w-full rounded-xl px-3 py-2 text-[13px]"
-              />
-            </div>
-            <div className="w-28">
-              <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Height (m)</p>
-              <input
-                type="number" step="0.1"
-                value={firstWall ? (firstWall.heightMm / 1000).toString() : ""}
-                onChange={e => setWalls([{ ...(firstWall ?? DEFAULT_WALLS[0]), heightMm: Math.round((+e.target.value || 0) * 1000) }])}
-                className="glass-input font-mono-num w-full rounded-xl px-3 py-2 text-[13px]"
-              />
-            </div>
+            <div className="w-28"><Field label="Length" unit="m" value={length} onChange={setLength} error={validateGeometry(length, height, waste).length} /></div>
+            <div className="w-28"><Field label="Height" unit="m" value={height} onChange={setHeight} error={validateGeometry(length, height, waste).height} /></div>
             <div className="w-32">
               <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Waste {waste}%</p>
               <input type="range" min={0} max={20} value={waste} onChange={e => setWaste(+e.target.value)} className="w-full accent-[var(--accent-500)]" />
             </div>
             <div className="rounded-xl border border-[var(--accent-500)]/30 bg-[var(--accent-500)]/5 px-3 py-2">
               <p className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">Area</p>
-              <p className="font-mono-num text-[16px] font-bold text-[var(--ink-900)]">{area.toFixed(1)} <span className="text-[11px] font-normal text-[var(--ink-500)]">m²</span></p>
+              <p className="font-mono-num text-[16px] font-bold text-[var(--ink-900)]">{area.toLocaleString()} <span className="text-[11px] font-normal text-[var(--ink-500)]">m²</span></p>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Two pickers */}
       <div className="grid gap-5 lg:grid-cols-2">
-        <SystemPicker side="A" value={leftCode}  onChange={setLeftCode}  exclude={rightCode} sys={left}  highlight={tally.winner === "left"} />
-        <SystemPicker side="B" value={rightCode} onChange={setRightCode} exclude={leftCode}  sys={right} highlight={tally.winner === "right"} />
+        <SystemPicker side="A" value={leftCode}  onChange={setLeftCode}  exclude={rightCode} sys={left} />
+        <SystemPicker side="B" value={rightCode} onChange={setRightCode} exclude={leftCode}  sys={right} />
       </div>
 
       {sameSystem && (
@@ -899,31 +704,27 @@ function CompareView({
         </div>
       )}
 
+      {/* Performance comparison */}
       <section className="glass-card overflow-hidden rounded-2xl">
         <div className="flex items-center justify-between border-b border-[var(--ink-200)]/60 bg-gradient-to-br from-[var(--accent-500)]/10 to-transparent px-5 py-3">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-3.5 w-3.5 text-[var(--accent-500)]" />
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-700)]">Performance</p>
-          </div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-700)]">Performance</p>
           <DiffLegend />
         </div>
         <div className="grid grid-cols-[1fr_auto_1fr] divide-y divide-[var(--ink-200)]/60 text-[12.5px]">
-          {perfDecorated.map(row => (
-            <RowGrid key={row.k}
-              label={<span className="inline-flex items-center gap-1.5"><span className="text-[var(--accent-500)]">{row.icon}</span>{row.k}</span>}
-              left={<PerfCell value={row.l} unit={row.unit} winner={row.winner === "left"} decisive={row.decisive && row.winner === "left"} />}
-              right={<PerfCell value={row.r} unit={row.unit} winner={row.winner === "right"} decisive={row.decisive && row.winner === "right"} />}
-            />
-          ))}
+          {perfRows.map(row => {
+            const diff = compareNum(row.l, row.r, row.higherBetter);
+            return (
+              <RowGrid key={row.k}
+                label={<span className="inline-flex items-center gap-1.5"><span className="text-[var(--accent-500)]">{row.icon}</span>{row.k}</span>}
+                left={<PerfCell value={row.l} unit={row.unit} winner={diff === "left"} />}
+                right={<PerfCell value={row.r} unit={row.unit} winner={diff === "right"} />}
+              />
+            );
+          })}
         </div>
-        {tally.winner && !sameSystem && (
-          <div className="border-t border-[var(--ink-200)]/60 bg-[var(--ink-50)]/40 px-5 py-2.5 text-[11.5px] text-[var(--ink-700)]">
-            <strong>System {tally.winner === "left" ? "A" : "B"}</strong> wins {Math.max(tally.l, tally.r)}–{Math.min(tally.l, tally.r)} on performance metrics.
-            {perfDecorated.some(r => r.decisive) && <span className="text-[var(--ink-500)]"> Highlighted rows have a ≥20% gap.</span>}
-          </div>
-        )}
       </section>
 
+      {/* Aggregated totals comparison */}
       <section className="glass-card overflow-hidden rounded-2xl">
         <div className="flex items-center justify-between border-b border-[var(--ink-200)]/60 bg-gradient-to-br from-[var(--accent-500)]/10 to-transparent px-5 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-700)]">Aggregated material totals</p>
@@ -931,20 +732,22 @@ function CompareView({
         </div>
         <div className="grid grid-cols-[1fr_auto_1fr] divide-y divide-[var(--ink-200)]/60 text-[12.5px]">
           {totalsRows.map(row => {
+            // For materials, "lower" is the winning side (less consumption).
+            // Items present on only one side flag as "exclusive".
             const exclusive = row.l === 0 || row.r === 0;
-            const winner = exclusive ? null : compareNum(row.l, row.r, false);
+            const winner = exclusive ? null : compareNum(row.l, row.r, false); // lower better
             return (
               <RowGrid key={row.item}
                 label={<span className="text-[var(--ink-900)]">{row.item}</span>}
                 left={
                   row.l === 0
                     ? <ExclusiveCell side="A" />
-                    : <QtyCell value={row.l} unit={row.unit} winner={winner === "left"} />
+                    : <QtyCell value={row.l} unit={row.unit} winner={winner === "left"}  exclusive={exclusive && row.r === 0} />
                 }
                 right={
                   row.r === 0
                     ? <ExclusiveCell side="B" />
-                    : <QtyCell value={row.r} unit={row.unit} winner={winner === "right"} />
+                    : <QtyCell value={row.r} unit={row.unit} winner={winner === "right"} exclusive={exclusive && row.l === 0} />
                 }
               />
             );
@@ -956,8 +759,20 @@ function CompareView({
         <Button variant="outline" onClick={() => toast.success("Comparison exported", { description: "PDF ready" })}>
           <Download className="mr-1.5 h-4 w-4" /> Export comparison
         </Button>
-        <Button variant="outline" className="gap-1.5" onClick={() => onPromote(left.code, "Loaded System A")}>Load A → calculator</Button>
-        <Button variant="outline" className="gap-1.5" onClick={() => onPromote(right.code, "Loaded System B")}>Load B → calculator</Button>
+        <Button
+          variant="outline"
+          className="gap-1.5"
+          onClick={() => onPromote(left.code, "Loaded System A")}
+        >
+          Load A → calculator
+        </Button>
+        <Button
+          variant="outline"
+          className="gap-1.5"
+          onClick={() => onPromote(right.code, "Loaded System B")}
+        >
+          Load B → calculator
+        </Button>
         <Button
           disabled={!winnerCode || sameSystem}
           className="gap-1.5"
@@ -978,26 +793,21 @@ function CompareView({
 // COMPARE — building blocks
 // =============================================================================
 function SystemPicker({
-  side, value, onChange, exclude, sys, highlight,
+  side, value, onChange, exclude, sys,
 }: {
   side: "A" | "B";
   value: string;
   onChange: (v: string) => void;
   exclude: string;
   sys: SystemDef;
-  highlight?: boolean;
 }) {
   const accent = side === "A" ? "var(--accent-500)" : "var(--teal-500)";
   return (
-    <div
-      className="glass-card overflow-hidden rounded-2xl"
-      style={highlight ? { boxShadow: `0 0 0 2px color-mix(in oklab, ${accent} 50%, transparent)` } : undefined}
-    >
+    <div className="glass-card overflow-hidden rounded-2xl">
       <div className="flex items-center justify-between border-b border-[var(--ink-200)]/60 px-5 py-3" style={{ background: `linear-gradient(135deg, color-mix(in oklab, ${accent} 14%, transparent), transparent)` }}>
         <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-700)]">
           <span className="font-mono-num inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: accent }}>{side}</span>
           System {side}
-          {highlight && <span className="ml-2 rounded-full bg-[var(--green-600)]/15 px-2 py-0.5 text-[9.5px] font-semibold text-[var(--green-600)]">Winning</span>}
         </p>
         <p className="font-mono-num text-[10.5px] text-[var(--ink-500)]">{sys.code}</p>
       </div>
@@ -1030,24 +840,21 @@ function RowGrid({ label, left, right }: { label: React.ReactNode; left: React.R
   );
 }
 
-function PerfCell({ value, unit, winner, decisive }: { value: number; unit: string; winner: boolean; decisive?: boolean }) {
+function PerfCell({ value, unit, winner }: { value: number; unit: string; winner: boolean }) {
   if (value === 0) return <span className="text-[var(--ink-500)]">—</span>;
   return (
     <span className={`font-mono-num inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 font-semibold ${
       winner
-        ? decisive
-          ? "bg-[var(--green-600)]/22 text-[var(--green-600)] ring-1 ring-[var(--green-600)]/40"
-          : "bg-[var(--green-600)]/12 text-[var(--green-600)]"
+        ? "bg-[var(--green-600)]/12 text-[var(--green-600)]"
         : "text-[var(--ink-900)]"
     }`}>
       {winner && <Check className="h-3 w-3" />}
       {value.toLocaleString()} <span className="text-[10.5px] font-normal text-[var(--ink-500)]">{unit}</span>
-      {decisive && winner && <span className="ml-1 rounded-sm bg-[var(--green-600)] px-1 text-[8.5px] font-bold text-white">×{Math.round(((Math.max(value, 1)) / Math.max(1, value)) * 100) > 0 ? "" : ""}DECISIVE</span>}
     </span>
   );
 }
 
-function QtyCell({ value, unit, winner }: { value: number; unit: string; winner: boolean }) {
+function QtyCell({ value, unit, winner }: { value: number; unit: string; winner: boolean; exclusive?: boolean }) {
   return (
     <span className={`font-mono-num inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 font-semibold ${
       winner ? "bg-[var(--green-600)]/12 text-[var(--green-600)]" : "text-[var(--ink-900)]"
@@ -1102,26 +909,58 @@ function SectionTitle({ n, label }: { n: string; label: string }) {
 }
 
 function Field({
-  label, value, onChange, placeholder, unit,
+  label, value, onChange, placeholder, unit, error, hint,
 }: {
   label: string;
   value?: string;
   onChange?: (v: string) => void;
   placeholder?: string;
   unit?: string;
+  error?: string | null;
+  hint?: string;
 }) {
+  const [touched, setTouched] = React.useState(false);
+  const isEmpty = !value || value.trim() === "";
+  // "info" = gentle nudge (empty required field, or before user has interacted).
+  // "error" = real validation error after the user has touched the field.
+  const tone: "none" | "info" | "error" =
+    !error ? "none" : (isEmpty || !touched) ? "info" : "error";
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between">
         <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
         {unit && <span className="font-mono-num text-[10.5px] font-medium text-[var(--ink-500)]">{unit}</span>}
       </div>
-      <input
-        value={value}
-        onChange={e => onChange?.(e.target.value)}
-        placeholder={placeholder}
-        className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium placeholder:text-[var(--ink-500)]"
-      />
+      <div className="relative">
+        <input
+          value={value}
+          onChange={e => onChange?.(e.target.value)}
+          onBlur={() => setTouched(true)}
+          placeholder={placeholder}
+          aria-invalid={tone === "error"}
+          aria-describedby={tone !== "none" ? `${label}-err` : undefined}
+          className={
+            "glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium placeholder:text-[var(--ink-500)] transition-shadow " +
+            (tone === "error"
+              ? "border-[var(--tier-critical)] shadow-[0_0_0_3px_color-mix(in_oklab,var(--tier-critical)_14%,transparent)]"
+              : tone === "info"
+              ? "border-[var(--ink-200)]"
+              : "")
+          }
+        />
+        {tone === "error" && (
+          <AlertCircle className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--tier-critical)]" />
+        )}
+      </div>
+      {tone === "error" ? (
+        <p id={`${label}-err`} className="mt-1 flex items-center gap-1 text-[11px] font-medium text-[var(--tier-critical)]">
+          <AlertCircle className="h-3 w-3" /> {error}
+        </p>
+      ) : tone === "info" ? (
+        <p id={`${label}-err`} className="mt-1 text-[11px] text-[var(--ink-500)]">{error}</p>
+      ) : hint ? (
+        <p className="mt-1 text-[11px] text-[var(--ink-500)]">{hint}</p>
+      ) : null}
     </div>
   );
 }
@@ -1137,17 +976,20 @@ function Select({ label, options, defaultValue }: { label: string; options: stri
   );
 }
 
-function scaledTotals(sys: SystemDef, area: number, wasteFactor: number) {
-  return Object.entries(sys.totalsPerM2).map(([item, { qty, unit }]) => ({
-    item, unit, qty: qty * area * wasteFactor,
-  }));
+function perfChipsFor(sys: SystemDef) {
+  return [
+    { icon: <Volume2 className="h-3 w-3" />, k: "Approx. weight",  v: `${sys.perf.weight} kg/m²` },
+    { icon: <Ruler   className="h-3 w-3" />, k: "Max Height",      v: `${sys.perf.maxHeight} mm` },
+    { icon: <Layers  className="h-3 w-3" />, k: "Stud Centres",    v: `${sys.perf.studCentres} mm` },
+  ];
 }
 
-function totalAreaGrossOf(walls: WallInput[]) {
-  return walls.reduce((a, w) => a + (w.heightMm * w.lengthMm) / 1_000_000, 0);
-}
-function sumOpenings(walls: WallInput[]) {
-  return walls.reduce((a, w) => a + (w.openingsM2 ?? 0), 0);
+function scaledTotals(sys: SystemDef, area: number, wasteFactor: number) {
+  return Object.entries(sys.totalsPerM2).map(([item, { qty, unit }]) => ({
+    item,
+    unit,
+    qty: qty * area * wasteFactor,
+  }));
 }
 
 function fmtQty(n: number) {
@@ -1163,45 +1005,3 @@ function compareNum(a: number, b: number, higherBetter: boolean): "left" | "righ
   if (higherBetter) return a > b ? "left" : "right";
   return a < b ? "left" : "right";
 }
-
-function exportBoQCsv(
-  sys: SystemDef,
-  walls: WallInput[],
-  totals: { item: string; qty: number; unit: string }[],
-  plan: ReturnType<typeof planWalls>,
-) {
-  const lines: string[] = [];
-  lines.push("# BG System Calculator — BoQ export");
-  lines.push(`# System,${sys.code},${sys.shortName}`);
-  lines.push(`# Generated,${new Date().toISOString()}`);
-  lines.push("");
-  lines.push("Section,Item,Qty,Unit");
-  lines.push(`Walls,Total walls,${walls.length},count`);
-  walls.forEach(w => {
-    lines.push(`Walls,${w.name} (${(w.lengthMm / 1000).toFixed(2)}m × ${(w.heightMm / 1000).toFixed(2)}m),${((w.heightMm * w.lengthMm) / 1_000_000 - (w.openingsM2 ?? 0)).toFixed(2)},m²`);
-  });
-  lines.push("");
-  const firstWallBoard = plan.walls[0]?.boardLabel ?? "";
-  lines.push(`Boards,${firstWallBoard},${plan.totalBoardsBought},boards`);
-  lines.push(`Boards,Net waste %,${plan.netWastePct},%`);
-  lines.push(`Boards,Material cost,${plan.totalCost.toFixed(2)},GBP`);
-  lines.push(`Boards,Scrap cost,${plan.scrapCost.toFixed(2)},GBP`);
-  lines.push("");
-  totals.forEach(t => {
-    lines.push(`Materials,"${t.item.replace(/"/g, '""')}",${fmtQty(t.qty)},${t.unit}`);
-  });
-  const csv = lines.join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `boq-${sys.code.replace(/\s+/g, "-")}-${Date.now()}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  toast.success("BoQ exported", { description: a.download });
-}
-
-// suppress lint about unused Tier import (kept for future)
-void (null as unknown as Tier);
