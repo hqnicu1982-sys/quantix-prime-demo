@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Search, Sparkles, Download, Shield, Layers, Ruler, Volume2, Flame,
-  ArrowRight, Wand2, RotateCcw, GitCompare, Check, ArrowDown, ArrowUp, Minus,
+  ArrowRight, Wand2, RotateCcw, GitCompare, Check, ArrowDown, ArrowUp, Minus, Lightbulb,
 } from "lucide-react";
 import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
