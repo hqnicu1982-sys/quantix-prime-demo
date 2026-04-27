@@ -6,7 +6,7 @@ import {
   Search, Sparkles, Download, Shield, Layers, Ruler, Volume2, Flame,
   ArrowRight, Wand2, RotateCcw, GitCompare, Check, ArrowDown, ArrowUp, Minus, Lightbulb,
   ChevronDown, Scissors, PoundSterling,
-  AlertCircle,
+  AlertCircle, FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
@@ -18,6 +18,8 @@ import { ColumnDiagram } from "@/components/calculator/ColumnDiagram";
 import { WallEditor } from "@/components/calculator/WallEditor";
 import { BrandSelector } from "@/components/calculator/BrandSelector";
 import { getBrand, readActiveBrand, subscribeBrand, type BrandId } from "@/lib/systemBrands";
+import { useProject } from "@/lib/ProjectContext";
+import { addSystemToBoQ } from "@/lib/projectData";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
@@ -378,6 +380,7 @@ function SingleView({
             >
               <GitCompare className="h-4 w-4" /> Send to Compare
             </Button>
+            <AddToBoqButton sys={sys} length={length} height={height} waste={waste} boardSize={effectiveBoard} totals={totals} />
           </div>
           <p className="mt-3 text-[12px] text-[var(--ink-500)]">Type a code and press Load. Data comes from the live System Catalog.</p>
 
@@ -1216,5 +1219,62 @@ function Stat({
         {value}
       </span>
     </div>
+  );
+}
+
+// =============================================================================
+// ADD-TO-BOQ BUTTON
+// Pushes the currently configured system into the active project's BoQ.
+// =============================================================================
+function AddToBoqButton({
+  sys, length, height, waste, boardSize, totals,
+}: {
+  sys: SystemDef;
+  length: string;
+  height: string;
+  waste: number;
+  boardSize: string;
+  totals: { item: string; unit: string; qty: number }[];
+}) {
+  const { current } = useProject();
+  const lengthN = +length;
+  const heightN = +height;
+  const valid = lengthN > 0 && heightN > 0;
+
+  const onAdd = () => {
+    if (!valid) {
+      toast.error("Enter wall length and height first");
+      return;
+    }
+    const materials = totals.map((t) => ({
+      name: t.item,
+      qty: Math.round(t.qty * 100) / 100,
+      unit: t.unit,
+    }));
+    addSystemToBoQ(current.id, {
+      systemCode: sys.code,
+      systemName: sys.shortName,
+      lengthM: lengthN,
+      heightM: heightN,
+      wastePct: waste,
+      boardSize,
+      materials,
+    });
+    toast.success(`Added to BoQ for ${current.name}`, {
+      description: `${sys.shortName} · ${(lengthN * heightN).toFixed(1)} m² · ${materials.length} lines`,
+      action: { label: "View BoQ", onClick: () => { window.location.href = "/costed-boq"; } },
+    });
+  };
+
+  return (
+    <Button
+      size="lg"
+      className="gap-1.5"
+      onClick={onAdd}
+      disabled={!valid}
+      title={valid ? `Add ${sys.shortName} to ${current.name} BoQ` : "Enter length & height first"}
+    >
+      <FileSpreadsheet className="h-4 w-4" /> Add to BoQ
+    </Button>
   );
 }
