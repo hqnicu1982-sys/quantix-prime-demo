@@ -8,6 +8,7 @@ import {
 import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
 import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste } from "@/lib/boardSizing";
+import { fireTier, acousticTier, heightTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
@@ -158,13 +159,13 @@ function Calculator() {
       <div className="relative space-y-8">
         {/* Hero */}
         <header className="flex flex-wrap items-end justify-between gap-4">
-          <div>
+          <div className="pop-in">
             <p className="font-mono-num flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[var(--ink-500)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-500)] shadow-[0_0_12px_var(--accent-500)]" />
+              <span className="glow-pulse h-1.5 w-1.5 rounded-full bg-[var(--accent-500)] shadow-[0_0_12px_var(--accent-500)]" />
               BG System Calculator
             </p>
-            <h1 className="font-display mt-3 text-[44px] font-semibold leading-[0.95] tracking-tight text-[var(--ink-900)] md:text-[60px]">
-              From a code to a<br />
+            <h1 className="font-display mt-3 text-[44px] font-semibold leading-[0.95] tracking-tight md:text-[60px]">
+              <span className="hero-gradient-text">From a code to a</span><br />
               <span className="italic text-[var(--accent-500)]">priced BoQ</span>.
             </h1>
             <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-[var(--ink-700)]">
