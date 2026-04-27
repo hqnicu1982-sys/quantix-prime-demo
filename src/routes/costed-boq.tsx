@@ -62,6 +62,7 @@ function CostedBoq() {
         case "qty":    return (a.qty - b.qty) * dir;
         case "rate":   return (a.rate - b.rate) * dir;
         case "saving": return (a.saving - b.saving) * dir;
+        default:       return 0;
       }
     });
     return sorted;
