@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
-import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste } from "@/lib/boardSizing";
+import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste, getAvailableBoards, piecesPerColumn } from "@/lib/boardSizing";
 import { fireTier, acousticTier, heightTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
 import { TierMetric as TierChip } from "@/components/TierMetric";
 import { validateGeometry, hasErrors } from "@/lib/calcValidation";
