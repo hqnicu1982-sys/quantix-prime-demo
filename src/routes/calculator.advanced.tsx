@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { useEffect, useMemo, useState } from "react";
@@ -223,16 +223,25 @@ function Calculator() {
       <div className="relative space-y-8">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="pop-in">
-            <p className="font-mono-num flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[var(--ink-500)]">
-              <span className="glow-pulse h-1.5 w-1.5 rounded-full bg-[var(--accent-500)] shadow-[0_0_12px_var(--accent-500)]" />
-              BG System Calculator
-            </p>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/calculator"
+                className="font-mono-num inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.22em] text-[var(--ink-500)] hover:text-[var(--accent-500)]"
+              >
+                ← Calculator
+              </Link>
+              <span className="text-[var(--ink-200)]">/</span>
+              <p className="font-mono-num flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[var(--ink-700)]">
+                <span className="glow-pulse h-1.5 w-1.5 rounded-full bg-[var(--accent-500)] shadow-[0_0_12px_var(--accent-500)]" />
+                Advanced — Multi-wall planning
+              </p>
+            </div>
             <h1 className="font-display mt-3 text-[44px] font-semibold leading-[0.95] tracking-tight md:text-[60px]">
-              <span className="hero-gradient-text">From a code to a</span><br />
-              <span className="italic text-[var(--accent-500)]">priced BoQ</span>.
+              <span className="hero-gradient-text">Plan walls, re-use</span><br />
+              <span className="italic text-[var(--accent-500)]">every off-cut</span>.
             </h1>
             <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-[var(--ink-700)]">
-              Load any British Gypsum system — set the area — get the full build-up: frame, board, jointing and ancillaries.
+              Multi-wall optimisation, board cutting strategy and side-by-side compare. For one wall and a single system, the simpler <Link to="/calculator" className="font-semibold text-[var(--accent-500)] hover:underline">Calculator</Link> is faster.
             </p>
           </div>
 
