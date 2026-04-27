@@ -9,16 +9,25 @@ export const BOARD_LIBRARY: { label: string; width: number; height: number }[] =
   { label: "1200 × 3600", width: 1200, height: 3600 },
 ];
 
-export function recommendBoard(wallHeightMm: number): {
+/** Filter the global library by labels available for a given system. */
+export function getAvailableBoards(allowedLabels?: string[]) {
+  if (!allowedLabels || allowedLabels.length === 0) return BOARD_LIBRARY;
+  const set = new Set(allowedLabels);
+  return BOARD_LIBRARY.filter(b => set.has(b.label));
+}
+
+export function recommendBoard(wallHeightMm: number, allowedLabels?: string[]): {
   label: string;
   height: number;
   reason: string;
   needsHorizontalJoint: boolean;
 } {
+  const lib = getAvailableBoards(allowedLabels);
+  const fallback = lib[0] ?? BOARD_LIBRARY[1];
   if (!wallHeightMm || wallHeightMm <= 0) {
-    return { label: "1200 × 2400", height: 2400, reason: "Default size", needsHorizontalJoint: false };
+    return { label: fallback.label, height: fallback.height, reason: "Default size", needsHorizontalJoint: false };
   }
-  const single = BOARD_LIBRARY.find(b => b.height >= wallHeightMm);
+  const single = lib.find(b => b.height >= wallHeightMm);
   if (single) {
     const offcut = single.height - wallHeightMm;
     return {
@@ -28,11 +37,11 @@ export function recommendBoard(wallHeightMm: number): {
       needsHorizontalJoint: false,
     };
   }
-  const tallest = BOARD_LIBRARY[BOARD_LIBRARY.length - 1];
+  const tallest = lib[lib.length - 1];
   return {
     label: tallest.label,
     height: tallest.height,
-    reason: `Wall exceeds ${tallest.height} mm — adds horizontal joint`,
+    reason: `Wall exceeds ${tallest.height} mm — tallest available board, adds horizontal joint`,
     needsHorizontalJoint: true,
   };
 }
@@ -41,8 +50,19 @@ export function boardOffcutWaste(wallHeightMm: number, boardLabel: string): numb
   const board = BOARD_LIBRARY.find(b => b.label === boardLabel);
   if (!board || !wallHeightMm) return 0;
   if (wallHeightMm > board.height) {
-    const remainder = wallHeightMm - board.height;
-    return Math.round((1 - remainder / board.height) * 100);
+    // Need 2+ boards stacked. Total board length used = ceil(h/H) * H.
+    // Waste = unused portion of the last board.
+    const piecesPerColumn = Math.ceil(wallHeightMm / board.height);
+    const usedTotal = piecesPerColumn * board.height;
+    const offcut = usedTotal - wallHeightMm;
+    return Math.round((offcut / usedTotal) * 100);
   }
   return Math.round(((board.height - wallHeightMm) / board.height) * 100);
+}
+
+/** Number of board pieces needed per vertical column for a wall of given height. */
+export function piecesPerColumn(wallHeightMm: number, boardLabel: string): number {
+  const board = BOARD_LIBRARY.find(b => b.label === boardLabel);
+  if (!board || !wallHeightMm) return 0;
+  return Math.max(1, Math.ceil(wallHeightMm / board.height));
 }
