@@ -323,13 +323,40 @@ function SelectField({ label, value, onChange, options }: { label: string; value
   );
 }
 
-function SpecChip({ icon, k, v }: { icon: React.ReactNode; k: string; v: string }) {
+function SpecChip({ icon, k, v, tier = "none" }: { icon: React.ReactNode; k: string; v: string; tier?: Tier }) {
+  const color = tierColorVar(tier);
+  const isNone = tier === "none";
   return (
-    <div className="rounded-lg border border-[var(--ink-200)]/60 bg-[var(--card)]/40 p-2 text-center backdrop-blur-sm">
-      <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+    <div
+      className="group/chip relative overflow-hidden rounded-lg border p-2 text-center backdrop-blur-sm transition-all hover:-translate-y-0.5"
+      style={{
+        borderColor: isNone
+          ? "color-mix(in oklab, var(--ink-200) 60%, transparent)"
+          : `color-mix(in oklab, ${color} 35%, transparent)`,
+        background: isNone
+          ? "color-mix(in oklab, var(--card) 40%, transparent)"
+          : `linear-gradient(180deg, color-mix(in oklab, ${color} 12%, transparent), color-mix(in oklab, ${color} 4%, transparent))`,
+      }}
+    >
+      {/* tier corner accent */}
+      {!isNone && (
+        <span
+          className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full"
+          style={{ background: color, boxShadow: `0 0 8px ${color}` }}
+        />
+      )}
+      <span
+        className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider"
+        style={{ color: isNone ? "var(--ink-500)" : color }}
+      >
         {icon} {k}
       </span>
-      <p className="font-mono-num mt-1 text-[12.5px] font-bold text-[var(--ink-900)]">{v}</p>
+      <p
+        className="font-mono-num mt-1 text-[12.5px] font-bold"
+        style={{ color: isNone ? "var(--ink-900)" : color }}
+      >
+        {v}
+      </p>
     </div>
   );
 }
