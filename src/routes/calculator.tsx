@@ -310,17 +310,62 @@ function SingleView({
             <Field label="Length (m)" value={length} onChange={setLength} />
             <Field label="Height (m)" value={height} onChange={setHeight} />
             <Select label="Stud Centres" options={["400 mm","600 mm","Other"]} defaultValue="600 mm" />
-            <Select label="Board Size"   options={["1200 × 2400","1200 × 3000","900 × 1800"]} defaultValue="1200 × 2400" />
+            <div>
+              <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Board Size</p>
+              <select
+                value={boardSize}
+                onChange={e => setBoardSize(e.target.value)}
+                className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium"
+              >
+                <option value="auto">Auto — recommended</option>
+                {BOARD_LIBRARY.map(b => (
+                  <option key={b.label} value={b.label}>{b.label}</option>
+                ))}
+              </select>
+            </div>
             <Select label="Finish" options={["Tape & Joint","Skim","Direct decorate"]} defaultValue="Tape & Joint" />
             <Select label="Stage"  options={["Both","Frame only","Board only"]} defaultValue="Both" />
           </div>
 
+          {/* Board recommendation chip — derives the smallest board ≥ wall height */}
+          {heightMm > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--accent-500)]/25 bg-[var(--accent-500)]/5 px-4 py-3 text-[12.5px]">
+              <Lightbulb className="h-4 w-4 shrink-0 text-[var(--accent-500)]" />
+              <span className="text-[var(--ink-700)]">
+                {boardSize === "auto" ? (
+                  <>For <strong>{(+height).toFixed(2)} m</strong> wall we recommend <strong className="font-mono-num">{recommended.label}</strong> — {recommended.reason.toLowerCase()}.</>
+                ) : (
+                  <>Using <strong className="font-mono-num">{effectiveBoard}</strong>. Auto would pick <strong className="font-mono-num">{recommended.label}</strong>.</>
+                )}
+              </span>
+              <span className="ml-auto inline-flex items-center gap-1.5">
+                <span className="font-mono-num rounded-md bg-[var(--card)] px-2 py-0.5 text-[11px] font-semibold text-[var(--ink-700)]">
+                  Cut waste {cutWastePct}%
+                </span>
+                {recommended.needsHorizontalJoint && (
+                  <span className="font-mono-num rounded-md bg-[var(--amber-500)]/15 px-2 py-0.5 text-[11px] font-semibold text-[var(--amber-500)]">
+                    + horizontal joint
+                  </span>
+                )}
+                {boardSize !== "auto" && boardSize !== recommended.label && (
+                  <button
+                    onClick={() => { setBoardSize("auto"); toast.success("Switched to recommended board", { description: recommended.label }); }}
+                    className="rounded-md bg-[var(--accent-500)] px-2 py-0.5 text-[11px] font-semibold text-white hover:opacity-90"
+                  >
+                    Use recommended
+                  </button>
+                )}
+              </span>
+            </div>
+          )}
+
           <div className="mt-5">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Waste %</p>
+              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Handling waste %</p>
               <span className="font-mono-num rounded-md bg-[var(--accent-500)]/10 px-2 py-0.5 text-[12px] font-semibold text-[var(--accent-500)]">{waste}%</span>
             </div>
             <input type="range" min={0} max={20} value={waste} onChange={e => setWaste(+e.target.value)} className="w-full accent-[var(--accent-500)]" />
+            <p className="mt-1 text-[11px] text-[var(--ink-500)]">Adds on top of cut waste — covers damage, mistakes and offcuts that can't be reused.</p>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2">
