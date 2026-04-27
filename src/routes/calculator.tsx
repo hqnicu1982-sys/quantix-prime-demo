@@ -387,7 +387,7 @@ function SingleView({
 function CompareView({
   leftCode, setLeftCode, rightCode, setRightCode,
   length, setLength, height, setHeight, waste, setWaste,
-  area, wasteFactor,
+  area, wasteFactor, onPromote,
 }: {
   leftCode: string;  setLeftCode: (v: string) => void;
   rightCode: string; setRightCode: (v: string) => void;
@@ -395,6 +395,7 @@ function CompareView({
   height: string;    setHeight: (v: string) => void;
   waste: number;     setWaste: (v: number) => void;
   area: number;      wasteFactor: number;
+  onPromote: (code: string, label?: string) => void;
 }) {
   const left  = LIBRARY.find(s => s.code === leftCode)  ?? LIBRARY[0];
   const right = LIBRARY.find(s => s.code === rightCode) ?? LIBRARY[1];
@@ -408,6 +409,22 @@ function CompareView({
     { k: "Stud Centres", unit: "mm",    icon: <Layers  className="h-3 w-3" />, l: left.perf.studCentres, r: right.perf.studCentres, higherBetter: false },
     { k: "Weight",       unit: "kg/m²", icon: <Layers  className="h-3 w-3" />, l: left.perf.weight,      r: right.perf.weight,      higherBetter: false },
   ]), [left, right]);
+
+  // Tally perf wins to suggest a default winner. Ties don't count.
+  const tally = useMemo(() => {
+    let l = 0, r = 0;
+    for (const row of perfRows) {
+      const w = compareNum(row.l, row.r, row.higherBetter);
+      if (w === "left") l++;
+      else if (w === "right") r++;
+    }
+    return { l, r, winner: l === r ? null : l > r ? ("left" as const) : ("right" as const) };
+  }, [perfRows]);
+
+  const winnerCode =
+    tally.winner === "left"  ? left.code  :
+    tally.winner === "right" ? right.code :
+    null;
 
   const totalsRows = useMemo(() => {
     const lT = scaledTotals(left,  area, wasteFactor);
@@ -518,8 +535,30 @@ function CompareView({
         <Button variant="outline" onClick={() => toast.success("Comparison exported", { description: "PDF ready" })}>
           <Download className="mr-1.5 h-4 w-4" /> Export comparison
         </Button>
-        <Button onClick={() => toast.success("Recommendation noted", { description: "We'll surface the better fit on next BoQ" })}>
-          Pick winner
+        <Button
+          variant="outline"
+          className="gap-1.5"
+          onClick={() => onPromote(left.code, "Loaded System A")}
+        >
+          Load A → calculator
+        </Button>
+        <Button
+          variant="outline"
+          className="gap-1.5"
+          onClick={() => onPromote(right.code, "Loaded System B")}
+        >
+          Load B → calculator
+        </Button>
+        <Button
+          disabled={!winnerCode || sameSystem}
+          className="gap-1.5"
+          onClick={() => {
+            if (!winnerCode) return;
+            const side = tally.winner === "left" ? "A" : "B";
+            onPromote(winnerCode, `Pick winner — System ${side} wins ${Math.max(tally.l, tally.r)}–${Math.min(tally.l, tally.r)}`);
+          }}
+        >
+          <Check className="h-4 w-4" /> Pick winner & load
         </Button>
       </div>
     </div>
