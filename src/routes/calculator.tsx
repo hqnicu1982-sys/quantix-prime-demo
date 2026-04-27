@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import {
   Search, Sparkles, Download, Shield, Layers, Ruler, Volume2, Flame,
   ArrowRight, Wand2, RotateCcw, GitCompare, Check, ArrowDown, ArrowUp, Minus, Lightbulb,
   ChevronDown, Scissors, PoundSterling,
-  AlertCircle,
+  AlertCircle, FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
@@ -18,6 +18,8 @@ import { ColumnDiagram } from "@/components/calculator/ColumnDiagram";
 import { WallEditor } from "@/components/calculator/WallEditor";
 import { BrandSelector } from "@/components/calculator/BrandSelector";
 import { getBrand, readActiveBrand, subscribeBrand, type BrandId } from "@/lib/systemBrands";
+import { useProject } from "@/lib/ProjectContext";
+import { addSystemToBoQ } from "@/lib/projectData";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
@@ -378,6 +380,7 @@ function SingleView({
             >
               <GitCompare className="h-4 w-4" /> Send to Compare
             </Button>
+            <AddToBoqButton sys={sys} length={length} height={height} waste={waste} boardSize={effectiveBoard} totals={totals} />
           </div>
           <p className="mt-3 text-[12px] text-[var(--ink-500)]">Type a code and press Load. Data comes from the live System Catalog.</p>
 
