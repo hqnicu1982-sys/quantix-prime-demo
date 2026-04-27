@@ -11,8 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
-import { addCustomProject, inferHealth } from "@/lib/customProjects";
+import { Plus, Upload, FileText, Calendar as CalIcon } from "lucide-react";
+import { addCustomProject, inferHealth, saveProjectExtras } from "@/lib/customProjects";
 import { toast } from "sonner";
 
 export function NewProjectDialog() {
@@ -25,6 +25,10 @@ export function NewProjectDialog() {
   const [progress, setProgress] = useState<string>("0");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [specsFileName, setSpecsFileName] = useState<string>("");
+  const [plannerTemplate, setPlannerTemplate] =
+    useState<"drylining-standard" | "fitout-standard" | "custom">("drylining-standard");
+  const [plannerFileName, setPlannerFileName] = useState<string>("");
 
   const reset = () => {
     setName("");
@@ -35,6 +39,9 @@ export function NewProjectDialog() {
     setProgress("0");
     setStartDate("");
     setEndDate("");
+    setSpecsFileName("");
+    setPlannerTemplate("drylining-standard");
+    setPlannerFileName("");
   };
 
   const formatDate = (iso: string) => {
@@ -50,7 +57,7 @@ export function NewProjectDialog() {
     const cv = Number(contractValue) || 0;
     const mg = Number(margin) || 0;
     const pg = Math.min(100, Math.max(0, Number(progress) || 0));
-    addCustomProject({
+    const created = addCustomProject({
       name: name.trim(),
       subtitle: subtitle.trim() || "—",
       mainContractor: mainContractor.trim(),
@@ -60,6 +67,11 @@ export function NewProjectDialog() {
       health: inferHealth(mg, pg),
       startDate: formatDate(startDate),
       endDate: formatDate(endDate),
+    });
+    saveProjectExtras(created.id, {
+      specsFileName: specsFileName || undefined,
+      plannerTemplate,
+      plannerFileName: plannerFileName || undefined,
     });
     toast.success(`Project "${name.trim()}" created`);
     reset();
@@ -74,7 +86,7 @@ export function NewProjectDialog() {
           New project
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create new project</DialogTitle>
           <DialogDescription>Set the basic details. You can refine systems and BoQ later.</DialogDescription>
@@ -118,6 +130,70 @@ export function NewProjectDialog() {
               <Label htmlFor="np-ed">End date</Label>
               <Input id="np-ed" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
+          </div>
+
+          <div className="rounded-md border border-[var(--ink-200)] p-3">
+            <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--ink-500)]">
+              <FileText className="h-3 w-3" /> Specifications
+            </p>
+            <div className="flex items-center gap-2">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded border border-dashed border-[var(--ink-200)] px-3 py-1.5 text-[12px] hover:bg-[var(--ink-50)]">
+                <Upload className="h-3.5 w-3.5" />
+                <span>{specsFileName ? "Replace file" : "Upload PDF / CSV"}</span>
+                <input
+                  type="file"
+                  accept=".pdf,.csv,.xlsx"
+                  className="hidden"
+                  onChange={(e) => setSpecsFileName(e.target.files?.[0]?.name ?? "")}
+                />
+              </label>
+              {specsFileName && (
+                <span className="truncate text-[12px] text-[var(--ink-700)]">{specsFileName}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-md border border-[var(--ink-200)] p-3">
+            <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--ink-500)]">
+              <CalIcon className="h-3 w-3" /> Planner template
+            </p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {([
+                { id: "drylining-standard", label: "Drylining" },
+                { id: "fitout-standard", label: "Fit-out" },
+                { id: "custom", label: "Custom" },
+              ] as const).map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setPlannerTemplate(t.id)}
+                  className={`rounded border px-2 py-1.5 text-[12px] transition-colors ${
+                    plannerTemplate === t.id
+                      ? "border-[var(--accent-500)] bg-[var(--accent-500)]/10 font-semibold text-[var(--accent-500)]"
+                      : "border-[var(--ink-200)] hover:bg-[var(--ink-50)]"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            {plannerTemplate === "custom" && (
+              <div className="mt-2 flex items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded border border-dashed border-[var(--ink-200)] px-3 py-1.5 text-[12px] hover:bg-[var(--ink-50)]">
+                  <Upload className="h-3.5 w-3.5" />
+                  <span>{plannerFileName ? "Replace file" : "Upload .mpp / .xlsx"}</span>
+                  <input
+                    type="file"
+                    accept=".mpp,.xlsx,.csv"
+                    className="hidden"
+                    onChange={(e) => setPlannerFileName(e.target.files?.[0]?.name ?? "")}
+                  />
+                </label>
+                {plannerFileName && (
+                  <span className="truncate text-[12px] text-[var(--ink-700)]">{plannerFileName}</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
