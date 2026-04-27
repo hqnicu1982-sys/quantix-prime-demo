@@ -625,9 +625,9 @@ function SingleView({
         {/* Visualisation */}
         {tallestWall > 0 && (
           <section className="glass-card rounded-2xl p-6">
-            <SectionTitle n="03" label="Column layout" />
+            <SectionTitle n="03" label="Cutting strategy" />
             <p className="mt-2 text-[12px] text-[var(--ink-500)]">
-              How <strong className="font-mono-num text-[var(--ink-900)]">{effectiveBoard}</strong> stacks across each wall. Diagonal stripes are scrap from off-cuts that lost their second factory edge.
+              Schematic of how <strong className="font-mono-num text-[var(--ink-900)]">{effectiveBoard}</strong> is used per wall — one typical column and (when relevant) one column with a re-used off-cut. Diagonal stripes mark scrap.
             </p>
             <div className="mt-4 space-y-5">
               {activePlan.walls.map(wp => (

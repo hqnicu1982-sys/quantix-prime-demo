@@ -1,100 +1,112 @@
 import { type WallPlan, type ColumnPiece } from "@/lib/boardSizing";
 
 /**
- * Visual stack diagram for a single wall: each column is a vertical strip,
- * each piece coloured by source (fresh / reused). Hover shows mm + scrap.
+ * Schematic mock-up of how a board is used on a wall.
  *
- * The diagram is purely SVG — no canvas, no charts library.
+ * Instead of drawing every column (which is noisy on long walls), we pick
+ * up to two representative columns:
+ *  1. A "fresh" column — what the typical column looks like.
+ *  2. A "reused" column — only shown if the plan actually re-uses off-cuts.
+ *
+ * Goal: communicate the cutting strategy at a glance, not enumerate boards.
  */
 export function ColumnDiagram({
   plan,
-  maxHeightPx = 240,
-  showLegend = true,
+  maxHeightPx = 200,
   className = "",
 }: {
   plan: WallPlan;
   maxHeightPx?: number;
-  showLegend?: boolean;
   className?: string;
 }) {
   if (!plan.columns.length) {
     return (
-      <div className={"flex h-32 items-center justify-center rounded-lg border border-dashed border-[var(--ink-200)] text-[12px] text-[var(--ink-500)] " + className}>
-        Enter wall dimensions to see the column layout
+      <div className={"flex h-24 items-center justify-center rounded-lg border border-dashed border-[var(--ink-200)] text-[12px] text-[var(--ink-500)] " + className}>
+        Enter wall dimensions to see the cutting strategy
       </div>
     );
   }
 
   const wallH = plan.wall.heightMm;
-  const wallL = plan.wall.lengthMm;
-  // Scale so the tallest column fits maxHeightPx, while preserving ratio in width.
+
+  // Pick representative columns
+  const freshCol = plan.columns.find(c => c.every(p => p.source === "fresh")) ?? plan.columns[0];
+  const reusedCol = plan.columns.find(c => c.some(p => p.source === "reused"));
+
+  const samples: { col: ColumnPiece[]; label: string; caption: string }[] = [
+    {
+      col: freshCol,
+      label: "Typical column",
+      caption: describeColumn(freshCol, plan.boardLengthMm),
+    },
+  ];
+  if (reusedCol && reusedCol !== freshCol) {
+    samples.push({
+      col: reusedCol,
+      label: "Off-cut re-used",
+      caption: describeColumn(reusedCol, plan.boardLengthMm),
+    });
+  }
+
   const pxPerMm = maxHeightPx / Math.max(wallH, plan.boardLengthMm);
-  // Limit width to a reasonable amount; aim for at least 32 px per column
-  const colWidthPx = Math.max(32, Math.min(72, plan.boardWidthMm * pxPerMm * 0.6));
-  const totalWidthPx = colWidthPx * plan.columns.length + (plan.columns.length - 1) * 6;
+  const colWidthPx = 56;
 
   return (
-    <div className={"space-y-2 " + className}>
-      <div className="overflow-x-auto pb-1">
-        <div className="flex items-end gap-1.5" style={{ height: maxHeightPx + 28 }}>
-          {plan.columns.map((col, ci) => (
-            <ColumnStack key={ci} col={col} index={ci} pxPerMm={pxPerMm} widthPx={colWidthPx} wallHeightMm={wallH} />
-          ))}
+    <div className={"rounded-xl border border-[var(--ink-200)] bg-[var(--ink-50)]/40 p-4 " + className}>
+      <div className="flex items-start gap-6">
+        {samples.map((s, i) => (
+          <div key={i} className="flex flex-col items-center gap-2">
+            <div
+              className="relative flex flex-col-reverse overflow-hidden rounded-md border border-[var(--ink-200)] bg-[var(--card)]"
+              style={{ width: colWidthPx, height: wallH * pxPerMm }}
+            >
+              {s.col.map((piece, pi) => (
+                <PieceBlock key={pi} piece={piece} pxPerMm={pxPerMm} />
+              ))}
+            </div>
+            <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-700)]">{s.label}</p>
+            <p className="font-mono-num text-center text-[10.5px] leading-tight text-[var(--ink-500)]" style={{ maxWidth: 160 }}>
+              {s.caption}
+            </p>
+          </div>
+        ))}
+
+        <div className="ml-auto space-y-2 text-[10.5px] text-[var(--ink-500)]">
+          <LegendDot color="var(--accent-500)" label="Fresh board cut" />
+          <LegendDot color="var(--green-600)" label="Re-used off-cut" />
+          <LegendDot color="var(--tier-critical)" label="Scrap (no factory edge left)" striped />
+          <p className="pt-1 font-mono-num text-[10.5px] text-[var(--ink-700)]">
+            × {plan.columns.length} column{plan.columns.length === 1 ? "" : "s"} → {plan.boardsBought} board{plan.boardsBought === 1 ? "" : "s"} bought
+          </p>
         </div>
       </div>
-
-      <div className="flex flex-wrap items-center gap-3 text-[10.5px] text-[var(--ink-500)]">
-        <span>Wall {(wallH / 1000).toFixed(2)} m × {(wallL / 1000).toFixed(2)} m · {plan.columns.length} column{plan.columns.length === 1 ? "" : "s"} · {plan.boardsBought} board{plan.boardsBought === 1 ? "" : "s"}</span>
-        {showLegend && (
-          <span className="ml-auto inline-flex items-center gap-3">
-            <LegendDot color="var(--accent-500)" label="Fresh board" />
-            <LegendDot color="var(--green-600)" label="Reused off-cut" />
-            <LegendDot color="var(--tier-critical)" label="Scrap (cut from off-cut)" />
-          </span>
-        )}
-      </div>
-
-      {totalWidthPx > 0 && null}
     </div>
   );
 }
 
-function ColumnStack({
-  col, index, pxPerMm, widthPx, wallHeightMm,
-}: {
-  col: ColumnPiece[];
-  index: number;
-  pxPerMm: number;
-  widthPx: number;
-  wallHeightMm: number;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div
-        className="relative flex flex-col-reverse rounded-md border border-[var(--ink-200)] overflow-hidden bg-[var(--ink-50)]"
-        style={{ width: widthPx, height: wallHeightMm * pxPerMm }}
-      >
-        {col.map((piece, pi) => (
-          <PieceBlock key={pi} piece={piece} pxPerMm={pxPerMm} widthPx={widthPx} />
-        ))}
-      </div>
-      <span className="font-mono-num text-[9.5px] text-[var(--ink-500)]">C{index + 1}</span>
-    </div>
-  );
+function describeColumn(col: ColumnPiece[], boardLengthMm: number): string {
+  return col
+    .map(p => {
+      if (p.source === "fresh") {
+        if (p.lengthMm === boardLengthMm) return `full board ${p.lengthMm}`;
+        return `cut ${p.lengthMm} from new board`;
+      }
+      return p.scrapMm > 0
+        ? `${p.lengthMm} from off-cut (${p.scrapMm} scrap)`
+        : `${p.lengthMm} from off-cut`;
+    })
+    .join(" + ");
 }
 
-function PieceBlock({ piece, pxPerMm, widthPx }: { piece: ColumnPiece; pxPerMm: number; widthPx: number }) {
+function PieceBlock({ piece, pxPerMm }: { piece: ColumnPiece; pxPerMm: number }) {
   const heightPx = piece.lengthMm * pxPerMm;
   const isReused = piece.source === "reused";
   const bg = isReused
     ? "color-mix(in oklab, var(--green-600) 22%, var(--card))"
     : "color-mix(in oklab, var(--accent-500) 18%, var(--card))";
   const borderColor = isReused ? "var(--green-600)" : "var(--accent-500)";
-  const showLabel = heightPx >= 22;
-
-  // Scrap appears for fresh pieces (off-cut goes to stock — visualised separately)
-  // and for reused pieces (the leftover after the cut is wasted).
-  const scrapPx = piece.scrapMm * pxPerMm;
+  const showLabel = heightPx >= 20;
+  const scrapPx = isReused ? piece.scrapMm * pxPerMm : 0;
 
   return (
     <>
@@ -106,31 +118,35 @@ function PieceBlock({ piece, pxPerMm, widthPx }: { piece: ColumnPiece; pxPerMm: 
           borderTop: `1px dashed color-mix(in oklab, ${borderColor} 40%, transparent)`,
           color: borderColor,
         }}
-        title={`${piece.source === "reused" ? "Reused off-cut" : "Fresh board"} · ${piece.lengthMm} mm${piece.scrapMm ? ` · scrap ${piece.scrapMm} mm` : ""}`}
       >
         {showLabel && <span className="font-mono-num">{piece.lengthMm}</span>}
       </div>
-      {isReused && scrapPx > 2 && (
+      {scrapPx > 2 && (
         <div
           className="flex items-center justify-center text-[9px] font-semibold text-white"
           style={{
             height: scrapPx,
             background: "repeating-linear-gradient(45deg, var(--tier-critical), var(--tier-critical) 4px, color-mix(in oklab, var(--tier-critical) 70%, black) 4px, color-mix(in oklab, var(--tier-critical) 70%, black) 8px)",
           }}
-          title={`Scrap ${piece.scrapMm} mm — off-cut had only one factory edge left`}
         >
           {scrapPx >= 14 && <span className="font-mono-num">{piece.scrapMm}</span>}
         </div>
       )}
-      {void widthPx}
     </>
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+function LegendDot({ color, label, striped }: { color: string; label: string; striped?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-1">
-      <span className="h-2 w-2 rounded-sm" style={{ background: color }} />
+    <span className="flex items-center gap-1.5">
+      <span
+        className="h-2.5 w-2.5 rounded-sm"
+        style={{
+          background: striped
+            ? `repeating-linear-gradient(45deg, ${color}, ${color} 2px, color-mix(in oklab, ${color} 70%, black) 2px, color-mix(in oklab, ${color} 70%, black) 4px)`
+            : color,
+        }}
+      />
       {label}
     </span>
   );
