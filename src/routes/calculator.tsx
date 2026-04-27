@@ -401,15 +401,22 @@ function SingleView({
       </main>
 
       <aside className="lg:sticky lg:top-6 lg:self-start">
-        <div className="glass-card glass-card-strong overflow-hidden rounded-2xl">
+        <div className="glass-card glass-card-strong relative overflow-hidden rounded-2xl">
+          <span className="impact-ribbon" />
+          <span className="shimmer-line absolute inset-x-0 top-0 h-[2px] opacity-60" />
           <div className="border-b border-[var(--ink-200)]/60 bg-gradient-to-br from-[var(--accent-500)]/10 to-transparent px-5 py-4">
-            <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Live summary</p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Live summary</p>
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--green-600)]">
+                <span className="glow-pulse h-1.5 w-1.5 rounded-full bg-[var(--green-600)]" /> live
+              </span>
+            </div>
             <p className="font-mono-num mt-1 text-[12px] font-semibold text-[var(--accent-500)]">{sys.code}</p>
           </div>
 
           <div className="border-b border-[var(--ink-200)]/60 px-5 py-5">
             <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">Wall area</p>
-            <p className="font-display mt-1 text-[34px] font-bold leading-none tracking-tight text-[var(--ink-900)]">
+            <p className="font-display impact-number mt-1 text-[44px] font-bold leading-none tracking-tight">
               {area.toLocaleString()}<span className="ml-1 text-[16px] font-medium text-[var(--ink-500)]">m²</span>
             </p>
             <p className="mt-1 text-[11.5px] text-[var(--ink-500)]">{length} m × {height} m · waste {waste}%</p>
