@@ -259,7 +259,7 @@ function SingleView({
                 className="glass-input font-mono-num w-full rounded-xl px-4 py-3 text-[14px] font-semibold"
               >
                 {LIBRARY.map(s => (
-                  <option key={s.code} value={s.code}>{s.code} — {s.shortName}</option>
+                  <option key={s.code} value={s.code}>{s.code}</option>
                 ))}
               </select>
             </div>
