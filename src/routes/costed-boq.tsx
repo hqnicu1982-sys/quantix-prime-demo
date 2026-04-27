@@ -472,3 +472,97 @@ function generateRows(): BoqRow[] {
   }
   return out;
 }
+
+// ============================================================================
+// CustomSystemsPanel — shows systems added from the Calculator for this project
+// ============================================================================
+function CustomSystemsPanel({
+  projectId, projectName, systems, lines,
+}: {
+  projectId: string;
+  projectName: string;
+  systems: ReturnType<typeof useProjectData>["systems"];
+  lines: ReturnType<typeof useProjectData>["boqLines"];
+}) {
+  if (systems.length === 0) {
+    return (
+      <div className="rounded-md border border-dashed border-[var(--ink-200)] bg-[var(--ink-50)]/40 px-4 py-3 text-[12.5px] text-[var(--ink-500)]">
+        <div className="flex flex-wrap items-center gap-2">
+          <CalcIcon className="h-3.5 w-3.5 text-[var(--accent-500)]" />
+          <span>
+            No systems added from the Calculator for <strong className="text-[var(--ink-900)]">{projectName}</strong> yet.
+          </span>
+          <Link to="/calculator" className="ml-auto inline-flex items-center gap-1 rounded bg-[var(--accent-500)] px-2 py-1 text-[11.5px] font-semibold text-white hover:opacity-90">
+            Open Calculator →
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-md border border-[var(--accent-500)]/30 bg-[var(--accent-500)]/5 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <CalcIcon className="h-3.5 w-3.5 text-[var(--accent-500)]" />
+          <p className="text-[11.5px] font-semibold uppercase tracking-wider text-[var(--ink-700)]">
+            Systems for {projectName} · from Calculator
+          </p>
+          <span className="rounded-full bg-[var(--accent-500)]/20 px-2 py-0.5 text-[10.5px] font-bold text-[var(--accent-500)]">
+            {systems.length}
+          </span>
+        </div>
+        <Link to="/calculator" className="text-[11.5px] font-semibold text-[var(--accent-500)] hover:underline">
+          + Add another
+        </Link>
+      </div>
+      <div className="space-y-1.5">
+        {systems.map((s) => {
+          const sysLines = lines.filter((l) => l.systemId === s.id);
+          return (
+            <div key={s.id} className="rounded bg-white px-3 py-2 text-[12.5px] shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-[var(--ink-900)]">{s.systemName}</p>
+                  <p className="truncate text-[11px] text-[var(--ink-500)]">
+                    {s.systemCode} · {s.lengthM}×{s.heightM} m ({s.areaM2.toFixed(1)} m²) · {s.boardSize} · {s.wastePct}% waste
+                  </p>
+                </div>
+                <span className="shrink-0 rounded bg-[var(--ink-50)] px-2 py-0.5 text-[10.5px] font-medium text-[var(--ink-700)]">
+                  {sysLines.length} lines
+                </span>
+                <button
+                  onClick={() => {
+                    removeSystem(projectId, s.id);
+                    toast.success("System removed");
+                  }}
+                  className="rounded p-1 text-[var(--ink-500)] hover:bg-[var(--red-500)]/10 hover:text-[var(--red-500)]"
+                  aria-label="Remove system"
+                  title="Remove from BoQ"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <details className="mt-1.5">
+                <summary className="cursor-pointer text-[11px] text-[var(--ink-500)] hover:text-[var(--ink-900)]">
+                  Show {sysLines.length} BoQ lines
+                </summary>
+                <table className="mt-1.5 w-full text-[11.5px]">
+                  <tbody className="divide-y divide-[var(--ink-200)]">
+                    {sysLines.map((l) => (
+                      <tr key={l.id}>
+                        <td className="py-1 pr-2 text-[var(--ink-700)]">{l.material}</td>
+                        <td className="py-1 pl-2 text-right font-mono tabular-nums text-[var(--ink-900)]">
+                          {l.qty.toLocaleString()} {l.unit}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </details>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
