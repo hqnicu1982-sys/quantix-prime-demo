@@ -254,6 +254,8 @@ function SingleView({
   navigate: ReturnType<typeof useNavigate>;
 }) {
   const sys = LIBRARY.find(s => s.code === activeCode) ?? LIBRARY[0];
+  const errs = validateGeometry(length, height, waste);
+  const invalid = hasErrors(errs);
   const totals = scaledTotals(sys, area, wasteFactor);
 
   // Recommendation: pick the smallest board ≥ wall height to minimise off-cuts.
@@ -326,8 +328,8 @@ function SingleView({
         <section className="glass-card rounded-2xl p-6">
           <SectionTitle n="02" label="Geometry & finish" />
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <Field label="Length (m)" value={length} onChange={setLength} />
-            <Field label="Height (m)" value={height} onChange={setHeight} />
+            <Field label="Length" unit="m" value={length} onChange={setLength} error={errs.length} hint="Wall length, e.g. 12.5" />
+            <Field label="Height" unit="m" value={height} onChange={setHeight} error={errs.height} hint="Floor to ceiling, 1.5–12 m" />
             <Select label="Stud Centres" options={["400 mm","600 mm","Other"]} defaultValue="600 mm" />
             <div>
               <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Board Size</p>
@@ -388,7 +390,19 @@ function SingleView({
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            <Button size="lg" className="flex-1 min-w-[200px] gap-2" onClick={() => toast.success("BoQ calculated", { description: `${sys.code} · ${area} m²` })}>
+            <Button
+              size="lg"
+              className="flex-1 min-w-[200px] gap-2"
+              disabled={invalid}
+              onClick={() => {
+                if (invalid) {
+                  const first = errs.length || errs.height || errs.waste;
+                  toast.error("Please fix the highlighted fields", { description: first ?? undefined });
+                  return;
+                }
+                toast.success("BoQ calculated", { description: `${sys.code} · ${area.toLocaleString()} m²` });
+              }}
+            >
               <Sparkles className="h-4 w-4" /> Calculate BoQ
             </Button>
             <Button size="lg" variant="outline" onClick={() => { setLength("50"); setHeight("4"); setWaste(5); toast("Reset to defaults"); }}>
