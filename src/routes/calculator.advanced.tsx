@@ -32,9 +32,9 @@ const searchSchema = z.object({
   // Each wall: { n: name, l: length-mm, h: height-mm, o?: openings-m² }
   w:       fallback(z.string(), "").default(""),
   // Filters for Recommend mode
-  minH:    fallback(z.number().min(0).max(20).optional(), undefined),
-  minRw:   fallback(z.number().int().min(0).max(80).optional(), undefined),
-  minFire: fallback(z.number().int().min(0).max(240).optional(), undefined),
+  minH:    fallback(z.number().min(0).max(20).optional(), undefined).default(undefined),
+  minRw:   fallback(z.number().int().min(0).max(80).optional(), undefined).default(undefined),
+  minFire: fallback(z.number().int().min(0).max(240).optional(), undefined).default(undefined),
 });
 
 export const Route = createFileRoute("/calculator/advanced")({
