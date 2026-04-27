@@ -127,6 +127,16 @@ function Calculator() {
   const [height, setHeight] = useState("4");
   const [waste, setWaste]   = useState(5);
 
+  // Active manufacturer brand. Visual-only for now — actual catalogue swap
+  // happens in a follow-up step. British Gypsum has the real systems; the
+  // others show a "coming soon" banner over the existing data.
+  const [brandId, setBrandId] = useState<BrandId>("british-gypsum");
+  useEffect(() => {
+    setBrandId(readActiveBrand());
+    return subscribeBrand(setBrandId);
+  }, []);
+  const brand = getBrand(brandId);
+
   // Compare-mode state
   const [leftCode,  setLeftCode]  = useState<string>(LIBRARY[0].code);
   const [rightCode, setRightCode] = useState<string>(LIBRARY[1].code);
