@@ -1,27 +1,23 @@
-import { createFileRoute, useNavigate, Link, Outlet, useChildMatches } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Search, Sparkles, Download, Shield, Layers, Ruler, Volume2, Flame,
-  ArrowRight, Wand2, RotateCcw, GitCompare, Check, ArrowDown, ArrowUp, Minus, Lightbulb, SlidersHorizontal,
+  ArrowRight, Wand2, RotateCcw, GitCompare, Check, ArrowDown, ArrowUp, Minus, Lightbulb,
+  ChevronDown, Scissors, PoundSterling,
   AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
-import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste, getAvailableBoards, piecesPerColumn, boardNetWasteWithReuse, recommendBoardSmart } from "@/lib/boardSizing";
+import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste, getAvailableBoards, piecesPerColumn, boardNetWasteWithReuse, recommendBoardSmart, planWalls, type WallInput } from "@/lib/boardSizing";
 import { fireTier, acousticTier, heightTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
 import { TierMetric as TierChip } from "@/components/TierMetric";
 import { validateGeometry, hasErrors } from "@/lib/calcValidation";
+import { ColumnDiagram } from "@/components/calculator/ColumnDiagram";
+import { WallEditor } from "@/components/calculator/WallEditor";
 
-export const Route = createFileRoute("/calculator")({ component: CalculatorLayout });
-
-function CalculatorLayout() {
-  // If a child route (e.g. /calculator/advanced) is active, render only the child.
-  const childMatches = useChildMatches();
-  if (childMatches.length > 0) return <Outlet />;
-  return <Calculator />;
-}
+export const Route = createFileRoute("/calculator")({ component: Calculator });
 
 // =============================================================================
 // SYSTEM LIBRARY (structured for compare)
@@ -195,21 +191,10 @@ function Calculator() {
           </div>
 
           {/* Mode toggle */}
-          <div className="flex items-center gap-2">
-            <div className="glass-card inline-flex rounded-full p-1">
-              <ModeBtn active={mode === "code"}      onClick={() => setMode("code")}      icon={<Search className="h-3.5 w-3.5" />}      label="By code" />
-              <ModeBtn active={mode === "recommend"} onClick={() => setMode("recommend")} icon={<Sparkles className="h-3.5 w-3.5" />}    label="Recommend" />
-              <ModeBtn active={mode === "compare"}   onClick={() => setMode("compare")}   icon={<GitCompare className="h-3.5 w-3.5" />}  label="Compare" />
-            </div>
-            <Link
-              to="/calculator/advanced"
-              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ink-200)] bg-[var(--card)] px-3.5 py-2 text-[12px] font-semibold text-[var(--ink-700)] transition-colors hover:border-[var(--accent-500)] hover:text-[var(--accent-500)]"
-              title="Multi-wall planning, off-cut re-use and cutting strategy"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              Advanced
-              <ArrowRight className="h-3 w-3" />
-            </Link>
+          <div className="glass-card inline-flex rounded-full p-1">
+            <ModeBtn active={mode === "code"}      onClick={() => setMode("code")}      icon={<Search className="h-3.5 w-3.5" />}      label="By code" />
+            <ModeBtn active={mode === "recommend"} onClick={() => setMode("recommend")} icon={<Sparkles className="h-3.5 w-3.5" />}    label="Recommend" />
+            <ModeBtn active={mode === "compare"}   onClick={() => setMode("compare")}   icon={<GitCompare className="h-3.5 w-3.5" />}  label="Compare" />
           </div>
         </header>
 
@@ -300,6 +285,31 @@ function SingleView({
   const cutWastePct = reuseOffcuts
     ? boardNetWasteWithReuse(heightMm, lengthMm, effectiveBoard)
     : boardOffcutWaste(heightMm, effectiveBoard);
+
+  // ─── Plan all walls (drawer): multi-wall, off-cut re-use cross-wall, cost ──
+  const [planOpen, setPlanOpen] = useState(false);
+  const [extraWalls, setExtraWalls] = useState<WallInput[]>([]);
+  const [reuseAcrossWalls, setReuseAcrossWalls] = useState(true);
+
+  // Always include the current wall as "Wall 1" — synced from the main inputs.
+  const allWalls = useMemo<WallInput[]>(() => {
+    const w1: WallInput = {
+      id: "wall-current",
+      name: "Wall 1 (current)",
+      heightMm,
+      lengthMm,
+      openingsM2: 0,
+    };
+    return [w1, ...extraWalls];
+  }, [heightMm, lengthMm, extraWalls]);
+
+  const projectPlan = useMemo(
+    () =>
+      heightMm > 0 && lengthMm > 0
+        ? planWalls(allWalls, effectiveBoard, { reuseAcrossWalls })
+        : null,
+    [allWalls, effectiveBoard, reuseAcrossWalls, heightMm, lengthMm],
+  );
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
@@ -515,6 +525,91 @@ function SingleView({
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* ───── Plan all walls (multi-wall + cutting strategy + cost) ───── */}
+          {heightMm > 0 && lengthMm > 0 && (
+            <div className="mt-3 overflow-hidden rounded-xl border border-[var(--ink-200)]">
+              <button
+                type="button"
+                onClick={() => setPlanOpen(o => !o)}
+                className="flex w-full items-center justify-between gap-3 bg-gradient-to-r from-[var(--accent-500)]/8 to-transparent px-3 py-2.5 text-left transition-colors hover:from-[var(--accent-500)]/14"
+                aria-expanded={planOpen}
+              >
+                <span className="flex items-center gap-2">
+                  <Scissors className="h-3.5 w-3.5 text-[var(--accent-500)]" />
+                  <span className="text-[11.5px] font-semibold uppercase tracking-wider text-[var(--ink-900)]">
+                    Plan all walls — cutting strategy &amp; project total
+                  </span>
+                  {projectPlan && allWalls.length > 1 && (
+                    <span className="font-mono-num rounded-md bg-[var(--accent-500)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-500)]">
+                      {allWalls.length} walls
+                    </span>
+                  )}
+                </span>
+                <span className="flex items-center gap-2 text-[11px] text-[var(--ink-500)]">
+                  {projectPlan && (
+                    <>
+                      <span className="font-mono-num">{projectPlan.totalBoardsBought} boards</span>
+                      <span aria-hidden="true">·</span>
+                      <span className="font-mono-num">£{projectPlan.totalCost.toFixed(0)}</span>
+                    </>
+                  )}
+                  <ChevronDown className={"h-4 w-4 transition-transform " + (planOpen ? "rotate-180" : "")} />
+                </span>
+              </button>
+
+              {planOpen && projectPlan && (
+                <div className="space-y-4 border-t border-[var(--ink-200)] bg-[var(--ink-50)]/30 p-4">
+                  <p className="text-[11.5px] leading-relaxed text-[var(--ink-700)]">
+                    Add every wall built with <span className="font-mono-num font-semibold">{sys.shortName}</span> using <span className="font-mono-num font-semibold">{effectiveBoard}</span>.
+                    The planner simulates board cutting wall-by-wall and reuses off-cuts that still have a factory edge — exactly as on site.
+                  </p>
+
+                  {/* Multi-wall editor */}
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+                        Walls in this system ({allWalls.length})
+                      </p>
+                      <label className="flex cursor-pointer items-center gap-2 text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+                        <input
+                          type="checkbox"
+                          checked={reuseAcrossWalls}
+                          onChange={e => setReuseAcrossWalls(e.target.checked)}
+                          className="h-3.5 w-3.5 accent-[var(--accent-500)]"
+                        />
+                        Re-use off-cuts across walls
+                      </label>
+                    </div>
+                    <WallEditor
+                      walls={allWalls}
+                      onChange={(next) => {
+                        // Wall 1 is locked (synced to main inputs); only persist extras.
+                        setExtraWalls(next.filter(w => w.id !== "wall-current"));
+                      }}
+                    />
+                  </div>
+
+                  {/* Project total + cutting diagram */}
+                  <div className="grid gap-4 md:grid-cols-[1fr_280px]">
+                    <ColumnDiagram plan={projectPlan.walls[0]} maxHeightPx={180} />
+                    <div className="space-y-2 rounded-xl border border-[var(--ink-200)] bg-[var(--card)] p-3">
+                      <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+                        <PoundSterling className="h-3 w-3" />
+                        Project totals
+                      </div>
+                      <Stat label="Boards bought" value={`${projectPlan.totalBoardsBought}`} />
+                      <Stat label="Wall area covered" value={`${projectPlan.totalWallAreaM2.toFixed(1)} m²`} />
+                      <Stat label="Net waste" value={`${projectPlan.netWastePct}%`} tone={projectPlan.netWastePct <= 10 ? "good" : projectPlan.netWastePct <= 20 ? "warn" : "bad"} />
+                      <div className="my-1 border-t border-[var(--ink-200)]" />
+                      <Stat label="Board cost" value={`£${projectPlan.totalCost.toFixed(0)}`} strong />
+                      <Stat label="Of which scrap" value={`£${projectPlan.scrapCost.toFixed(0)}`} tone="bad" />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1022,4 +1117,33 @@ function compareNum(a: number, b: number, higherBetter: boolean): "left" | "righ
   if (b === 0) return "left";
   if (higherBetter) return a > b ? "left" : "right";
   return a < b ? "left" : "right";
+}
+
+function Stat({
+  label,
+  value,
+  tone,
+  strong,
+}: {
+  label: string;
+  value: string;
+  tone?: "good" | "warn" | "bad";
+  strong?: boolean;
+}) {
+  const colorVar =
+    tone === "good" ? "var(--tier-good)" :
+    tone === "warn" ? "var(--amber-500)" :
+    tone === "bad"  ? "var(--tier-critical)" :
+    "var(--ink-900)";
+  return (
+    <div className="flex items-center justify-between gap-2 text-[12px]">
+      <span className="text-[var(--ink-500)]">{label}</span>
+      <span
+        className={"font-mono-num tabular-nums " + (strong ? "text-[14px] font-bold" : "font-semibold")}
+        style={{ color: colorVar }}
+      >
+        {value}
+      </span>
+    </div>
+  );
 }
