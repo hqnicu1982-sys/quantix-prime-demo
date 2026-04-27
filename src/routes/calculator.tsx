@@ -114,6 +114,9 @@ function Calculator() {
   const [leftCode,  setLeftCode]  = useState<string>(LIBRARY[0].code);
   const [rightCode, setRightCode] = useState<string>(LIBRARY[1].code);
 
+  // Active system shown in SingleView (By code / Recommend)
+  const [activeCode, setActiveCode] = useState<string>(LIBRARY[0].code);
+
   // On mount: if URL says ?mode=compare or the tray has slots, switch to compare
   // and hydrate left/right from the tray. Then keep them in sync with the tray.
   useEffect(() => {
@@ -137,6 +140,14 @@ function Calculator() {
 
   const area = +length * +height;
   const wasteFactor = 1 + waste / 100;
+
+  // Promote one side of the comparison into the single-system calculator.
+  const promoteToCalculator = (code: string, label?: string) => {
+    setActiveCode(code);
+    setMode("code");
+    toast.success(label ?? "Loaded into calculator", { description: code });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="glass-bg -m-6 min-h-[calc(100vh-4rem)] p-6 md:-m-8 md:p-10">
@@ -198,10 +209,12 @@ function Calculator() {
             height={height} setHeight={setHeight}
             waste={waste}   setWaste={setWaste}
             area={area} wasteFactor={wasteFactor}
+            onPromote={promoteToCalculator}
           />
         ) : (
           /* ===================== SINGLE-SYSTEM MODE ===================== */
           <SingleView
+            activeCode={activeCode} setActiveCode={setActiveCode}
             length={length} setLength={setLength}
             height={height} setHeight={setHeight}
             waste={waste}   setWaste={setWaste}
