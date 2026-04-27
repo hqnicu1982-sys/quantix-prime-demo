@@ -2,11 +2,11 @@
 // Boards are stocked at 1200 mm wide × {1800, 2400, 3000, 3600} mm long.
 // Vertical orientation: board length must cover wall height.
 
-export const BOARD_LIBRARY: { label: string; width: number; height: number }[] = [
-  { label: "900 × 1800",  width:  900, height: 1800 },
-  { label: "1200 × 2400", width: 1200, height: 2400 },
-  { label: "1200 × 3000", width: 1200, height: 3000 },
-  { label: "1200 × 3600", width: 1200, height: 3600 },
+export const BOARD_LIBRARY: { label: string; width: number; height: number; pricePerM2: number }[] = [
+  { label: "900 × 1800",  width:  900, height: 1800, pricePerM2: 4.10 },
+  { label: "1200 × 2400", width: 1200, height: 2400, pricePerM2: 3.92 },
+  { label: "1200 × 3000", width: 1200, height: 3000, pricePerM2: 4.20 },
+  { label: "1200 × 3600", width: 1200, height: 3600, pricePerM2: 4.45 },
 ];
 
 /** Filter the global library by labels available for a given system. */
