@@ -4,24 +4,26 @@ import { Button } from "@/components/ui/button";
 import {
   Check, Sparkles, ArrowRight, Search, SlidersHorizontal,
   Layers, Volume2, Flame, Ruler, GitCompare,
+  Building2, PanelTop, Shield, Grid3x3, Box, Hammer, Wind, Brush,
 } from "lucide-react";
 import { toast } from "sonner";
 import { pushToTray } from "@/lib/compareTray";
+import { fireTier, acousticTier, heightTier, thicknessTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
 
 export const Route = createFileRoute("/catalog")({ component: Catalog });
 
 // ---- Domain ----
-type Family = { id: string; name: string; blurb: string; status: "live" | "beta" | "roadmap" };
+type Family = { id: string; name: string; blurb: string; status: "live" | "beta" | "roadmap"; icon: React.ComponentType<{ className?: string }> };
 
 const families: Family[] = [
-  { id: "walls",    name: "Partitions & Walls", blurb: "Internal partition systems",      status: "live" },
-  { id: "lining",   name: "Wall Linings",       blurb: "Independent & direct linings",   status: "live" },
-  { id: "shaft",    name: "Shaftwalls",         blurb: "Fire rated systems",              status: "live" },
-  { id: "ceilings", name: "Ceilings",           blurb: "MF ceilings & horizontal shaftwalls", status: "beta" },
-  { id: "steel",    name: "Steel Protection",   blurb: "Board & coating fire protection", status: "roadmap" },
-  { id: "floors",   name: "Floors",             blurb: "Floating & acoustic floors",      status: "roadmap" },
-  { id: "external", name: "External Walls",     blurb: "Lightweight external systems",    status: "roadmap" },
-  { id: "plasters", name: "Plasters",           blurb: "Skim & undercoat plasters",       status: "roadmap" },
+  { id: "walls",    name: "Partitions & Walls", blurb: "Internal partition systems",          status: "live",    icon: Building2 },
+  { id: "lining",   name: "Wall Linings",       blurb: "Independent & direct linings",        status: "live",    icon: PanelTop  },
+  { id: "shaft",    name: "Shaftwalls",         blurb: "Fire rated systems",                  status: "live",    icon: Shield    },
+  { id: "ceilings", name: "Ceilings",           blurb: "MF ceilings & horizontal shaftwalls", status: "beta",    icon: Grid3x3   },
+  { id: "steel",    name: "Steel Protection",   blurb: "Board & coating fire protection",     status: "roadmap", icon: Box       },
+  { id: "floors",   name: "Floors",             blurb: "Floating & acoustic floors",          status: "roadmap", icon: Hammer    },
+  { id: "external", name: "External Walls",     blurb: "Lightweight external systems",        status: "roadmap", icon: Wind      },
+  { id: "plasters", name: "Plasters",           blurb: "Skim & undercoat plasters",           status: "roadmap", icon: Brush     },
 ];
 
 const allMatches = [
@@ -66,18 +68,26 @@ function Catalog() {
       <div className="relative space-y-8">
         {/* Hero */}
         <header className="flex flex-wrap items-end justify-between gap-4">
-          <div>
+          <div className="pop-in">
             <p className="font-mono-num flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[var(--ink-500)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-500)] shadow-[0_0_12px_var(--accent-500)]" />
+              <span className="glow-pulse h-1.5 w-1.5 rounded-full bg-[var(--accent-500)] shadow-[0_0_12px_var(--accent-500)]" />
               Guided Selection · BG Systems
             </p>
-            <h1 className="font-display mt-3 text-[44px] font-semibold leading-[0.95] tracking-tight text-[var(--ink-900)] md:text-[60px]">
-              Choose a system —<br />
+            <h1 className="font-display mt-3 text-[44px] font-semibold leading-[0.95] tracking-tight md:text-[60px]">
+              <span className="hero-gradient-text">Choose a system —</span><br />
               <span className="italic text-[var(--accent-500)]">on your terms.</span>
             </h1>
             <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-[var(--ink-700)]">
               Pick a family, narrow by performance, and load the right BG build-up straight into the calculator.
             </p>
+            {/* Tier legend */}
+            <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="text-[var(--ink-500)]">Impact coding</span>
+              <span className="tier-chip" data-tier="critical"><span className="tier-dot" /> Critical</span>
+              <span className="tier-chip" data-tier="high"><span className="tier-dot" /> High</span>
+              <span className="tier-chip" data-tier="standard"><span className="tier-dot" /> Standard</span>
+              <span className="tier-chip" data-tier="eco"><span className="tier-dot" /> Eco</span>
+            </div>
           </div>
           <Button size="sm" onClick={() => navigate({ to: "/calculator" })} className="gap-1.5">
             Open calculator <ArrowRight className="h-3.5 w-3.5" />
@@ -96,6 +106,7 @@ function Catalog() {
                 {families.map(f => {
                   const isPicked = picked === f.id;
                   const disabled = f.status === "roadmap";
+                  const Icon = f.icon;
                   return (
                     <li key={f.id}>
                       <button
@@ -109,10 +120,12 @@ function Catalog() {
                             : "hover:bg-[var(--ink-50)]"
                         }`}
                       >
-                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                          isPicked ? "border-[var(--accent-500)] bg-[var(--accent-500)] text-white" : "border-[var(--ink-200)]"
+                        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all ${
+                          isPicked
+                            ? "bg-gradient-to-br from-[var(--accent-500)] to-[var(--teal-500)] text-white shadow-[0_8px_22px_-10px_var(--accent-500)]"
+                            : "bg-[var(--ink-50)] text-[var(--ink-700)] group-hover:bg-[var(--card)]"
                         }`}>
-                          {isPicked && <Check className="h-3 w-3" />}
+                          <Icon className="h-4 w-4" />
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
@@ -121,6 +134,7 @@ function Catalog() {
                           </div>
                           <p className="mt-0.5 truncate text-[11.5px] text-[var(--ink-500)]">{f.blurb}</p>
                         </div>
+                        {isPicked && <Check className="h-3.5 w-3.5 shrink-0 text-[var(--accent-500)]" />}
                       </button>
                     </li>
                   );
@@ -191,27 +205,49 @@ function Catalog() {
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
-                {results.map(m => (
-                  <article key={m.code} className="glass-card group relative overflow-hidden rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:neon-ring">
+                {results.map((m, i) => {
+                  const tH = heightTier(m.height);
+                  const tF = fireTier(m.fire);
+                  const tR = acousticTier(m.rw);
+                  const tT = thicknessTier(m.thick);
+                  const top = bestTier(tF, tR, tH);
+                  return (
+                  <article
+                    key={m.code}
+                    className="glass-card lift-on-hover pop-in group relative overflow-hidden rounded-2xl p-5 hover:neon-ring"
+                    style={{
+                      // ribbon color picks up the highest-impact tier
+                      ['--tier-color' as never]: tierColorVar(top),
+                      animationDelay: `${i * 35}ms`,
+                    }}
+                  >
+                    <span className="impact-ribbon" />
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-mono-num text-[11px] font-semibold uppercase tracking-wider text-[var(--accent-500)]">{m.code}</p>
-                        <p className="mt-1 text-[15px] font-semibold leading-snug text-[var(--ink-900)]">{m.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-mono-num text-[11px] font-semibold uppercase tracking-wider text-[var(--accent-500)]">{m.code}</p>
+                          {top !== "none" && (
+                            <span className="tier-chip" data-tier={top}>
+                              <span className="tier-dot" /> {top}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1.5 text-[15px] font-semibold leading-snug text-[var(--ink-900)]">{m.name}</p>
                       </div>
                       <button
                         onClick={() => { toast.success("Loaded into calculator", { description: m.code }); navigate({ to: "/calculator" }); }}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ink-900)] text-white transition-transform group-hover:scale-110"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--ink-900)] to-[var(--navy-800)] text-white transition-all group-hover:scale-110 group-hover:shadow-[0_10px_24px_-8px_var(--accent-500)]"
                         aria-label="Load"
                       >
-                        <ArrowRight className="h-4 w-4" />
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                       </button>
                     </div>
 
                     <div className="mt-4 grid grid-cols-4 gap-2">
-                      <SpecChip icon={<Ruler className="h-3 w-3" />}   v={m.height ? `${m.height} m` : "—"} k="Height" />
-                      <SpecChip icon={<Flame className="h-3 w-3" />}   v={m.fire   ? `${m.fire}'`    : "—"} k="Fire" />
-                      <SpecChip icon={<Volume2 className="h-3 w-3" />} v={m.rw     ? `${m.rw} dB`    : "—"} k="Rw" />
-                      <SpecChip icon={<Layers className="h-3 w-3" />}  v={`${m.thick}`} k="mm" />
+                      <SpecChip icon={<Ruler   className="h-3 w-3" />} v={m.height ? `${m.height} m` : "—"} k="Height" tier={tH} />
+                      <SpecChip icon={<Flame   className="h-3 w-3" />} v={m.fire   ? `${m.fire}'`    : "—"} k="Fire"   tier={tF} />
+                      <SpecChip icon={<Volume2 className="h-3 w-3" />} v={m.rw     ? `${m.rw} dB`    : "—"} k="Rw"     tier={tR} />
+                      <SpecChip icon={<Layers  className="h-3 w-3" />} v={`${m.thick} mm`}                  k="Thick"  tier={tT} />
                     </div>
 
                     <div className="mt-4 flex items-center gap-2 border-t border-[var(--ink-200)]/50 pt-3">
@@ -232,7 +268,8 @@ function Catalog() {
                       </button>
                     </div>
                   </article>
-                ))}
+                  );
+                })}
               </div>
             )}
           </main>
@@ -286,13 +323,40 @@ function SelectField({ label, value, onChange, options }: { label: string; value
   );
 }
 
-function SpecChip({ icon, k, v }: { icon: React.ReactNode; k: string; v: string }) {
+function SpecChip({ icon, k, v, tier = "none" }: { icon: React.ReactNode; k: string; v: string; tier?: Tier }) {
+  const color = tierColorVar(tier);
+  const isNone = tier === "none";
   return (
-    <div className="rounded-lg border border-[var(--ink-200)]/60 bg-[var(--card)]/40 p-2 text-center backdrop-blur-sm">
-      <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+    <div
+      className="group/chip relative overflow-hidden rounded-lg border p-2 text-center backdrop-blur-sm transition-all hover:-translate-y-0.5"
+      style={{
+        borderColor: isNone
+          ? "color-mix(in oklab, var(--ink-200) 60%, transparent)"
+          : `color-mix(in oklab, ${color} 35%, transparent)`,
+        background: isNone
+          ? "color-mix(in oklab, var(--card) 40%, transparent)"
+          : `linear-gradient(180deg, color-mix(in oklab, ${color} 12%, transparent), color-mix(in oklab, ${color} 4%, transparent))`,
+      }}
+    >
+      {/* tier corner accent */}
+      {!isNone && (
+        <span
+          className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full"
+          style={{ background: color, boxShadow: `0 0 8px ${color}` }}
+        />
+      )}
+      <span
+        className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider"
+        style={{ color: isNone ? "var(--ink-500)" : color }}
+      >
         {icon} {k}
       </span>
-      <p className="font-mono-num mt-1 text-[12.5px] font-bold text-[var(--ink-900)]">{v}</p>
+      <p
+        className="font-mono-num mt-1 text-[12.5px] font-bold"
+        style={{ color: isNone ? "var(--ink-900)" : color }}
+      >
+        {v}
+      </p>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
 import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
 import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste } from "@/lib/boardSizing";
+import { fireTier, acousticTier, heightTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
@@ -158,13 +159,13 @@ function Calculator() {
       <div className="relative space-y-8">
         {/* Hero */}
         <header className="flex flex-wrap items-end justify-between gap-4">
-          <div>
+          <div className="pop-in">
             <p className="font-mono-num flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[var(--ink-500)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-500)] shadow-[0_0_12px_var(--accent-500)]" />
+              <span className="glow-pulse h-1.5 w-1.5 rounded-full bg-[var(--accent-500)] shadow-[0_0_12px_var(--accent-500)]" />
               BG System Calculator
             </p>
-            <h1 className="font-display mt-3 text-[44px] font-semibold leading-[0.95] tracking-tight text-[var(--ink-900)] md:text-[60px]">
-              From a code to a<br />
+            <h1 className="font-display mt-3 text-[44px] font-semibold leading-[0.95] tracking-tight md:text-[60px]">
+              <span className="hero-gradient-text">From a code to a</span><br />
               <span className="italic text-[var(--accent-500)]">priced BoQ</span>.
             </h1>
             <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-[var(--ink-700)]">
@@ -291,18 +292,32 @@ function SingleView({
           </div>
           <p className="mt-3 text-[12px] text-[var(--ink-500)]">Type a code and press Load. Data comes from the live System Catalog.</p>
 
-          <div className="mt-5 rounded-xl border border-[var(--accent-500)]/30 bg-[var(--accent-500)]/5 p-4">
-            <p className="text-[12.5px] leading-relaxed text-[var(--ink-900)]">{sys.desc}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {perfChipsFor(sys).map(p => (
-                <span key={p.k} className="glass-card inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px]">
-                  <span className="text-[var(--accent-500)]">{p.icon}</span>
-                  <span className="text-[var(--ink-500)]">{p.k}</span>
-                  <span className="font-mono-num font-semibold text-[var(--ink-900)]">{p.v}</span>
-                </span>
-              ))}
-            </div>
-          </div>
+          {(() => {
+            const tF = fireTier(sys.perf.fire);
+            const tR = acousticTier(sys.perf.rw);
+            const tH = heightTier(sys.perf.maxHeight / 1000);
+            const top = bestTier(tF, tR, tH);
+            return (
+              <div
+                className="relative mt-5 overflow-hidden rounded-xl border p-4"
+                style={{
+                  borderColor: `color-mix(in oklab, ${tierColorVar(top)} 35%, transparent)`,
+                  background: `linear-gradient(135deg, color-mix(in oklab, ${tierColorVar(top)} 10%, transparent), color-mix(in oklab, var(--accent-500) 4%, transparent))`,
+                  ['--tier-color' as never]: tierColorVar(top),
+                }}
+              >
+                <span className="impact-ribbon" />
+                <p className="text-[12.5px] leading-relaxed text-[var(--ink-900)]">{sys.desc}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <TierMetric icon={<Flame   className="h-3 w-3" />} label="Fire"     value={sys.perf.fire ? `${sys.perf.fire}'`   : "—"} tier={tF} />
+                  <TierMetric icon={<Volume2 className="h-3 w-3" />} label="Acoustic" value={sys.perf.rw   ? `${sys.perf.rw} dB` : "—"} tier={tR} />
+                  <TierMetric icon={<Ruler   className="h-3 w-3" />} label="Max H"    value={`${sys.perf.maxHeight} mm`}                tier={tH} />
+                  <TierMetric icon={<Layers  className="h-3 w-3" />} label="Stud c/c" value={`${sys.perf.studCentres} mm`}              tier="none" />
+                  <TierMetric icon={<Layers  className="h-3 w-3" />} label="Weight"   value={`${sys.perf.weight} kg/m²`}                tier="none" />
+                </div>
+              </div>
+            );
+          })()}
         </section>
 
         <section className="glass-card rounded-2xl p-6">
@@ -386,15 +401,22 @@ function SingleView({
       </main>
 
       <aside className="lg:sticky lg:top-6 lg:self-start">
-        <div className="glass-card glass-card-strong overflow-hidden rounded-2xl">
+        <div className="glass-card glass-card-strong relative overflow-hidden rounded-2xl">
+          <span className="impact-ribbon" />
+          <span className="shimmer-line absolute inset-x-0 top-0 h-[2px] opacity-60" />
           <div className="border-b border-[var(--ink-200)]/60 bg-gradient-to-br from-[var(--accent-500)]/10 to-transparent px-5 py-4">
-            <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Live summary</p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Live summary</p>
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--green-600)]">
+                <span className="glow-pulse h-1.5 w-1.5 rounded-full bg-[var(--green-600)]" /> live
+              </span>
+            </div>
             <p className="font-mono-num mt-1 text-[12px] font-semibold text-[var(--accent-500)]">{sys.code}</p>
           </div>
 
           <div className="border-b border-[var(--ink-200)]/60 px-5 py-5">
             <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">Wall area</p>
-            <p className="font-display mt-1 text-[34px] font-bold leading-none tracking-tight text-[var(--ink-900)]">
+            <p className="font-display impact-number mt-1 text-[44px] font-bold leading-none tracking-tight">
               {area.toLocaleString()}<span className="ml-1 text-[16px] font-medium text-[var(--ink-500)]">m²</span>
             </p>
             <p className="mt-1 text-[11.5px] text-[var(--ink-500)]">{length} m × {height} m · waste {waste}%</p>
@@ -736,9 +758,21 @@ function ModeBtn({ active, onClick, icon, label }: { active: boolean; onClick: (
 function SectionTitle({ n, label }: { n: string; label: string }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="font-mono-num inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--ink-900)] text-[11px] font-bold text-white">{n}</span>
+      <span className="step-badge">{n}</span>
       <h2 className="text-[14px] font-semibold tracking-tight text-[var(--ink-900)]">{label}</h2>
+      <span className="ml-3 hidden h-px flex-1 bg-gradient-to-r from-[var(--ink-200)] to-transparent sm:block" />
     </div>
+  );
+}
+
+function TierMetric({ icon, label, value, tier }: { icon: React.ReactNode; label: string; value: string; tier: Tier }) {
+  return (
+    <span className="tier-chip" data-tier={tier}>
+      <span className="tier-dot" />
+      {icon}
+      <span className="opacity-80">{label}</span>
+      <span className="font-bold">{value}</span>
+    </span>
   );
 }
 
