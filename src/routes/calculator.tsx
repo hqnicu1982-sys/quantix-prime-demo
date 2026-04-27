@@ -489,7 +489,7 @@ function SingleView({
                       : w <= 15 ? "var(--accent-500)"
                       : w <= 25 ? "var(--amber-500)"
                       :           "var(--tier-critical)";
-                    const costColor = isBestValue ? "var(--tier-good)" : "var(--ink-900)";
+                    const costColor = isBestValue ? "var(--green-600)" : "var(--ink-900)";
                     return (
                       <tr
                         key={b.label}
@@ -529,7 +529,7 @@ function SingleView({
                               £{scrapCost.toFixed(2)}
                             </span>
                             {isBestValue && (
-                              <span className="rounded-full bg-[var(--tier-good)]/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--tier-good)]">
+                              <span className="rounded-full bg-[var(--green-600)]/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--green-600)]">
                                 Best value
                               </span>
                             )}
