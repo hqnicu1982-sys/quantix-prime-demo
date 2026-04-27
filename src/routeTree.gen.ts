@@ -26,6 +26,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as ProjectsFitzroviaRouteImport } from './routes/projects.fitzrovia'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
+import { Route as CalculatorAdvancedRouteImport } from './routes/calculator.advanced'
 
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
@@ -112,10 +113,15 @@ const PriceListsUploadRoute = PriceListsUploadRouteImport.update({
   path: '/price-lists/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CalculatorAdvancedRoute = CalculatorAdvancedRouteImport.update({
+  id: '/advanced',
+  path: '/advanced',
+  getParentRoute: () => CalculatorRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/calculator': typeof CalculatorRoute
+  '/calculator': typeof CalculatorRouteWithChildren
   '/calloffs': typeof CalloffsRoute
   '/catalog': typeof CatalogRoute
   '/costed-boq': typeof CostedBoqRoute
@@ -128,13 +134,14 @@ export interface FileRoutesByFullPath {
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/team': typeof TeamRoute
+  '/calculator/advanced': typeof CalculatorAdvancedRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaRoute
   '/projects/': typeof ProjectsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/calculator': typeof CalculatorRoute
+  '/calculator': typeof CalculatorRouteWithChildren
   '/calloffs': typeof CalloffsRoute
   '/catalog': typeof CatalogRoute
   '/costed-boq': typeof CostedBoqRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/price-intelligence': typeof PriceIntelligenceRoute
   '/readiness': typeof ReadinessRoute
   '/team': typeof TeamRoute
+  '/calculator/advanced': typeof CalculatorAdvancedRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaRoute
   '/projects': typeof ProjectsIndexRoute
@@ -153,7 +161,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/calculator': typeof CalculatorRoute
+  '/calculator': typeof CalculatorRouteWithChildren
   '/calloffs': typeof CalloffsRoute
   '/catalog': typeof CatalogRoute
   '/costed-boq': typeof CostedBoqRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/team': typeof TeamRoute
+  '/calculator/advanced': typeof CalculatorAdvancedRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaRoute
   '/projects/': typeof ProjectsIndexRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/readiness'
     | '/team'
+    | '/calculator/advanced'
     | '/price-lists/upload'
     | '/projects/fitzrovia'
     | '/projects/'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/price-intelligence'
     | '/readiness'
     | '/team'
+    | '/calculator/advanced'
     | '/price-lists/upload'
     | '/projects/fitzrovia'
     | '/projects'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/readiness'
     | '/team'
+    | '/calculator/advanced'
     | '/price-lists/upload'
     | '/projects/fitzrovia'
     | '/projects/'
@@ -231,7 +243,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CalculatorRoute: typeof CalculatorRoute
+  CalculatorRoute: typeof CalculatorRouteWithChildren
   CalloffsRoute: typeof CalloffsRoute
   CatalogRoute: typeof CatalogRoute
   CostedBoqRoute: typeof CostedBoqRoute
@@ -368,8 +380,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PriceListsUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/calculator/advanced': {
+      id: '/calculator/advanced'
+      path: '/advanced'
+      fullPath: '/calculator/advanced'
+      preLoaderRoute: typeof CalculatorAdvancedRouteImport
+      parentRoute: typeof CalculatorRoute
+    }
   }
 }
+
+interface CalculatorRouteChildren {
+  CalculatorAdvancedRoute: typeof CalculatorAdvancedRoute
+}
+
+const CalculatorRouteChildren: CalculatorRouteChildren = {
+  CalculatorAdvancedRoute: CalculatorAdvancedRoute,
+}
+
+const CalculatorRouteWithChildren = CalculatorRoute._addFileChildren(
+  CalculatorRouteChildren,
+)
 
 interface ProjectsRouteChildren {
   ProjectsFitzroviaRoute: typeof ProjectsFitzroviaRoute
@@ -387,7 +418,7 @@ const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CalculatorRoute: CalculatorRoute,
+  CalculatorRoute: CalculatorRouteWithChildren,
   CalloffsRoute: CalloffsRoute,
   CatalogRoute: CatalogRoute,
   CostedBoqRoute: CostedBoqRoute,
