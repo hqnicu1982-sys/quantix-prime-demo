@@ -268,7 +268,8 @@ function SingleView({
   // Recommendation: pick the smallest board ≥ wall height to minimise off-cuts.
   // Wall height in mm; board catalogue (W × H, mm).
   const heightMm = Math.round((+height || 0) * 1000);
-  const recommended = recommendBoard(heightMm);
+  const availableBoards = getAvailableBoards(sys.availableBoards);
+  const recommended = recommendBoard(heightMm, sys.availableBoards);
   const effectiveBoard = boardSize === "auto" ? recommended.label : boardSize;
   const cutWastePct = boardOffcutWaste(heightMm, effectiveBoard);
 
