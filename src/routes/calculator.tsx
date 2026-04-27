@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
 import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste } from "@/lib/boardSizing";
 import { fireTier, acousticTier, heightTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
+import { TierMetric } from "@/components/TierMetric";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
