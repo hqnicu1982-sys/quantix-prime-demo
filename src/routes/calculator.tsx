@@ -178,8 +178,8 @@ function Calculator() {
   const walls = useMemo(() => decodeWalls(search.w), [search.w]);
 
   // Setters that write to URL
-  const set = (patch: Partial<typeof search>) =>
-    navigate({ search: prev => ({ ...prev, ...patch }), replace: true });
+  const set = (patch: Record<string, unknown>) =>
+    navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, ...patch }), replace: true });
 
   // Sync compare slots from tray
   useEffect(() => {
@@ -1181,7 +1181,8 @@ function exportBoQCsv(
     lines.push(`Walls,${w.name} (${(w.lengthMm / 1000).toFixed(2)}m × ${(w.heightMm / 1000).toFixed(2)}m),${((w.heightMm * w.lengthMm) / 1_000_000 - (w.openingsM2 ?? 0)).toFixed(2)},m²`);
   });
   lines.push("");
-  lines.push(`Boards,${plan.boardLabel || ""},${plan.totalBoardsBought},boards`);
+  const firstWallBoard = plan.walls[0]?.boardLabel ?? "";
+  lines.push(`Boards,${firstWallBoard},${plan.totalBoardsBought},boards`);
   lines.push(`Boards,Net waste %,${plan.netWastePct},%`);
   lines.push(`Boards,Material cost,${plan.totalCost.toFixed(2)},GBP`);
   lines.push(`Boards,Scrap cost,${plan.scrapCost.toFixed(2)},GBP`);
@@ -1201,10 +1202,6 @@ function exportBoQCsv(
   URL.revokeObjectURL(url);
   toast.success("BoQ exported", { description: a.download });
 }
-
-const DEFAULT_WALLS: WallInput[] = [
-  { id: "w-1", name: "Wall 1", lengthMm: 50000, heightMm: 4000, openingsM2: 0 },
-];
 
 // suppress lint about unused Tier import (kept for future)
 void (null as unknown as Tier);
