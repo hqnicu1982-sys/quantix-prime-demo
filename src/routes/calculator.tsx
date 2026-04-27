@@ -189,16 +189,22 @@ function Calculator() {
         {/* Hero */}
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="pop-in">
-            <p className="font-mono-num flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[var(--ink-500)]">
-              <span className="glow-pulse h-1.5 w-1.5 rounded-full bg-[var(--accent-500)] shadow-[0_0_12px_var(--accent-500)]" />
-              BG System Calculator
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="font-mono-num flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[var(--ink-500)]">
+                <span
+                  className="glow-pulse h-1.5 w-1.5 rounded-full"
+                  style={{ background: brand.accent, boxShadow: `0 0 12px ${brand.accent}` }}
+                />
+                {brand.initial} System Calculator
+              </p>
+              <BrandSelector />
+            </div>
             <h1 className="font-display mt-3 text-[44px] font-semibold leading-[0.95] tracking-tight md:text-[60px]">
               <span className="hero-gradient-text">From a code to a</span><br />
               <span className="italic text-[var(--accent-500)]">priced BoQ</span>.
             </h1>
             <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-[var(--ink-700)]">
-              Load any British Gypsum system — set the area — get the full build-up: frame, board, jointing and ancillaries.
+              Load any {brand.name} system — set the area — get the full build-up: frame, board, jointing and ancillaries.
             </p>
           </div>
 
@@ -209,6 +215,25 @@ function Calculator() {
             <ModeBtn active={mode === "compare"}   onClick={() => setMode("compare")}   icon={<GitCompare className="h-3.5 w-3.5" />}  label="Compare" />
           </div>
         </header>
+
+        {/* Coming-soon notice for brands without a real catalogue yet */}
+        {!brand.hasCatalog && (
+          <div
+            className="glass-card flex flex-wrap items-center gap-3 rounded-2xl px-4 py-3 text-[12.5px]"
+            style={{ borderLeft: `3px solid ${brand.accent}` }}
+          >
+            <span
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+              style={{ background: brand.accent, color: brand.accentInk }}
+            >
+              {brand.initial}
+            </span>
+            <p className="flex-1 text-[var(--ink-700)]">
+              <span className="font-semibold text-[var(--ink-900)]">{brand.name} catalogue coming soon.</span>{" "}
+              Showing British Gypsum systems for preview — switch back from the brand picker above.
+            </p>
+          </div>
+        )}
 
         {/* Recommend bar (fold-out) */}
         {mode === "recommend" && (
