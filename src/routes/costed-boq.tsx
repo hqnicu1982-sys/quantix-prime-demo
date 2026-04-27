@@ -9,9 +9,12 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { costedBoqRows, costedBoqKpi, fmtMoney, type BoqRow } from "@/lib/mockData";
-import { History, FileDown, Sparkles, AlertTriangle, Search, ArrowUpDown, ArrowUp, ArrowDown, X, Check } from "lucide-react";
+import { History, FileDown, Sparkles, AlertTriangle, Search, ArrowUpDown, ArrowUp, ArrowDown, X, Check, Trash2, Calculator as CalcIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useProject } from "@/lib/ProjectContext";
+import { useProjectData, removeSystem } from "@/lib/projectData";
+import { Link } from "@tanstack/react-router";
 
 const searchSchema = z.object({
   tab:    fallback(z.enum(["all", "review", "missing", "savings"]), "all").default("all"),
@@ -39,6 +42,8 @@ const PAGE_SIZE = 20;
 function CostedBoq() {
   const navigate = Route.useNavigate();
   const search = Route.useSearch();
+  const { current } = useProject();
+  const projectData = useProjectData(current.id);
   const set = (patch: Record<string, unknown>) =>
     navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, ...patch }), replace: true });
 
@@ -157,6 +162,9 @@ function CostedBoq() {
         <Kpi label="Single supplier (CCF)" value={fmtMoney(costedBoqKpi.singleSupplier, { compact: true })} delta="+£28.2k" tone="warning" />
         <Kpi label="Items not priced" value={`${tabCounts.missing}`} delta={`${costedBoqKpi.coverage}% coverage`} tone="warning" />
       </div>
+
+      {/* Custom systems added via Calculator for current project */}
+      <CustomSystemsPanel projectId={current.id} projectName={current.name} systems={projectData.systems} lines={projectData.boqLines} />
 
       {/* Tabs + search */}
       <div className="flex flex-wrap items-center justify-between gap-3">
