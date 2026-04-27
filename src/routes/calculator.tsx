@@ -35,6 +35,9 @@ type SystemDef = {
   perf: Perf;
   // qty is per m² of wall — multiplied by area in render
   totalsPerM2: Totals;
+  // Board sizes the manufacturer actually supplies for this system.
+  // Subset of BOARD_LIBRARY labels. If omitted, all boards are assumed available.
+  availableBoards?: string[];
 };
 
 const LIBRARY: SystemDef[] = [
@@ -50,6 +53,7 @@ const LIBRARY: SystemDef[] = [
       { k: "Suggested stud length", v: "4.2 m" },
     ],
     perf: { weight: 14, maxHeight: 7200, studCentres: 600, fire: 0, rw: 0 },
+    availableBoards: ["1200 × 2400", "1200 × 3000"], // DuraLine 15: no 3600 in this thickness
     totalsPerM2: {
       "Gypframe Stud (4.2m)":                                            { qty: 0.42,  unit: "lengths" },
       "Gypframe 62 FEC 50 Folded Edge Floor & Ceiling Channel (3.6m)":   { qty: 0.14,  unit: "lengths" },
@@ -71,6 +75,7 @@ const LIBRARY: SystemDef[] = [
       { k: "Suggested stud length", v: "3.0 m" },
     ],
     perf: { weight: 22, maxHeight: 5400, studCentres: 600, fire: 60, rw: 44 },
+    availableBoards: ["1200 × 2400", "1200 × 3000", "1200 × 3600"], // WallBoard 12.5: full range
     totalsPerM2: {
       "Gypframe Stud (3.0m)":                                            { qty: 0.42,  unit: "lengths" },
       "Gypframe 62 FEC 50 Folded Edge Floor & Ceiling Channel (3.6m)":   { qty: 0.14,  unit: "lengths" },
@@ -92,6 +97,7 @@ const LIBRARY: SystemDef[] = [
       { k: "Suggested stud length", v: "4.2 m" },
     ],
     perf: { weight: 28, maxHeight: 7200, studCentres: 600, fire: 90, rw: 58 },
+    availableBoards: ["1200 × 2400", "1200 × 3000"], // SoundBloc 15: heavier, no 3600
     totalsPerM2: {
       "Gypframe Stud (4.2m)":                                            { qty: 0.42,  unit: "lengths" },
       "Gypframe 62 FEC 50 Folded Edge Floor & Ceiling Channel (3.6m)":   { qty: 0.14,  unit: "lengths" },
