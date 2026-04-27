@@ -4,24 +4,26 @@ import { Button } from "@/components/ui/button";
 import {
   Check, Sparkles, ArrowRight, Search, SlidersHorizontal,
   Layers, Volume2, Flame, Ruler, GitCompare,
+  Building2, PanelTop, Shield, Grid3x3, Box, Hammer, Wind, Brush,
 } from "lucide-react";
 import { toast } from "sonner";
 import { pushToTray } from "@/lib/compareTray";
+import { fireTier, acousticTier, heightTier, thicknessTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
 
 export const Route = createFileRoute("/catalog")({ component: Catalog });
 
 // ---- Domain ----
-type Family = { id: string; name: string; blurb: string; status: "live" | "beta" | "roadmap" };
+type Family = { id: string; name: string; blurb: string; status: "live" | "beta" | "roadmap"; icon: React.ComponentType<{ className?: string }> };
 
 const families: Family[] = [
-  { id: "walls",    name: "Partitions & Walls", blurb: "Internal partition systems",      status: "live" },
-  { id: "lining",   name: "Wall Linings",       blurb: "Independent & direct linings",   status: "live" },
-  { id: "shaft",    name: "Shaftwalls",         blurb: "Fire rated systems",              status: "live" },
-  { id: "ceilings", name: "Ceilings",           blurb: "MF ceilings & horizontal shaftwalls", status: "beta" },
-  { id: "steel",    name: "Steel Protection",   blurb: "Board & coating fire protection", status: "roadmap" },
-  { id: "floors",   name: "Floors",             blurb: "Floating & acoustic floors",      status: "roadmap" },
-  { id: "external", name: "External Walls",     blurb: "Lightweight external systems",    status: "roadmap" },
-  { id: "plasters", name: "Plasters",           blurb: "Skim & undercoat plasters",       status: "roadmap" },
+  { id: "walls",    name: "Partitions & Walls", blurb: "Internal partition systems",          status: "live",    icon: Building2 },
+  { id: "lining",   name: "Wall Linings",       blurb: "Independent & direct linings",        status: "live",    icon: PanelTop  },
+  { id: "shaft",    name: "Shaftwalls",         blurb: "Fire rated systems",                  status: "live",    icon: Shield    },
+  { id: "ceilings", name: "Ceilings",           blurb: "MF ceilings & horizontal shaftwalls", status: "beta",    icon: Grid3x3   },
+  { id: "steel",    name: "Steel Protection",   blurb: "Board & coating fire protection",     status: "roadmap", icon: Box       },
+  { id: "floors",   name: "Floors",             blurb: "Floating & acoustic floors",          status: "roadmap", icon: Hammer    },
+  { id: "external", name: "External Walls",     blurb: "Lightweight external systems",        status: "roadmap", icon: Wind      },
+  { id: "plasters", name: "Plasters",           blurb: "Skim & undercoat plasters",           status: "roadmap", icon: Brush     },
 ];
 
 const allMatches = [
