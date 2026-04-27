@@ -187,6 +187,8 @@ export type WallInput = {
   lengthMm: number;
   /** subtracted from wall area for cost; columns fall through openings unchanged */
   openingsM2?: number;
+  /** Optional per-wall manufacturer override (UI mock — does not yet affect costing). */
+  brandOverride?: string;
 };
 
 export type ColumnPiece = {
