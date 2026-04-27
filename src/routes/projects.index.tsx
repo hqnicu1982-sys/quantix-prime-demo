@@ -3,17 +3,35 @@ import { Card, CardHead, Kpi, Section } from "@/components/Primitives";
 import { getHealthBadge } from "@/components/HealthBadge";
 import { projects, projectsKpi, fmtMoney } from "@/lib/mockData";
 import { ChevronRight } from "lucide-react";
+import { useCustomProjects } from "@/lib/customProjects";
+import { NewProjectDialog } from "@/components/projects/NewProjectDialog";
+import { useMemo } from "react";
 
 export const Route = createFileRoute("/projects/")({ component: ProjectsList });
 
 function ProjectsList() {
+  const custom = useCustomProjects();
+  const allProjects = useMemo(() => [...custom, ...projects], [custom]);
+  const totalValue = useMemo(
+    () => allProjects.reduce((s, p) => s + p.contractValue, 0),
+    [allProjects],
+  );
+  const contractorCount = useMemo(
+    () => new Set(allProjects.map((p) => p.mainContractor)).size,
+    [allProjects],
+  );
+
   return (
-    <Section title="All projects" subtitle="8 active · 2 completed · 1 pre-contract · £8.4m pipeline value">
+    <Section
+      title="All projects"
+      subtitle={`${allProjects.length} projects · ${fmtMoney(totalValue, { compact: true })} pipeline value`}
+      right={<NewProjectDialog />}
+    >
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Total contract value" value={fmtMoney(projectsKpi.totalValue, { compact: true })} />
+        <Kpi label="Total contract value" value={fmtMoney(totalValue, { compact: true })} />
         <Kpi label="Weighted margin" value={`${projectsKpi.weightedMargin}%`} delta={`+${projectsKpi.marginDeltaQoQ}pp QoQ`} tone="success" />
         <Kpi label="At-risk projects" value={`${projectsKpi.atRisk}`} delta="Trafalgar · Bermondsey" tone="danger" />
-        <Kpi label="Main contractors" value={`${projectsKpi.mainContractors}`} />
+        <Kpi label="Main contractors" value={`${contractorCount}`} />
       </div>
 
       <Card>
@@ -32,7 +50,7 @@ function ProjectsList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--ink-200)]">
-              {projects.map((p) => (
+              {allProjects.map((p) => (
                 <tr key={p.id} className="hover:bg-[var(--ink-50)]">
                   <td className="px-4 py-3">
                     <Link to={p.id === "fitzrovia" ? "/projects/fitzrovia" : "/projects"} className="block">
