@@ -347,10 +347,13 @@ function SingleView({
                 className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium"
               >
                 <option value="auto">Auto — recommended</option>
-                {BOARD_LIBRARY.map(b => (
+                {availableBoards.map(b => (
                   <option key={b.label} value={b.label}>{b.label}</option>
                 ))}
               </select>
+              <p className="mt-1 text-[11px] text-[var(--ink-500)]">
+                {availableBoards.length} size{availableBoards.length === 1 ? "" : "s"} supplied for {sys.shortName}
+              </p>
             </div>
             <Select label="Finish" options={["Tape & Joint","Skim","Direct decorate"]} defaultValue="Tape & Joint" />
             <Select label="Stage"  options={["Both","Frame only","Board only"]} defaultValue="Both" />
