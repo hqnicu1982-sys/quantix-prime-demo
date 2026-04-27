@@ -751,8 +751,9 @@ function ModeBtn({ active, onClick, icon, label }: { active: boolean; onClick: (
 function SectionTitle({ n, label }: { n: string; label: string }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="font-mono-num inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--ink-900)] text-[11px] font-bold text-white">{n}</span>
+      <span className="step-badge">{n}</span>
       <h2 className="text-[14px] font-semibold tracking-tight text-[var(--ink-900)]">{label}</h2>
+      <span className="ml-3 hidden h-px flex-1 bg-gradient-to-r from-[var(--ink-200)] to-transparent sm:block" />
     </div>
   );
 }
