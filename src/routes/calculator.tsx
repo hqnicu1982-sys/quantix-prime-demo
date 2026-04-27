@@ -472,10 +472,10 @@ function SingleView({
           </div>
 
           <div className="space-y-2 border-t border-[var(--ink-200)]/60 bg-[var(--ink-50)]/40 p-4">
-            <Button className="w-full gap-2" size="lg" onClick={() => toast.success("BoQ exported", { description: "CSV ready" })}>
+            <Button className="w-full gap-2" size="lg" disabled={invalid} onClick={() => toast.success("BoQ exported", { description: "CSV ready" })}>
               <Download className="h-4 w-4" /> Export BoQ
             </Button>
-            <Button className="w-full" variant="outline" onClick={() => { toast.success("Added to project BoQ"); navigate({ to: "/costed-boq" }); }}>
+            <Button className="w-full" variant="outline" disabled={invalid} onClick={() => { toast.success("Added to project BoQ"); navigate({ to: "/costed-boq" }); }}>
               Add to Costed BoQ
             </Button>
           </div>
