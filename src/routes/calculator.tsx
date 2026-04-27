@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Search, Sparkles, Download, Shield, Layers, Ruler, Volume2, Flame,
   ArrowRight, Wand2, RotateCcw, GitCompare, Check, ArrowDown, ArrowUp, Minus,
 } from "lucide-react";
 import { toast } from "sonner";
+import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
@@ -113,6 +114,27 @@ function Calculator() {
   const [leftCode,  setLeftCode]  = useState<string>(LIBRARY[0].code);
   const [rightCode, setRightCode] = useState<string>(LIBRARY[1].code);
 
+  // On mount: if URL says ?mode=compare or the tray has slots, switch to compare
+  // and hydrate left/right from the tray. Then keep them in sync with the tray.
+  useEffect(() => {
+    const url = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const slots = readSlots();
+    const wantsCompare = url?.get("mode") === "compare" || !!(slots.A && slots.B);
+    if (wantsCompare) setMode("compare");
+    if (slots.A && LIBRARY.some(s => s.code === slots.A)) setLeftCode(slots.A);
+    if (slots.B && LIBRARY.some(s => s.code === slots.B)) setRightCode(slots.B);
+
+    return subscribe(() => {
+      const s = readSlots();
+      if (s.A && LIBRARY.some(x => x.code === s.A)) setLeftCode(s.A);
+      if (s.B && LIBRARY.some(x => x.code === s.B)) setRightCode(s.B);
+    });
+  }, []);
+
+  // When the user changes a picker in compare view, mirror it back to the tray.
+  const setLeftAndSync = (v: string) => { setLeftCode(v); setSlot("A", v); };
+  const setRightAndSync = (v: string) => { setRightCode(v); setSlot("B", v); };
+
   const area = +length * +height;
   const wasteFactor = 1 + waste / 100;
 
@@ -170,8 +192,8 @@ function Calculator() {
         {/* ===================== COMPARE MODE ===================== */}
         {mode === "compare" ? (
           <CompareView
-            leftCode={leftCode}  setLeftCode={setLeftCode}
-            rightCode={rightCode} setRightCode={setRightCode}
+            leftCode={leftCode}  setLeftCode={setLeftAndSync}
+            rightCode={rightCode} setRightCode={setRightAndSync}
             length={length} setLength={setLength}
             height={height} setHeight={setHeight}
             waste={waste}   setWaste={setWaste}
