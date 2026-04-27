@@ -205,27 +205,49 @@ function Catalog() {
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
-                {results.map(m => (
-                  <article key={m.code} className="glass-card group relative overflow-hidden rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:neon-ring">
+                {results.map((m, i) => {
+                  const tH = heightTier(m.height);
+                  const tF = fireTier(m.fire);
+                  const tR = acousticTier(m.rw);
+                  const tT = thicknessTier(m.thick);
+                  const top = bestTier(tF, tR, tH);
+                  return (
+                  <article
+                    key={m.code}
+                    className="glass-card lift-on-hover pop-in group relative overflow-hidden rounded-2xl p-5 hover:neon-ring"
+                    style={{
+                      // ribbon color picks up the highest-impact tier
+                      ['--tier-color' as never]: tierColorVar(top),
+                      animationDelay: `${i * 35}ms`,
+                    }}
+                  >
+                    <span className="impact-ribbon" />
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-mono-num text-[11px] font-semibold uppercase tracking-wider text-[var(--accent-500)]">{m.code}</p>
-                        <p className="mt-1 text-[15px] font-semibold leading-snug text-[var(--ink-900)]">{m.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-mono-num text-[11px] font-semibold uppercase tracking-wider text-[var(--accent-500)]">{m.code}</p>
+                          {top !== "none" && (
+                            <span className="tier-chip" data-tier={top}>
+                              <span className="tier-dot" /> {top}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1.5 text-[15px] font-semibold leading-snug text-[var(--ink-900)]">{m.name}</p>
                       </div>
                       <button
                         onClick={() => { toast.success("Loaded into calculator", { description: m.code }); navigate({ to: "/calculator" }); }}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ink-900)] text-white transition-transform group-hover:scale-110"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--ink-900)] to-[var(--navy-800)] text-white transition-all group-hover:scale-110 group-hover:shadow-[0_10px_24px_-8px_var(--accent-500)]"
                         aria-label="Load"
                       >
-                        <ArrowRight className="h-4 w-4" />
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                       </button>
                     </div>
 
                     <div className="mt-4 grid grid-cols-4 gap-2">
-                      <SpecChip icon={<Ruler className="h-3 w-3" />}   v={m.height ? `${m.height} m` : "—"} k="Height" />
-                      <SpecChip icon={<Flame className="h-3 w-3" />}   v={m.fire   ? `${m.fire}'`    : "—"} k="Fire" />
-                      <SpecChip icon={<Volume2 className="h-3 w-3" />} v={m.rw     ? `${m.rw} dB`    : "—"} k="Rw" />
-                      <SpecChip icon={<Layers className="h-3 w-3" />}  v={`${m.thick}`} k="mm" />
+                      <SpecChip icon={<Ruler   className="h-3 w-3" />} v={m.height ? `${m.height} m` : "—"} k="Height" tier={tH} />
+                      <SpecChip icon={<Flame   className="h-3 w-3" />} v={m.fire   ? `${m.fire}'`    : "—"} k="Fire"   tier={tF} />
+                      <SpecChip icon={<Volume2 className="h-3 w-3" />} v={m.rw     ? `${m.rw} dB`    : "—"} k="Rw"     tier={tR} />
+                      <SpecChip icon={<Layers  className="h-3 w-3" />} v={`${m.thick} mm`}                  k="Thick"  tier={tT} />
                     </div>
 
                     <div className="mt-4 flex items-center gap-2 border-t border-[var(--ink-200)]/50 pt-3">
@@ -246,7 +268,8 @@ function Catalog() {
                       </button>
                     </div>
                   </article>
-                ))}
+                  );
+                })}
               </div>
             )}
           </main>
