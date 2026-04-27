@@ -68,18 +68,26 @@ function Catalog() {
       <div className="relative space-y-8">
         {/* Hero */}
         <header className="flex flex-wrap items-end justify-between gap-4">
-          <div>
+          <div className="pop-in">
             <p className="font-mono-num flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[var(--ink-500)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-500)] shadow-[0_0_12px_var(--accent-500)]" />
+              <span className="glow-pulse h-1.5 w-1.5 rounded-full bg-[var(--accent-500)] shadow-[0_0_12px_var(--accent-500)]" />
               Guided Selection · BG Systems
             </p>
-            <h1 className="font-display mt-3 text-[44px] font-semibold leading-[0.95] tracking-tight text-[var(--ink-900)] md:text-[60px]">
-              Choose a system —<br />
+            <h1 className="font-display mt-3 text-[44px] font-semibold leading-[0.95] tracking-tight md:text-[60px]">
+              <span className="hero-gradient-text">Choose a system —</span><br />
               <span className="italic text-[var(--accent-500)]">on your terms.</span>
             </h1>
             <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-[var(--ink-700)]">
               Pick a family, narrow by performance, and load the right BG build-up straight into the calculator.
             </p>
+            {/* Tier legend */}
+            <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="text-[var(--ink-500)]">Impact coding</span>
+              <span className="tier-chip" data-tier="critical"><span className="tier-dot" /> Critical</span>
+              <span className="tier-chip" data-tier="high"><span className="tier-dot" /> High</span>
+              <span className="tier-chip" data-tier="standard"><span className="tier-dot" /> Standard</span>
+              <span className="tier-chip" data-tier="eco"><span className="tier-dot" /> Eco</span>
+            </div>
           </div>
           <Button size="sm" onClick={() => navigate({ to: "/calculator" })} className="gap-1.5">
             Open calculator <ArrowRight className="h-3.5 w-3.5" />
@@ -98,6 +106,7 @@ function Catalog() {
                 {families.map(f => {
                   const isPicked = picked === f.id;
                   const disabled = f.status === "roadmap";
+                  const Icon = f.icon;
                   return (
                     <li key={f.id}>
                       <button
@@ -111,10 +120,12 @@ function Catalog() {
                             : "hover:bg-[var(--ink-50)]"
                         }`}
                       >
-                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                          isPicked ? "border-[var(--accent-500)] bg-[var(--accent-500)] text-white" : "border-[var(--ink-200)]"
+                        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all ${
+                          isPicked
+                            ? "bg-gradient-to-br from-[var(--accent-500)] to-[var(--teal-500)] text-white shadow-[0_8px_22px_-10px_var(--accent-500)]"
+                            : "bg-[var(--ink-50)] text-[var(--ink-700)] group-hover:bg-[var(--card)]"
                         }`}>
-                          {isPicked && <Check className="h-3 w-3" />}
+                          <Icon className="h-4 w-4" />
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
@@ -123,6 +134,7 @@ function Catalog() {
                           </div>
                           <p className="mt-0.5 truncate text-[11.5px] text-[var(--ink-500)]">{f.blurb}</p>
                         </div>
+                        {isPicked && <Check className="h-3.5 w-3.5 shrink-0 text-[var(--accent-500)]" />}
                       </button>
                     </li>
                   );
