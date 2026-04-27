@@ -1,27 +1,23 @@
-import { createFileRoute, useNavigate, Link, Outlet, useChildMatches } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Search, Sparkles, Download, Shield, Layers, Ruler, Volume2, Flame,
-  ArrowRight, Wand2, RotateCcw, GitCompare, Check, ArrowDown, ArrowUp, Minus, Lightbulb, SlidersHorizontal,
+  ArrowRight, Wand2, RotateCcw, GitCompare, Check, ArrowDown, ArrowUp, Minus, Lightbulb,
+  ChevronDown, Scissors, PoundSterling,
   AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
-import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste, getAvailableBoards, piecesPerColumn, boardNetWasteWithReuse, recommendBoardSmart } from "@/lib/boardSizing";
+import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste, getAvailableBoards, piecesPerColumn, boardNetWasteWithReuse, recommendBoardSmart, planWalls, type WallInput } from "@/lib/boardSizing";
 import { fireTier, acousticTier, heightTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
 import { TierMetric as TierChip } from "@/components/TierMetric";
 import { validateGeometry, hasErrors } from "@/lib/calcValidation";
+import { ColumnDiagram } from "@/components/calculator/ColumnDiagram";
+import { WallEditor } from "@/components/calculator/WallEditor";
 
-export const Route = createFileRoute("/calculator")({ component: CalculatorLayout });
-
-function CalculatorLayout() {
-  // If a child route (e.g. /calculator/advanced) is active, render only the child.
-  const childMatches = useChildMatches();
-  if (childMatches.length > 0) return <Outlet />;
-  return <Calculator />;
-}
+export const Route = createFileRoute("/calculator")({ component: Calculator });
 
 // =============================================================================
 // SYSTEM LIBRARY (structured for compare)
