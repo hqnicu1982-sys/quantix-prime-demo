@@ -1,197 +1,279 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { Card, CardHead, Section } from "@/components/Primitives";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, ArrowRight } from "lucide-react";
+import {
+  Check, Sparkles, ArrowRight, Search, SlidersHorizontal,
+  Layers, Volume2, Flame, Ruler,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/catalog")({ component: Catalog });
 
-type Family = {
-  id: string;
-  name: string;
-  blurb: string;
-  status: "live" | "beta" | "roadmap";
-};
+// ---- Domain ----
+type Family = { id: string; name: string; blurb: string; status: "live" | "beta" | "roadmap" };
 
 const families: Family[] = [
-  { id: "walls",    name: "Partitions & Walls", blurb: "Internal partition systems.",      status: "live" },
-  { id: "lining",   name: "Wall Linings",       blurb: "Independent & direct linings.",   status: "live" },
-  { id: "shaft",    name: "Shaftwalls",         blurb: "Fire rated systems.",              status: "live" },
-  { id: "steel",    name: "Steel Protection",   blurb: "Board & coating fire protection.", status: "roadmap" },
-  { id: "ceilings", name: "Ceilings",           blurb: "MF ceilings and horizontal shaftwalls.", status: "beta" },
-  { id: "floors",   name: "Floors",             blurb: "Floating and acoustic floors.",   status: "roadmap" },
-  { id: "external", name: "External Walls",     blurb: "Lightweight external wall systems.", status: "roadmap" },
-  { id: "plasters", name: "Plasters",           blurb: "Skim & undercoat plaster systems.", status: "roadmap" },
+  { id: "walls",    name: "Partitions & Walls", blurb: "Internal partition systems",      status: "live" },
+  { id: "lining",   name: "Wall Linings",       blurb: "Independent & direct linings",   status: "live" },
+  { id: "shaft",    name: "Shaftwalls",         blurb: "Fire rated systems",              status: "live" },
+  { id: "ceilings", name: "Ceilings",           blurb: "MF ceilings & horizontal shaftwalls", status: "beta" },
+  { id: "steel",    name: "Steel Protection",   blurb: "Board & coating fire protection", status: "roadmap" },
+  { id: "floors",   name: "Floors",             blurb: "Floating & acoustic floors",      status: "roadmap" },
+  { id: "external", name: "External Walls",     blurb: "Lightweight external systems",    status: "roadmap" },
+  { id: "plasters", name: "Plasters",           blurb: "Skim & undercoat plasters",       status: "roadmap" },
 ];
 
-// Pretend matched results when user clicks Recommend
-const matches = [
-  { code: "GIWL-146-I-80-1L-DL15 (B)", name: "Independent lining · DuraLine 15", height: "7.2 m", fire: "—",     rw: "—",   centres: "600 mm" },
-  { code: "GIWL-92-C-50-2L-WB12.5",    name: "Independent lining · 2× WallBoard 12.5", height: "5.4 m", fire: "60 min", rw: "44 dB", centres: "600 mm" },
-  { code: "GDWL-DL15-1L",              name: "Direct lining · DuraLine 15 (dabs)", height: "3.6 m", fire: "—",     rw: "—",   centres: "—" },
+const allMatches = [
+  { code: "GIWL-146-I-80-1L-DL15 (B)", name: "Independent lining · DuraLine 15",        family: "lining",  height: 7.2, fire: 0,   rw: 0,  centres: 600, thick: 161 },
+  { code: "GIWL-92-C-50-2L-WB12.5",    name: "Independent lining · 2× WallBoard 12.5",  family: "lining",  height: 5.4, fire: 60,  rw: 44, centres: 600, thick: 117 },
+  { code: "GDWL-DL15-1L",              name: "Direct lining · DuraLine 15 (dabs)",      family: "lining",  height: 3.6, fire: 0,   rw: 0,  centres: 0,   thick: 35  },
+  { code: "C-48/70-1L-WB15",           name: "GypWall CLASSIC · WallBoard 15",          family: "walls",   height: 4.2, fire: 60,  rw: 43, centres: 600, thick: 100 },
+  { code: "C-92/146-2L-SB",            name: "GypWall QUIET · SoundBloc",               family: "walls",   height: 5.8, fire: 60,  rw: 63, centres: 600, thick: 176 },
+  { code: "S-CW-120",                  name: "ShaftWall S-CW · 120 min",                family: "shaft",   height: 8.1, fire: 120, rw: 52, centres: 600, thick: 130 },
+  { code: "MF-CASOLINE",               name: "CasoLine MF ceiling",                     family: "ceilings", height: 0,  fire: 30,  rw: 37, centres: 0,   thick: 28  },
 ];
 
 function Catalog() {
   const navigate = useNavigate();
-  const [picked, setPicked] = useState<string>("walls");
-  const [showResults, setShowResults] = useState(false);
+  const [picked, setPicked] = useState<string>("lining");
+  const [q, setQ] = useState("");
+  const [minH, setMinH] = useState("");
+  const [minRw, setMinRw] = useState("");
+  const [minFire, setMinFire] = useState("");
+  const [maxThick, setMaxThick] = useState("");
+  const [duty, setDuty] = useState("Any");
+  const [board, setBoard] = useState("Any");
+  const [stud, setStud] = useState("Any");
+  const [sort, setSort] = useState<"best"|"height"|"thick">("best");
 
-  const statusBadge = (s: Family["status"]) => {
-    const map = {
-      live:    { t: "LIVE",    cls: "bg-[var(--green-600)]/15 text-[var(--green-600)]" },
-      beta:    { t: "BETA",    cls: "bg-[var(--amber-500)]/15 text-[var(--amber-500)]" },
-      roadmap: { t: "ROADMAP", cls: "bg-[var(--ink-200)] text-[var(--ink-700)]" },
-    }[s];
-    return <span className={`rounded-full px-2 py-0.5 text-[9.5px] font-bold tracking-wider ${map.cls}`}>{map.t}</span>;
-  };
+  const results = useMemo(() => {
+    let r = allMatches.filter(m =>
+      m.family === picked &&
+      (!q || (m.code + " " + m.name).toLowerCase().includes(q.toLowerCase())) &&
+      (!minH    || m.height >= +minH) &&
+      (!minRw   || m.rw     >= +minRw) &&
+      (!minFire || m.fire   >= +minFire) &&
+      (!maxThick|| m.thick  <= +maxThick)
+    );
+    if (sort === "height") r = [...r].sort((a,b) => b.height - a.height);
+    if (sort === "thick")  r = [...r].sort((a,b) => a.thick  - b.thick);
+    return r;
+  }, [picked, q, minH, minRw, minFire, maxThick, sort]);
 
   return (
-    <Section
-      title="Guided Selection"
-      subtitle="Select compatible BG systems for your project. Pick a family, set requirements, and we'll match the right systems."
-      right={
-        <Button size="sm" onClick={() => navigate({ to: "/calculator" })}>
-          Open calculator <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-        </Button>
-      }
-    >
-      {/* System type grid */}
-      <div>
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
-          System type — choose which BG system family you want to work with
-        </p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {families.map(f => {
-            const isPicked = picked === f.id;
-            const disabled = f.status === "roadmap";
-            return (
-              <button
-                key={f.id}
-                disabled={disabled}
-                onClick={() => !disabled && setPicked(f.id)}
-                className={`group relative flex flex-col rounded-[12px] border p-4 text-left transition-all ${
-                  disabled
-                    ? "cursor-not-allowed border-[var(--ink-200)] bg-[var(--ink-50)] opacity-60"
-                    : isPicked
-                    ? "border-[var(--accent-500)] bg-[var(--accent-500)]/5 shadow-[0_4px_18px_-8px_rgba(37,99,235,0.4)]"
-                    : "border-[var(--ink-200)] bg-card hover:border-[var(--ink-900)]"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <span
-                    className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                      isPicked
-                        ? "border-[var(--accent-500)] bg-[var(--accent-500)] text-white"
-                        : "border-[var(--ink-200)] bg-card"
-                    }`}
-                  >
-                    {isPicked && <Check className="h-3 w-3" />}
-                  </span>
-                  {statusBadge(f.status)}
+    <div className="glass-bg -m-6 min-h-[calc(100vh-4rem)] p-6 md:-m-8 md:p-10">
+      <div className="relative space-y-8">
+        {/* Hero */}
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="font-mono-num flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[var(--ink-500)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-500)] shadow-[0_0_12px_var(--accent-500)]" />
+              Guided Selection · BG Systems
+            </p>
+            <h1 className="font-display mt-3 text-[44px] font-semibold leading-[0.95] tracking-tight text-[var(--ink-900)] md:text-[60px]">
+              Choose a system —<br />
+              <span className="italic text-[var(--accent-500)]">on your terms.</span>
+            </h1>
+            <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-[var(--ink-700)]">
+              Pick a family, narrow by performance, and load the right BG build-up straight into the calculator.
+            </p>
+          </div>
+          <Button size="sm" onClick={() => navigate({ to: "/calculator" })} className="gap-1.5">
+            Open calculator <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        </header>
+
+        {/* Split layout */}
+        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+          {/* LEFT — family rail (sticky) */}
+          <aside className="lg:sticky lg:top-6 lg:self-start">
+            <div className="glass-card rounded-2xl p-3">
+              <p className="px-2 pb-2 pt-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+                System type
+              </p>
+              <ul className="space-y-1">
+                {families.map(f => {
+                  const isPicked = picked === f.id;
+                  const disabled = f.status === "roadmap";
+                  return (
+                    <li key={f.id}>
+                      <button
+                        disabled={disabled}
+                        onClick={() => setPicked(f.id)}
+                        className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all ${
+                          disabled
+                            ? "cursor-not-allowed opacity-45"
+                            : isPicked
+                            ? "bg-gradient-to-r from-[var(--accent-500)]/15 to-transparent ring-1 ring-[var(--accent-500)]/40"
+                            : "hover:bg-[var(--ink-50)]"
+                        }`}
+                      >
+                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                          isPicked ? "border-[var(--accent-500)] bg-[var(--accent-500)] text-white" : "border-[var(--ink-200)]"
+                        }`}>
+                          {isPicked && <Check className="h-3 w-3" />}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="truncate text-[13px] font-semibold text-[var(--ink-900)]">{f.name}</p>
+                            <StatusDot s={f.status} />
+                          </div>
+                          <p className="mt-0.5 truncate text-[11.5px] text-[var(--ink-500)]">{f.blurb}</p>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </aside>
+
+          {/* RIGHT — filters + results */}
+          <main className="space-y-6">
+            {/* Filter bar */}
+            <div className="glass-card rounded-2xl p-5">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="h-4 w-4 text-[var(--accent-500)]" />
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-[var(--ink-700)]">Filters</p>
+                <span className="ml-auto text-[11px] text-[var(--ink-500)]">Empty fields don't constrain</span>
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                <Field label="Min height (m)" placeholder="3.6" value={minH}    onChange={setMinH} />
+                <Field label="Min Rw (dB)"    placeholder="50"  value={minRw}   onChange={setMinRw} />
+                <Field label="Min Fire (min)" placeholder="60"  value={minFire} onChange={setMinFire} />
+                <Field label="Max thickness (mm)" placeholder="150" value={maxThick} onChange={setMaxThick} />
+                <SelectField label="Duty rating" value={duty}  onChange={setDuty}  options={["Any","SD1","SD2","SD3","SD4"]} />
+                <SelectField label="Board type"  value={board} onChange={setBoard} options={["Any","WallBoard","DuraLine","SoundBloc","FireLine","Glasroc F"]} />
+                <SelectField label="Stud size"   value={stud}  onChange={setStud}  options={["Any","48","70","92","146"]} />
+                <div className="flex items-end">
+                  <Button className="w-full gap-1.5" onClick={() => toast.success(`${results.length} systems matched`)}>
+                    <Sparkles className="h-3.5 w-3.5" /> Recommend
+                  </Button>
                 </div>
-                <p className="mt-4 text-[15px] font-semibold leading-tight text-[var(--ink-900)]">{f.name}</p>
-                <p className="mt-1 text-[12px] text-[var(--ink-500)]">{f.blurb}</p>
-                <p className={`mt-4 text-[12px] font-semibold ${
-                  disabled ? "text-[var(--ink-500)]" : isPicked ? "text-[var(--accent-500)]" : "text-[var(--ink-700)] group-hover:text-[var(--accent-500)]"
-                }`}>
-                  {disabled ? "Coming soon" : `Select ${f.name}`}
-                </p>
-              </button>
-            );
-          })}
+              </div>
+            </div>
+
+            {/* Results header */}
+            <div className="glass-card flex flex-wrap items-center gap-3 rounded-2xl px-5 py-3">
+              <div className="relative flex flex-1 items-center">
+                <Search className="absolute left-3 h-4 w-4 text-[var(--ink-500)]" />
+                <input
+                  value={q}
+                  onChange={e => setQ(e.target.value)}
+                  placeholder="Search system code or name…"
+                  className="glass-input w-full rounded-xl py-2 pl-9 pr-3 text-[13px] placeholder:text-[var(--ink-500)]"
+                />
+              </div>
+              <div className="flex items-center gap-2 text-[12px]">
+                <span className="text-[var(--ink-500)]">Sort</span>
+                <select
+                  value={sort}
+                  onChange={e => setSort(e.target.value as typeof sort)}
+                  className="glass-input rounded-lg px-2.5 py-1.5 text-[12px] font-medium"
+                >
+                  <option value="best">Best match</option>
+                  <option value="height">Tallest height</option>
+                  <option value="thick">Thinnest build-up</option>
+                </select>
+              </div>
+              <span className="font-mono-num rounded-full bg-[var(--accent-500)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--accent-500)]">
+                {results.length} match{results.length === 1 ? "" : "es"}
+              </span>
+            </div>
+
+            {/* Results grid */}
+            {results.length === 0 ? (
+              <div className="glass-card rounded-2xl p-12 text-center">
+                <p className="font-display text-[22px] text-[var(--ink-700)]">Nothing matches.</p>
+                <p className="mt-1 text-[12.5px] text-[var(--ink-500)]">Loosen a filter or try another family.</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {results.map(m => (
+                  <article key={m.code} className="glass-card group relative overflow-hidden rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:neon-ring">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-mono-num text-[11px] font-semibold uppercase tracking-wider text-[var(--accent-500)]">{m.code}</p>
+                        <p className="mt-1 text-[15px] font-semibold leading-snug text-[var(--ink-900)]">{m.name}</p>
+                      </div>
+                      <button
+                        onClick={() => { toast.success("Loaded into calculator", { description: m.code }); navigate({ to: "/calculator" }); }}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ink-900)] text-white transition-transform group-hover:scale-110"
+                        aria-label="Load"
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-4 gap-2">
+                      <SpecChip icon={<Ruler className="h-3 w-3" />}   v={m.height ? `${m.height} m` : "—"} k="Height" />
+                      <SpecChip icon={<Flame className="h-3 w-3" />}   v={m.fire   ? `${m.fire}'`    : "—"} k="Fire" />
+                      <SpecChip icon={<Volume2 className="h-3 w-3" />} v={m.rw     ? `${m.rw} dB`    : "—"} k="Rw" />
+                      <SpecChip icon={<Layers className="h-3 w-3" />}  v={`${m.thick}`} k="mm" />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </main>
         </div>
       </div>
-
-      {/* Calculator inputs (filter the family) */}
-      <Card>
-        <CardHead title="Calculator inputs" subtitle="Filters are optional. Empty fields won't constrain results." />
-        <div className="space-y-4 p-5">
-          <div className="grid gap-3 md:grid-cols-4">
-            <ReqField label="Min height (m)" placeholder="e.g. 3.6" />
-            <ReqField label="Min Rw (dB)"    placeholder="e.g. 50" />
-            <ReqField label="Min Fire (min)" placeholder="e.g. 60" />
-            <ReqField label="Max thickness (mm)" placeholder="e.g. 150" />
-            <ReqSelect label="Duty rating" options={["Any","SD1","SD2","SD3","SD4"]} />
-            <ReqSelect label="Board type"  options={["Any","WallBoard","DuraLine","SoundBloc","FireLine","Glasroc F"]} />
-            <ReqSelect label="Stud size"   options={["Any","48","70","92","146"]} />
-            <div className="flex items-end">
-              <Button className="w-full" onClick={() => { setShowResults(true); toast.success("3 systems matched"); }}>
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Recommend systems
-              </Button>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Results */}
-      <Card>
-        <CardHead
-          title={showResults ? `${matches.length} matching systems` : "No matching systems"}
-          subtitle={showResults ? "Sorted by best match — load any to the calculator." : "Adjust your filters and try again."}
-          right={
-            <select className="rounded-md border border-[var(--ink-200)] bg-card px-3 py-1.5 text-[12px] font-medium">
-              <option>Best match</option>
-              <option>Lowest cost</option>
-              <option>Tallest height</option>
-            </select>
-          }
-        />
-        {showResults ? (
-          <div className="divide-y divide-[var(--ink-200)]">
-            {matches.map(m => (
-              <div key={m.code} className="flex flex-wrap items-center gap-4 px-5 py-4">
-                <div className="min-w-0 flex-1">
-                  <p className="font-mono-num text-[12px] font-semibold text-[var(--accent-500)]">{m.code}</p>
-                  <p className="mt-0.5 text-[13px] font-semibold text-[var(--ink-900)]">{m.name}</p>
-                </div>
-                <div className="flex flex-wrap gap-x-5 gap-y-1 text-[11.5px]">
-                  <Stat k="Height" v={m.height} />
-                  <Stat k="Fire"   v={m.fire} />
-                  <Stat k="Rw"     v={m.rw} />
-                  <Stat k="Centres" v={m.centres} />
-                </div>
-                <Button size="sm" variant="outline" onClick={() => { toast.success("Loaded into calculator", { description: m.code }); navigate({ to: "/calculator" }); }}>
-                  Load <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="px-5 py-12 text-center">
-            <p className="text-[13px] text-[var(--ink-500)]">No systems match the current filters.</p>
-          </div>
-        )}
-      </Card>
-    </Section>
-  );
-}
-
-function Stat({ k, v }: { k: string; v: string }) {
-  return (
-    <span className="inline-flex items-baseline gap-1">
-      <span className="text-[var(--ink-500)]">{k}</span>
-      <span className="font-mono-num font-semibold text-[var(--ink-900)]">{v}</span>
-    </span>
-  );
-}
-
-function ReqField({ label, placeholder }: { label: string; placeholder: string }) {
-  return (
-    <div>
-      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
-      <input placeholder={placeholder} className="w-full rounded-md border border-[var(--ink-200)] bg-card px-3 py-2 text-[13px] placeholder:text-[var(--ink-500)] focus:border-[var(--accent-500)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-500)]/20" />
     </div>
   );
 }
 
-function ReqSelect({ label, options }: { label: string; options: string[] }) {
+// ---- helpers ----
+function StatusDot({ s }: { s: Family["status"] }) {
+  const cfg = {
+    live:    { c: "bg-[var(--green-600)]",  t: "Live"    },
+    beta:    { c: "bg-[var(--amber-500)]",  t: "Beta"    },
+    roadmap: { c: "bg-[var(--ink-200)]",    t: "Roadmap" },
+  }[s];
+  return (
+    <span className="inline-flex items-center gap-1 text-[9.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+      <span className={`h-1.5 w-1.5 rounded-full ${cfg.c}`} />
+      {cfg.t}
+    </span>
+  );
+}
+
+function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div>
-      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
-      <select className="w-full rounded-md border border-[var(--ink-200)] bg-card px-3 py-2 text-[13px] font-medium focus:border-[var(--accent-500)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-500)]/20">
+      <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
+      <input
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium placeholder:text-[var(--ink-500)]"
+      />
+    </div>
+  );
+}
+
+function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
+  return (
+    <div>
+      <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium"
+      >
         {options.map(o => <option key={o}>{o}</option>)}
       </select>
+    </div>
+  );
+}
+
+function SpecChip({ icon, k, v }: { icon: React.ReactNode; k: string; v: string }) {
+  return (
+    <div className="rounded-lg border border-[var(--ink-200)]/60 bg-[var(--card)]/40 p-2 text-center backdrop-blur-sm">
+      <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+        {icon} {k}
+      </span>
+      <p className="font-mono-num mt-1 text-[12.5px] font-bold text-[var(--ink-900)]">{v}</p>
     </div>
   );
 }
