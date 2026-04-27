@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Calendar, Package, ClipboardList, FileSpreadsheet, Plug, Users2,
   Menu, X, Bell, Search, Settings, HardHat, LineChart, Check, FolderKanban, Library,
   Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Hammer, Sun, Moon,
+  ChevronDown,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -180,7 +181,7 @@ function Breadcrumb() {
     <nav className="hidden items-center gap-1.5 text-[12.5px] text-[var(--ink-500)] md:flex" aria-label="Breadcrumb">
       <span className="font-semibold text-[var(--ink-700)]">Quantix Prime</span>
       <span className="text-[var(--ink-200)]">/</span>
-      <span>{current.name}</span>
+      <ProjectSwitcher />
       {labelMap[path] && labelMap[path] !== current.name && (
         <>
           <span className="text-[var(--ink-200)]">/</span>
@@ -188,6 +189,54 @@ function Breadcrumb() {
         </>
       )}
     </nav>
+  );
+}
+
+function ProjectSwitcher() {
+  const { current, all, setCurrent } = useProject();
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onClick = () => setOpen(false);
+    window.addEventListener("click", onClick);
+    return () => window.removeEventListener("click", onClick);
+  }, [open]);
+  return (
+    <div className="relative">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12.5px] font-medium text-[var(--ink-700)] hover:bg-[var(--ink-50)]"
+      >
+        {current.name}
+        <ChevronDown className="h-3 w-3 opacity-60" />
+      </button>
+      {open && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute left-0 top-full z-50 mt-1 max-h-[360px] w-[280px] overflow-y-auto rounded-md border border-[var(--ink-200)] bg-[var(--card)] p-1 shadow-lg"
+        >
+          <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-500)]">
+            Switch project
+          </p>
+          {all.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => { setCurrent(p.id); setOpen(false); }}
+              className={cn(
+                "flex w-full items-start justify-between gap-2 rounded px-2 py-1.5 text-left text-[12.5px] hover:bg-[var(--ink-50)]",
+                p.id === current.id && "bg-[var(--accent-500)]/10",
+              )}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-[var(--ink-900)]">{p.name}</p>
+                <p className="truncate text-[10.5px] text-[var(--ink-500)]">{p.mainContractor}</p>
+              </div>
+              {p.id === current.id && <Check className="h-3.5 w-3.5 shrink-0 text-[var(--accent-500)]" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
