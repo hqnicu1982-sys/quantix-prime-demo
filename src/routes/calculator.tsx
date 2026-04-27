@@ -424,19 +424,25 @@ function SingleView({
           <div className="border-b border-[var(--ink-200)]/60 bg-gradient-to-br from-[var(--accent-500)]/10 to-transparent px-5 py-4">
             <div className="flex items-center justify-between">
               <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Live summary</p>
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--green-600)]">
-                <span className="glow-pulse h-1.5 w-1.5 rounded-full bg-[var(--green-600)]" /> live
-              </span>
+              {invalid ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--tier-critical)]">
+                  <AlertCircle className="h-3 w-3" /> check inputs
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--green-600)]">
+                  <span className="glow-pulse h-1.5 w-1.5 rounded-full bg-[var(--green-600)]" /> live
+                </span>
+              )}
             </div>
             <p className="font-mono-num mt-1 text-[12px] font-semibold text-[var(--accent-500)]">{sys.code}</p>
           </div>
 
           <div className="border-b border-[var(--ink-200)]/60 px-5 py-5">
             <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">Wall area</p>
-            <p className="font-display impact-number mt-1 text-[44px] font-bold leading-none tracking-tight">
-              {area.toLocaleString()}<span className="ml-1 text-[16px] font-medium text-[var(--ink-500)]">m²</span>
+            <p className={"font-display mt-1 text-[44px] font-bold leading-none tracking-tight " + (invalid ? "text-[var(--ink-500)]" : "impact-number")}>
+              {invalid ? "—" : area.toLocaleString()}<span className="ml-1 text-[16px] font-medium text-[var(--ink-500)]">m²</span>
             </p>
-            <p className="mt-1 text-[11.5px] text-[var(--ink-500)]">{length} m × {height} m · waste {waste}%</p>
+            <p className="mt-1 text-[11.5px] text-[var(--ink-500)]">{length || "—"} m × {height || "—"} m · waste {waste}%</p>
           </div>
 
           <div className="border-b border-[var(--ink-200)]/60 px-5 py-4">
