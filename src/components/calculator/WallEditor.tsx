@@ -18,6 +18,16 @@ export function WallEditor({
   onChange: (next: WallInput[]) => void;
 }) {
   const [projectBrand, setProjectBrand] = useState<BrandId>("british-gypsum");
+  const updateMetres = (id: string, key: "lengthMm" | "heightMm", value: string) => {
+    if (value === "") {
+      update(id, { [key]: 0 });
+      return;
+    }
+
+    const next = Number(value);
+    if (Number.isFinite(next)) update(id, { [key]: Math.max(0, Math.round(next * 1000)) });
+  };
+
   useEffect(() => {
     setProjectBrand(readActiveBrand());
     return subscribeBrand(setProjectBrand);
@@ -77,7 +87,8 @@ export function WallEditor({
                       type="number"
                       step="0.1"
                       value={(w.lengthMm / 1000).toString()}
-                      onChange={e => update(w.id, { lengthMm: Math.round((+e.target.value || 0) * 1000) })}
+                      onFocus={e => e.target.select()}
+                      onChange={e => updateMetres(w.id, "lengthMm", e.target.value)}
                       className="glass-input font-mono-num w-full rounded-md px-2 py-1 text-right text-[12.5px]"
                     />
                   </td>
@@ -86,7 +97,8 @@ export function WallEditor({
                       type="number"
                       step="0.1"
                       value={(w.heightMm / 1000).toString()}
-                      onChange={e => update(w.id, { heightMm: Math.round((+e.target.value || 0) * 1000) })}
+                      onFocus={e => e.target.select()}
+                      onChange={e => updateMetres(w.id, "heightMm", e.target.value)}
                       className="glass-input font-mono-num w-full rounded-md px-2 py-1 text-right text-[12.5px]"
                     />
                   </td>
