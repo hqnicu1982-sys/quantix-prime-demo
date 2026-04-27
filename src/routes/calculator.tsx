@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
-import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste } from "@/lib/boardSizing";
+import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste, getAvailableBoards, piecesPerColumn } from "@/lib/boardSizing";
 import { fireTier, acousticTier, heightTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
 import { TierMetric as TierChip } from "@/components/TierMetric";
 import { validateGeometry, hasErrors } from "@/lib/calcValidation";
@@ -35,6 +35,9 @@ type SystemDef = {
   perf: Perf;
   // qty is per m² of wall — multiplied by area in render
   totalsPerM2: Totals;
+  // Board sizes the manufacturer actually supplies for this system.
+  // Subset of BOARD_LIBRARY labels. If omitted, all boards are assumed available.
+  availableBoards?: string[];
 };
 
 const LIBRARY: SystemDef[] = [
@@ -50,6 +53,7 @@ const LIBRARY: SystemDef[] = [
       { k: "Suggested stud length", v: "4.2 m" },
     ],
     perf: { weight: 14, maxHeight: 7200, studCentres: 600, fire: 0, rw: 0 },
+    availableBoards: ["1200 × 2400", "1200 × 3000"], // DuraLine 15: no 3600 in this thickness
     totalsPerM2: {
       "Gypframe Stud (4.2m)":                                            { qty: 0.42,  unit: "lengths" },
       "Gypframe 62 FEC 50 Folded Edge Floor & Ceiling Channel (3.6m)":   { qty: 0.14,  unit: "lengths" },
@@ -71,6 +75,7 @@ const LIBRARY: SystemDef[] = [
       { k: "Suggested stud length", v: "3.0 m" },
     ],
     perf: { weight: 22, maxHeight: 5400, studCentres: 600, fire: 60, rw: 44 },
+    availableBoards: ["1200 × 2400", "1200 × 3000", "1200 × 3600"], // WallBoard 12.5: full range
     totalsPerM2: {
       "Gypframe Stud (3.0m)":                                            { qty: 0.42,  unit: "lengths" },
       "Gypframe 62 FEC 50 Folded Edge Floor & Ceiling Channel (3.6m)":   { qty: 0.14,  unit: "lengths" },
@@ -92,6 +97,7 @@ const LIBRARY: SystemDef[] = [
       { k: "Suggested stud length", v: "4.2 m" },
     ],
     perf: { weight: 28, maxHeight: 7200, studCentres: 600, fire: 90, rw: 58 },
+    availableBoards: ["1200 × 2400", "1200 × 3000"], // SoundBloc 15: heavier, no 3600
     totalsPerM2: {
       "Gypframe Stud (4.2m)":                                            { qty: 0.42,  unit: "lengths" },
       "Gypframe 62 FEC 50 Folded Edge Floor & Ceiling Channel (3.6m)":   { qty: 0.14,  unit: "lengths" },
@@ -262,7 +268,8 @@ function SingleView({
   // Recommendation: pick the smallest board ≥ wall height to minimise off-cuts.
   // Wall height in mm; board catalogue (W × H, mm).
   const heightMm = Math.round((+height || 0) * 1000);
-  const recommended = recommendBoard(heightMm);
+  const availableBoards = getAvailableBoards(sys.availableBoards);
+  const recommended = recommendBoard(heightMm, sys.availableBoards);
   const effectiveBoard = boardSize === "auto" ? recommended.label : boardSize;
   const cutWastePct = boardOffcutWaste(heightMm, effectiveBoard);
 
@@ -340,10 +347,13 @@ function SingleView({
                 className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium"
               >
                 <option value="auto">Auto — recommended</option>
-                {BOARD_LIBRARY.map(b => (
+                {availableBoards.map(b => (
                   <option key={b.label} value={b.label}>{b.label}</option>
                 ))}
               </select>
+              <p className="mt-1 text-[11px] text-[var(--ink-500)]">
+                {availableBoards.length} size{availableBoards.length === 1 ? "" : "s"} supplied for {sys.shortName}
+              </p>
             </div>
             <Select label="Finish" options={["Tape & Joint","Skim","Direct decorate"]} defaultValue="Tape & Joint" />
             <Select label="Stage"  options={["Both","Frame only","Board only"]} defaultValue="Both" />
@@ -382,6 +392,90 @@ function SingleView({
               </span>
             )}
           </div>
+
+          {/* Board comparison table — shows waste for every size the manufacturer supplies */}
+          {heightMm > 0 && availableBoards.length > 1 && (
+            <div className="mt-3 overflow-hidden rounded-xl border border-[var(--ink-200)]">
+              <div className="flex items-center justify-between border-b border-[var(--ink-200)] bg-[var(--ink-100)]/50 px-3 py-2">
+                <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+                  Available boards for {sys.shortName}
+                </p>
+                <p className="text-[10.5px] text-[var(--ink-500)]">Wall height {(+height).toFixed(2)} m</p>
+              </div>
+              <table className="w-full text-[12.5px]">
+                <thead className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+                  <tr className="border-b border-[var(--ink-200)]">
+                    <th className="px-3 py-2 text-left font-semibold">Board size</th>
+                    <th className="px-3 py-2 text-right font-semibold">Pieces / column</th>
+                    <th className="px-3 py-2 text-right font-semibold">Off-cut waste</th>
+                    <th className="px-3 py-2 text-right font-semibold">Notes</th>
+                    <th className="px-3 py-2 text-right font-semibold sr-only">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {availableBoards.map(b => {
+                    const w = boardOffcutWaste(heightMm, b.label);
+                    const pieces = piecesPerColumn(heightMm, b.label);
+                    const isRecommended = b.label === recommended.label;
+                    const isSelected = effectiveBoard === b.label;
+                    const needsJoint = pieces > 1;
+                    const tone =
+                      w <= 5  ? "var(--tier-good)"
+                      : w <= 15 ? "var(--accent-500)"
+                      : w <= 25 ? "var(--amber-500)"
+                      :           "var(--tier-critical)";
+                    return (
+                      <tr
+                        key={b.label}
+                        className={
+                          "border-b border-[var(--ink-200)] last:border-b-0 " +
+                          (isSelected ? "bg-[var(--accent-500)]/5" : "")
+                        }
+                      >
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono-num font-semibold text-[var(--ink-900)]">{b.label}</span>
+                            {isRecommended && (
+                              <span className="rounded-full bg-[var(--accent-500)]/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-500)]">
+                                Recommended
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="font-mono-num px-3 py-2 text-right text-[var(--ink-700)]">{pieces}</td>
+                        <td className="px-3 py-2 text-right">
+                          <span
+                            className="font-mono-num inline-block rounded-md px-2 py-0.5 text-[11.5px] font-semibold"
+                            style={{
+                              color: tone,
+                              background: `color-mix(in oklab, ${tone} 12%, transparent)`,
+                            }}
+                          >
+                            {w}%
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-right text-[11.5px] text-[var(--ink-500)]">
+                          {needsJoint ? `${pieces} pieces stacked + horizontal joint` : "Single piece, no joint"}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {isSelected ? (
+                            <span className="text-[11px] font-semibold text-[var(--accent-500)]">In use</span>
+                          ) : (
+                            <button
+                              onClick={() => setBoardSize(b.label)}
+                              className="rounded-md border border-[var(--ink-200)] px-2 py-0.5 text-[11px] font-medium text-[var(--ink-700)] hover:border-[var(--accent-500)] hover:text-[var(--accent-500)]"
+                            >
+                              Use
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <div className="mt-5">
             <div className="mb-2 flex items-center justify-between">
