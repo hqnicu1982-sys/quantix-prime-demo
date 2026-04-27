@@ -552,8 +552,8 @@ function CompareView({
             </p>
           </div>
           <div className="ml-auto flex flex-wrap items-end gap-3">
-            <div className="w-24"><Field label="Length (m)" value={length} onChange={setLength} /></div>
-            <div className="w-24"><Field label="Height (m)" value={height} onChange={setHeight} /></div>
+            <div className="w-28"><Field label="Length" unit="m" value={length} onChange={setLength} error={validateGeometry(length, height, waste).length} /></div>
+            <div className="w-28"><Field label="Height" unit="m" value={height} onChange={setHeight} error={validateGeometry(length, height, waste).height} /></div>
             <div className="w-32">
               <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Waste {waste}%</p>
               <input type="range" min={0} max={20} value={waste} onChange={e => setWaste(+e.target.value)} className="w-full accent-[var(--accent-500)]" />
