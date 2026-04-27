@@ -114,6 +114,9 @@ function Calculator() {
   const [leftCode,  setLeftCode]  = useState<string>(LIBRARY[0].code);
   const [rightCode, setRightCode] = useState<string>(LIBRARY[1].code);
 
+  // Active system shown in SingleView (By code / Recommend)
+  const [activeCode, setActiveCode] = useState<string>(LIBRARY[0].code);
+
   // On mount: if URL says ?mode=compare or the tray has slots, switch to compare
   // and hydrate left/right from the tray. Then keep them in sync with the tray.
   useEffect(() => {
@@ -137,6 +140,14 @@ function Calculator() {
 
   const area = +length * +height;
   const wasteFactor = 1 + waste / 100;
+
+  // Promote one side of the comparison into the single-system calculator.
+  const promoteToCalculator = (code: string, label?: string) => {
+    setActiveCode(code);
+    setMode("code");
+    toast.success(label ?? "Loaded into calculator", { description: code });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="glass-bg -m-6 min-h-[calc(100vh-4rem)] p-6 md:-m-8 md:p-10">
@@ -198,10 +209,12 @@ function Calculator() {
             height={height} setHeight={setHeight}
             waste={waste}   setWaste={setWaste}
             area={area} wasteFactor={wasteFactor}
+            onPromote={promoteToCalculator}
           />
         ) : (
           /* ===================== SINGLE-SYSTEM MODE ===================== */
           <SingleView
+            activeCode={activeCode} setActiveCode={setActiveCode}
             length={length} setLength={setLength}
             height={height} setHeight={setHeight}
             waste={waste}   setWaste={setWaste}
@@ -218,16 +231,18 @@ function Calculator() {
 // SINGLE-SYSTEM VIEW (existing layout, scaled to area)
 // =============================================================================
 function SingleView({
+  activeCode, setActiveCode,
   length, setLength, height, setHeight, waste, setWaste,
   area, wasteFactor, navigate,
 }: {
+  activeCode: string; setActiveCode: (v: string) => void;
   length: string; setLength: (v: string) => void;
   height: string; setHeight: (v: string) => void;
   waste: number;  setWaste: (v: number) => void;
   area: number;   wasteFactor: number;
   navigate: ReturnType<typeof useNavigate>;
 }) {
-  const sys = LIBRARY[0];
+  const sys = LIBRARY.find(s => s.code === activeCode) ?? LIBRARY[0];
   const totals = scaledTotals(sys, area, wasteFactor);
 
   return (
@@ -238,9 +253,16 @@ function SingleView({
           <div className="mt-4 flex flex-wrap items-end gap-3">
             <div className="min-w-[280px] flex-1">
               <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">System code</p>
-              <input defaultValue={sys.code} className="glass-input font-mono-num w-full rounded-xl px-4 py-3 text-[14px] font-semibold" />
+              <select
+                value={activeCode}
+                onChange={e => setActiveCode(e.target.value)}
+                className="glass-input font-mono-num w-full rounded-xl px-4 py-3 text-[14px] font-semibold"
+              >
+                {LIBRARY.map(s => (
+                  <option key={s.code} value={s.code}>{s.code} — {s.shortName}</option>
+                ))}
+              </select>
             </div>
-            <Button variant="outline" size="lg" onClick={() => toast.success("System loaded", { description: sys.code })}>Load</Button>
             <Button
               variant="outline"
               size="lg"
@@ -365,7 +387,7 @@ function SingleView({
 function CompareView({
   leftCode, setLeftCode, rightCode, setRightCode,
   length, setLength, height, setHeight, waste, setWaste,
-  area, wasteFactor,
+  area, wasteFactor, onPromote,
 }: {
   leftCode: string;  setLeftCode: (v: string) => void;
   rightCode: string; setRightCode: (v: string) => void;
@@ -373,6 +395,7 @@ function CompareView({
   height: string;    setHeight: (v: string) => void;
   waste: number;     setWaste: (v: number) => void;
   area: number;      wasteFactor: number;
+  onPromote: (code: string, label?: string) => void;
 }) {
   const left  = LIBRARY.find(s => s.code === leftCode)  ?? LIBRARY[0];
   const right = LIBRARY.find(s => s.code === rightCode) ?? LIBRARY[1];
@@ -386,6 +409,22 @@ function CompareView({
     { k: "Stud Centres", unit: "mm",    icon: <Layers  className="h-3 w-3" />, l: left.perf.studCentres, r: right.perf.studCentres, higherBetter: false },
     { k: "Weight",       unit: "kg/m²", icon: <Layers  className="h-3 w-3" />, l: left.perf.weight,      r: right.perf.weight,      higherBetter: false },
   ]), [left, right]);
+
+  // Tally perf wins to suggest a default winner. Ties don't count.
+  const tally = useMemo(() => {
+    let l = 0, r = 0;
+    for (const row of perfRows) {
+      const w = compareNum(row.l, row.r, row.higherBetter);
+      if (w === "left") l++;
+      else if (w === "right") r++;
+    }
+    return { l, r, winner: l === r ? null : l > r ? ("left" as const) : ("right" as const) };
+  }, [perfRows]);
+
+  const winnerCode =
+    tally.winner === "left"  ? left.code  :
+    tally.winner === "right" ? right.code :
+    null;
 
   const totalsRows = useMemo(() => {
     const lT = scaledTotals(left,  area, wasteFactor);
@@ -496,8 +535,30 @@ function CompareView({
         <Button variant="outline" onClick={() => toast.success("Comparison exported", { description: "PDF ready" })}>
           <Download className="mr-1.5 h-4 w-4" /> Export comparison
         </Button>
-        <Button onClick={() => toast.success("Recommendation noted", { description: "We'll surface the better fit on next BoQ" })}>
-          Pick winner
+        <Button
+          variant="outline"
+          className="gap-1.5"
+          onClick={() => onPromote(left.code, "Loaded System A")}
+        >
+          Load A → calculator
+        </Button>
+        <Button
+          variant="outline"
+          className="gap-1.5"
+          onClick={() => onPromote(right.code, "Loaded System B")}
+        >
+          Load B → calculator
+        </Button>
+        <Button
+          disabled={!winnerCode || sameSystem}
+          className="gap-1.5"
+          onClick={() => {
+            if (!winnerCode) return;
+            const side = tally.winner === "left" ? "A" : "B";
+            onPromote(winnerCode, `Pick winner — System ${side} wins ${Math.max(tally.l, tally.r)}–${Math.min(tally.l, tally.r)}`);
+          }}
+        >
+          <Check className="h-4 w-4" /> Pick winner & load
         </Button>
       </div>
     </div>
