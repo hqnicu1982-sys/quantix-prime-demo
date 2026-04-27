@@ -3,9 +3,10 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Check, Sparkles, ArrowRight, Search, SlidersHorizontal,
-  Layers, Volume2, Flame, Ruler,
+  Layers, Volume2, Flame, Ruler, GitCompare,
 } from "lucide-react";
 import { toast } from "sonner";
+import { pushToTray } from "@/lib/compareTray";
 
 export const Route = createFileRoute("/catalog")({ component: Catalog });
 
@@ -211,6 +212,24 @@ function Catalog() {
                       <SpecChip icon={<Flame className="h-3 w-3" />}   v={m.fire   ? `${m.fire}'`    : "—"} k="Fire" />
                       <SpecChip icon={<Volume2 className="h-3 w-3" />} v={m.rw     ? `${m.rw} dB`    : "—"} k="Rw" />
                       <SpecChip icon={<Layers className="h-3 w-3" />}  v={`${m.thick}`} k="mm" />
+                    </div>
+
+                    <div className="mt-4 flex items-center gap-2 border-t border-[var(--ink-200)]/50 pt-3">
+                      <button
+                        onClick={() => {
+                          const side = pushToTray(m.code);
+                          toast.success(`Added to Compare slot ${side}`, { description: m.code });
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent-500)]/30 bg-[var(--accent-500)]/5 px-2.5 py-1 text-[11.5px] font-semibold text-[var(--accent-500)] transition-colors hover:bg-[var(--accent-500)]/15"
+                      >
+                        <GitCompare className="h-3 w-3" /> Send to Compare
+                      </button>
+                      <button
+                        onClick={() => { toast.success("Loaded into calculator", { description: m.code }); navigate({ to: "/calculator" }); }}
+                        className="ml-auto inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--ink-700)] hover:text-[var(--ink-900)]"
+                      >
+                        Load → calculator <ArrowRight className="h-3 w-3" />
+                      </button>
                     </div>
                   </article>
                 ))}
