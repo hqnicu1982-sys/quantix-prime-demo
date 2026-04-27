@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
 import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste } from "@/lib/boardSizing";
 import { fireTier, acousticTier, heightTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
+import { TierMetric } from "@/components/TierMetric";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
@@ -762,17 +763,6 @@ function SectionTitle({ n, label }: { n: string; label: string }) {
       <h2 className="text-[14px] font-semibold tracking-tight text-[var(--ink-900)]">{label}</h2>
       <span className="ml-3 hidden h-px flex-1 bg-gradient-to-r from-[var(--ink-200)] to-transparent sm:block" />
     </div>
-  );
-}
-
-function TierMetric({ icon, label, value, tier }: { icon: React.ReactNode; label: string; value: string; tier: Tier }) {
-  return (
-    <span className="tier-chip" data-tier={tier}>
-      <span className="tier-dot" />
-      {icon}
-      <span className="opacity-80">{label}</span>
-      <span className="font-bold">{value}</span>
-    </span>
   );
 }
 
