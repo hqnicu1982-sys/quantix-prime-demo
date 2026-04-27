@@ -253,9 +253,16 @@ function SingleView({
           <div className="mt-4 flex flex-wrap items-end gap-3">
             <div className="min-w-[280px] flex-1">
               <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">System code</p>
-              <input defaultValue={sys.code} className="glass-input font-mono-num w-full rounded-xl px-4 py-3 text-[14px] font-semibold" />
+              <select
+                value={activeCode}
+                onChange={e => setActiveCode(e.target.value)}
+                className="glass-input font-mono-num w-full rounded-xl px-4 py-3 text-[14px] font-semibold"
+              >
+                {LIBRARY.map(s => (
+                  <option key={s.code} value={s.code}>{s.code} — {s.shortName}</option>
+                ))}
+              </select>
             </div>
-            <Button variant="outline" size="lg" onClick={() => toast.success("System loaded", { description: sys.code })}>Load</Button>
             <Button
               variant="outline"
               size="lg"
