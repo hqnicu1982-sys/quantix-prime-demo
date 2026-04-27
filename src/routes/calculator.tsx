@@ -457,24 +457,39 @@ function SingleView({
                     <th className="px-3 py-2 text-left font-semibold">Board size</th>
                     <th className="px-3 py-2 text-right font-semibold">Pieces / column</th>
                     <th className="px-3 py-2 text-right font-semibold">{reuseOffcuts ? "Net waste (after reuse)" : "Off-cut waste"}</th>
-                    <th className="px-3 py-2 text-right font-semibold">Notes</th>
+                    <th className="px-3 py-2 text-right font-semibold">Scrap cost (this wall)</th>
                     <th className="px-3 py-2 text-right font-semibold sr-only">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {availableBoards.map(b => {
-                    const w = reuseOffcuts
-                      ? boardNetWasteWithReuse(heightMm, lengthMm, b.label)
-                      : boardOffcutWaste(heightMm, b.label);
-                    const pieces = piecesPerColumn(heightMm, b.label);
+                  {(() => {
+                    const wallAreaM2 = (heightMm * lengthMm) / 1_000_000;
+                    const computed = availableBoards.map(b => {
+                      const lib = BOARD_LIBRARY.find(x => x.label === b.label);
+                      const boardAreaM2 = lib ? (lib.width * lib.height) / 1_000_000 : 0;
+                      const pricePerM2 = lib?.pricePerM2 ?? 0;
+                      const wPct = reuseOffcuts
+                        ? boardNetWasteWithReuse(heightMm, lengthMm, b.label)
+                        : boardOffcutWaste(heightMm, b.label);
+                      const pcs = piecesPerColumn(heightMm, b.label);
+                      const cols = lib ? Math.ceil(lengthMm / lib.width) : 0;
+                      const boardsNeeded = cols * pcs;
+                      const purchasedAreaM2 = boardsNeeded * boardAreaM2;
+                      const scrapAreaM2 = Math.max(0, purchasedAreaM2 - wallAreaM2);
+                      const scrapCost = scrapAreaM2 * pricePerM2;
+                      return { b, wPct, pcs, scrapCost };
+                    });
+                    const minScrap = computed.reduce((m, r) => Math.min(m, r.scrapCost), Infinity);
+                    return computed.map(({ b, wPct: w, pcs: pieces, scrapCost }) => {
                     const isRecommended = b.label === recommended.label;
                     const isSelected = effectiveBoard === b.label;
-                    const needsJoint = pieces > 1;
+                    const isBestValue = computed.length > 1 && scrapCost === minScrap;
                     const tone =
                       w <= 5  ? "var(--tier-good)"
                       : w <= 15 ? "var(--accent-500)"
                       : w <= 25 ? "var(--amber-500)"
                       :           "var(--tier-critical)";
+                    const costColor = isBestValue ? "var(--tier-good)" : "var(--ink-900)";
                     return (
                       <tr
                         key={b.label}
@@ -505,8 +520,20 @@ function SingleView({
                             {w}%
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-right text-[11.5px] text-[var(--ink-500)]">
-                          {needsJoint ? `${pieces} pieces stacked + horizontal joint` : "Single piece, no joint"}
+                        <td className="px-3 py-2 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span
+                              className="font-mono-num text-[12.5px] font-semibold"
+                              style={{ color: costColor }}
+                            >
+                              £{scrapCost.toFixed(2)}
+                            </span>
+                            {isBestValue && (
+                              <span className="rounded-full bg-[var(--tier-good)]/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--tier-good)]">
+                                Best value
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-3 py-2 text-right">
                           {isSelected ? (
@@ -522,7 +549,8 @@ function SingleView({
                         </td>
                       </tr>
                     );
-                  })}
+                    });
+                  })()}
                 </tbody>
               </table>
             </div>
