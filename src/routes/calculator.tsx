@@ -241,6 +241,17 @@ function SingleView({
               <input defaultValue={sys.code} className="glass-input font-mono-num w-full rounded-xl px-4 py-3 text-[14px] font-semibold" />
             </div>
             <Button variant="outline" size="lg" onClick={() => toast.success("System loaded", { description: sys.code })}>Load</Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="gap-1.5"
+              onClick={() => {
+                const side = pushToTray(sys.code);
+                toast.success(`Added to Compare slot ${side}`, { description: sys.code });
+              }}
+            >
+              <GitCompare className="h-4 w-4" /> Send to Compare
+            </Button>
           </div>
           <p className="mt-3 text-[12px] text-[var(--ink-500)]">Type a code and press Load. Data comes from the live System Catalog.</p>
 
