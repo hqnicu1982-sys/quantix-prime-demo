@@ -799,7 +799,12 @@ function Field({
   error?: string | null;
   hint?: string;
 }) {
-  const invalid = !!error;
+  const [touched, setTouched] = React.useState(false);
+  const isEmpty = !value || value.trim() === "";
+  // "info" = gentle nudge (empty required field, or before user has interacted).
+  // "error" = real validation error after the user has touched the field.
+  const tone: "none" | "info" | "error" =
+    !error ? "none" : (isEmpty || !touched) ? "info" : "error";
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between">
@@ -810,24 +815,29 @@ function Field({
         <input
           value={value}
           onChange={e => onChange?.(e.target.value)}
+          onBlur={() => setTouched(true)}
           placeholder={placeholder}
-          aria-invalid={invalid}
-          aria-describedby={invalid ? `${label}-err` : undefined}
+          aria-invalid={tone === "error"}
+          aria-describedby={tone !== "none" ? `${label}-err` : undefined}
           className={
             "glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium placeholder:text-[var(--ink-500)] transition-shadow " +
-            (invalid
-              ? "border-[var(--tier-critical)] shadow-[0_0_0_4px_color-mix(in_oklab,var(--tier-critical)_18%,transparent)]"
+            (tone === "error"
+              ? "border-[var(--tier-critical)] shadow-[0_0_0_3px_color-mix(in_oklab,var(--tier-critical)_14%,transparent)]"
+              : tone === "info"
+              ? "border-[var(--ink-200)]"
               : "")
           }
         />
-        {invalid && (
+        {tone === "error" && (
           <AlertCircle className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--tier-critical)]" />
         )}
       </div>
-      {invalid ? (
+      {tone === "error" ? (
         <p id={`${label}-err`} className="mt-1 flex items-center gap-1 text-[11px] font-medium text-[var(--tier-critical)]">
           <AlertCircle className="h-3 w-3" /> {error}
         </p>
+      ) : tone === "info" ? (
+        <p id={`${label}-err`} className="mt-1 text-[11px] text-[var(--ink-500)]">{error}</p>
       ) : hint ? (
         <p className="mt-1 text-[11px] text-[var(--ink-500)]">{hint}</p>
       ) : null}
