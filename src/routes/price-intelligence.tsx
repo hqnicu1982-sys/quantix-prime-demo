@@ -3,14 +3,19 @@ import { Card, CardHead, Kpi, Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { priceIntelKpi, priceTrend, topMovers, priceAlerts, fmtMoney } from "@/lib/mockData";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
-import { Bell, Upload, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Bell, Upload, ArrowUpRight, ArrowDownRight, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { useProject } from "@/lib/ProjectContext";
+import { useProjectData, selectSupplier } from "@/lib/projectData";
+import { ProjectBanner } from "@/components/ProjectBanner";
 
 export const Route = createFileRoute("/price-intelligence")({ component: PriceIntel });
 
 function PriceIntel() {
   const navigate = useNavigate();
+  const { current } = useProject();
+  const data = useProjectData(current.id);
   return (
     <Section
       title="Price Intelligence"
@@ -22,6 +27,7 @@ function PriceIntel() {
         </>
       }
     >
+      <ProjectBanner scope="Price Intelligence" />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Items tracked" value={`${priceIntelKpi.itemsTracked}`} delta={`${priceIntelKpi.ccfItems} CCF · ${priceIntelKpi.minsterItems} Minster`} />
         <Kpi label="Avg uplift 90d" value={`+${priceIntelKpi.avgUplift}%`} delta={`vs +${priceIntelKpi.marketAvg}% market`} tone="warning" />
@@ -60,6 +66,24 @@ function PriceIntel() {
                     {m.dir === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                     {m.dir === "up" ? "+" : "–"}{m.pct}%
                   </span>
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  {data.supplierChoices[m.item] === m.supplier ? (
+                    <span className="inline-flex items-center gap-1 rounded bg-[var(--green-600)]/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-[var(--green-600)]">
+                      <Check className="h-3 w-3" /> Selected for {current.name}
+                    </span>
+                  ) : <span />}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 px-2 text-[11px]"
+                    onClick={() => {
+                      selectSupplier(current.id, m.item, m.supplier);
+                      toast.success(`${m.supplier} selected`, { description: `${m.item} → ${current.name}` });
+                    }}
+                  >
+                    Select for project
+                  </Button>
                 </div>
               </div>
             ))}

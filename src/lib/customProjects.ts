@@ -4,6 +4,29 @@ import type { Project, Health } from "./mockData";
 const KEY = "qp-custom-projects";
 const EVT = "qp-custom-projects-change";
 
+export type ProjectExtras = {
+  specsFileName?: string;
+  plannerTemplate?: "drylining-standard" | "fitout-standard" | "custom";
+  plannerFileName?: string;
+};
+
+const EXTRAS_KEY = (id: string) => `qp-project-extras-${id}`;
+
+export function saveProjectExtras(id: string, extras: ProjectExtras) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(EXTRAS_KEY(id), JSON.stringify(extras));
+}
+
+export function readProjectExtras(id: string): ProjectExtras {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(EXTRAS_KEY(id));
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
 function read(): Project[] {
   if (typeof window === "undefined") return [];
   try {

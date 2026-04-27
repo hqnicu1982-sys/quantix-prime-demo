@@ -6,6 +6,7 @@ import { invoices, invoiceKpi, reconFlow, fmtMoney, type Invoice } from "@/lib/m
 import { Upload, Plus, ArrowRight, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ProjectBanner } from "@/components/ProjectBanner";
 
 export const Route = createFileRoute("/invoices")({
   head: () => ({ meta: [{ title: "Invoice Reconciliation — Quantix Prime" }] }),
@@ -30,6 +31,8 @@ function Invoices() {
           <Button size="sm" onClick={() => toast.success("New reconciliation started", { description: "Select supplier and invoice to begin matching" })}><Plus className="mr-1.5 h-3.5 w-3.5" />New reconciliation</Button>
         </div>
       </div>
+
+      <ProjectBanner scope="Invoice Reconciliation" />
 
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Invoices this month" value={`${invoiceKpi.total}`} />

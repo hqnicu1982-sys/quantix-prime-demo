@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { callOffs, callOffStateMachine, callOffTabs, fmtMoney } from "@/lib/mockData";
 import { ChevronRight, ShieldCheck, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { ProjectBanner } from "@/components/ProjectBanner";
+import { useProject } from "@/lib/ProjectContext";
+import { useProjectData } from "@/lib/projectData";
 
 export const Route = createFileRoute("/calloffs")({ component: CallOffs });
 
@@ -20,12 +23,29 @@ const stateBadge = {
 };
 
 function CallOffs() {
+  const { current } = useProject();
+  const data = useProjectData(current.id);
+  const supplierPicks = Object.entries(data.supplierChoices);
   return (
     <Section
       title="Call-offs"
       subtitle="7-state workflow · full audit trail · Site manager requests, QS approves, PO fires on green light."
       right={<Button size="sm" onClick={() => toast.success("New call-off draft", { description: "Pick a BoQ item to call off against" })}><Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off</Button>}
     >
+      <ProjectBanner scope="Call-offs" />
+      {supplierPicks.length > 0 && (
+        <Card>
+          <CardHead title={`Agreed suppliers · ${current.name}`} subtitle="Used as default when raising new call-offs" />
+          <div className="divide-y divide-[var(--ink-200)] text-[12.5px]">
+            {supplierPicks.map(([material, supplier]) => (
+              <div key={material} className="flex items-center justify-between px-5 py-2.5">
+                <span className="font-medium">{material}</span>
+                <span className="rounded bg-[var(--accent-500)]/10 px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-500)]">{supplier}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
       <Card>
         <CardHead title="Call-off #247 (Gyproc WallBoard, 1,850m²)" subtitle="State machine · live audit trail" />
         <div className="overflow-x-auto p-5">

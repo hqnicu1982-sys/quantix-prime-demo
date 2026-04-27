@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ganttRows } from "@/lib/mockData";
 import { Calendar, Download, Plus, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { ProjectBanner } from "@/components/ProjectBanner";
 
 export const Route = createFileRoute("/planner")({ component: Planner });
 
@@ -31,6 +32,7 @@ function Planner() {
         </>
       }
     >
+      <ProjectBanner scope="Execution Planner" />
       <Card>
         <CardHead title="Gantt view" subtitle="Apr 20 → May 10 · 14 tasks" />
         <div className="overflow-x-auto p-5">
