@@ -782,16 +782,49 @@ function SectionTitle({ n, label }: { n: string; label: string }) {
   );
 }
 
-function Field({ label, value, onChange, placeholder }: { label: string; value?: string; onChange?: (v: string) => void; placeholder?: string }) {
+function Field({
+  label, value, onChange, placeholder, unit, error, hint,
+}: {
+  label: string;
+  value?: string;
+  onChange?: (v: string) => void;
+  placeholder?: string;
+  unit?: string;
+  error?: string | null;
+  hint?: string;
+}) {
+  const invalid = !!error;
   return (
     <div>
-      <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
-      <input
-        value={value}
-        onChange={e => onChange?.(e.target.value)}
-        placeholder={placeholder}
-        className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium placeholder:text-[var(--ink-500)]"
-      />
+      <div className="mb-1 flex items-baseline justify-between">
+        <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
+        {unit && <span className="font-mono-num text-[10.5px] font-medium text-[var(--ink-500)]">{unit}</span>}
+      </div>
+      <div className="relative">
+        <input
+          value={value}
+          onChange={e => onChange?.(e.target.value)}
+          placeholder={placeholder}
+          aria-invalid={invalid}
+          aria-describedby={invalid ? `${label}-err` : undefined}
+          className={
+            "glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium placeholder:text-[var(--ink-500)] transition-shadow " +
+            (invalid
+              ? "border-[var(--tier-critical)] shadow-[0_0_0_4px_color-mix(in_oklab,var(--tier-critical)_18%,transparent)]"
+              : "")
+          }
+        />
+        {invalid && (
+          <AlertCircle className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--tier-critical)]" />
+        )}
+      </div>
+      {invalid ? (
+        <p id={`${label}-err`} className="mt-1 flex items-center gap-1 text-[11px] font-medium text-[var(--tier-critical)]">
+          <AlertCircle className="h-3 w-3" /> {error}
+        </p>
+      ) : hint ? (
+        <p className="mt-1 text-[11px] text-[var(--ink-500)]">{hint}</p>
+      ) : null}
     </div>
   );
 }
