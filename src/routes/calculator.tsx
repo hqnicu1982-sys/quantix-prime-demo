@@ -349,17 +349,19 @@ function SingleView({
             <Select label="Stage"  options={["Both","Frame only","Board only"]} defaultValue="Both" />
           </div>
 
-          {/* Board recommendation chip — derives the smallest board ≥ wall height */}
-          {heightMm > 0 && (
-            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--accent-500)]/25 bg-[var(--accent-500)]/5 px-4 py-3 text-[12.5px]">
-              <Lightbulb className="h-4 w-4 shrink-0 text-[var(--accent-500)]" />
-              <span className="text-[var(--ink-700)]">
-                {boardSize === "auto" ? (
-                  <>For <strong>{(+height).toFixed(2)} m</strong> wall we recommend <strong className="font-mono-num">{recommended.label}</strong> — {recommended.reason.toLowerCase()}.</>
-                ) : (
-                  <>Using <strong className="font-mono-num">{effectiveBoard}</strong>. Auto would pick <strong className="font-mono-num">{recommended.label}</strong>.</>
-                )}
-              </span>
+          {/* Board recommendation chip — always visible, hints user when height is missing */}
+          <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--accent-500)]/25 bg-[var(--accent-500)]/5 px-4 py-3 text-[12.5px]">
+            <Lightbulb className="h-4 w-4 shrink-0 text-[var(--accent-500)]" />
+            <span className="text-[var(--ink-700)]">
+              {heightMm <= 0 ? (
+                <>Enter a wall <strong>height</strong> and we'll auto-pick the board size that minimises off-cut waste.</>
+              ) : boardSize === "auto" ? (
+                <>For <strong>{(+height).toFixed(2)} m</strong> wall we recommend <strong className="font-mono-num">{recommended.label}</strong> — {recommended.reason.toLowerCase()}.</>
+              ) : (
+                <>Using <strong className="font-mono-num">{effectiveBoard}</strong>. Auto would pick <strong className="font-mono-num">{recommended.label}</strong>.</>
+              )}
+            </span>
+            {heightMm > 0 && (
               <span className="ml-auto inline-flex items-center gap-1.5">
                 <span className="font-mono-num rounded-md bg-[var(--card)] px-2 py-0.5 text-[11px] font-semibold text-[var(--ink-700)]">
                   Cut waste {cutWastePct}%
@@ -378,8 +380,8 @@ function SingleView({
                   </button>
                 )}
               </span>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="mt-5">
             <div className="mb-2 flex items-center justify-between">
