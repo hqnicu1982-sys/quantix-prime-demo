@@ -528,6 +528,91 @@ function SingleView({
             </div>
           )}
 
+          {/* ───── Plan all walls (multi-wall + cutting strategy + cost) ───── */}
+          {heightMm > 0 && lengthMm > 0 && (
+            <div className="mt-3 overflow-hidden rounded-xl border border-[var(--ink-200)]">
+              <button
+                type="button"
+                onClick={() => setPlanOpen(o => !o)}
+                className="flex w-full items-center justify-between gap-3 bg-gradient-to-r from-[var(--accent-500)]/8 to-transparent px-3 py-2.5 text-left transition-colors hover:from-[var(--accent-500)]/14"
+                aria-expanded={planOpen}
+              >
+                <span className="flex items-center gap-2">
+                  <Scissors className="h-3.5 w-3.5 text-[var(--accent-500)]" />
+                  <span className="text-[11.5px] font-semibold uppercase tracking-wider text-[var(--ink-900)]">
+                    Plan all walls — cutting strategy &amp; project total
+                  </span>
+                  {projectPlan && allWalls.length > 1 && (
+                    <span className="font-mono-num rounded-md bg-[var(--accent-500)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-500)]">
+                      {allWalls.length} walls
+                    </span>
+                  )}
+                </span>
+                <span className="flex items-center gap-2 text-[11px] text-[var(--ink-500)]">
+                  {projectPlan && (
+                    <>
+                      <span className="font-mono-num">{projectPlan.totalBoardsBought} boards</span>
+                      <span aria-hidden="true">·</span>
+                      <span className="font-mono-num">£{projectPlan.totalCost.toFixed(0)}</span>
+                    </>
+                  )}
+                  <ChevronDown className={"h-4 w-4 transition-transform " + (planOpen ? "rotate-180" : "")} />
+                </span>
+              </button>
+
+              {planOpen && projectPlan && (
+                <div className="space-y-4 border-t border-[var(--ink-200)] bg-[var(--ink-50)]/30 p-4">
+                  <p className="text-[11.5px] leading-relaxed text-[var(--ink-700)]">
+                    Add every wall built with <span className="font-mono-num font-semibold">{sys.shortName}</span> using <span className="font-mono-num font-semibold">{effectiveBoard}</span>.
+                    The planner simulates board cutting wall-by-wall and reuses off-cuts that still have a factory edge — exactly as on site.
+                  </p>
+
+                  {/* Multi-wall editor */}
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+                        Walls in this system ({allWalls.length})
+                      </p>
+                      <label className="flex cursor-pointer items-center gap-2 text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+                        <input
+                          type="checkbox"
+                          checked={reuseAcrossWalls}
+                          onChange={e => setReuseAcrossWalls(e.target.checked)}
+                          className="h-3.5 w-3.5 accent-[var(--accent-500)]"
+                        />
+                        Re-use off-cuts across walls
+                      </label>
+                    </div>
+                    <WallEditor
+                      walls={allWalls}
+                      onChange={(next) => {
+                        // Wall 1 is locked (synced to main inputs); only persist extras.
+                        setExtraWalls(next.filter(w => w.id !== "wall-current"));
+                      }}
+                    />
+                  </div>
+
+                  {/* Project total + cutting diagram */}
+                  <div className="grid gap-4 md:grid-cols-[1fr_280px]">
+                    <ColumnDiagram plan={projectPlan.walls[0]} maxHeightPx={180} />
+                    <div className="space-y-2 rounded-xl border border-[var(--ink-200)] bg-[var(--card)] p-3">
+                      <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+                        <PoundSterling className="h-3 w-3" />
+                        Project totals
+                      </div>
+                      <Stat label="Boards bought" value={`${projectPlan.totalBoardsBought}`} />
+                      <Stat label="Wall area covered" value={`${projectPlan.totalWallAreaM2.toFixed(1)} m²`} />
+                      <Stat label="Net waste" value={`${projectPlan.netWastePct}%`} tone={projectPlan.netWastePct <= 10 ? "good" : projectPlan.netWastePct <= 20 ? "warn" : "bad"} />
+                      <div className="my-1 border-t border-[var(--ink-200)]" />
+                      <Stat label="Board cost" value={`£${projectPlan.totalCost.toFixed(0)}`} strong />
+                      <Stat label="Of which scrap" value={`£${projectPlan.scrapCost.toFixed(0)}`} tone="bad" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="mt-5">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Handling waste %</p>
