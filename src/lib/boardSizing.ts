@@ -151,17 +151,26 @@ export function recommendBoardSmart(
     const waste = accountForReuse
       ? boardNetWasteWithReuse(wallHeightMm, wallLengthMm || 1200, b.label)
       : boardOffcutWaste(wallHeightMm, b.label);
-    return { board: b, waste, pieces: piecesPerColumn(wallHeightMm, b.label) };
+    // Scrap cost (£) for cladding this single wall once. This is what the
+    // user actually pays for in waste, so we rank on this rather than %.
+    const wallAreaM2 = (wallHeightMm * (wallLengthMm || 1200)) / 1_000_000;
+    const boardAreaM2 = (b.width * b.height) / 1_000_000;
+    const pieces = piecesPerColumn(wallHeightMm, b.label);
+    const cols = Math.ceil((wallLengthMm || 1200) / b.width);
+    const purchasedAreaM2 = cols * pieces * boardAreaM2;
+    const scrapCost = Math.max(0, purchasedAreaM2 - wallAreaM2) * b.pricePerM2;
+    return { board: b, waste, pieces, scrapCost };
   });
-  // Lowest waste wins; tie-break on fewer pieces (no joint preferred).
-  scored.sort((a, b) => a.waste - b.waste || a.pieces - b.pieces);
+  // Lowest scrap cost (£) wins — that's what aligns with "Best value".
+  // Tie-break on fewer pieces (no horizontal joint preferred), then lower waste %.
+  scored.sort((a, b) => a.scrapCost - b.scrapCost || a.pieces - b.pieces || a.waste - b.waste);
   const best = scored[0];
   const needsJoint = best.pieces > 1;
   const reason = accountForReuse
-    ? `Lowest net waste ${best.waste}% after re-using factory-edge off-cuts`
+    ? `Lowest scrap cost £${best.scrapCost.toFixed(2)} after re-using factory-edge off-cuts (${best.waste}% net waste)`
     : needsJoint
-      ? `Wall exceeds board height — best of available sizes (${best.waste}% off-cut)`
-      : `Single board covers ${wallHeightMm} mm with ${best.board.height - wallHeightMm} mm off-cut`;
+      ? `Lowest scrap cost £${best.scrapCost.toFixed(2)} for this wall (${best.waste}% off-cut)`
+      : `Single board covers ${wallHeightMm} mm — £${best.scrapCost.toFixed(2)} scrap`;
   return { label: best.board.label, height: best.board.height, reason, needsHorizontalJoint: needsJoint };
 }
 
