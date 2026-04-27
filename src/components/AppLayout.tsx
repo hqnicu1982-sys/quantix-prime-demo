@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { ProjectProvider, useProject } from "@/lib/ProjectContext";
 import { cn } from "@/lib/utils";
+import { CompareTray } from "@/components/CompareTray";
 
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean };
 type NavGroup = { label: string; persona?: "site" | "commercial"; items: NavItem[] };
@@ -343,6 +344,7 @@ function LayoutInner() {
       </nav>
 
       <WelcomeModal open={welcomeOpen} onOpenChange={setWelcomeOpen} />
+      <CompareTray />
       <Toaster position="top-right" />
     </div>
   );
