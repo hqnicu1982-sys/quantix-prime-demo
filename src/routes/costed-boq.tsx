@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectData, removeSystem } from "@/lib/projectData";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 const searchSchema = z.object({
   tab:    fallback(z.enum(["all", "review", "missing", "savings"]), "all").default("all"),
@@ -41,6 +41,7 @@ const PAGE_SIZE = 20;
 
 function CostedBoq() {
   const navigate = Route.useNavigate();
+  const goto = useNavigate();
   const search = Route.useSearch();
   const { current } = useProject();
   const projectData = useProjectData(current.id);
@@ -214,8 +215,14 @@ function CostedBoq() {
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setSelected(new Set())}>Clear</Button>
             <Button size="sm" onClick={() => {
-              toast.success(`${selected.size} draft call-offs created`, { description: "Awaiting QS review" });
+              const picks = Object.keys(projectData.supplierChoices).length;
+              toast.success(`${selected.size} draft call-offs created`, {
+                description: picks > 0
+                  ? `Using ${picks} agreed supplier${picks === 1 ? "" : "s"} for ${current.name}`
+                  : `No supplier picks yet — defaults from Price Intelligence`,
+              });
               setSelected(new Set());
+              goto({ to: "/calloffs" });
             }}>Generate call-offs ({selected.size})</Button>
           </div>
         </div>
