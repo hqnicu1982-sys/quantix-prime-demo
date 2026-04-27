@@ -237,17 +237,26 @@ function Calculator() {
 function SingleView({
   activeCode, setActiveCode,
   length, setLength, height, setHeight, waste, setWaste,
+  boardSize, setBoardSize,
   area, wasteFactor, navigate,
 }: {
   activeCode: string; setActiveCode: (v: string) => void;
   length: string; setLength: (v: string) => void;
   height: string; setHeight: (v: string) => void;
   waste: number;  setWaste: (v: number) => void;
+  boardSize: string; setBoardSize: (v: string) => void;
   area: number;   wasteFactor: number;
   navigate: ReturnType<typeof useNavigate>;
 }) {
   const sys = LIBRARY.find(s => s.code === activeCode) ?? LIBRARY[0];
   const totals = scaledTotals(sys, area, wasteFactor);
+
+  // Recommendation: pick the smallest board ≥ wall height to minimise off-cuts.
+  // Wall height in mm; board catalogue (W × H, mm).
+  const heightMm = Math.round((+height || 0) * 1000);
+  const recommended = recommendBoard(heightMm);
+  const effectiveBoard = boardSize === "auto" ? recommended.label : boardSize;
+  const cutWastePct = boardOffcutWaste(heightMm, effectiveBoard);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
