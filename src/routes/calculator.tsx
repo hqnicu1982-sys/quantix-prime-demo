@@ -1118,3 +1118,32 @@ function compareNum(a: number, b: number, higherBetter: boolean): "left" | "righ
   if (higherBetter) return a > b ? "left" : "right";
   return a < b ? "left" : "right";
 }
+
+function Stat({
+  label,
+  value,
+  tone,
+  strong,
+}: {
+  label: string;
+  value: string;
+  tone?: "good" | "warn" | "bad";
+  strong?: boolean;
+}) {
+  const colorVar =
+    tone === "good" ? "var(--tier-good)" :
+    tone === "warn" ? "var(--amber-500)" :
+    tone === "bad"  ? "var(--tier-critical)" :
+    "var(--ink-900)";
+  return (
+    <div className="flex items-center justify-between gap-2 text-[12px]">
+      <span className="text-[var(--ink-500)]">{label}</span>
+      <span
+        className={"font-mono-num tabular-nums " + (strong ? "text-[14px] font-bold" : "font-semibold")}
+        style={{ color: colorVar }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
