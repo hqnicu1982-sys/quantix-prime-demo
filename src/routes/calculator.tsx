@@ -286,6 +286,31 @@ function SingleView({
     ? boardNetWasteWithReuse(heightMm, lengthMm, effectiveBoard)
     : boardOffcutWaste(heightMm, effectiveBoard);
 
+  // ─── Plan all walls (drawer): multi-wall, off-cut re-use cross-wall, cost ──
+  const [planOpen, setPlanOpen] = useState(false);
+  const [extraWalls, setExtraWalls] = useState<WallInput[]>([]);
+  const [reuseAcrossWalls, setReuseAcrossWalls] = useState(true);
+
+  // Always include the current wall as "Wall 1" — synced from the main inputs.
+  const allWalls = useMemo<WallInput[]>(() => {
+    const w1: WallInput = {
+      id: "wall-current",
+      name: "Wall 1 (current)",
+      heightMm,
+      lengthMm,
+      openingsM2: 0,
+    };
+    return [w1, ...extraWalls];
+  }, [heightMm, lengthMm, extraWalls]);
+
+  const projectPlan = useMemo(
+    () =>
+      heightMm > 0 && lengthMm > 0
+        ? planWalls(allWalls, effectiveBoard, { reuseAcrossWalls })
+        : null,
+    [allWalls, effectiveBoard, reuseAcrossWalls, heightMm, lengthMm],
+  );
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
       <main className="space-y-6">
