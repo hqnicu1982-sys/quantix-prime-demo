@@ -310,11 +310,11 @@ function SingleView({
                 <span className="impact-ribbon" />
                 <p className="text-[12.5px] leading-relaxed text-[var(--ink-900)]">{sys.desc}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <TierMetric icon={<Flame   className="h-3 w-3" />} label="Fire"     value={sys.perf.fire ? `${sys.perf.fire}'`   : "—"} tier={tF} />
-                  <TierMetric icon={<Volume2 className="h-3 w-3" />} label="Acoustic" value={sys.perf.rw   ? `${sys.perf.rw} dB` : "—"} tier={tR} />
-                  <TierMetric icon={<Ruler   className="h-3 w-3" />} label="Max H"    value={`${sys.perf.maxHeight} mm`}                tier={tH} />
-                  <TierMetric icon={<Layers  className="h-3 w-3" />} label="Stud c/c" value={`${sys.perf.studCentres} mm`}              tier="none" />
-                  <TierMetric icon={<Layers  className="h-3 w-3" />} label="Weight"   value={`${sys.perf.weight} kg/m²`}                tier="none" />
+                  <TierChip icon={<Flame   className="h-3 w-3" />} label="Fire"     value={sys.perf.fire ? `${sys.perf.fire}'`   : "—"} tier={tF} />
+                  <TierChip icon={<Volume2 className="h-3 w-3" />} label="Acoustic" value={sys.perf.rw   ? `${sys.perf.rw} dB` : "—"} tier={tR} />
+                  <TierChip icon={<Ruler   className="h-3 w-3" />} label="Max H"    value={`${sys.perf.maxHeight} mm`}                tier={tH} />
+                  <TierChip icon={<Layers  className="h-3 w-3" />} label="Stud c/c" value={`${sys.perf.studCentres} mm`}              tier="none" />
+                  <TierChip icon={<Layers  className="h-3 w-3" />} label="Weight"   value={`${sys.perf.weight} kg/m²`}                tier="none" />
                 </div>
               </div>
             );
