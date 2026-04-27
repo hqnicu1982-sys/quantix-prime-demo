@@ -1234,7 +1234,7 @@ function AddToBoqButton({
   height: string;
   waste: number;
   boardSize: string;
-  totals: Totals;
+  totals: { item: string; unit: string; qty: number }[];
 }) {
   const { current } = useProject();
   const lengthN = +length;
@@ -1246,8 +1246,8 @@ function AddToBoqButton({
       toast.error("Enter wall length and height first");
       return;
     }
-    const materials = Object.entries(totals).map(([name, t]) => ({
-      name,
+    const materials = totals.map((t) => ({
+      name: t.item,
       qty: Math.round(t.qty * 100) / 100,
       unit: t.unit,
     }));
