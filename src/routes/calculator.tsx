@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { pushToTray, readSlots, setSlot, subscribe } from "@/lib/compareTray";
-import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste, getAvailableBoards, piecesPerColumn } from "@/lib/boardSizing";
+import { BOARD_LIBRARY, recommendBoard, boardOffcutWaste, getAvailableBoards, piecesPerColumn, boardNetWasteWithReuse, recommendBoardSmart } from "@/lib/boardSizing";
 import { fireTier, acousticTier, heightTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
 import { TierMetric as TierChip } from "@/components/TierMetric";
 import { validateGeometry, hasErrors } from "@/lib/calcValidation";
@@ -131,6 +131,10 @@ function Calculator() {
 
   // Board sizing — "auto" lets us derive the best board from height to minimise waste.
   const [boardSize, setBoardSize] = useState<string>("auto");
+  // When true, the recommender and waste table assume off-cuts that still carry a
+  // factory edge will be re-used in subsequent columns / walls. Reflects realistic
+  // site practice where large off-cuts top a column near the ceiling/skirting.
+  const [reuseOffcuts, setReuseOffcuts] = useState<boolean>(false);
 
   // On mount: if URL says ?mode=compare or the tray has slots, switch to compare
   // and hydrate left/right from the tray. Then keep them in sync with the tray.
@@ -234,6 +238,7 @@ function Calculator() {
             height={height} setHeight={setHeight}
             waste={waste}   setWaste={setWaste}
             boardSize={boardSize} setBoardSize={setBoardSize}
+            reuseOffcuts={reuseOffcuts} setReuseOffcuts={setReuseOffcuts}
             area={area} wasteFactor={wasteFactor}
             navigate={navigate}
           />
@@ -250,6 +255,7 @@ function SingleView({
   activeCode, setActiveCode,
   length, setLength, height, setHeight, waste, setWaste,
   boardSize, setBoardSize,
+  reuseOffcuts, setReuseOffcuts,
   area, wasteFactor, navigate,
 }: {
   activeCode: string; setActiveCode: (v: string) => void;
@@ -257,6 +263,7 @@ function SingleView({
   height: string; setHeight: (v: string) => void;
   waste: number;  setWaste: (v: number) => void;
   boardSize: string; setBoardSize: (v: string) => void;
+  reuseOffcuts: boolean; setReuseOffcuts: (v: boolean) => void;
   area: number;   wasteFactor: number;
   navigate: ReturnType<typeof useNavigate>;
 }) {
@@ -268,10 +275,13 @@ function SingleView({
   // Recommendation: pick the smallest board ≥ wall height to minimise off-cuts.
   // Wall height in mm; board catalogue (W × H, mm).
   const heightMm = Math.round((+height || 0) * 1000);
+  const lengthMm = Math.round((+length || 0) * 1000);
   const availableBoards = getAvailableBoards(sys.availableBoards);
-  const recommended = recommendBoard(heightMm, sys.availableBoards);
+  const recommended = recommendBoardSmart(heightMm, lengthMm, sys.availableBoards, reuseOffcuts);
   const effectiveBoard = boardSize === "auto" ? recommended.label : boardSize;
-  const cutWastePct = boardOffcutWaste(heightMm, effectiveBoard);
+  const cutWastePct = reuseOffcuts
+    ? boardNetWasteWithReuse(heightMm, lengthMm, effectiveBoard)
+    : boardOffcutWaste(heightMm, effectiveBoard);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
@@ -400,21 +410,34 @@ function SingleView({
                 <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
                   Available boards for {sys.shortName}
                 </p>
-                <p className="text-[10.5px] text-[var(--ink-500)]">Wall height {(+height).toFixed(2)} m</p>
+                <div className="flex items-center gap-3">
+                  <label className="flex cursor-pointer items-center gap-2 text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+                    <input
+                      type="checkbox"
+                      checked={reuseOffcuts}
+                      onChange={e => setReuseOffcuts(e.target.checked)}
+                      className="h-3.5 w-3.5 accent-[var(--accent-500)]"
+                    />
+                    Account for off-cut reuse
+                  </label>
+                  <p className="text-[10.5px] text-[var(--ink-500)]">Wall {(+height).toFixed(2)} m × {(+length || 0).toFixed(2)} m</p>
+                </div>
               </div>
               <table className="w-full text-[12.5px]">
                 <thead className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
                   <tr className="border-b border-[var(--ink-200)]">
                     <th className="px-3 py-2 text-left font-semibold">Board size</th>
                     <th className="px-3 py-2 text-right font-semibold">Pieces / column</th>
-                    <th className="px-3 py-2 text-right font-semibold">Off-cut waste</th>
+                    <th className="px-3 py-2 text-right font-semibold">{reuseOffcuts ? "Net waste (after reuse)" : "Off-cut waste"}</th>
                     <th className="px-3 py-2 text-right font-semibold">Notes</th>
                     <th className="px-3 py-2 text-right font-semibold sr-only">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {availableBoards.map(b => {
-                    const w = boardOffcutWaste(heightMm, b.label);
+                    const w = reuseOffcuts
+                      ? boardNetWasteWithReuse(heightMm, lengthMm, b.label)
+                      : boardOffcutWaste(heightMm, b.label);
                     const pieces = piecesPerColumn(heightMm, b.label);
                     const isRecommended = b.label === recommended.label;
                     const isSelected = effectiveBoard === b.label;

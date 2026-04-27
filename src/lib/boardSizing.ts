@@ -66,3 +66,103 @@ export function piecesPerColumn(wallHeightMm: number, boardLabel: string): numbe
   if (!board || !wallHeightMm) return 0;
   return Math.max(1, Math.ceil(wallHeightMm / board.height));
 }
+
+/**
+ * Net waste % when off-cuts that still carry a factory edge are re-used in
+ * subsequent columns. Simulates filling each vertical column of a wall and
+ * keeping a small inventory of usable off-cuts. An off-cut keeps its factory
+ * edge on one end (the un-cut side); we accept it for re-use only if it is
+ * long enough to satisfy a remaining gap in another column.
+ *
+ * Net waste = (boards bought × board area − wall area) / (boards bought × board area).
+ */
+export function boardNetWasteWithReuse(
+  wallHeightMm: number,
+  wallLengthMm: number,
+  boardLabel: string,
+): number {
+  const board = BOARD_LIBRARY.find(b => b.label === boardLabel);
+  if (!board || !wallHeightMm || !wallLengthMm) return 0;
+
+  const columns = Math.max(1, Math.ceil(wallLengthMm / board.width));
+  // Inventory of factory-edge off-cuts available for re-use, sorted largest first.
+  const stock: number[] = [];
+  let boardsBought = 0;
+
+  for (let c = 0; c < columns; c++) {
+    let remaining = wallHeightMm;
+    while (remaining > 0) {
+      // Try to satisfy the remaining gap from stock first (best-fit: smallest piece ≥ need,
+      // otherwise largest piece available).
+      stock.sort((a, b) => a - b);
+      let usedFromStock = false;
+      const fitIdx = stock.findIndex(p => p >= remaining);
+      if (fitIdx !== -1) {
+        const piece = stock.splice(fitIdx, 1)[0];
+        const leftover = piece - remaining;
+        remaining = 0;
+        // Cutting a stock piece destroys its remaining factory edge → leftover is scrap.
+        // (One factory edge was already consumed when the piece was first cut.)
+        void leftover;
+        usedFromStock = true;
+      } else if (stock.length > 0) {
+        // Use the largest stock piece whole (it has a factory edge that goes against
+        // the joint), then fill the rest from a new board.
+        const piece = stock.pop()!;
+        remaining -= piece;
+        usedFromStock = true;
+      }
+      if (usedFromStock) continue;
+
+      // Open a new board and cut what we need from it. The cut piece consumes one
+      // factory edge of the board; the remaining off-cut keeps the other factory edge
+      // and goes into stock for potential re-use.
+      boardsBought += 1;
+      if (remaining >= board.height) {
+        remaining -= board.height; // whole board used, no off-cut
+      } else {
+        const offcut = board.height - remaining;
+        remaining = 0;
+        if (offcut > 0) stock.push(offcut);
+      }
+    }
+  }
+
+  const totalBoardLength = boardsBought * board.height;
+  const wallLengthCovered = columns * wallHeightMm;
+  const waste = Math.max(0, totalBoardLength - wallLengthCovered);
+  return Math.round((waste / Math.max(1, totalBoardLength)) * 100);
+}
+
+/**
+ * Pick the board that minimises net waste (with reuse) or off-cut waste (without).
+ * Falls back to the no-height behaviour of the simple recommender.
+ */
+export function recommendBoardSmart(
+  wallHeightMm: number,
+  wallLengthMm: number,
+  allowedLabels: string[] | undefined,
+  accountForReuse: boolean,
+): { label: string; height: number; reason: string; needsHorizontalJoint: boolean } {
+  const lib = getAvailableBoards(allowedLabels);
+  const fallback = lib[0] ?? BOARD_LIBRARY[1];
+  if (!wallHeightMm || wallHeightMm <= 0) {
+    return { label: fallback.label, height: fallback.height, reason: "Default size", needsHorizontalJoint: false };
+  }
+  const scored = lib.map(b => {
+    const waste = accountForReuse
+      ? boardNetWasteWithReuse(wallHeightMm, wallLengthMm || 1200, b.label)
+      : boardOffcutWaste(wallHeightMm, b.label);
+    return { board: b, waste, pieces: piecesPerColumn(wallHeightMm, b.label) };
+  });
+  // Lowest waste wins; tie-break on fewer pieces (no joint preferred).
+  scored.sort((a, b) => a.waste - b.waste || a.pieces - b.pieces);
+  const best = scored[0];
+  const needsJoint = best.pieces > 1;
+  const reason = accountForReuse
+    ? `Lowest net waste ${best.waste}% after re-using factory-edge off-cuts`
+    : needsJoint
+      ? `Wall exceeds board height — best of available sizes (${best.waste}% off-cut)`
+      : `Single board covers ${wallHeightMm} mm with ${best.board.height - wallHeightMm} mm off-cut`;
+  return { label: best.board.label, height: best.board.height, reason, needsHorizontalJoint: needsJoint };
+}
