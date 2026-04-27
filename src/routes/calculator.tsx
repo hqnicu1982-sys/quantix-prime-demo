@@ -1221,3 +1221,60 @@ function Stat({
     </div>
   );
 }
+
+// =============================================================================
+// ADD-TO-BOQ BUTTON
+// Pushes the currently configured system into the active project's BoQ.
+// =============================================================================
+function AddToBoqButton({
+  sys, length, height, waste, boardSize, totals,
+}: {
+  sys: SystemDef;
+  length: string;
+  height: string;
+  waste: number;
+  boardSize: string;
+  totals: Totals;
+}) {
+  const { current } = useProject();
+  const lengthN = +length;
+  const heightN = +height;
+  const valid = lengthN > 0 && heightN > 0;
+
+  const onAdd = () => {
+    if (!valid) {
+      toast.error("Enter wall length and height first");
+      return;
+    }
+    const materials = Object.entries(totals).map(([name, t]) => ({
+      name,
+      qty: Math.round(t.qty * 100) / 100,
+      unit: t.unit,
+    }));
+    addSystemToBoQ(current.id, {
+      systemCode: sys.code,
+      systemName: sys.shortName,
+      lengthM: lengthN,
+      heightM: heightN,
+      wastePct: waste,
+      boardSize,
+      materials,
+    });
+    toast.success(`Added to BoQ for ${current.name}`, {
+      description: `${sys.shortName} · ${(lengthN * heightN).toFixed(1)} m² · ${materials.length} lines`,
+      action: { label: "View BoQ", onClick: () => { window.location.href = "/costed-boq"; } },
+    });
+  };
+
+  return (
+    <Button
+      size="lg"
+      className="gap-1.5"
+      onClick={onAdd}
+      disabled={!valid}
+      title={valid ? `Add ${sys.shortName} to ${current.name} BoQ` : "Enter length & height first"}
+    >
+      <FileSpreadsheet className="h-4 w-4" /> Add to BoQ
+    </Button>
+  );
+}
