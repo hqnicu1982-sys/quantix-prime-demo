@@ -410,21 +410,34 @@ function SingleView({
                 <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
                   Available boards for {sys.shortName}
                 </p>
-                <p className="text-[10.5px] text-[var(--ink-500)]">Wall height {(+height).toFixed(2)} m</p>
+                <div className="flex items-center gap-3">
+                  <label className="flex cursor-pointer items-center gap-2 text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+                    <input
+                      type="checkbox"
+                      checked={reuseOffcuts}
+                      onChange={e => setReuseOffcuts(e.target.checked)}
+                      className="h-3.5 w-3.5 accent-[var(--accent-500)]"
+                    />
+                    Account for off-cut reuse
+                  </label>
+                  <p className="text-[10.5px] text-[var(--ink-500)]">Wall {(+height).toFixed(2)} m × {(+length || 0).toFixed(2)} m</p>
+                </div>
               </div>
               <table className="w-full text-[12.5px]">
                 <thead className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
                   <tr className="border-b border-[var(--ink-200)]">
                     <th className="px-3 py-2 text-left font-semibold">Board size</th>
                     <th className="px-3 py-2 text-right font-semibold">Pieces / column</th>
-                    <th className="px-3 py-2 text-right font-semibold">Off-cut waste</th>
+                    <th className="px-3 py-2 text-right font-semibold">{reuseOffcuts ? "Net waste (after reuse)" : "Off-cut waste"}</th>
                     <th className="px-3 py-2 text-right font-semibold">Notes</th>
                     <th className="px-3 py-2 text-right font-semibold sr-only">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {availableBoards.map(b => {
-                    const w = boardOffcutWaste(heightMm, b.label);
+                    const w = reuseOffcuts
+                      ? boardNetWasteWithReuse(heightMm, lengthMm, b.label)
+                      : boardOffcutWaste(heightMm, b.label);
                     const pieces = piecesPerColumn(heightMm, b.label);
                     const isRecommended = b.label === recommended.label;
                     const isSelected = effectiveBoard === b.label;
