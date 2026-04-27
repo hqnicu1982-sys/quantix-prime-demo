@@ -69,10 +69,15 @@ export function piecesPerColumn(wallHeightMm: number, boardLabel: string): numbe
 
 /**
  * Net waste % when off-cuts that still carry a factory edge are re-used in
- * subsequent columns. Simulates filling each vertical column of a wall and
- * keeping a small inventory of usable off-cuts. An off-cut keeps its factory
- * edge on one end (the un-cut side); we accept it for re-use only if it is
- * long enough to satisfy a remaining gap in another column.
+ * subsequent columns. Each off-cut keeps a factory edge on exactly one end
+ * (the un-cut side). To re-use it on a new column the factory edge must butt
+ * against the joint with the main piece, which means we must cut the off-cut
+ * down to the exact gap size — and the remainder of that cut is scrap (it
+ * has lost both factory edges and cannot be joint-taped cleanly again).
+ *
+ * Example (3.2 m wall, 1200×2400 board):
+ *  • Column 1: full board (2400) + cut 800 from a second board → 1600 off-cut keeps factory edge.
+ *  • Column 2: full board (2400) + need 800 more → cut 800 from the 1600 off-cut, 800 mm scrap.
  *
  * Net waste = (boards bought × board area − wall area) / (boards bought × board area).
  */
@@ -92,31 +97,24 @@ export function boardNetWasteWithReuse(
   for (let c = 0; c < columns; c++) {
     let remaining = wallHeightMm;
     while (remaining > 0) {
-      // Try to satisfy the remaining gap from stock first (best-fit: smallest piece ≥ need,
-      // otherwise largest piece available).
+      // Prefer satisfying the gap from an existing factory-edge off-cut.
+      // Best-fit: smallest stock piece that is ≥ the remaining gap. Cutting
+      // it down to the gap consumes the remaining factory edge, so anything
+      // left over from that cut is scrap (NOT returned to stock).
       stock.sort((a, b) => a - b);
-      let usedFromStock = false;
       const fitIdx = stock.findIndex(p => p >= remaining);
       if (fitIdx !== -1) {
-        const piece = stock.splice(fitIdx, 1)[0];
-        const leftover = piece - remaining;
+        stock.splice(fitIdx, 1); // piece consumed; leftover is scrap
         remaining = 0;
-        // Cutting a stock piece destroys its remaining factory edge → leftover is scrap.
-        // (One factory edge was already consumed when the piece was first cut.)
-        void leftover;
-        usedFromStock = true;
-      } else if (stock.length > 0) {
-        // Use the largest stock piece whole (it has a factory edge that goes against
-        // the joint), then fill the rest from a new board.
-        const piece = stock.pop()!;
-        remaining -= piece;
-        usedFromStock = true;
+        continue;
       }
-      if (usedFromStock) continue;
+      // No stock piece is large enough on its own. We do NOT chain multiple
+      // off-cuts together (that would mean two cut edges meeting → no clean
+      // factory joint), so fall through and open a new board.
 
-      // Open a new board and cut what we need from it. The cut piece consumes one
-      // factory edge of the board; the remaining off-cut keeps the other factory edge
-      // and goes into stock for potential re-use.
+      // Open a new board. The piece we cut keeps one factory edge (top or
+      // bottom of the wall); the remaining off-cut keeps the other factory
+      // edge and goes into stock for potential re-use on a future column.
       boardsBought += 1;
       if (remaining >= board.height) {
         remaining -= board.height; // whole board used, no off-cut
