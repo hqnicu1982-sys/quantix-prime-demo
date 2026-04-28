@@ -10,6 +10,10 @@ import { Calendar, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { ProjectBanner } from "@/components/ProjectBanner";
+import { useProject } from "@/lib/ProjectContext";
+import { useProjectData } from "@/lib/projectData";
+import { exportProjectPack } from "@/lib/exportProjectPack";
+import { FileDown } from "lucide-react";
 
 export const Route = createFileRoute("/financial")({
   head: () => ({ meta: [{ title: "Financial Dashboard — Quantix Prime" }] }),
@@ -25,11 +29,21 @@ const HEALTH_COLOR: Record<string, string> = {
 
 function Financial() {
   const [period, setPeriod] = useState<"This month" | "Last month" | "QTD" | "YTD">("This month");
+  const { current } = useProject();
+  const projectData = useProjectData(current.id);
   const cyclePeriod = () => {
     const opts = ["This month", "Last month", "QTD", "YTD"] as const;
     const next = opts[(opts.indexOf(period) + 1) % opts.length];
     setPeriod(next);
     toast(`Period: ${next}`);
+  };
+  const handleExportPack = () => {
+    try {
+      exportProjectPack(current, projectData);
+      toast.success("Project pack exported", { description: `${current.name} · PDF downloaded` });
+    } catch (e) {
+      toast.error("Export failed", { description: String((e as Error).message ?? e) });
+    }
   };
   return (
     <Section
@@ -38,6 +52,7 @@ function Financial() {
       right={
         <>
           <Button variant="outline" size="sm" onClick={cyclePeriod}><Calendar className="mr-1.5 h-3.5 w-3.5" />{period}</Button>
+          <Button variant="outline" size="sm" onClick={handleExportPack}><FileDown className="mr-1.5 h-3.5 w-3.5" />Export project pack</Button>
           <Button variant="outline" size="sm" onClick={() => toast.success("Financials exported", { description: `${period} P&L · XLSX downloaded` })}><Download className="mr-1.5 h-3.5 w-3.5" />Export</Button>
         </>
       }
