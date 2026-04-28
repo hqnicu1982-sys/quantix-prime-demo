@@ -322,11 +322,13 @@ function useStore<T>(reader: () => T): T {
   useEffect(() => {
     const refresh = () => setState(reader());
     refresh();
-    const onStorage = (e: StorageEvent) => { if (e.key && e.key.startsWith("qp-labour")) refresh(); };
+    const onStorage = (e: StorageEvent) => { if (e.key && (e.key.startsWith("qp-labour") || e.key.startsWith("qp-pw-rates"))) refresh(); };
     window.addEventListener(EVT, refresh);
+    window.addEventListener(PW_EVT, refresh);
     window.addEventListener("storage", onStorage);
     return () => {
       window.removeEventListener(EVT, refresh);
+      window.removeEventListener(PW_EVT, refresh);
       window.removeEventListener("storage", onStorage);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -339,3 +341,4 @@ export function useMemberRates() { return useStore(getMemberRates); }
 export function useAssignments(projectId?: string) { return useStore(() => getAssignments(projectId)); }
 export function useProjectCrews(projectId: string) { return useStore(() => getProjectCrews(projectId)); }
 export function useInvites() { return useStore(getInvites); }
+export function usePriceWorkRates(projectId: string) { return useStore(() => getPriceWorkRates(projectId)); }
