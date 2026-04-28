@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, UserPlus } from "lucide-react";
+import { ExternalLink, Trash2 } from "lucide-react";
 import { team } from "@/lib/mockData";
+import { useProjectCrews, removeAssignment, useInvites } from "@/lib/labour";
+import { InviteMemberDialog } from "@/components/team/InviteMemberDialog";
+import { AssignToProjectDialog } from "@/components/team/AssignToProjectDialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/projects/fitzrovia/team")({ component: TeamPage });
-
-const onProject = team.filter((t) => t.status !== "pending").slice(0, 7);
 
 const tierTone = {
   Admin: "bg-purple-500/10 text-purple-600",
@@ -17,13 +19,18 @@ const tierTone = {
 } as const;
 
 function TeamPage() {
+  const crews = useProjectCrews("fitzrovia");
+  const invites = useInvites().filter((i) => i.projectId === "fitzrovia" && i.status === "pending");
+  const onProject = crews.map((c) => c.member).filter(Boolean) as typeof team;
+  const opCount = crews.filter((c) => c.member?.tier === "Operative").length;
+  const lead = crews.find((c) => c.member?.tier === "Pro" || c.member?.tier === "Pro Control");
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="On project" value={`${onProject.length}`} delta="3 office · 4 site" />
-        <Kpi label="Operatives on site today" value="22" delta="across 4 crews" />
-        <Kpi label="Pending invites" value="1" delta="ben@drywallcrew" tone="warning" />
-        <Kpi label="Lead PM" value="Nick A." delta="Site Manager · Pro" />
+        <Kpi label="On project" value={`${onProject.length}`} delta={`${crews.filter((c) => c.crewName).length} crews`} />
+        <Kpi label="Operatives" value={`${opCount}`} delta="active assignments" />
+        <Kpi label="Pending invites" value={`${invites.length}`} delta={invites[0]?.email ?? "—"} tone={invites.length ? "warning" : "neutral"} />
+        <Kpi label="Lead PM" value={lead?.member?.name.split(" ").map((p) => p[0] + ".").slice(0, 2).join(" ") ?? "—"} delta={lead?.projectRole ?? "—"} />
       </div>
 
       <Card>
@@ -32,25 +39,33 @@ function TeamPage() {
           subtitle="Members assigned to Hotel Fitzrovia"
           right={
             <div className="flex gap-2">
-              <Button size="sm"><UserPlus className="mr-1.5 h-3.5 w-3.5" /> Invite</Button>
+              <AssignToProjectDialog projectId="fitzrovia" />
+              <InviteMemberDialog defaultProjectId="fitzrovia" />
               <Button size="sm" variant="outline" asChild><Link to="/team">Full directory <ExternalLink className="ml-1.5 h-3.5 w-3.5" /></Link></Button>
             </div>
           }
         />
         <div className="divide-y divide-[var(--ink-200)]">
-          {onProject.map((m) => (
-            <div key={m.id} className="flex items-center gap-4 px-5 py-3 hover:bg-[var(--ink-50)]">
+          {crews.map((c) => {
+            const m = c.member;
+            if (!m) return null;
+            return (
+            <div key={c.assignment.id} className="flex items-center gap-4 px-5 py-3 hover:bg-[var(--ink-50)]">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-500)] to-[var(--teal-500)] text-[12px] font-bold text-white">
                 {m.initials}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-semibold">{m.name}</p>
-                <p className="text-[11.5px] text-[var(--ink-500)]">{m.role} · last active {m.lastActive}</p>
+                <p className="text-[11.5px] text-[var(--ink-500)]">{c.projectRole}{c.assignment.crewName ? ` · ${c.assignment.crewName}` : ""} · last active {m.lastActive}</p>
               </div>
+              <span className="rounded bg-[var(--ink-50)] px-2 py-0.5 font-mono-num text-[11px] font-semibold text-[var(--ink-700)]">£{c.rate.toFixed(2)}/h</span>
               <span className={`rounded px-2 py-0.5 text-[10.5px] font-semibold ${tierTone[m.tier]}`}>{m.tier}</span>
-              <span className="hidden text-[11px] text-[var(--ink-500)] md:inline">joined {m.joined}</span>
+              <Button variant="ghost" size="sm" onClick={() => { removeAssignment(c.assignment.id); toast("Removed from project"); }}>
+                <Trash2 className="h-3.5 w-3.5 text-[var(--ink-500)]" />
+              </Button>
             </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
 

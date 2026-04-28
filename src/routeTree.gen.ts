@@ -25,6 +25,7 @@ import { Route as CalloffsRouteImport } from './routes/calloffs'
 import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
+import { Route as SettingsLabourRouteImport } from './routes/settings.labour'
 import { Route as ProjectsFitzroviaRouteImport } from './routes/projects.fitzrovia'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
 import { Route as ProjectsFitzroviaIndexRouteImport } from './routes/projects.fitzrovia.index'
@@ -118,6 +119,11 @@ const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProjectsRoute,
 } as any)
+const SettingsLabourRoute = SettingsLabourRouteImport.update({
+  id: '/settings/labour',
+  path: '/settings/labour',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProjectsFitzroviaRoute = ProjectsFitzroviaRouteImport.update({
   id: '/fitzrovia',
   path: '/fitzrovia',
@@ -204,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/variations': typeof VariationsRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaRouteWithChildren
+  '/settings/labour': typeof SettingsLabourRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/fitzrovia/calloffs': typeof ProjectsFitzroviaCalloffsRoute
   '/projects/fitzrovia/costed-boq': typeof ProjectsFitzroviaCostedBoqRoute
@@ -232,6 +239,7 @@ export interface FileRoutesByTo {
   '/team': typeof TeamRoute
   '/variations': typeof VariationsRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
+  '/settings/labour': typeof SettingsLabourRoute
   '/projects': typeof ProjectsIndexRoute
   '/projects/fitzrovia/calloffs': typeof ProjectsFitzroviaCalloffsRoute
   '/projects/fitzrovia/costed-boq': typeof ProjectsFitzroviaCostedBoqRoute
@@ -263,6 +271,7 @@ export interface FileRoutesById {
   '/variations': typeof VariationsRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaRouteWithChildren
+  '/settings/labour': typeof SettingsLabourRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/fitzrovia/calloffs': typeof ProjectsFitzroviaCalloffsRoute
   '/projects/fitzrovia/costed-boq': typeof ProjectsFitzroviaCostedBoqRoute
@@ -295,6 +304,7 @@ export interface FileRouteTypes {
     | '/variations'
     | '/price-lists/upload'
     | '/projects/fitzrovia'
+    | '/settings/labour'
     | '/projects/'
     | '/projects/fitzrovia/calloffs'
     | '/projects/fitzrovia/costed-boq'
@@ -323,6 +333,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/variations'
     | '/price-lists/upload'
+    | '/settings/labour'
     | '/projects'
     | '/projects/fitzrovia/calloffs'
     | '/projects/fitzrovia/costed-boq'
@@ -353,6 +364,7 @@ export interface FileRouteTypes {
     | '/variations'
     | '/price-lists/upload'
     | '/projects/fitzrovia'
+    | '/settings/labour'
     | '/projects/'
     | '/projects/fitzrovia/calloffs'
     | '/projects/fitzrovia/costed-boq'
@@ -383,6 +395,7 @@ export interface RootRouteChildren {
   TeamRoute: typeof TeamRoute
   VariationsRoute: typeof VariationsRoute
   PriceListsUploadRoute: typeof PriceListsUploadRoute
+  SettingsLabourRoute: typeof SettingsLabourRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -498,6 +511,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/projects/'
       preLoaderRoute: typeof ProjectsIndexRouteImport
       parentRoute: typeof ProjectsRoute
+    }
+    '/settings/labour': {
+      id: '/settings/labour'
+      path: '/settings/labour'
+      fullPath: '/settings/labour'
+      preLoaderRoute: typeof SettingsLabourRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/projects/fitzrovia': {
       id: '/projects/fitzrovia'
@@ -646,6 +666,7 @@ const rootRouteChildren: RootRouteChildren = {
   TeamRoute: TeamRoute,
   VariationsRoute: VariationsRoute,
   PriceListsUploadRoute: PriceListsUploadRoute,
+  SettingsLabourRoute: SettingsLabourRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
