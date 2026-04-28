@@ -951,8 +951,8 @@ function CompareView({
 
       {/* Two pickers */}
       <div className="grid gap-5 lg:grid-cols-2">
-        <SystemPicker side="A" value={leftCode}  onChange={setLeftCode}  exclude={rightCode} sys={left} />
-        <SystemPicker side="B" value={rightCode} onChange={setRightCode} exclude={leftCode}  sys={right} />
+        <SystemPicker side="A" value={leftCode}  onChange={setLeftCode}  exclude={rightCode} sys={left}  combined={combined} />
+        <SystemPicker side="B" value={rightCode} onChange={setRightCode} exclude={leftCode}  sys={right} combined={combined} />
       </div>
 
       {sameSystem && (
@@ -1050,13 +1050,14 @@ function CompareView({
 // COMPARE — building blocks
 // =============================================================================
 function SystemPicker({
-  side, value, onChange, exclude, sys,
+  side, value, onChange, exclude, sys, combined,
 }: {
   side: "A" | "B";
   value: string;
   onChange: (v: string) => void;
   exclude: string;
   sys: SystemDef;
+  combined: SystemDef[];
 }) {
   const accent = side === "A" ? "var(--accent-500)" : "var(--teal-500)";
   return (
@@ -1075,7 +1076,7 @@ function SystemPicker({
           onChange={e => onChange(e.target.value)}
           className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium"
         >
-          {LIBRARY.map(s => (
+          {combined.map(s => (
             <option key={s.code} value={s.code} disabled={s.code === exclude}>
               {s.code} — {s.shortName}
             </option>
