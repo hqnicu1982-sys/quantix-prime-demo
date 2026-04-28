@@ -382,6 +382,7 @@ function SingleView({
   const errs = validateGeometry(length, height, waste);
   const invalid = hasErrors(errs);
   const totals = scaledTotals(sys, area, wasteFactor);
+  const cost = estimateCost(totals, area, wasteFactor);
 
   // Recommendation: pick the smallest board ≥ wall height to minimise off-cuts.
   // Wall height in mm; board catalogue (W × H, mm).
