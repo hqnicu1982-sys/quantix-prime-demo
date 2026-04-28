@@ -1,64 +1,98 @@
-## Cum stă acum
+## Goal
 
-- `team` (în `src/lib/mockData.ts`) e o listă statică de oameni cu `role`, `tier`, `capability` — fără `rate`, fără cost real.
-- `projects.fitzrovia.labour.tsx` are crew-uri hardcodate cu `rate` (£24.5, £22.0…) — nu e legat de nimeni din team.
-- `Team` page are buton „Invite member" care doar dă un toast — nu persistă nimic.
-- `NewTaskDialog` (planner) atașează un `crewId` din `team`, dar nu există rată → planner-ul nu poate calcula cost de labour real.
-
-Deci „labour rate" nu există ca obiect propriu. Trebuie introdus.
-
-## Logica propusă (3 nivele de rate)
+Close the labour loop end-to-end: rates flow into the Planner as cost estimates, and Daily Report hours are persisted and propagate into the Labour KPIs.
 
 ```text
-Tier 1: GLOBAL ROLE RATES   (ex: Dryliner = £24.50/h, Taper = £22/h)
-        ↓ default values
-Tier 2: PERSON RATE         (per membru, override pe global; ex: Marcin £26/h)
-        ↓ used as default
-Tier 3: PROJECT ASSIGNMENT  (membru × proiect; poate override + rol pe proiect)
+Invite/Assign → Rate per crew → Planner task (hours × rate = cost)
+                                       ↓
+                            Daily Report (log hours)
+                                       ↓
+                              Labour KPIs (actuals)
 ```
 
-Flow de utilizare:
-1. **Settings → Labour rates** — definești rate default pe rol (Lead Dryliner, Taper, MF Fixer, Apprentice…).
-2. **Team → Invite member** — dialog real: email, role (din lista de roluri), rate £/h (prefilled din role default), tier (permission).
-3. **Project → Team → Assign** — alegi din directory, opțional override rate doar pe proiectul ăsta + crew name (ex: „Marcin's Crew").
-4. **Planner / Labour** — task-urile cu `crewId` calculează cost = `hours × effectiveRate(person, project)`.
+## 1. Planner — cost estimates per task
 
-## Ce construim
+**Add to `PlannerTask` (src/lib/planner.ts):**
+- `plannedHours?: number` — total man-hours estimated for the task
+- Helper `taskPlannedCost(task, projectId)` → `plannedHours × effectiveRate(crewId, projectId)`
+- Helper `taskActualCost(task, projectId, actualHours)` for later reuse
 
-### 1. Data layer — `src/lib/labour.ts` (nou)
-- Tipuri: `LabourRole { id, name, defaultRate }`, `TeamMemberRate { memberId, rate, roleId }`, `ProjectAssignment { projectId, memberId, projectRole?, rateOverride?, crewName? }`, `Invite { email, roleId, rate, tier, status: 'pending' }`.
-- Persistență `localStorage` (la fel ca `planner.ts` / `variations.ts`).
-- Helpers: `effectiveRate(memberId, projectId)`, `getProjectCrews(projectId)`, `getMembersOnProject(projectId)`.
-- Seed cu cele 4 crew-uri existente din labour page → devin asignări reale pe Fitzrovia.
+**`NewTaskDialog.tsx`:**
+- New "Planned hours" input next to crew selector
+- Live cost preview: `12 h × £24.50 = £294` once both crew + hours are set
 
-### 2. Settings — labour rates
-- Rută nouă `src/routes/settings.labour.tsx` (sau secțiune în `team.tsx`).
-- Tabel editabil cu rolurile globale + rate default. Add / edit / delete role.
+**`TaskDetailDialog.tsx`:**
+- Editable Planned hours field
+- New "Cost" mini-panel showing: rate (from assignment), planned hours, planned cost, actual hours logged so far (sum from daily logs), actual cost, variance
+- If no crew assigned → show "Assign a crew to see cost estimate"
 
-### 3. Invite flow real — `src/components/team/InviteMemberDialog.tsx` (nou)
-- Înlocuiește toast-ul din `team.tsx`.
-- Câmpuri: email, name, role (Select din `LabourRole`), rate £/h (auto-fill din role, editabil), tier (permission), proiect default (opțional).
-- La submit: persist `Invite` cu status `pending`; apare în Team directory cu badge „Pending invite" și în KPI „Open invites".
+**Planner page KPIs (both `planner.tsx` and `projects.fitzrovia.planner.tsx`):**
+- Add 5th KPI tile: "Planned labour cost" = sum of taskPlannedCost across non-done tasks
 
-### 4. Project team assign — `src/components/team/AssignToProjectDialog.tsx` (nou)
-- Buton în `projects.fitzrovia.team.tsx` lângă „Invite".
-- Pick member din directory + project role override + rate override + crew name.
-- Apare imediat în lista „Project team" și în dropdown-ul de crew din `NewTaskDialog`.
+## 2. Daily Report — persistent labour log
 
-### 5. Wire-in
-- `projects.fitzrovia.labour.tsx`: înlocuiește `crews` hardcodat cu `getProjectCrews('fitzrovia')`; KPI „Average rate" devine media weighted reală.
-- `NewTaskDialog`: dropdown crew din asignările proiectului (nu din `team` brut). Afișează rate lângă nume.
-- `TaskDetailDialog` / `BlockersPanel`: arată cost estimat = `plannedHours × effectiveRate`.
+**New module `src/lib/laborLog.ts`:**
+```ts
+type LaborLogEntry = {
+  id: string;
+  projectId: string;
+  date: string;          // ISO
+  memberId: string;      // refs assignment
+  taskId?: string;       // optional planner task link
+  hoursIn: string;       // "07:00"
+  hoursOut: string;      // "16:30"
+  hours: number;
+  work: string;
+  late?: boolean;
+  createdAt: number;
+};
+```
+- localStorage-backed, same patterns as `planner.ts` / `labour.ts`
+- Hooks: `useLabourLogs(projectId, dateRange?)`, `useLabourLogsForMember(projectId, memberId)`
+- Helpers: `getActualHours(projectId, memberId)`, `getActualHoursForTask(projectId, taskId)`
+- Seed Fitzrovia with the existing `dailyReport.labour` mock entries so KPIs stay populated on first load
 
-### 6. Mici update-uri UX
-- În `team.tsx`: coloană nouă „Default rate £/h" în tabel.
-- KPI „Open invites" devine real (count din `Invite` cu status pending).
+**`daily-report.tsx`:**
+- Replace static `dailyReport.labour` table with live data from `useLabourLogs(currentProjectId, today)`
+- Add "Log labour" button → opens `LogLabourDialog.tsx`:
+  - Crew (dropdown of project assignments — re-uses `useProjectCrews`)
+  - Optional task (dropdown of planner tasks)
+  - In / Out times → auto-computes hours
+  - Work description
+- Submit persists via `addLabourLog()` and toasts confirmation
+- Each row gets a delete button (Pro Control / Admin only, gated by `currentUser.tier`)
 
-## Ce NU includem acum (le putem face într-o iterație separată)
-- Acceptare reală a invitației prin email / auth.
-- Overtime, weekend rates, cost categories (PAYE vs CIS vs sub-contractor) — putem adăuga ulterior ca câmpuri pe `LabourRole`.
-- Rapoarte de cost actual din timesheets (acum doar planned cost).
+## 3. Labour KPIs — wire actuals from log
 
-## Întrebări înainte să dau drumul
+**`projects.fitzrovia.labour.tsx`:**
+- Replace hardcoded `HOURS` constant with derived data:
+  - `actual` = `getActualHours("fitzrovia", memberId)` (sum of all log entries to date)
+  - `planned` = sum of `plannedHours` across planner tasks where `crewId === memberId`
+  - `complete` = `min(100, actual / planned * 100)`
+  - `variance` = `(actual - planned) / planned * 100`
+- "Total hours MTD", "Labour cost", "Average rate" recompute live
+- Add small "Last logged" column referencing most recent entry date
 
-Un singur lucru de confirmat: vrei **rate-urile expuse vizibil tuturor** pe pagina de team (transparent pe tot proiectul), sau **doar rolurilor Pro Control / Admin** (ascuns pentru Site User / Operative)? Dacă da-ul e „doar PM", adaug un guard simplu pe coloana de rate.
+## Files
+
+**Created:**
+- `src/lib/laborLog.ts`
+- `src/components/daily-report/LogLabourDialog.tsx`
+
+**Edited:**
+- `src/lib/planner.ts` — add `plannedHours`, cost helpers
+- `src/components/planner/NewTaskDialog.tsx` — hours input + cost preview
+- `src/components/planner/TaskDetailDialog.tsx` — cost panel + editable hours
+- `src/routes/planner.tsx` + `src/routes/projects.fitzrovia.planner.tsx` — planned cost KPI
+- `src/routes/daily-report.tsx` — live log table + Log Labour button
+- `src/routes/projects.fitzrovia.labour.tsx` — derived actuals from log
+
+## Out of scope (next iteration)
+
+- Generic `projects.$projectId.*` route refactor
+- Financial overview sync from invoice registry
+- Approval workflow for logged hours (operative submits → foreman signs)
+
+## Result
+
+After approval, you'll have a closed loop: invite a member → assign with rate → plan a task with hours (sees real cost) → daily report logs hours against that crew → labour KPIs update automatically with actual cost, variance and blended rate.
