@@ -3,9 +3,10 @@
 // Bridges the calculator's per-m² material totals with Costed BoQ unit prices,
 // and adds a labour estimate so the Live Summary can show £ totals + £/m².
 // ============================================================================
-import { costedBoqRows, calculatorResults } from "./mockData";
+import { costedBoqRows } from "./mockData";
 
-export const HOURS_PER_M2 = 0.4; // mock productivity assumption (drylining)
+export const HOURS_PER_M2 = 0.4;          // mock productivity assumption (drylining)
+export const LABOUR_RATE_PER_M2 = 24.50;  // £ per m² installed (mirrors mockData dummyParameters)
 
 export type PricedLine = {
   item: string;
@@ -69,7 +70,7 @@ export function estimateCost(
 
   const materials = lines.reduce((s, l) => s + (l.lineCost ?? 0), 0);
   const labourArea = area * wasteFactor;
-  const labour = labourArea * calculatorResults.labourRate;
+  const labour = labourArea * LABOUR_RATE_PER_M2;
   const hours = labourArea * HOURS_PER_M2;
   const total = materials + labour;
   const perM2 = area > 0 ? total / area : 0;
@@ -80,7 +81,7 @@ export function estimateCost(
     total,
     perM2,
     hours,
-    labourRate: calculatorResults.labourRate,
+    labourRate: LABOUR_RATE_PER_M2,
     pricedLines: lines.filter((l) => l.unitPrice != null).length,
     totalLines: lines.length,
     lines,
