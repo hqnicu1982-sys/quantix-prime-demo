@@ -3,7 +3,7 @@ import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
 
-export const Route = createFileRoute("/projects/fitzrovia/invoices")({ component: InvoicesPage });
+export const Route = createFileRoute("/projects/$projectId/invoices")({ component: InvoicesPage });
 
 const invoices = [
   { id: "CCF-10824", supplier: "CCF", date: "18 Apr", po: 7093, invoiced: 8340, variance: 1247, status: "variance" as const },

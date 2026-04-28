@@ -25,7 +25,7 @@ import { NewTaskDialog } from "@/components/planner/NewTaskDialog";
 import { BlockersPanel } from "@/components/planner/BlockersPanel";
 import { useProjectVariations } from "@/lib/variations";
 
-export const Route = createFileRoute("/projects/fitzrovia/planner")({
+export const Route = createFileRoute("/projects/$projectId/planner")({
   component: PlannerPage,
 });
 
@@ -39,7 +39,7 @@ const CALL_OFFS: { id: string; status: "draft" | "pending" | "approved" | "deliv
 ];
 
 function PlannerPage() {
-  const PID = "fitzrovia";
+  const { projectId: PID } = Route.useParams();
   const tasks = useProjectTasks(PID);
   const variations = useProjectVariations(PID);
   const approvedVariationIds = variations

@@ -14,7 +14,7 @@ import { ProjectProvider, useProject } from "@/lib/ProjectContext";
 import { cn } from "@/lib/utils";
 import { CompareTray } from "@/components/CompareTray";
 
-type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean };
+type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean; params?: Record<string, string> };
 type NavGroup = { label: string; persona?: "site" | "commercial"; items: NavItem[] };
 
 const navGroups: NavGroup[] = [
@@ -27,7 +27,7 @@ const navGroups: NavGroup[] = [
   ]},
   { label: "Projects", items: [
     { to: "/projects", label: "All Projects", icon: FolderKanban, mobile: true },
-    { to: "/projects/fitzrovia", label: "Hotel Fitzrovia", icon: HardHat },
+    { to: "/projects/$projectId", label: "Hotel Fitzrovia", icon: HardHat, params: { projectId: "fitzrovia" } as Record<string, string> },
   ]},
   { label: "Commercial", persona: "commercial", items: [
     { to: "/costed-boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true },
@@ -80,11 +80,19 @@ function PersonaToggle() {
 
 function NavLinkItem({ item, onClick }: { item: NavItem; onClick?: () => void }) {
   const location = useLocation();
-  const active = location.pathname === item.to;
+  // resolve dynamic segments for active comparison
+  const resolvedTo = item.params
+    ? Object.entries(item.params).reduce(
+        (acc, [k, v]) => acc.replace(`$${k}`, v),
+        item.to,
+      )
+    : item.to;
+  const active = location.pathname === resolvedTo;
   const Icon = item.icon;
   return (
     <Link
-      to={item.to}
+      to={item.to as "/"}
+      params={item.params as never}
       onClick={onClick}
       className={cn(
         "group relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",

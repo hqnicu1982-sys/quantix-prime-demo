@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Download } from "lucide-react";
 import { costedBoqRows, costedBoqKpi, fmtMoney } from "@/lib/mockData";
 
-export const Route = createFileRoute("/projects/fitzrovia/costed-boq")({ component: BoQPage });
+export const Route = createFileRoute("/projects/$projectId/costed-boq")({ component: BoQPage });
 
 function BoQPage() {
   return (

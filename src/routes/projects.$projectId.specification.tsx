@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Download, CheckCircle2, AlertTriangle, Layers } from "lucide-react";
 import { fitzroviaSystems, fmtMoney } from "@/lib/mockData";
 
-export const Route = createFileRoute("/projects/fitzrovia/specification")({ component: SpecificationPage });
+export const Route = createFileRoute("/projects/$projectId/specification")({ component: SpecificationPage });
 
 const docs = [
   { name: "Architectural drawings — Rev 4.1.pdf", size: "12.4 MB", date: "18 Apr 2026", tag: "Architect", tone: "info" as const },

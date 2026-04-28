@@ -3,7 +3,7 @@ import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { Plus, ExternalLink, Truck } from "lucide-react";
 
-export const Route = createFileRoute("/projects/fitzrovia/calloffs")({ component: CallOffsPage });
+export const Route = createFileRoute("/projects/$projectId/calloffs")({ component: CallOffsPage });
 
 const callOffs = [
   { id: "CO-247", supplier: "Minster", items: "Gyproc WallBoard 15mm × 220, Rockwool RW3 × 48", value: 4820, eta: "24 Apr", status: "approved" as const },

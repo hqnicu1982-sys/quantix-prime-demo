@@ -87,7 +87,8 @@ export function BlockersPanel({
                   )}
                   {r.blockers.some((b) => b.type === "material") && (
                     <Link
-                      to="/projects/fitzrovia/calloffs"
+                      to="/projects/$projectId/calloffs"
+                      params={{ projectId }}
                       className="inline-flex h-6 items-center rounded border border-[var(--ink-200)] px-2 text-[10.5px] hover:border-[var(--accent-500)]"
                     >
                       Open call-offs
@@ -95,7 +96,8 @@ export function BlockersPanel({
                   )}
                   {r.blockers.some((b) => b.type === "variation") && (
                     <Link
-                      to="/projects/fitzrovia/variations"
+                      to="/projects/$projectId/variations"
+                      params={{ projectId }}
                       className="inline-flex h-6 items-center rounded border border-[var(--ink-200)] px-2 text-[10.5px] hover:border-[var(--accent-500)]"
                     >
                       Open variations

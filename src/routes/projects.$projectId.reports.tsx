@@ -3,7 +3,7 @@ import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, ClipboardList } from "lucide-react";
 
-export const Route = createFileRoute("/projects/fitzrovia/reports")({ component: ReportsPage });
+export const Route = createFileRoute("/projects/$projectId/reports")({ component: ReportsPage });
 
 const reports = [
   { id: "DR-118", title: "Daily site report — 20 Apr", who: "Nick Andrei", when: "today 17:42", type: "Daily", crew: 22, hrs: 176 },
