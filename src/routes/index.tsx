@@ -168,7 +168,10 @@ function FocusRow({ action }: { action: typeof focusToday[number] }) {
       <h4 className="mt-2 text-[14px] font-semibold text-[var(--ink-900)]">{action.title}</h4>
       <p className="mt-1 text-[13px] text-[var(--ink-700)]">{action.body}</p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Link to={action.primary.to}>
+        <Link
+          to={action.primary.to}
+          params={"projectId" in action.primary ? { projectId: (action.primary as { projectId: string }).projectId } : undefined}
+        >
           <Button size="sm">{action.primary.label}<ArrowRight className="ml-1 h-3.5 w-3.5" /></Button>
         </Link>
         {action.secondary && <Button size="sm" variant="outline" onClick={() => toast(action.secondary!.label, { description: "Action queued" })}>{action.secondary.label}</Button>}

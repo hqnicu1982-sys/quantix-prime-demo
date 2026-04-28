@@ -158,7 +158,7 @@ export const focusToday = [
     impact: "Labour overrun",
     title: "Level 4 dryliners running 22% over BoQ hours",
     body: "Marcin's crew: planned 248h, burned 302h at 76% complete. Either re-baseline or raise a dayworks variation with Kier.",
-    primary: { label: "View labour detail", to: "/projects/fitzrovia" as const },
+    primary: { label: "View labour detail", to: "/projects/$projectId/labour" as const, projectId: "fitzrovia" },
     secondary: { label: "Raise dayworks" },
   },
 ];

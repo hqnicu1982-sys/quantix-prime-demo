@@ -53,7 +53,7 @@ function ProjectsList() {
               {allProjects.map((p) => (
                 <tr key={p.id} className="hover:bg-[var(--ink-50)]">
                   <td className="px-4 py-3">
-                    <Link to={p.id === "fitzrovia" ? "/projects/fitzrovia" : "/projects"} className="block">
+                    <Link to="/projects/$projectId" params={{ projectId: p.id }} className="block">
                       <p className="font-semibold text-[var(--ink-900)]">{p.name}</p>
                       <p className="text-[11.5px] text-[var(--ink-500)]">{p.subtitle}</p>
                     </Link>
