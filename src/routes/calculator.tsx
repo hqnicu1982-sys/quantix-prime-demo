@@ -20,6 +20,8 @@ import { BrandSelector } from "@/components/calculator/BrandSelector";
 import { getBrand, readActiveBrand, subscribeBrand, type BrandId } from "@/lib/systemBrands";
 import { useProject } from "@/lib/ProjectContext";
 import { addSystemToBoQ } from "@/lib/projectData";
+import { useBespokeSystems, buildUpToMaterials, type BespokeSystem, type BespokeBuildUp } from "@/lib/bespokeSystems";
+import { BespokeBuildUpDialog } from "@/components/calculator/BespokeBuildUpDialog";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
@@ -122,6 +124,55 @@ const LIBRARY: SystemDef[] = [
 // =============================================================================
 type Mode = "code" | "recommend" | "compare";
 
+// Convert a per-project bespoke system into the same shape used by the calculator.
+// Performance numbers are intentionally zeroed — bespoke build-ups don't carry
+// SpecSure ratings until BG re-certifies.
+function bespokeToSystemDef(bsp: BespokeSystem): SystemDef {
+  const mats = buildUpToMaterials(bsp.buildUp);
+  const totalsPerM2: Totals = {};
+  for (const m of mats) totalsPerM2[m.item] = { qty: m.qty, unit: m.unit };
+  return {
+    code: bsp.id,
+    shortName: `${bsp.name} (bespoke)`,
+    desc: `Bespoke build-up forked from ${bsp.parentCode} (${bsp.parentShortName}). Materials only — performance ratings require BG re-certification.`,
+    buildUp: [
+      { k: "Side A layers", v: String(bsp.buildUp.sideA.length) },
+      { k: "Side B layers", v: String(bsp.buildUp.sideB.length) },
+      { k: "Stud", v: `${bsp.buildUp.studType} ${bsp.buildUp.studSize} @ ${bsp.buildUp.studCentres} c/c` },
+      { k: "Insulation", v: bsp.buildUp.insulation.kind === "none" ? "None" : bsp.buildUp.insulation.kind === "isover-apr" ? `Isover APR ${bsp.buildUp.insulation.thicknessMm}mm` : `Rockwool RW3 ${bsp.buildUp.insulation.thicknessMm}mm` },
+      { k: "Resilient bars", v: bsp.buildUp.resilientBars ? "Yes" : "No" },
+    ],
+    perf: { weight: 0, maxHeight: 0, studCentres: bsp.buildUp.studCentres, fire: 0, rw: 0 },
+    totalsPerM2,
+  };
+}
+
+// Best-effort seed for the bespoke editor when forking a known library system.
+function seedBuildUpFromLibrary(code: string): BespokeBuildUp {
+  const sys = LIBRARY.find(s => s.code === code);
+  // Simple defaults — user edits from here.
+  if (!sys) {
+    return {
+      sideA: ["Gyproc WallBoard 12.5"],
+      sideB: ["Gyproc WallBoard 12.5"],
+      studType: "C-Stud", studSize: 70, studCentres: 600,
+      insulation: { kind: "none" },
+      resilientBars: false,
+    };
+  }
+  // Heuristic mapping based on the example library entries
+  if (code.includes("DL15"))    return { sideA: ["Gyproc DuraLine 15"],            sideB: [],                                  studType: "I-Stud", studSize: 146, studCentres: 600, insulation: { kind: "none" },                              resilientBars: false };
+  if (code.includes("WB12.5"))  return { sideA: ["Gyproc WallBoard 12.5", "Gyproc WallBoard 12.5"], sideB: [],                  studType: "C-Stud", studSize: 92,  studCentres: 600, insulation: { kind: "none" },                              resilientBars: false };
+  if (code.includes("SB15"))    return { sideA: ["Gyproc SoundBloc 15", "Gyproc SoundBloc 15"],    sideB: [],                  studType: "I-Stud", studSize: 146, studCentres: 600, insulation: { kind: "isover-apr", thicknessMm: 50 },        resilientBars: false };
+  return {
+    sideA: ["Gyproc WallBoard 12.5"],
+    sideB: ["Gyproc WallBoard 12.5"],
+    studType: "C-Stud", studSize: 70, studCentres: 600,
+    insulation: { kind: "none" },
+    resilientBars: false,
+  };
+}
+
 function Calculator() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>("code");
@@ -138,6 +189,14 @@ function Calculator() {
     return subscribeBrand(setBrandId);
   }, []);
   const brand = getBrand(brandId);
+
+  // Bespoke systems for the active project — merged into the dropdown.
+  const { current } = useProject();
+  const bespokes = useBespokeSystems(current.id);
+  const COMBINED: SystemDef[] = useMemo(
+    () => [...bespokes.map(bespokeToSystemDef), ...LIBRARY],
+    [bespokes],
+  );
 
   // Compare-mode state
   const [leftCode,  setLeftCode]  = useState<string>(LIBRARY[0].code);
@@ -271,6 +330,7 @@ function Calculator() {
             waste={waste}   setWaste={setWaste}
             area={area} wasteFactor={wasteFactor}
             onPromote={promoteToCalculator}
+            combined={COMBINED}
           />
         ) : (
           /* ===================== SINGLE-SYSTEM MODE ===================== */
@@ -283,6 +343,9 @@ function Calculator() {
             reuseOffcuts={reuseOffcuts} setReuseOffcuts={setReuseOffcuts}
             area={area} wasteFactor={wasteFactor}
             navigate={navigate}
+            combined={COMBINED}
+            projectId={current.id}
+            projectName={current.name}
           />
         )}
       </div>
@@ -299,6 +362,7 @@ function SingleView({
   boardSize, setBoardSize,
   reuseOffcuts, setReuseOffcuts,
   area, wasteFactor, navigate,
+  combined, projectId, projectName,
 }: {
   activeCode: string; setActiveCode: (v: string) => void;
   length: string; setLength: (v: string) => void;
@@ -308,8 +372,12 @@ function SingleView({
   reuseOffcuts: boolean; setReuseOffcuts: (v: boolean) => void;
   area: number;   wasteFactor: number;
   navigate: ReturnType<typeof useNavigate>;
+  combined: SystemDef[];
+  projectId: string;
+  projectName: string;
 }) {
-  const sys = LIBRARY.find(s => s.code === activeCode) ?? LIBRARY[0];
+  const sys = combined.find(s => s.code === activeCode) ?? LIBRARY[0];
+  const isBespoke = activeCode.startsWith("BSP-");
   const errs = validateGeometry(length, height, waste);
   const invalid = hasErrors(errs);
   const totals = scaledTotals(sys, area, wasteFactor);
@@ -351,6 +419,9 @@ function SingleView({
     [allWalls, effectiveBoard, reuseAcrossWalls, heightMm, lengthMm],
   );
 
+  // Bespoke build-up dialog state
+  const [bespokeOpen, setBespokeOpen] = useState(false);
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
       <main className="space-y-6">
@@ -358,17 +429,35 @@ function SingleView({
           <SectionTitle n="01" label="System reference" />
           <div className="mt-4 flex flex-wrap items-end gap-3">
             <div className="min-w-[280px] flex-1">
-              <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">System code</p>
+              <p className="mb-1 flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+                System code
+                {isBespoke && (
+                  <span className="rounded-full bg-[var(--accent-500)]/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent-500)]">
+                    Bespoke
+                  </span>
+                )}
+              </p>
               <select
                 value={activeCode}
                 onChange={e => setActiveCode(e.target.value)}
                 className="glass-input font-mono-num w-full rounded-xl px-4 py-3 text-[14px] font-semibold"
               >
-                {LIBRARY.map(s => (
-                  <option key={s.code} value={s.code}>{s.code}</option>
+                {combined.map(s => (
+                  <option key={s.code} value={s.code}>
+                    {s.code.startsWith("BSP-") ? "🛠️ " : ""}{s.code}{s.code.startsWith("BSP-") ? ` — ${s.shortName}` : ""}
+                  </option>
                 ))}
               </select>
             </div>
+            <Button
+              variant="outline"
+              size="lg"
+              className="gap-1.5"
+              onClick={() => setBespokeOpen(true)}
+              title="Fork this system into a bespoke build-up"
+            >
+              <Wand2 className="h-4 w-4" /> Customise build-up
+            </Button>
             <Button
               variant="outline"
               size="lg"
@@ -382,7 +471,11 @@ function SingleView({
             </Button>
             <AddToBoqButton sys={sys} length={length} height={height} waste={waste} boardSize={effectiveBoard} totals={totals} />
           </div>
-          <p className="mt-3 text-[12px] text-[var(--ink-500)]">Type a code and press Load. Data comes from the live System Catalog.</p>
+          <p className="mt-3 text-[12px] text-[var(--ink-500)]">
+            {isBespoke
+              ? "Bespoke build-up — materials only. Performance ratings need BG re-certification."
+              : "Type a code and press Load. Data comes from the live System Catalog."}
+          </p>
 
           {(() => {
             const tF = fireTier(sys.perf.fire);
@@ -788,6 +881,19 @@ function SingleView({
           </div>
         </div>
       </aside>
+
+      <BespokeBuildUpDialog
+        open={bespokeOpen}
+        onOpenChange={setBespokeOpen}
+        projectId={projectId}
+        projectName={projectName}
+        parent={{
+          code: isBespoke ? (LIBRARY[0].code) : sys.code,
+          shortName: isBespoke ? LIBRARY[0].shortName : sys.shortName,
+          seed: seedBuildUpFromLibrary(isBespoke ? LIBRARY[0].code : sys.code),
+        }}
+        onCreated={(created) => setActiveCode(created.id)}
+      />
     </div>
   );
 }
@@ -799,6 +905,7 @@ function CompareView({
   leftCode, setLeftCode, rightCode, setRightCode,
   length, setLength, height, setHeight, waste, setWaste,
   area, wasteFactor, onPromote,
+  combined,
 }: {
   leftCode: string;  setLeftCode: (v: string) => void;
   rightCode: string; setRightCode: (v: string) => void;
@@ -807,9 +914,10 @@ function CompareView({
   waste: number;     setWaste: (v: number) => void;
   area: number;      wasteFactor: number;
   onPromote: (code: string, label?: string) => void;
+  combined: SystemDef[];
 }) {
-  const left  = LIBRARY.find(s => s.code === leftCode)  ?? LIBRARY[0];
-  const right = LIBRARY.find(s => s.code === rightCode) ?? LIBRARY[1];
+  const left  = combined.find(s => s.code === leftCode)  ?? LIBRARY[0];
+  const right = combined.find(s => s.code === rightCode) ?? LIBRARY[1];
   const sameSystem = left.code === right.code;
 
   // Perf rows for diff (higher = better unless noted)
@@ -881,8 +989,8 @@ function CompareView({
 
       {/* Two pickers */}
       <div className="grid gap-5 lg:grid-cols-2">
-        <SystemPicker side="A" value={leftCode}  onChange={setLeftCode}  exclude={rightCode} sys={left} />
-        <SystemPicker side="B" value={rightCode} onChange={setRightCode} exclude={leftCode}  sys={right} />
+        <SystemPicker side="A" value={leftCode}  onChange={setLeftCode}  exclude={rightCode} sys={left}  combined={combined} />
+        <SystemPicker side="B" value={rightCode} onChange={setRightCode} exclude={leftCode}  sys={right} combined={combined} />
       </div>
 
       {sameSystem && (
@@ -980,13 +1088,14 @@ function CompareView({
 // COMPARE — building blocks
 // =============================================================================
 function SystemPicker({
-  side, value, onChange, exclude, sys,
+  side, value, onChange, exclude, sys, combined,
 }: {
   side: "A" | "B";
   value: string;
   onChange: (v: string) => void;
   exclude: string;
   sys: SystemDef;
+  combined: SystemDef[];
 }) {
   const accent = side === "A" ? "var(--accent-500)" : "var(--teal-500)";
   return (
@@ -1005,7 +1114,7 @@ function SystemPicker({
           onChange={e => onChange(e.target.value)}
           className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium"
         >
-          {LIBRARY.map(s => (
+          {combined.map(s => (
             <option key={s.code} value={s.code} disabled={s.code === exclude}>
               {s.code} — {s.shortName}
             </option>
