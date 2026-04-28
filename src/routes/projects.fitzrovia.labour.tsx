@@ -1,23 +1,40 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { useProjectCrews } from "@/lib/labour";
 
 export const Route = createFileRoute("/projects/fitzrovia/labour")({ component: LabourPage });
 
-const crews = [
-  { name: "Marcin's Crew", role: "Drylining L4", planned: 248, actual: 302, complete: 76, rate: 24.5, variance: 22 },
-  { name: "Paweł's Crew", role: "Drylining L5", planned: 320, actual: 142, complete: 38, rate: 24.5, variance: -8 },
-  { name: "Andy's Tapers", role: "Tape & joint", planned: 184, actual: 96, complete: 52, rate: 22.0, variance: -2 },
-  { name: "Mihai's Fixers", role: "MF ceilings", planned: 410, actual: 380, complete: 88, rate: 23.0, variance: 5 },
-];
+// Demo planned/actual hours per assignment (keyed by member id).
+const HOURS: Record<string, { planned: number; actual: number; complete: number; variance: number }> = {
+  mk: { planned: 248, actual: 302, complete: 76, variance: 22 },
+  pw: { planned: 320, actual: 142, complete: 38, variance: -8 },
+  aj: { planned: 184, actual: 96,  complete: 52, variance: -2 },
+  na: { planned: 80,  actual: 76,  complete: 95, variance: -5 },
+  sm: { planned: 40,  actual: 38,  complete: 95, variance: -5 },
+};
 
 function LabourPage() {
+  const projectCrews = useProjectCrews("fitzrovia");
+  const crews = projectCrews
+    .filter((c) => HOURS[c.assignment.memberId])
+    .map((c) => ({
+      name: c.crewName,
+      role: c.projectRole,
+      rate: c.rate,
+      ...HOURS[c.assignment.memberId],
+    }));
+
+  const totalHours = crews.reduce((s, c) => s + c.actual, 0);
+  const totalCost = crews.reduce((s, c) => s + c.actual * c.rate, 0);
+  const blendedRate = totalHours > 0 ? totalCost / totalHours : 0;
+
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Total hours MTD" value="920" delta="vs 880 planned" tone="warning" />
-        <Kpi label="Labour cost" value="£22.4k" delta="+£14.2k vs BoQ wk" tone="danger" trend="up" />
-        <Kpi label="Average rate" value="£23.50" delta="weighted blended" />
+        <Kpi label="Total hours MTD" value={`${totalHours.toFixed(0)}`} delta={`vs ${crews.reduce((s, c) => s + c.planned, 0)} planned`} tone={totalHours > crews.reduce((s, c) => s + c.planned, 0) ? "warning" : "neutral"} />
+        <Kpi label="Labour cost" value={`£${(totalCost / 1000).toFixed(1)}k`} delta="planned × actual hrs" tone="danger" trend="up" />
+        <Kpi label="Average rate" value={`£${blendedRate.toFixed(2)}`} delta="weighted blended" />
         <Kpi label="Productivity" value="0.91" delta="m²/hr · target 1.05" tone="warning" />
       </div>
 
