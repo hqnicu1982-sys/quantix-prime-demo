@@ -145,6 +145,18 @@ export function getActualHoursForTask(projectId: string, taskId: string): number
     .reduce((s, e) => s + e.hours, 0);
 }
 
+export function getActualCostForTask(projectId: string, taskId: string): number {
+  return getLabourLogs(projectId)
+    .filter((e) => e.taskId === taskId && (e.status ?? "submitted") === "approved")
+    .reduce((s, e) => s + computeEntryCost(e), 0);
+}
+
+export function getActualCostByMember(projectId: string, memberId: string): number {
+  return getLabourLogs(projectId)
+    .filter((e) => e.memberId === memberId && (e.status ?? "submitted") === "approved")
+    .reduce((s, e) => s + computeEntryCost(e), 0);
+}
+
 export function getPendingHours(projectId: string, memberId?: string): number {
   return getLabourLogs(projectId)
     .filter((e) => (e.status ?? "submitted") === "submitted" && (!memberId || e.memberId === memberId))
