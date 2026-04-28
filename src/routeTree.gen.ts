@@ -26,6 +26,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as ProjectsFitzroviaRouteImport } from './routes/projects.fitzrovia'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
+import { Route as ProjectsFitzroviaIndexRouteImport } from './routes/projects.fitzrovia.index'
 
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
@@ -112,6 +113,11 @@ const PriceListsUploadRoute = PriceListsUploadRouteImport.update({
   path: '/price-lists/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectsFitzroviaIndexRoute = ProjectsFitzroviaIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProjectsFitzroviaRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -129,8 +135,9 @@ export interface FileRoutesByFullPath {
   '/readiness': typeof ReadinessRoute
   '/team': typeof TeamRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
-  '/projects/fitzrovia': typeof ProjectsFitzroviaRoute
+  '/projects/fitzrovia': typeof ProjectsFitzroviaRouteWithChildren
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/fitzrovia/': typeof ProjectsFitzroviaIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -147,8 +154,8 @@ export interface FileRoutesByTo {
   '/readiness': typeof ReadinessRoute
   '/team': typeof TeamRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
-  '/projects/fitzrovia': typeof ProjectsFitzroviaRoute
   '/projects': typeof ProjectsIndexRoute
+  '/projects/fitzrovia': typeof ProjectsFitzroviaIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -167,8 +174,9 @@ export interface FileRoutesById {
   '/readiness': typeof ReadinessRoute
   '/team': typeof TeamRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
-  '/projects/fitzrovia': typeof ProjectsFitzroviaRoute
+  '/projects/fitzrovia': typeof ProjectsFitzroviaRouteWithChildren
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/fitzrovia/': typeof ProjectsFitzroviaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -190,6 +198,7 @@ export interface FileRouteTypes {
     | '/price-lists/upload'
     | '/projects/fitzrovia'
     | '/projects/'
+    | '/projects/fitzrovia/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -206,8 +215,8 @@ export interface FileRouteTypes {
     | '/readiness'
     | '/team'
     | '/price-lists/upload'
-    | '/projects/fitzrovia'
     | '/projects'
+    | '/projects/fitzrovia'
   id:
     | '__root__'
     | '/'
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
     | '/price-lists/upload'
     | '/projects/fitzrovia'
     | '/projects/'
+    | '/projects/fitzrovia/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -368,16 +378,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PriceListsUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/projects/fitzrovia/': {
+      id: '/projects/fitzrovia/'
+      path: '/'
+      fullPath: '/projects/fitzrovia/'
+      preLoaderRoute: typeof ProjectsFitzroviaIndexRouteImport
+      parentRoute: typeof ProjectsFitzroviaRoute
+    }
   }
 }
 
+interface ProjectsFitzroviaRouteChildren {
+  ProjectsFitzroviaIndexRoute: typeof ProjectsFitzroviaIndexRoute
+}
+
+const ProjectsFitzroviaRouteChildren: ProjectsFitzroviaRouteChildren = {
+  ProjectsFitzroviaIndexRoute: ProjectsFitzroviaIndexRoute,
+}
+
+const ProjectsFitzroviaRouteWithChildren =
+  ProjectsFitzroviaRoute._addFileChildren(ProjectsFitzroviaRouteChildren)
+
 interface ProjectsRouteChildren {
-  ProjectsFitzroviaRoute: typeof ProjectsFitzroviaRoute
+  ProjectsFitzroviaRoute: typeof ProjectsFitzroviaRouteWithChildren
   ProjectsIndexRoute: typeof ProjectsIndexRoute
 }
 
 const ProjectsRouteChildren: ProjectsRouteChildren = {
-  ProjectsFitzroviaRoute: ProjectsFitzroviaRoute,
+  ProjectsFitzroviaRoute: ProjectsFitzroviaRouteWithChildren,
   ProjectsIndexRoute: ProjectsIndexRoute,
 }
 
