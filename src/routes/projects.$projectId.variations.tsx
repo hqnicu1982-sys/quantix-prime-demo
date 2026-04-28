@@ -6,18 +6,20 @@ import { VariationsTable } from "@/components/variations/VariationsTable";
 import { CostBreakdownPanel } from "@/components/variations/CostBreakdownPanel";
 
 export const Route = createFileRoute("/projects/$projectId/variations")({
-  component: FitzroviaVariations,
+  component: ProjectVariations,
 });
 
-const CONTRACT_VALUE = 2_100_000;
 const fmtMoney = (n: number) =>
   `${n < 0 ? "-" : ""}£${Math.abs(n).toLocaleString("en-GB", { maximumFractionDigits: 0 })}`;
 
-function FitzroviaVariations() {
-  const variations = useProjectVariations("fitzrovia");
+function ProjectVariations() {
+  const { projectId } = Route.useParams();
+  const variations = useProjectVariations(projectId);
   const s = summarize(variations);
-  const net = CONTRACT_VALUE + s.approvedValue;
-  const upliftPct = (s.approvedValue / CONTRACT_VALUE) * 100;
+  // baseline contract: read from current project
+  const baseline = useBaseline(projectId);
+  const net = baseline + s.approvedValue;
+  const upliftPct = baseline > 0 ? (s.approvedValue / baseline) * 100 : 0;
 
   return (
     <div className="space-y-5 pt-5">
@@ -25,10 +27,10 @@ function FitzroviaVariations() {
         <div>
           <h2 className="font-display text-[20px] font-semibold tracking-tight">Variations register</h2>
           <p className="mt-0.5 text-[13px] text-[var(--ink-500)]">
-            Client & contractor changes against the £{(CONTRACT_VALUE / 1_000_000).toFixed(2)}m baseline contract.
+            Client & contractor changes against the £{(baseline / 1_000_000).toFixed(2)}m baseline contract.
           </p>
         </div>
-        <NewVariationDialog projectId="fitzrovia" />
+        <NewVariationDialog projectId={projectId} />
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -47,7 +49,7 @@ function FitzroviaVariations() {
         <Kpi
           label="Net contract"
           value={fmtMoney(net)}
-          delta={`Baseline ${fmtMoney(CONTRACT_VALUE)}`}
+          delta={`Baseline ${fmtMoney(baseline)}`}
           tone="info"
         />
         <Kpi
@@ -59,9 +61,15 @@ function FitzroviaVariations() {
         />
       </div>
 
-      <VariationsTable projectId="fitzrovia" variations={variations} />
+      <VariationsTable projectId={projectId} variations={variations} />
 
-      <CostBreakdownPanel variations={variations} baseline={CONTRACT_VALUE} />
+      <CostBreakdownPanel variations={variations} baseline={baseline} />
     </div>
   );
+}
+
+function useBaseline(projectId: string): number {
+  const { all } = useProject();
+  const p = all.find((x) => x.id === projectId);
+  return p?.contractValue ?? 0;
 }

@@ -39,7 +39,7 @@ const CALL_OFFS: { id: string; status: "draft" | "pending" | "approved" | "deliv
 ];
 
 function PlannerPage() {
-  const PID = "fitzrovia";
+  const { projectId: PID } = Route.useParams();
   const tasks = useProjectTasks(PID);
   const variations = useProjectVariations(PID);
   const approvedVariationIds = variations

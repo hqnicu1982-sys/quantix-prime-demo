@@ -19,8 +19,9 @@ const tierTone = {
 } as const;
 
 function TeamPage() {
-  const crews = useProjectCrews("fitzrovia");
-  const invites = useInvites().filter((i) => i.projectId === "fitzrovia" && i.status === "pending");
+  const { projectId } = Route.useParams();
+  const crews = useProjectCrews(projectId);
+  const invites = useInvites().filter((i) => i.projectId === projectId && i.status === "pending");
   const onProject = crews.map((c) => c.member).filter(Boolean) as typeof team;
   const opCount = crews.filter((c) => c.member?.tier === "Operative").length;
   const lead = crews.find((c) => c.member?.tier === "Pro" || c.member?.tier === "Pro Control");
@@ -36,11 +37,11 @@ function TeamPage() {
       <Card>
         <CardHead
           title="Project team"
-          subtitle="Members assigned to Hotel Fitzrovia"
+          subtitle="Members assigned to this project"
           right={
             <div className="flex gap-2">
-              <AssignToProjectDialog projectId="fitzrovia" />
-              <InviteMemberDialog defaultProjectId="fitzrovia" />
+              <AssignToProjectDialog projectId={projectId} />
+              <InviteMemberDialog defaultProjectId={projectId} />
               <Button size="sm" variant="outline" asChild><Link to="/team">Full directory <ExternalLink className="ml-1.5 h-3.5 w-3.5" /></Link></Button>
             </div>
           }

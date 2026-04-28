@@ -8,7 +8,7 @@ import { useProjectTasks } from "@/lib/planner";
 export const Route = createFileRoute("/projects/$projectId/labour")({ component: LabourPage });
 
 function LabourPage() {
-  const PID = "fitzrovia";
+  const { projectId: PID } = Route.useParams();
   const projectCrews = useProjectCrews(PID);
   const logs = useLabourLogs(PID);
   const tasks = useProjectTasks(PID);
