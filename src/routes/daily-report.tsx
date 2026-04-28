@@ -7,8 +7,8 @@ import { Download, Send, Cloud, Clock, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { ProjectBanner } from "@/components/ProjectBanner";
 import { useProject } from "@/lib/ProjectContext";
-import { useLabourLogsForDate, deleteLabourLog, approveLabourLog, rejectLabourLog } from "@/lib/laborLog";
-import { useProjectCrews } from "@/lib/labour";
+import { useLabourLogsForDate, deleteLabourLog, approveLabourLog, rejectLabourLog, computeEntryCost } from "@/lib/laborLog";
+import { useProjectCrews, usePriceWorkRates } from "@/lib/labour";
 import { LogLabourDialog } from "@/components/daily-report/LogLabourDialog";
 
 export const Route = createFileRoute("/daily-report")({
@@ -21,15 +21,14 @@ function DailyReport() {
   const today = new Date().toISOString().slice(0, 10);
   const logs = useLabourLogsForDate(current.id, today);
   const crews = useProjectCrews(current.id);
+  const pwRates = usePriceWorkRates(current.id);
   const canApprove = currentUser.tier === "Admin" || currentUser.tier === "Pro Control";
   const canDelete = canApprove;
   const approvedLogs = logs.filter((l) => (l.status ?? "submitted") === "approved");
   const pendingLogs = logs.filter((l) => (l.status ?? "submitted") === "submitted");
   const totalHours = approvedLogs.reduce((s, l) => s + l.hours, 0);
-  const totalCost = approvedLogs.reduce((s, l) => {
-    const crew = crews.find((c) => c.assignment.memberId === l.memberId);
-    return s + (crew ? l.hours * crew.rate : 0);
-  }, 0);
+  const totalCost = approvedLogs.reduce((s, l) => s + computeEntryCost(l), 0);
+  const pwCount = approvedLogs.filter((l) => l.payMode === "pw").length;
   const pendingHours = pendingLogs.reduce((s, l) => s + l.hours, 0);
 
   return (
@@ -61,7 +60,7 @@ function DailyReport() {
       <Card>
         <CardHead
           title="Labour"
-          subtitle={`${approvedLogs.length} approved · ${totalHours.toFixed(1)}h · £${totalCost.toFixed(0)}${pendingLogs.length ? ` · ${pendingLogs.length} pending (${pendingHours.toFixed(1)}h)` : ""}`}
+          subtitle={`${approvedLogs.length} approved · ${totalHours.toFixed(1)}h · £${totalCost.toFixed(0)}${pwCount ? ` · ${pwCount} PW` : ""}${pendingLogs.length ? ` · ${pendingLogs.length} pending (${pendingHours.toFixed(1)}h)` : ""}`}
           right={<LogLabourDialog projectId={current.id} date={today} />}
         />
         <div className="overflow-x-auto">
@@ -89,14 +88,18 @@ function DailyReport() {
                 logs.map((l) => {
                   const crew = crews.find((c) => c.assignment.memberId === l.memberId);
                   const member = team.find((m) => m.id === l.memberId);
-                  const cost = crew ? l.hours * crew.rate : 0;
+                  const cost = computeEntryCost(l);
                   const status = l.status ?? "submitted";
+                  const pw = l.payMode === "pw" ? pwRates.find((r) => r.id === l.pwRateId) : undefined;
                   return (
                     <tr key={l.id}>
                       <td className="px-4 py-2.5 font-medium">
                         {member?.name ?? l.memberId}
                         {crew?.crewName && (
                           <span className="ml-1.5 text-[11.5px] font-normal text-[var(--ink-500)]">· {crew.crewName}</span>
+                        )}
+                        {l.payMode === "pw" && (
+                          <span className="ml-1.5 rounded bg-[var(--accent-500)]/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--accent-500)]">PW</span>
                         )}
                       </td>
                       <td className="px-3 py-2.5 font-mono tabular-nums">
@@ -107,6 +110,11 @@ function DailyReport() {
                       <td className="px-3 py-2.5 text-right font-mono tabular-nums">£{cost.toFixed(0)}</td>
                       <td className="px-3 py-2.5 text-[var(--ink-700)]">
                         {l.work}
+                        {pw && (
+                          <span className="ml-1.5 rounded bg-[var(--accent-500)]/10 px-1.5 py-0.5 font-mono text-[10.5px] text-[var(--accent-500)]">
+                            {pw.code}{pw.unit !== "lump" && l.pwQty ? ` · ${l.pwQty}${pw.unit}` : ""}
+                          </span>
+                        )}
                         {l.taskId && (
                           <span className="ml-1.5 rounded bg-[var(--ink-50)] px-1.5 py-0.5 font-mono text-[10.5px] text-[var(--ink-500)]">{l.taskId}</span>
                         )}
