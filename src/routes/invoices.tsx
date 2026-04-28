@@ -3,10 +3,13 @@ import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { invoices, invoiceKpi, reconFlow, fmtMoney, type Invoice } from "@/lib/mockData";
-import { Upload, Plus, ArrowRight, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { Upload, Plus, ArrowRight, CheckCircle2, AlertTriangle, XCircle, FileDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ProjectBanner } from "@/components/ProjectBanner";
+import { useProject } from "@/lib/ProjectContext";
+import { useProjectData } from "@/lib/projectData";
+import { exportProjectPack } from "@/lib/exportProjectPack";
 
 export const Route = createFileRoute("/invoices")({
   head: () => ({ meta: [{ title: "Invoice Reconciliation — Quantix Prime" }] }),
@@ -14,6 +17,16 @@ export const Route = createFileRoute("/invoices")({
 });
 
 function Invoices() {
+  const { current } = useProject();
+  const projectData = useProjectData(current.id);
+  const handleExportPack = () => {
+    try {
+      exportProjectPack(current, projectData);
+      toast.success("Project pack exported", { description: `${current.name} · PDF downloaded` });
+    } catch (e) {
+      toast.error("Export failed", { description: String((e as Error).message ?? e) });
+    }
+  };
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -27,6 +40,7 @@ function Invoices() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportPack}><FileDown className="mr-1.5 h-3.5 w-3.5" />Export project pack</Button>
           <Button variant="outline" size="sm" onClick={() => toast("Upload invoice", { description: "Drop a PDF/XLSX — we'll match it to a PO automatically" })}><Upload className="mr-1.5 h-3.5 w-3.5" />Upload invoice</Button>
           <Button size="sm" onClick={() => toast.success("New reconciliation started", { description: "Select supplier and invoice to begin matching" })}><Plus className="mr-1.5 h-3.5 w-3.5" />New reconciliation</Button>
         </div>
