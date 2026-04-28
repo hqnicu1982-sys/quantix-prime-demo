@@ -124,6 +124,55 @@ const LIBRARY: SystemDef[] = [
 // =============================================================================
 type Mode = "code" | "recommend" | "compare";
 
+// Convert a per-project bespoke system into the same shape used by the calculator.
+// Performance numbers are intentionally zeroed — bespoke build-ups don't carry
+// SpecSure ratings until BG re-certifies.
+function bespokeToSystemDef(bsp: BespokeSystem): SystemDef {
+  const mats = buildUpToMaterials(bsp.buildUp);
+  const totalsPerM2: Totals = {};
+  for (const m of mats) totalsPerM2[m.item] = { qty: m.qty, unit: m.unit };
+  return {
+    code: bsp.id,
+    shortName: `${bsp.name} (bespoke)`,
+    desc: `Bespoke build-up forked from ${bsp.parentCode} (${bsp.parentShortName}). Materials only — performance ratings require BG re-certification.`,
+    buildUp: [
+      { k: "Side A layers", v: String(bsp.buildUp.sideA.length) },
+      { k: "Side B layers", v: String(bsp.buildUp.sideB.length) },
+      { k: "Stud", v: `${bsp.buildUp.studType} ${bsp.buildUp.studSize} @ ${bsp.buildUp.studCentres} c/c` },
+      { k: "Insulation", v: bsp.buildUp.insulation.kind === "none" ? "None" : bsp.buildUp.insulation.kind === "isover-apr" ? `Isover APR ${bsp.buildUp.insulation.thicknessMm}mm` : `Rockwool RW3 ${bsp.buildUp.insulation.thicknessMm}mm` },
+      { k: "Resilient bars", v: bsp.buildUp.resilientBars ? "Yes" : "No" },
+    ],
+    perf: { weight: 0, maxHeight: 0, studCentres: bsp.buildUp.studCentres, fire: 0, rw: 0 },
+    totalsPerM2,
+  };
+}
+
+// Best-effort seed for the bespoke editor when forking a known library system.
+function seedBuildUpFromLibrary(code: string): BespokeBuildUp {
+  const sys = LIBRARY.find(s => s.code === code);
+  // Simple defaults — user edits from here.
+  if (!sys) {
+    return {
+      sideA: ["Gyproc WallBoard 12.5"],
+      sideB: ["Gyproc WallBoard 12.5"],
+      studType: "C-Stud", studSize: 70, studCentres: 600,
+      insulation: { kind: "none" },
+      resilientBars: false,
+    };
+  }
+  // Heuristic mapping based on the example library entries
+  if (code.includes("DL15"))    return { sideA: ["Gyproc DuraLine 15"],            sideB: [],                                  studType: "I-Stud", studSize: 146, studCentres: 600, insulation: { kind: "none" },                              resilientBars: false };
+  if (code.includes("WB12.5"))  return { sideA: ["Gyproc WallBoard 12.5", "Gyproc WallBoard 12.5"], sideB: [],                  studType: "C-Stud", studSize: 92,  studCentres: 600, insulation: { kind: "none" },                              resilientBars: false };
+  if (code.includes("SB15"))    return { sideA: ["Gyproc SoundBloc 15", "Gyproc SoundBloc 15"],    sideB: [],                  studType: "I-Stud", studSize: 146, studCentres: 600, insulation: { kind: "isover-apr", thicknessMm: 50 },        resilientBars: false };
+  return {
+    sideA: ["Gyproc WallBoard 12.5"],
+    sideB: ["Gyproc WallBoard 12.5"],
+    studType: "C-Stud", studSize: 70, studCentres: 600,
+    insulation: { kind: "none" },
+    resilientBars: false,
+  };
+}
+
 function Calculator() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>("code");
