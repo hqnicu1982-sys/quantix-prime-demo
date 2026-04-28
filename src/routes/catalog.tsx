@@ -272,6 +272,37 @@ function Catalog() {
                       <SpecChip icon={<Layers  className="h-3 w-3" />} v={`${m.thick} mm`}                  k="Thick"  tier={tT} />
                     </div>
 
+                    {(() => {
+                      const c = costFor(m.code);
+                      if (!c) {
+                        return (
+                          <div
+                            className="mt-3 flex items-center justify-between rounded-lg border border-dashed border-[var(--ink-200)] bg-[var(--ink-50)]/40 px-3 py-2 text-[11px] text-[var(--ink-500)]"
+                            title="No quantity build-up yet — open in calculator to estimate manually"
+                          >
+                            <span className="font-semibold uppercase tracking-wider">Price</span>
+                            <span>n/a · open in calculator</span>
+                          </div>
+                        );
+                      }
+                      const matPct = Math.round((c.materials / (c.materials + c.labour)) * 100);
+                      const partial = c.pricedRatio < 1;
+                      return (
+                        <div
+                          className="mt-3 flex items-center justify-between rounded-lg bg-gradient-to-r from-[var(--accent-500)]/10 to-transparent px-3 py-2"
+                          title={`Materials £${c.materials.toFixed(2)}/m² · Labour £${c.labour.toFixed(2)}/m²${partial ? " · partial catalogue coverage" : ""}`}
+                        >
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+                            Indicative cost {partial && <span className="text-[var(--amber-500)]">·</span>}
+                          </span>
+                          <span className="font-mono-num text-[13px] font-bold text-[var(--accent-500)]">
+                            £{c.perM2.toFixed(0)}<span className="text-[10px] font-medium text-[var(--ink-500)]"> /m²</span>
+                            <span className="ml-2 text-[10px] font-normal text-[var(--ink-500)]">{matPct}% mat</span>
+                          </span>
+                        </div>
+                      );
+                    })()}
+
                     <div className="mt-4 flex items-center gap-2 border-t border-[var(--ink-200)]/50 pt-3">
                       <button
                         onClick={() => {
