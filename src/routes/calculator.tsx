@@ -23,102 +23,9 @@ import { addSystemToBoQ } from "@/lib/projectData";
 import { useBespokeSystems, buildUpToMaterials, type BespokeSystem, type BespokeBuildUp } from "@/lib/bespokeSystems";
 import { BespokeBuildUpDialog } from "@/components/calculator/BespokeBuildUpDialog";
 import { estimateCost, fmtMoneyShort } from "@/lib/calculatorPricing";
+import { LIBRARY, scaledTotals, type SystemDef, type Totals } from "@/lib/systemLibrary";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
-
-// =============================================================================
-// SYSTEM LIBRARY (structured for compare)
-// =============================================================================
-type Perf = {
-  weight: number;     // kg/m²
-  maxHeight: number;  // mm
-  studCentres: number;// mm
-  fire: number;       // minutes (0 = none)
-  rw: number;         // dB     (0 = none)
-};
-type Totals = Record<string, { qty: number; unit: string }>;
-type SystemDef = {
-  code: string;
-  shortName: string;
-  desc: string;
-  buildUp: { k: string; v: string }[];
-  perf: Perf;
-  // qty is per m² of wall — multiplied by area in render
-  totalsPerM2: Totals;
-  // Board sizes the manufacturer actually supplies for this system.
-  // Subset of BOARD_LIBRARY labels. If omitted, all boards are assumed available.
-  availableBoards?: string[];
-};
-
-const LIBRARY: SystemDef[] = [
-  {
-    code: "GIWL-146-I-80-1L-DL15 (B)",
-    shortName: "DuraLine 15 · I-Stud 146",
-    desc: "One layer of Gyproc DuraLine 15mm to one side of Gypframe 146 | 80 'I' Stud framework forming an independent lining. Heights up to 7200 mm.",
-    buildUp: [
-      { k: "Board type",            v: "Gyproc DuraLine" },
-      { k: "Board thickness (mm)",  v: "15" },
-      { k: "Layers / Side",         v: "1 — 0" },
-      { k: "Board size used",       v: "1200 × 2400" },
-      { k: "Suggested stud length", v: "4.2 m" },
-    ],
-    perf: { weight: 14, maxHeight: 7200, studCentres: 600, fire: 0, rw: 0 },
-    availableBoards: ["1200 × 2400", "1200 × 3000"], // DuraLine 15: no 3600 in this thickness
-    totalsPerM2: {
-      "Gypframe Stud (4.2m)":                                            { qty: 0.42,  unit: "lengths" },
-      "Gypframe 62 FEC 50 Folded Edge Floor & Ceiling Channel (3.6m)":   { qty: 0.14,  unit: "lengths" },
-      "Gypframe 99 FC 50":                                               { qty: 0.07,  unit: "lengths" },
-      "Gypframe GFS1":                                                   { qty: 0.50,  unit: "lm" },
-      "Jointing":                                                        { qty: 0.84,  unit: "kg" },
-      "Sealant":                                                         { qty: 12.5,  unit: "ml" },
-    },
-  },
-  {
-    code: "GIWL-92-C-50-2L-WB12.5",
-    shortName: "WallBoard 12.5 ×2 · C-Stud 92",
-    desc: "Two layers of Gyproc WallBoard 12.5 mm to one side of Gypframe 92 C-Stud — 60 min fire and 44 dB Rw. Heights up to 5400 mm.",
-    buildUp: [
-      { k: "Board type",            v: "Gyproc WallBoard" },
-      { k: "Board thickness (mm)",  v: "12.5 (×2)" },
-      { k: "Layers / Side",         v: "2 — 0" },
-      { k: "Board size used",       v: "1200 × 2400" },
-      { k: "Suggested stud length", v: "3.0 m" },
-    ],
-    perf: { weight: 22, maxHeight: 5400, studCentres: 600, fire: 60, rw: 44 },
-    availableBoards: ["1200 × 2400", "1200 × 3000", "1200 × 3600"], // WallBoard 12.5: full range
-    totalsPerM2: {
-      "Gypframe Stud (3.0m)":                                            { qty: 0.42,  unit: "lengths" },
-      "Gypframe 62 FEC 50 Folded Edge Floor & Ceiling Channel (3.6m)":   { qty: 0.14,  unit: "lengths" },
-      "Gyproc WallBoard 12.5":                                           { qty: 2.10,  unit: "m²" },
-      "Gypframe GFS1":                                                   { qty: 0.50,  unit: "lm" },
-      "Jointing":                                                        { qty: 1.20,  unit: "kg" },
-      "Sealant":                                                         { qty: 12.5,  unit: "ml" },
-    },
-  },
-  {
-    code: "GIWL-146-I-80-2L-SB15",
-    shortName: "SoundBloc 15 ×2 · I-Stud 146 (acoustic)",
-    desc: "Two layers of Gyproc SoundBloc 15 mm on Gypframe 146 I-Stud — 90 min fire and 58 dB Rw. Heights up to 7200 mm.",
-    buildUp: [
-      { k: "Board type",            v: "Gyproc SoundBloc" },
-      { k: "Board thickness (mm)",  v: "15 (×2)" },
-      { k: "Layers / Side",         v: "2 — 0" },
-      { k: "Board size used",       v: "1200 × 2400" },
-      { k: "Suggested stud length", v: "4.2 m" },
-    ],
-    perf: { weight: 28, maxHeight: 7200, studCentres: 600, fire: 90, rw: 58 },
-    availableBoards: ["1200 × 2400", "1200 × 3000"], // SoundBloc 15: heavier, no 3600
-    totalsPerM2: {
-      "Gypframe Stud (4.2m)":                                            { qty: 0.42,  unit: "lengths" },
-      "Gypframe 62 FEC 50 Folded Edge Floor & Ceiling Channel (3.6m)":   { qty: 0.14,  unit: "lengths" },
-      "Gyproc SoundBloc 15":                                             { qty: 2.10,  unit: "m²" },
-      "Isover Acoustic Partition Roll":                                  { qty: 1.00,  unit: "m²" },
-      "Gypframe GFS1":                                                   { qty: 0.50,  unit: "lm" },
-      "Jointing":                                                        { qty: 1.40,  unit: "kg" },
-      "Sealant":                                                         { qty: 12.5,  unit: "ml" },
-    },
-  },
-];
 
 // =============================================================================
 // COMPONENT
@@ -1321,14 +1228,6 @@ function perfChipsFor(sys: SystemDef) {
     { icon: <Ruler   className="h-3 w-3" />, k: "Max Height",      v: `${sys.perf.maxHeight} mm` },
     { icon: <Layers  className="h-3 w-3" />, k: "Stud Centres",    v: `${sys.perf.studCentres} mm` },
   ];
-}
-
-function scaledTotals(sys: SystemDef, area: number, wasteFactor: number) {
-  return Object.entries(sys.totalsPerM2).map(([item, { qty, unit }]) => ({
-    item,
-    unit,
-    qty: qty * area * wasteFactor,
-  }));
 }
 
 function fmtQty(n: number) {
