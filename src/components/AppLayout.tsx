@@ -14,7 +14,7 @@ import { ProjectProvider, useProject } from "@/lib/ProjectContext";
 import { cn } from "@/lib/utils";
 import { CompareTray } from "@/components/CompareTray";
 
-type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean };
+type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean; params?: Record<string, string> };
 type NavGroup = { label: string; persona?: "site" | "commercial"; items: NavItem[] };
 
 const navGroups: NavGroup[] = [
