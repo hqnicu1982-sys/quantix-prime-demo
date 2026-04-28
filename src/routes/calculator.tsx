@@ -362,6 +362,7 @@ function SingleView({
   boardSize, setBoardSize,
   reuseOffcuts, setReuseOffcuts,
   area, wasteFactor, navigate,
+  combined, projectId, projectName,
 }: {
   activeCode: string; setActiveCode: (v: string) => void;
   length: string; setLength: (v: string) => void;
@@ -371,8 +372,12 @@ function SingleView({
   reuseOffcuts: boolean; setReuseOffcuts: (v: boolean) => void;
   area: number;   wasteFactor: number;
   navigate: ReturnType<typeof useNavigate>;
+  combined: SystemDef[];
+  projectId: string;
+  projectName: string;
 }) {
-  const sys = LIBRARY.find(s => s.code === activeCode) ?? LIBRARY[0];
+  const sys = combined.find(s => s.code === activeCode) ?? LIBRARY[0];
+  const isBespoke = activeCode.startsWith("BSP-");
   const errs = validateGeometry(length, height, waste);
   const invalid = hasErrors(errs);
   const totals = scaledTotals(sys, area, wasteFactor);
@@ -862,6 +867,7 @@ function CompareView({
   leftCode, setLeftCode, rightCode, setRightCode,
   length, setLength, height, setHeight, waste, setWaste,
   area, wasteFactor, onPromote,
+  combined,
 }: {
   leftCode: string;  setLeftCode: (v: string) => void;
   rightCode: string; setRightCode: (v: string) => void;
@@ -870,9 +876,10 @@ function CompareView({
   waste: number;     setWaste: (v: number) => void;
   area: number;      wasteFactor: number;
   onPromote: (code: string, label?: string) => void;
+  combined: SystemDef[];
 }) {
-  const left  = LIBRARY.find(s => s.code === leftCode)  ?? LIBRARY[0];
-  const right = LIBRARY.find(s => s.code === rightCode) ?? LIBRARY[1];
+  const left  = combined.find(s => s.code === leftCode)  ?? LIBRARY[0];
+  const right = combined.find(s => s.code === rightCode) ?? LIBRARY[1];
   const sameSystem = left.code === right.code;
 
   // Perf rows for diff (higher = better unless noted)
