@@ -45,6 +45,7 @@ const navGroups: NavGroup[] = [
   ]},
   { label: "Admin", items: [
     { to: "/team", label: "Team & Roles", icon: Users2 },
+    { to: "/settings/labour", label: "Labour Rates", icon: Settings },
     { to: "/integrations", label: "Integrations", icon: Plug },
   ]},
 ];
