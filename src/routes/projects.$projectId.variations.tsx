@@ -4,6 +4,7 @@ import { useProjectVariations, summarize } from "@/lib/variations";
 import { NewVariationDialog } from "@/components/variations/NewVariationDialog";
 import { VariationsTable } from "@/components/variations/VariationsTable";
 import { CostBreakdownPanel } from "@/components/variations/CostBreakdownPanel";
+import { useProject } from "@/lib/ProjectContext";
 
 export const Route = createFileRoute("/projects/$projectId/variations")({
   component: ProjectVariations,
