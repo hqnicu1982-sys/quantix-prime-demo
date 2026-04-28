@@ -85,6 +85,9 @@ function ensureSeed() {
     ...s,
     id: `log-seed-${i}`,
     createdAt: Date.now() - i * 1000,
+    status: "approved",
+    approvedBy: "sm",
+    approvedAt: Date.now() - i * 1000,
   }));
   write(list);
   localStorage.setItem(SEED_KEY, "1");
