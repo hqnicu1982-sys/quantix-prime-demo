@@ -49,7 +49,7 @@ function Catalog() {
   const [duty, setDuty] = useState("Any");
   const [board, setBoard] = useState("Any");
   const [stud, setStud] = useState("Any");
-  const [sort, setSort] = useState<"best"|"height"|"thick">("best");
+  const [sort, setSort] = useState<"best"|"height"|"thick"|"price">("best");
 
   // Per-m² cost lookup (where we have a quantity build-up in the shared library)
   const costFor = (code: string): { perM2: number; materials: number; labour: number; pricedRatio: number } | null => {
