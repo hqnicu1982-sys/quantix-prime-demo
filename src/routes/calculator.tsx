@@ -419,6 +419,9 @@ function SingleView({
     [allWalls, effectiveBoard, reuseAcrossWalls, heightMm, lengthMm],
   );
 
+  // Bespoke build-up dialog state
+  const [bespokeOpen, setBespokeOpen] = useState(false);
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
       <main className="space-y-6">
@@ -426,17 +429,35 @@ function SingleView({
           <SectionTitle n="01" label="System reference" />
           <div className="mt-4 flex flex-wrap items-end gap-3">
             <div className="min-w-[280px] flex-1">
-              <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">System code</p>
+              <p className="mb-1 flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+                System code
+                {isBespoke && (
+                  <span className="rounded-full bg-[var(--accent-500)]/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent-500)]">
+                    Bespoke
+                  </span>
+                )}
+              </p>
               <select
                 value={activeCode}
                 onChange={e => setActiveCode(e.target.value)}
                 className="glass-input font-mono-num w-full rounded-xl px-4 py-3 text-[14px] font-semibold"
               >
-                {LIBRARY.map(s => (
-                  <option key={s.code} value={s.code}>{s.code}</option>
+                {combined.map(s => (
+                  <option key={s.code} value={s.code}>
+                    {s.code.startsWith("BSP-") ? "🛠️ " : ""}{s.code}{s.code.startsWith("BSP-") ? ` — ${s.shortName}` : ""}
+                  </option>
                 ))}
               </select>
             </div>
+            <Button
+              variant="outline"
+              size="lg"
+              className="gap-1.5"
+              onClick={() => setBespokeOpen(true)}
+              title="Fork this system into a bespoke build-up"
+            >
+              <Wand2 className="h-4 w-4" /> Customise build-up
+            </Button>
             <Button
               variant="outline"
               size="lg"
@@ -450,7 +471,11 @@ function SingleView({
             </Button>
             <AddToBoqButton sys={sys} length={length} height={height} waste={waste} boardSize={effectiveBoard} totals={totals} />
           </div>
-          <p className="mt-3 text-[12px] text-[var(--ink-500)]">Type a code and press Load. Data comes from the live System Catalog.</p>
+          <p className="mt-3 text-[12px] text-[var(--ink-500)]">
+            {isBespoke
+              ? "Bespoke build-up — materials only. Performance ratings need BG re-certification."
+              : "Type a code and press Load. Data comes from the live System Catalog."}
+          </p>
 
           {(() => {
             const tF = fireTier(sys.perf.fire);
