@@ -1,39 +1,61 @@
-## Goal
+# Cost & Labour în Live Summary (Calculator)
 
-Fă matricea de permisiuni vizibilă și pe pagina de proiect (`/projects/$projectId/team`), nu doar pe directorul global `/team`. În același timp, extrage matricea într-o componentă comună ca să nu duplicăm definiția în două locuri.
+## Răspuns scurt la întrebare
+Da — `Calculator` și `Costed BoQ` împart același model de date: calculatorul produce cantități (`totalsPerM2 × area × waste`) iar Costed BoQ are prețurile per material (`costedBoqRows` cu `rate`, `ccf`, `minster`). În prezent **Live Summary nu afișează niciun cost** — doar cantități. Le pot lega printr-un mic helper de pricing și pot adăuga labour folosind `calculatorResults.labourRate` (£24.50/m² mock).
 
-## 1. Componentă reutilizabilă
+## Ce vom afișa în noul Live Summary
 
-**Creează `src/components/team/PermissionMatrix.tsx`:**
-- Card cu header "Permission matrix" + subtitle configurabil
-- Tabel `Role × capability` cu cele 5 tier-uri și 7 capabilități, identic cu cel din `team.tsx`
-- Acceptă prop `highlightTiers?: string[]` — dacă e dat, evidențiază (background subtil + text bold) doar rândurile cu tier-uri prezente pe proiectul curent; restul rămân vizibile dar mute
-- Rândurile evidențiate primesc și un mic counter ("2 members") la dreapta numelui rolului
+Bloc nou „Cost estimate" plasat sub „Wall area", deasupra build-up-ului:
 
-## 2. Integrare pe pagina de proiect
+```text
+┌─ COST ESTIMATE ────────────────────────────┐
+│  Total system            £ 12,480          │
+│  └ £ 62.40 / m²                            │
+│                                            │
+│  Materials   £  8,540   (best-supplier)    │
+│  Labour      £  3,940   (160 h @ £24.50)   │
+│                                            │
+│  Coverage: 6 / 7 lines priced  •  1 review │
+└────────────────────────────────────────────┘
+```
 
-**În `src/routes/projects.$projectId.team.tsx`:**
-- Importă `PermissionMatrix`
-- Calculează `tiersOnProject` din `crews` (unique tier-uri ale membrilor asignați + invites pending)
-- Adaugă cardul matricei sub "Capability overview"
-- Subtitle: "Cine ce poate face pe acest proiect — rândurile evidențiate sunt prezente în echipă"
-- Pasează `highlightTiers={tiersOnProject}` și un map `tier → count` pentru contoare
+Plus, în lista existentă „Aggregated totals", adaug a 3-a coloană cu costul pe linie:
 
-## 3. Refactor `/team` global
+```text
+Gyproc WallBoard 12.5     105.0 m²    £  411
+Gypframe Stud (3.0m)       21.0 lengths £ 260
+Jointing                    60.0 kg    £   —   ⓘ no price
+```
 
-**În `src/routes/team.tsx`:**
-- Înlocuiește blocul inline al matricei (liniile 114–146) cu `<PermissionMatrix />` fără highlight (vede toate rândurile egal — e directorul global)
-- Șterge tabelul duplicat
+## Surse de date (re-folosim ce există, zero date noi)
 
-## Files
+- **Material price**: `costedBoqRows` din `src/lib/mockData.ts` — match pe `name` (case-insensitive contains) → folosim `Math.min(ccf ?? rate, minster ?? rate)` ca „best price". Liniile fără match → marcate „no price" (nu mint un preț).
+- **Labour**: `calculatorResults.labourRate` (£24.50/m²) × `area × wasteFactor` pentru cost; productivitate 0.4 h/m² ca să afișăm și ore.
+- **Coverage**: `priced / totalLines` — onest pentru utilizator (mock-ul nu acoperă toate materialele BG).
 
-**Created:**
-- `src/components/team/PermissionMatrix.tsx`
+## Fișiere de modificat / creat
 
-**Edited:**
-- `src/routes/projects.$projectId.team.tsx` — adaugă matricea cu highlight
-- `src/routes/team.tsx` — folosește componenta comună
+1. **`src/lib/calculatorPricing.ts`** (nou, ~50 linii)
+   - `priceMaterial(name) → { unitPrice, supplier } | null` — caută în `costedBoqRows`.
+   - `estimateCost(totals, area, wasteFactor) → { materials, labour, total, perM2, hours, pricedLines, totalLines, lines: [...] }`
+   - Productivitate: `HOURS_PER_M2 = 0.4` (export ca const).
 
-## Result
+2. **`src/routes/calculator.tsx`**
+   - Import helper-ul nou; calculez `cost = estimateCost(totals, area, wasteFactor)`.
+   - Adaug bloc „Cost estimate" în aside-ul Live Summary (între „Wall area" și „System build-up").
+   - Adaug a 3-a coloană (cost £) în lista „Aggregated totals" — cu fallback `—` și tooltip „no price in catalogue" pentru linii ne-prețuite.
+   - Pasez `cost.total` și `cost.perM2` și la `AddToBoqButton` (toast cu valoarea).
 
-Matricea apare acum și pe `/projects/fitzrovia/team`, cu rândurile pentru tier-urile efectiv prezente pe proiect evidențiate (Admin, Pro Control, Pro, Site User, Operative — în funcție de cine e asignat). O singură sursă de adevăr pentru permisiuni, fără duplicare.
+3. **`src/routes/projects.$projectId.calloffs.tsx`** — *nimic*. Live Summary rămâne o feature izolată în calculator; nu propag costul în BoQ-ul proiectului în acest task (rămâne pe rate de la furnizor în Costed BoQ).
+
+## Edge cases tratate
+- `invalid` (input rupt): blocul Cost arată `—`, nu zerouri false.
+- 0 linii prețuite: arătăm doar Labour + un hint „add prices in Costed BoQ".
+- Sistem bespoke (fără rate fixe): folosim totuși matching pe nume material; ce nu se găsește = „no price".
+
+## Ce NU includem (pot fi follow-ups dacă vrei)
+- Toggle CCF vs Minster vs Best (acum doar best).
+- Markup / margin pe deasupra costului.
+- Persistarea „cost snapshot" în `projectData` când apeși „Add to Costed BoQ".
+
+Confirmi planul ca să-l implementez?
