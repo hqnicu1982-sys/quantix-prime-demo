@@ -325,7 +325,8 @@ export function TaskDetailDialog({
             {draft.boqLineIds.map((b) => (
               <Link
                 key={b}
-                to="/projects/fitzrovia/costed-boq"
+                to="/projects/$projectId/costed-boq"
+                params={{ projectId }}
                 className="inline-flex items-center gap-1 rounded bg-white px-2 py-0.5 text-[11px] text-[var(--ink-700)] ring-1 ring-[var(--ink-200)] hover:ring-[var(--accent-500)]"
               >
                 <LinkIcon className="h-3 w-3" /> {b}
@@ -334,7 +335,8 @@ export function TaskDetailDialog({
             {draft.calloffIds.map((c) => (
               <Link
                 key={c}
-                to="/projects/fitzrovia/calloffs"
+                to="/projects/$projectId/calloffs"
+                params={{ projectId }}
                 className="inline-flex items-center gap-1 rounded bg-white px-2 py-0.5 text-[11px] text-[var(--ink-700)] ring-1 ring-[var(--ink-200)] hover:ring-[var(--accent-500)]"
               >
                 <LinkIcon className="h-3 w-3" /> {c}
@@ -342,7 +344,8 @@ export function TaskDetailDialog({
             ))}
             {draft.variationId && (
               <Link
-                to="/projects/fitzrovia/variations"
+                to="/projects/$projectId/variations"
+                params={{ projectId }}
                 className="inline-flex items-center gap-1 rounded bg-white px-2 py-0.5 text-[11px] text-[var(--ink-700)] ring-1 ring-[var(--ink-200)] hover:ring-[var(--accent-500)]"
               >
                 <LinkIcon className="h-3 w-3" /> {draft.variationId}
