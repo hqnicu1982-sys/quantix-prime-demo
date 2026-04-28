@@ -20,6 +20,13 @@ function InvoicesPage() {
   const registry = useInvoices(projectId);
   const totals = useInvoiceTotals(projectId);
   const today = new Date().toISOString().slice(0, 10);
+  const sortedRegistry = [...registry].sort((a, b) => {
+    const aOverdue = a.status === "outstanding" && a.due < today;
+    const bOverdue = b.status === "outstanding" && b.due < today;
+    if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
+    if (aOverdue && bOverdue) return a.due.localeCompare(b.due); // most overdue first
+    return a.due.localeCompare(b.due);
+  });
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -52,10 +59,13 @@ function InvoicesPage() {
               {registry.length === 0 && (
                 <tr><td colSpan={8} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">No invoices in the ledger yet.</td></tr>
               )}
-              {registry.map((inv) => {
+              {sortedRegistry.map((inv) => {
                 const overdue = (inv.status === "outstanding") && inv.due < today;
+                const daysOverdue = overdue
+                  ? Math.floor((Date.parse(today) - Date.parse(inv.due)) / 86400000)
+                  : 0;
                 return (
-                  <tr key={inv.id} className="hover:bg-[var(--ink-50)]">
+                  <tr key={inv.id} className={`hover:bg-[var(--ink-50)] ${overdue ? "bg-[var(--red-500)]/5" : ""}`}>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold ${inv.direction === "receivable" ? "bg-[var(--green-600)]/10 text-[var(--green-600)]" : "bg-[var(--accent-500)]/10 text-[var(--accent-500)]"}`}>
                         <CircleDollarSign className="h-3 w-3" />
@@ -71,7 +81,13 @@ function InvoicesPage() {
                       {inv.status === "paid" ? (
                         <span className="inline-flex items-center gap-1 rounded bg-[var(--green-600)]/10 px-2 py-0.5 text-[10.5px] font-semibold text-[var(--green-600)]"><CheckCircle2 className="h-3 w-3" /> Paid</span>
                       ) : overdue ? (
-                        <span className="inline-flex items-center gap-1 rounded bg-[var(--red-500)]/10 px-2 py-0.5 text-[10.5px] font-semibold text-[var(--red-500)]"><AlertTriangle className="h-3 w-3" /> Overdue</span>
+                        <span className="inline-flex items-center gap-1 rounded border border-[var(--red-500)]/30 bg-[var(--red-500)]/10 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-[var(--red-500)]">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--red-500)] opacity-75" />
+                            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--red-500)]" />
+                          </span>
+                          <AlertTriangle className="h-3 w-3" /> Overdue {daysOverdue}d
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded bg-[var(--ink-50)] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--ink-500)]">Outstanding</span>
                       )}
