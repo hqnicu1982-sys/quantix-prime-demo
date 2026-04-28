@@ -6,6 +6,7 @@ import { team } from "@/lib/mockData";
 import { useProjectCrews, removeAssignment, useInvites } from "@/lib/labour";
 import { InviteMemberDialog } from "@/components/team/InviteMemberDialog";
 import { AssignToProjectDialog } from "@/components/team/AssignToProjectDialog";
+import { PermissionMatrix } from "@/components/team/PermissionMatrix";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/projects/$projectId/team")({ component: TeamPage });
@@ -25,6 +26,12 @@ function TeamPage() {
   const onProject = crews.map((c) => c.member).filter(Boolean) as typeof team;
   const opCount = crews.filter((c) => c.member?.tier === "Operative").length;
   const lead = crews.find((c) => c.member?.tier === "Pro" || c.member?.tier === "Pro Control");
+  const counts = onProject.reduce((acc, m) => {
+    acc[m.tier] = (acc[m.tier] ?? 0) + 1;
+    return acc;
+  }, {} as Partial<Record<typeof team[number]["tier"], number>>);
+  invites.forEach((i) => { counts[i.tier] = (counts[i.tier] ?? 0) + 1; });
+  const tiersOnProject = Object.keys(counts) as Array<typeof team[number]["tier"]>;
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -81,6 +88,12 @@ function TeamPage() {
           ))}
         </div>
       </Card>
+
+      <PermissionMatrix
+        subtitle="Cine ce poate face pe acest proiect — rândurile evidențiate sunt prezente în echipă"
+        highlightTiers={tiersOnProject}
+        counts={counts}
+      />
     </div>
   );
 }
