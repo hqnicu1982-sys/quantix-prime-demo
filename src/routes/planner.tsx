@@ -9,6 +9,7 @@ import {
   computeKpis,
   computeReadiness,
   useProjectTasks,
+  totalPlannedCost,
   type PlannerTask,
 } from "@/lib/planner";
 import { GanttChart } from "@/components/planner/GanttChart";
@@ -41,6 +42,7 @@ function Planner() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const kpis = useMemo(() => computeKpis(tasks), [tasks]);
+  const plannedCost = useMemo(() => totalPlannedCost(tasks, PID), [tasks, PID]);
   const blockedIds = useMemo(() => {
     const s = new Set<string>();
     for (const t of tasks) {
@@ -83,7 +85,11 @@ function Planner() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Total tasks" value={String(kpis.total)} delta={`${kpis.done} done`} />
         <Kpi label="Active" value={String(kpis.active)} delta={`${kpis.startingThisWeek} this week`} />
-        <Kpi label="Crews on site" value={String(kpis.crewsOnSite)} />
+        <Kpi
+          label="Planned labour"
+          value={`£${(plannedCost / 1000).toFixed(1)}k`}
+          delta={`${kpis.crewsOnSite} crews on site`}
+        />
         <Kpi
           label="Blocked"
           value={String(blockedIds.size)}
