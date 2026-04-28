@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { useProjectCrews } from "@/lib/labour";
-import { useLabourLogs, getLastLogDate, getPendingHours } from "@/lib/laborLog";
+import { useLabourLogs, getLastLogDate, getPendingHours, computeEntryCost } from "@/lib/laborLog";
 import { useProjectTasks } from "@/lib/planner";
 
 export const Route = createFileRoute("/projects/$projectId/labour")({ component: LabourPage });
@@ -17,9 +17,11 @@ function LabourPage() {
 
   const crews = projectCrews.map((c) => {
     const memberId = c.assignment.memberId;
-    const actual = approvedLogs
-      .filter((l) => l.memberId === memberId)
-      .reduce((s, l) => s + l.hours, 0);
+    const memberLogs = approvedLogs.filter((l) => l.memberId === memberId);
+    const actual = memberLogs.reduce((s, l) => s + l.hours, 0);
+    const actualCost = memberLogs.reduce((s, l) => s + computeEntryCost(l), 0);
+    const pwEntries = memberLogs.filter((l) => l.payMode === "pw").length;
+    const hourlyEntries = memberLogs.length - pwEntries;
     const planned = tasks
       .filter((t) => t.crewId === memberId)
       .reduce((s, t) => s + (t.plannedHours ?? 0), 0);
@@ -32,6 +34,9 @@ function LabourPage() {
       rate: c.rate,
       planned,
       actual,
+      actualCost,
+      pwEntries,
+      hourlyEntries,
       complete,
       variance,
       lastLog,
@@ -39,9 +44,11 @@ function LabourPage() {
   }).filter((c) => c.actual > 0 || c.planned > 0);
 
   const totalHours = crews.reduce((s, c) => s + c.actual, 0);
-  const totalCost = crews.reduce((s, c) => s + c.actual * c.rate, 0);
+  const totalCost = crews.reduce((s, c) => s + c.actualCost, 0);
   const blendedRate = totalHours > 0 ? totalCost / totalHours : 0;
   const totalPlanned = crews.reduce((s, c) => s + c.planned, 0);
+  const totalPwEntries = crews.reduce((s, c) => s + c.pwEntries, 0);
+  const totalHourlyEntries = crews.reduce((s, c) => s + c.hourlyEntries, 0);
 
   return (
     <div className="space-y-5">
@@ -55,11 +62,11 @@ function LabourPage() {
         <Kpi
           label="Labour cost"
           value={`£${(totalCost / 1000).toFixed(1)}k`}
-          delta={`from ${approvedLogs.length} approved entries`}
+          delta={`${totalHourlyEntries} hourly · ${totalPwEntries} PW (approved)`}
           tone={totalPlanned > 0 && totalHours > totalPlanned ? "danger" : "neutral"}
           trend="up"
         />
-        <Kpi label="Average rate" value={`£${blendedRate.toFixed(2)}`} delta="weighted blended" />
+        <Kpi label="Effective £/h" value={`£${blendedRate.toFixed(2)}`} delta="blended hourly + PW" />
         <Kpi
           label={pendingHours > 0 ? "Pending approval" : "Productivity"}
           value={pendingHours > 0 ? `${pendingHours.toFixed(1)}h` : "0.91"}
@@ -79,7 +86,8 @@ function LabourPage() {
                 <th className="px-4 py-2.5 text-right font-semibold">Planned h</th>
                 <th className="px-4 py-2.5 text-right font-semibold">Actual h</th>
                 <th className="px-4 py-2.5 text-right font-semibold">% complete</th>
-                <th className="px-4 py-2.5 text-right font-semibold">Rate £/h</th>
+                <th className="px-4 py-2.5 text-left font-semibold">Pay mix</th>
+                <th className="px-4 py-2.5 text-right font-semibold">Cost £</th>
                 <th className="px-4 py-2.5 text-right font-semibold">Variance</th>
                 <th className="px-4 py-2.5 text-right font-semibold">Last log</th>
               </tr>
@@ -87,7 +95,7 @@ function LabourPage() {
             <tbody className="divide-y divide-[var(--ink-200)]">
               {crews.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">
+                  <td colSpan={9} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">
                     No labour logged yet. Add entries via the Daily Report.
                   </td>
                 </tr>
@@ -99,7 +107,14 @@ function LabourPage() {
                   <td className="px-4 py-3 text-right font-mono-num">{c.planned || "—"}</td>
                   <td className="px-4 py-3 text-right font-mono-num">{c.actual.toFixed(1)}</td>
                   <td className="px-4 py-3 text-right font-mono-num">{c.complete}%</td>
-                  <td className="px-4 py-3 text-right font-mono-num">£{c.rate.toFixed(2)}</td>
+                  <td className="px-4 py-3 text-[12px] text-[var(--ink-500)]">
+                    {c.hourlyEntries > 0 && <span>{c.hourlyEntries}h @ £{c.rate.toFixed(0)}/h</span>}
+                    {c.hourlyEntries > 0 && c.pwEntries > 0 && <span className="mx-1">·</span>}
+                    {c.pwEntries > 0 && (
+                      <span className="rounded bg-[var(--accent-500)]/10 px-1.5 py-0.5 text-[10.5px] font-bold uppercase text-[var(--accent-500)]">{c.pwEntries} PW</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono-num font-semibold">£{c.actualCost.toFixed(0)}</td>
                   <td className={`px-4 py-3 text-right font-mono-num font-semibold ${c.planned === 0 ? "text-[var(--ink-500)]" : c.variance > 0 ? "text-[var(--red-500)]" : "text-[var(--green-600)]"}`}>
                     {c.planned === 0 ? (
                       "—"

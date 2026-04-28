@@ -29,7 +29,7 @@ import {
   type TaskStatus,
 } from "@/lib/planner";
 import { useProjectCrews } from "@/lib/labour";
-import { getActualHoursForTask } from "@/lib/laborLog";
+import { getActualHoursForTask, getActualCostForTask } from "@/lib/laborLog";
 import { AlertTriangle, CheckCircle2, Trash2, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
@@ -77,7 +77,9 @@ export function TaskDetailDialog({
   const selectedCrew = crews.find((c) => c.assignment.memberId === draft.crewId);
   const plannedCost = taskPlannedCost(draft, projectId);
   const actualHours = getActualHoursForTask(projectId, draft.id);
-  const actualCost = taskActualCost(draft, projectId, actualHours);
+  // Use real cost from logs (respects PW vs hourly), fallback to rate × hours.
+  const realCost = getActualCostForTask(projectId, draft.id);
+  const actualCost = realCost > 0 ? realCost : taskActualCost(draft, projectId, actualHours);
   const variance = plannedCost > 0 ? ((actualCost - plannedCost) / plannedCost) * 100 : 0;
 
   const save = () => {

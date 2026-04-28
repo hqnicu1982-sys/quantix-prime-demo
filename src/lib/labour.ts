@@ -46,6 +46,97 @@ const ASSIGN_KEY = "qp-labour-assignments";
 const INVITES_KEY = "qp-labour-invites";
 const SEED_KEY = "qp-labour-seeded-v1";
 const EVT = "qp-labour-change";
+const PW_KEY = (pid: string) => `qp-pw-rates-${pid}`;
+const PW_SEED_KEY = (pid: string) => `qp-pw-rates-seeded-${pid}`;
+const PW_EVT = "qp-pw-rates-change";
+
+// ---------- price-work rates ----------
+export type PriceWorkUnit = "lump" | "m2" | "lm" | "nr";
+
+export type PriceWorkRate = {
+  id: string;
+  projectId: string;
+  code: string;            // "PW-1FIX-L5"
+  scope: string;           // "1st fix partitions L5"
+  unit: PriceWorkUnit;
+  rate: number;            // £ per unit (or lump £ if unit="lump")
+  boqLineId?: string;
+  taskId?: string;
+  createdAt: number;
+};
+
+const PW_DEFAULTS: Record<string, Omit<PriceWorkRate, "id" | "createdAt" | "projectId">[]> = {
+  fitzrovia: [
+    { code: "PW-1FIX-L5",  scope: "1st fix partitions — L5",   unit: "m2", rate: 8.5,  boqLineId: "BOQ-L5-PART", taskId: "T-003" },
+    { code: "PW-2FIX-L5",  scope: "2nd fix boarding — L5",     unit: "m2", rate: 6.5,  boqLineId: "BOQ-L5-PART" },
+    { code: "PW-TJ-L4",    scope: "Tape & joint — L4",         unit: "m2", rate: 4.25, boqLineId: "BOQ-TJ" },
+    { code: "PW-MF-L5",    scope: "MF ceiling grid — L5",      unit: "m2", rate: 12.0, boqLineId: "BOQ-L5-CLG", taskId: "T-004" },
+    { code: "PW-LOBBY-VO", scope: "Lobby bulkheads (VO-002)",  unit: "lump", rate: 3200 },
+  ],
+};
+
+function ensurePwSeed(pid: string) {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem(PW_SEED_KEY(pid))) return;
+  const defs = PW_DEFAULTS[pid];
+  if (defs && !localStorage.getItem(PW_KEY(pid))) {
+    const seeded: PriceWorkRate[] = defs.map((d, i) => ({
+      ...d,
+      id: `pw-seed-${pid}-${i}`,
+      projectId: pid,
+      createdAt: Date.now() - (defs.length - i) * 1000,
+    }));
+    localStorage.setItem(PW_KEY(pid), JSON.stringify(seeded));
+  }
+  localStorage.setItem(PW_SEED_KEY(pid), "1");
+}
+
+export function getPriceWorkRates(projectId: string): PriceWorkRate[] {
+  if (typeof window === "undefined") return [];
+  ensurePwSeed(projectId);
+  try {
+    const raw = localStorage.getItem(PW_KEY(projectId));
+    return raw ? (JSON.parse(raw) as PriceWorkRate[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePw(projectId: string, list: PriceWorkRate[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(PW_KEY(projectId), JSON.stringify(list));
+  window.dispatchEvent(new Event(PW_EVT));
+}
+
+export function addPriceWorkRate(
+  input: Omit<PriceWorkRate, "id" | "createdAt">,
+): PriceWorkRate {
+  const list = getPriceWorkRates(input.projectId);
+  const next: PriceWorkRate = {
+    ...input,
+    id: uid("pw"),
+    createdAt: Date.now(),
+  };
+  writePw(input.projectId, [...list, next]);
+  return next;
+}
+
+export function updatePriceWorkRate(
+  projectId: string,
+  id: string,
+  patch: Partial<Omit<PriceWorkRate, "id" | "projectId" | "createdAt">>,
+) {
+  const list = getPriceWorkRates(projectId);
+  writePw(projectId, list.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+}
+
+export function removePriceWorkRate(projectId: string, id: string) {
+  writePw(projectId, getPriceWorkRates(projectId).filter((r) => r.id !== id));
+}
+
+export function getPriceWorkRate(projectId: string, id: string): PriceWorkRate | undefined {
+  return getPriceWorkRates(projectId).find((r) => r.id === id);
+}
 
 // ---------- defaults / seed ----------
 const DEFAULT_ROLES: LabourRole[] = [
@@ -231,11 +322,13 @@ function useStore<T>(reader: () => T): T {
   useEffect(() => {
     const refresh = () => setState(reader());
     refresh();
-    const onStorage = (e: StorageEvent) => { if (e.key && e.key.startsWith("qp-labour")) refresh(); };
+    const onStorage = (e: StorageEvent) => { if (e.key && (e.key.startsWith("qp-labour") || e.key.startsWith("qp-pw-rates"))) refresh(); };
     window.addEventListener(EVT, refresh);
+    window.addEventListener(PW_EVT, refresh);
     window.addEventListener("storage", onStorage);
     return () => {
       window.removeEventListener(EVT, refresh);
+      window.removeEventListener(PW_EVT, refresh);
       window.removeEventListener("storage", onStorage);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -248,3 +341,4 @@ export function useMemberRates() { return useStore(getMemberRates); }
 export function useAssignments(projectId?: string) { return useStore(() => getAssignments(projectId)); }
 export function useProjectCrews(projectId: string) { return useStore(() => getProjectCrews(projectId)); }
 export function useInvites() { return useStore(getInvites); }
+export function usePriceWorkRates(projectId: string) { return useStore(() => getPriceWorkRates(projectId)); }
