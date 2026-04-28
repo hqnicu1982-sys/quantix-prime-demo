@@ -2,6 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { fitzrovia, fitzroviaSystems, fitzroviaHealth, fitzroviaActivity, fmtMoney } from "@/lib/mockData";
 import { useProject } from "@/lib/ProjectContext";
+import { useProjectData } from "@/lib/projectData";
+import { useProjectTasks } from "@/lib/planner";
+import { useAssignments } from "@/lib/labour";
+import { CheckCircle2, Circle, ArrowRight } from "lucide-react";
+import type { LinkProps } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
 
@@ -22,27 +27,7 @@ function Overview() {
           <Kpi label="Forecast margin" value={`${project.margin.toFixed(1)}%`} tone={project.margin >= 18 ? "success" : project.margin >= 12 ? "warning" : "danger"} />
           <Kpi label="Progress" value={`${project.progress}%`} />
         </div>
-        <Card>
-          <CardHead title="Project setup" subtitle="Add specification, then build a costed BoQ" />
-          <div className="space-y-3 p-5 text-[13px] text-[var(--ink-700)]">
-            <p>This project has no curated demo data yet. Use the tabs above to:</p>
-            <ul className="ml-4 list-disc space-y-1 text-[var(--ink-500)]">
-              <li>Upload <strong className="text-[var(--ink-900)]">Specification</strong> documents</li>
-              <li>Build a <strong className="text-[var(--ink-900)]">Costed BoQ</strong> from the calculator</li>
-              <li>Create a <strong className="text-[var(--ink-900)]">Planner</strong> programme</li>
-              <li>Invite your team and set <strong className="text-[var(--ink-900)]">Labour</strong> rates</li>
-            </ul>
-          </div>
-        </Card>
-        <div className="flex justify-center">
-          <Link
-            to="/projects/$projectId/costed-boq"
-            params={{ projectId }}
-            className="text-[12.5px] font-medium text-[var(--accent-500)] hover:underline"
-          >
-            Open Costed BoQ →
-          </Link>
-        </div>
+        <ProjectSetupChecklist projectId={projectId} />
       </div>
     );
   }
@@ -157,5 +142,158 @@ function Overview() {
         </Link>
       </div>
     </div>
+  );
+}
+
+// ============================================================================
+// Project setup checklist — auto-checks each step from real project data
+// ============================================================================
+type SetupStep = {
+  key: string;
+  title: string;
+  hint: string;
+  done: boolean;
+  detail?: string;
+  to: LinkProps["to"];
+  cta: string;
+};
+
+function ProjectSetupChecklist({ projectId }: { projectId: string }) {
+  const data = useProjectData(projectId);
+  const tasks = useProjectTasks(projectId);
+  const assignments = useAssignments(projectId);
+
+  const steps: SetupStep[] = [
+    {
+      key: "spec",
+      title: "Upload specification",
+      hint: "Drawings, NBS spec, performance schedules",
+      done: data.systems.length > 0, // proxy: at least one system means scope is captured
+      detail: data.systems.length > 0 ? `${data.systems.length} system${data.systems.length === 1 ? "" : "s"} captured` : undefined,
+      to: "/projects/$projectId/specification",
+      cta: "Open Specification",
+    },
+    {
+      key: "boq",
+      title: "Build a Costed BoQ",
+      hint: "Add systems from the calculator and price them",
+      done: data.boqLines.length > 0,
+      detail: data.boqLines.length > 0 ? `${data.boqLines.length} line${data.boqLines.length === 1 ? "" : "s"} on the BoQ` : undefined,
+      to: "/projects/$projectId/costed-boq",
+      cta: "Open Costed BoQ",
+    },
+    {
+      key: "planner",
+      title: "Create a Planner programme",
+      hint: "Sequence tasks, set durations and dependencies",
+      done: tasks.length > 0,
+      detail: tasks.length > 0 ? `${tasks.length} task${tasks.length === 1 ? "" : "s"} scheduled` : undefined,
+      to: "/projects/$projectId/planner",
+      cta: "Open Planner",
+    },
+    {
+      key: "team",
+      title: "Assign your team & labour rates",
+      hint: "Invite members, pick crews, set day-rates",
+      done: assignments.length > 0,
+      detail: assignments.length > 0 ? `${assignments.length} member${assignments.length === 1 ? "" : "s"} on project` : undefined,
+      to: "/projects/$projectId/team",
+      cta: "Open Team",
+    },
+    {
+      key: "calloffs",
+      title: "Issue first call-off",
+      hint: "Convert priced lines into supplier orders",
+      done: data.callOffs.length > 0,
+      detail: data.callOffs.length > 0 ? `${data.callOffs.length} call-off${data.callOffs.length === 1 ? "" : "s"} raised` : undefined,
+      to: "/projects/$projectId/calloffs",
+      cta: "Open Call-offs",
+    },
+  ];
+
+  const doneCount = steps.filter((s) => s.done).length;
+  const pct = Math.round((doneCount / steps.length) * 100);
+  const allDone = doneCount === steps.length;
+  const nextStep = steps.find((s) => !s.done);
+
+  return (
+    <Card>
+      <CardHead
+        title="Project setup"
+        subtitle={allDone ? "All set up — project is ready to run" : "Complete each step to get this project running"}
+        right={
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="font-mono-num text-[14px] font-semibold text-[var(--ink-900)]">{doneCount}/{steps.length}</p>
+              <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">complete</p>
+            </div>
+            <div className="relative h-10 w-10">
+              <svg className="h-10 w-10 -rotate-90" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--ink-200)" strokeWidth="3" />
+                <circle
+                  cx="18" cy="18" r="15.5" fill="none"
+                  stroke={allDone ? "var(--green-600)" : "var(--accent-500)"}
+                  strokeWidth="3" strokeLinecap="round"
+                  strokeDasharray={`${(pct / 100) * 97.4} 97.4`}
+                  className="transition-all duration-500"
+                />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-[var(--ink-900)]">{pct}%</span>
+            </div>
+          </div>
+        }
+      />
+      <ul className="divide-y divide-[var(--ink-200)]">
+        {steps.map((s, i) => {
+          const isNext = !s.done && s === nextStep;
+          return (
+            <li
+              key={s.key}
+              className={`flex items-center gap-4 px-5 py-3.5 transition-colors ${
+                isNext ? "bg-[var(--accent-500)]/[0.04]" : "hover:bg-[var(--ink-50)]"
+              }`}
+            >
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center">
+                {s.done ? (
+                  <CheckCircle2 className="h-5 w-5 text-[var(--green-600)]" />
+                ) : (
+                  <Circle className={`h-5 w-5 ${isNext ? "text-[var(--accent-500)]" : "text-[var(--ink-200)]"}`} />
+                )}
+              </div>
+              <span className="font-mono-num w-5 text-[11px] font-semibold text-[var(--ink-500)]">{String(i + 1).padStart(2, "0")}</span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className={`text-[13.5px] font-semibold ${s.done ? "text-[var(--ink-500)] line-through decoration-[var(--ink-200)]" : "text-[var(--ink-900)]"}`}>
+                    {s.title}
+                  </p>
+                  {isNext && (
+                    <span className="rounded-full bg-[var(--accent-500)]/15 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-[var(--accent-500)]">
+                      Next
+                    </span>
+                  )}
+                  {s.done && s.detail && (
+                    <span className="text-[11px] font-medium text-[var(--green-600)]">· {s.detail}</span>
+                  )}
+                </div>
+                <p className="mt-0.5 text-[11.5px] text-[var(--ink-500)]">{s.hint}</p>
+              </div>
+              <Link
+                to={s.to}
+                params={{ projectId }}
+                className={`inline-flex shrink-0 items-center gap-1 rounded-lg px-3 py-1.5 text-[11.5px] font-semibold transition-colors ${
+                  isNext
+                    ? "bg-[var(--accent-500)] text-white hover:opacity-90"
+                    : s.done
+                    ? "text-[var(--ink-500)] hover:text-[var(--ink-900)]"
+                    : "border border-[var(--ink-200)] text-[var(--ink-700)] hover:bg-[var(--ink-50)]"
+                }`}
+              >
+                {s.done ? "Review" : s.cta} <ArrowRight className="h-3 w-3" />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
   );
 }
