@@ -27,7 +27,7 @@ const navGroups: NavGroup[] = [
   ]},
   { label: "Projects", items: [
     { to: "/projects", label: "All Projects", icon: FolderKanban, mobile: true },
-    { to: "/projects/fitzrovia", label: "Hotel Fitzrovia", icon: HardHat },
+    { to: "/projects/$projectId", label: "Hotel Fitzrovia", icon: HardHat, params: { projectId: "fitzrovia" } as Record<string, string> },
   ]},
   { label: "Commercial", persona: "commercial", items: [
     { to: "/costed-boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true },
