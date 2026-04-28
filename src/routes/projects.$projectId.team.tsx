@@ -1,9 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { ExternalLink, Trash2, Plus } from "lucide-react";
 import { team } from "@/lib/mockData";
-import { useProjectCrews, removeAssignment, useInvites } from "@/lib/labour";
+import {
+  useProjectCrews, removeAssignment, useInvites,
+  usePriceWorkRates, addPriceWorkRate, removePriceWorkRate,
+  type PriceWorkUnit,
+} from "@/lib/labour";
 import { InviteMemberDialog } from "@/components/team/InviteMemberDialog";
 import { AssignToProjectDialog } from "@/components/team/AssignToProjectDialog";
 import { PermissionMatrix } from "@/components/team/PermissionMatrix";
@@ -89,11 +99,116 @@ function TeamPage() {
         </div>
       </Card>
 
+      <PriceWorkRatesCard projectId={projectId} />
+
       <PermissionMatrix
         subtitle="Cine ce poate face pe acest proiect — rândurile evidențiate sunt prezente în echipă"
         highlightTiers={tiersOnProject}
         counts={counts}
       />
     </div>
+  );
+}
+
+function PriceWorkRatesCard({ projectId }: { projectId: string }) {
+  const rates = usePriceWorkRates(projectId);
+  const [code, setCode] = useState("");
+  const [scope, setScope] = useState("");
+  const [unit, setUnit] = useState<PriceWorkUnit>("m2");
+  const [rate, setRate] = useState<number>(0);
+  const [boqLineId, setBoqLineId] = useState("");
+
+  const linked = rates.filter((r) => r.boqLineId).length;
+
+  const onAdd = () => {
+    if (!code.trim() || !scope.trim() || rate <= 0) {
+      toast.error("Fill code, scope and rate");
+      return;
+    }
+    addPriceWorkRate({
+      projectId,
+      code: code.trim().toUpperCase(),
+      scope: scope.trim(),
+      unit,
+      rate,
+      boqLineId: boqLineId.trim() || undefined,
+    });
+    toast.success("PW rate added");
+    setCode(""); setScope(""); setRate(0); setBoqLineId(""); setUnit("m2");
+  };
+
+  return (
+    <Card>
+      <CardHead
+        title="Price Work rates"
+        subtitle={`${rates.length} defined · ${linked} linked to BoQ · per-project negotiated rates used by Daily Report`}
+      />
+      <div className="overflow-x-auto">
+        <table className="w-full text-[13px]">
+          <thead className="bg-[var(--ink-50)] text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+            <tr>
+              <th className="px-4 py-2.5 text-left font-semibold">Code</th>
+              <th className="px-4 py-2.5 text-left font-semibold">Scope</th>
+              <th className="px-4 py-2.5 text-left font-semibold">Unit</th>
+              <th className="px-4 py-2.5 text-right font-semibold">Rate £</th>
+              <th className="px-4 py-2.5 text-left font-semibold">BoQ link</th>
+              <th className="px-4 py-2.5 w-16" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[var(--ink-200)]">
+            {rates.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">
+                  No PW rates yet. Add one below to enable Price Work logging.
+                </td>
+              </tr>
+            )}
+            {rates.map((r) => (
+              <tr key={r.id} className="hover:bg-[var(--ink-50)]">
+                <td className="px-4 py-2.5 font-mono-num text-[12px] font-semibold">{r.code}</td>
+                <td className="px-4 py-2.5">{r.scope}</td>
+                <td className="px-4 py-2.5 text-[12px] text-[var(--ink-500)]">{r.unit}</td>
+                <td className="px-4 py-2.5 text-right font-mono-num font-semibold">
+                  £{r.rate.toFixed(2)}{r.unit === "lump" ? "" : `/${r.unit}`}
+                </td>
+                <td className="px-4 py-2.5 text-[12px] font-mono-num text-[var(--ink-500)]">
+                  {r.boqLineId ?? "—"}
+                </td>
+                <td className="px-4 py-2.5 text-right">
+                  <Button
+                    variant="ghost" size="sm"
+                    onClick={() => { removePriceWorkRate(projectId, r.id); toast("PW rate removed"); }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-[var(--ink-500)]" />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+            <tr className="bg-[var(--ink-50)]/40">
+              <td className="px-4 py-2"><Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="PW-CODE" className="h-8 font-mono-num" /></td>
+              <td className="px-4 py-2"><Input value={scope} onChange={(e) => setScope(e.target.value)} placeholder="Scope description" className="h-8" /></td>
+              <td className="px-4 py-2">
+                <Select value={unit} onValueChange={(v) => setUnit(v as PriceWorkUnit)}>
+                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="m2">m²</SelectItem>
+                    <SelectItem value="lm">lm</SelectItem>
+                    <SelectItem value="nr">nr</SelectItem>
+                    <SelectItem value="lump">lump</SelectItem>
+                  </SelectContent>
+                </Select>
+              </td>
+              <td className="px-4 py-2 text-right"><Input type="number" step="0.25" min={0} value={rate || ""} onChange={(e) => setRate(Number(e.target.value))} placeholder="0.00" className="h-8 text-right font-mono-num" /></td>
+              <td className="px-4 py-2"><Input value={boqLineId} onChange={(e) => setBoqLineId(e.target.value)} placeholder="BOQ-… (optional)" className="h-8 font-mono-num text-[12px]" /></td>
+              <td className="px-4 py-2 text-right">
+                <Button size="sm" variant="outline" onClick={onAdd}>
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }
