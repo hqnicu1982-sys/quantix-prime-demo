@@ -5,6 +5,7 @@ import { useProject } from "@/lib/ProjectContext";
 import { useProjectVariations, summarize } from "@/lib/variations";
 import { NewVariationDialog } from "@/components/variations/NewVariationDialog";
 import { VariationsTable } from "@/components/variations/VariationsTable";
+import { CostBreakdownPanel } from "@/components/variations/CostBreakdownPanel";
 
 export const Route = createFileRoute("/variations")({ component: VariationsPage });
 
@@ -55,6 +56,8 @@ function VariationsPage() {
       </div>
 
       <VariationsTable projectId={current.id} variations={variations} />
+
+      <CostBreakdownPanel variations={variations} baseline={current.contractValue} />
     </Section>
   );
 }
