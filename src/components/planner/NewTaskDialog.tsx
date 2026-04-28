@@ -30,6 +30,7 @@ export function NewTaskDialog({ projectId }: { projectId: string }) {
   const [crewId, setCrewId] = useState<string | undefined>(undefined);
   const [start, setStart] = useState(isoDate(PLANNER_TODAY));
   const [end, setEnd] = useState(addDays(isoDate(PLANNER_TODAY), 5));
+  const [plannedHours, setPlannedHours] = useState<string>("");
 
   const reset = () => {
     setTitle("");
@@ -37,10 +38,12 @@ export function NewTaskDialog({ projectId }: { projectId: string }) {
     setCrewId(undefined);
     setStart(isoDate(PLANNER_TODAY));
     setEnd(addDays(isoDate(PLANNER_TODAY), 5));
+    setPlannedHours("");
   };
 
   const submit = () => {
     if (!title.trim()) return;
+    const hrs = plannedHours ? Number(plannedHours) : undefined;
     addTask(projectId, {
       projectId,
       title: title.trim(),
@@ -53,11 +56,17 @@ export function NewTaskDialog({ projectId }: { projectId: string }) {
       boqLineIds: [],
       calloffIds: [],
       dependsOn: [],
+      plannedHours: hrs && Number.isFinite(hrs) && hrs > 0 ? hrs : undefined,
     });
     toast.success("Task added", { description: title.trim() });
     reset();
     setOpen(false);
   };
+
+  const selectedCrew = crews.find((c) => c.assignment.memberId === crewId);
+  const hrs = Number(plannedHours);
+  const showCost = selectedCrew && Number.isFinite(hrs) && hrs > 0;
+  const estCost = showCost ? hrs * selectedCrew.rate : 0;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -100,6 +109,30 @@ export function NewTaskDialog({ projectId }: { projectId: string }) {
           <div>
             <Label className="text-[11px]">End</Label>
             <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+          </div>
+          <div className="col-span-2">
+            <Label className="text-[11px]">Planned hours (man-hours)</Label>
+            <Input
+              type="number"
+              min={0}
+              step={0.5}
+              value={plannedHours}
+              onChange={(e) => setPlannedHours(e.target.value)}
+              placeholder="e.g. 80"
+            />
+            <p className="mt-1 text-[11px] text-[var(--ink-500)]">
+              {showCost ? (
+                <>
+                  {hrs} h × £{selectedCrew!.rate.toFixed(2)}/h ={" "}
+                  <span className="font-semibold text-[var(--ink-900)]">£{estCost.toFixed(0)}</span>{" "}
+                  estimated cost
+                </>
+              ) : crewId ? (
+                "Enter hours to see estimated cost"
+              ) : (
+                "Assign a crew to see estimated cost"
+              )}
+            </p>
           </div>
         </div>
         <DialogFooter>
