@@ -3,6 +3,7 @@ import { Kpi } from "@/components/Primitives";
 import { useProjectVariations, summarize } from "@/lib/variations";
 import { NewVariationDialog } from "@/components/variations/NewVariationDialog";
 import { VariationsTable } from "@/components/variations/VariationsTable";
+import { CostBreakdownPanel } from "@/components/variations/CostBreakdownPanel";
 
 export const Route = createFileRoute("/projects/fitzrovia/variations")({
   component: FitzroviaVariations,
@@ -59,6 +60,8 @@ function FitzroviaVariations() {
       </div>
 
       <VariationsTable projectId="fitzrovia" variations={variations} />
+
+      <CostBreakdownPanel variations={variations} baseline={CONTRACT_VALUE} />
     </div>
   );
 }
