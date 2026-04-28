@@ -881,6 +881,19 @@ function SingleView({
           </div>
         </div>
       </aside>
+
+      <BespokeBuildUpDialog
+        open={bespokeOpen}
+        onOpenChange={setBespokeOpen}
+        projectId={projectId}
+        projectName={projectName}
+        parent={{
+          code: isBespoke ? (LIBRARY[0].code) : sys.code,
+          shortName: isBespoke ? LIBRARY[0].shortName : sys.shortName,
+          seed: seedBuildUpFromLibrary(isBespoke ? LIBRARY[0].code : sys.code),
+        }}
+        onCreated={(created) => setActiveCode(created.id)}
+      />
     </div>
   );
 }
