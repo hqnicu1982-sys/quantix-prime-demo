@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { useProjectCrews } from "@/lib/labour";
-import { useLabourLogs, getLastLogDate } from "@/lib/laborLog";
+import { useLabourLogs, getLastLogDate, getPendingHours } from "@/lib/laborLog";
 import { useProjectTasks } from "@/lib/planner";
 
 export const Route = createFileRoute("/projects/$projectId/labour")({ component: LabourPage });
@@ -12,10 +12,12 @@ function LabourPage() {
   const projectCrews = useProjectCrews(PID);
   const logs = useLabourLogs(PID);
   const tasks = useProjectTasks(PID);
+  const pendingHours = getPendingHours(PID);
+  const approvedLogs = logs.filter((l) => (l.status ?? "submitted") === "approved");
 
   const crews = projectCrews.map((c) => {
     const memberId = c.assignment.memberId;
-    const actual = logs
+    const actual = approvedLogs
       .filter((l) => l.memberId === memberId)
       .reduce((s, l) => s + l.hours, 0);
     const planned = tasks
@@ -47,18 +49,23 @@ function LabourPage() {
         <Kpi
           label="Total hours MTD"
           value={`${totalHours.toFixed(0)}`}
-          delta={totalPlanned > 0 ? `vs ${totalPlanned} planned` : "no planned hours set"}
+          delta={totalPlanned > 0 ? `vs ${totalPlanned} planned · approved only` : "approved only"}
           tone={totalPlanned > 0 && totalHours > totalPlanned ? "warning" : "neutral"}
         />
         <Kpi
           label="Labour cost"
           value={`£${(totalCost / 1000).toFixed(1)}k`}
-          delta={`from ${logs.length} log entries`}
+          delta={`from ${approvedLogs.length} approved entries`}
           tone={totalPlanned > 0 && totalHours > totalPlanned ? "danger" : "neutral"}
           trend="up"
         />
         <Kpi label="Average rate" value={`£${blendedRate.toFixed(2)}`} delta="weighted blended" />
-        <Kpi label="Productivity" value="0.91" delta="m²/hr · target 1.05" tone="warning" />
+        <Kpi
+          label={pendingHours > 0 ? "Pending approval" : "Productivity"}
+          value={pendingHours > 0 ? `${pendingHours.toFixed(1)}h` : "0.91"}
+          delta={pendingHours > 0 ? "review in Daily Report" : "m²/hr · target 1.05"}
+          tone={pendingHours > 0 ? "warning" : "warning"}
+        />
       </div>
 
       <Card>
