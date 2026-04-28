@@ -15,6 +15,7 @@ import {
   computeReadiness,
   PLANNER_TODAY,
   useProjectTasks,
+  totalPlannedCost,
   type PlannerTask,
   type TaskStatus,
 } from "@/lib/planner";
@@ -55,6 +56,7 @@ function PlannerPage() {
   );
 
   const kpis = useMemo(() => computeKpis(tasks), [tasks]);
+  const plannedCost = useMemo(() => totalPlannedCost(tasks, PID), [tasks]);
   const readyCount = useMemo(
     () =>
       tasks.filter((t) => {
@@ -106,7 +108,7 @@ function PlannerPage() {
         <Kpi
           label="Crews on site"
           value={String(kpis.crewsOnSite)}
-          delta={`anchor ${PLANNER_TODAY.toLocaleDateString("en-GB")}`}
+          delta={`£${(plannedCost / 1000).toFixed(1)}k planned labour`}
         />
         <Kpi
           label="Ready to start"

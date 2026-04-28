@@ -2,44 +2,67 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { useProjectCrews } from "@/lib/labour";
+import { useLabourLogs, getLastLogDate } from "@/lib/laborLog";
+import { useProjectTasks } from "@/lib/planner";
 
 export const Route = createFileRoute("/projects/fitzrovia/labour")({ component: LabourPage });
 
-// Demo planned/actual hours per assignment (keyed by member id).
-const HOURS: Record<string, { planned: number; actual: number; complete: number; variance: number }> = {
-  mk: { planned: 248, actual: 302, complete: 76, variance: 22 },
-  pw: { planned: 320, actual: 142, complete: 38, variance: -8 },
-  aj: { planned: 184, actual: 96,  complete: 52, variance: -2 },
-  na: { planned: 80,  actual: 76,  complete: 95, variance: -5 },
-  sm: { planned: 40,  actual: 38,  complete: 95, variance: -5 },
-};
-
 function LabourPage() {
-  const projectCrews = useProjectCrews("fitzrovia");
-  const crews = projectCrews
-    .filter((c) => HOURS[c.assignment.memberId])
-    .map((c) => ({
+  const PID = "fitzrovia";
+  const projectCrews = useProjectCrews(PID);
+  const logs = useLabourLogs(PID);
+  const tasks = useProjectTasks(PID);
+
+  const crews = projectCrews.map((c) => {
+    const memberId = c.assignment.memberId;
+    const actual = logs
+      .filter((l) => l.memberId === memberId)
+      .reduce((s, l) => s + l.hours, 0);
+    const planned = tasks
+      .filter((t) => t.crewId === memberId)
+      .reduce((s, t) => s + (t.plannedHours ?? 0), 0);
+    const complete = planned > 0 ? Math.min(100, Math.round((actual / planned) * 100)) : 0;
+    const variance = planned > 0 ? Math.round(((actual - planned) / planned) * 100) : 0;
+    const lastLog = getLastLogDate(PID, memberId);
+    return {
       name: c.crewName,
       role: c.projectRole,
       rate: c.rate,
-      ...HOURS[c.assignment.memberId],
-    }));
+      planned,
+      actual,
+      complete,
+      variance,
+      lastLog,
+    };
+  }).filter((c) => c.actual > 0 || c.planned > 0);
 
   const totalHours = crews.reduce((s, c) => s + c.actual, 0);
   const totalCost = crews.reduce((s, c) => s + c.actual * c.rate, 0);
   const blendedRate = totalHours > 0 ? totalCost / totalHours : 0;
+  const totalPlanned = crews.reduce((s, c) => s + c.planned, 0);
 
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Total hours MTD" value={`${totalHours.toFixed(0)}`} delta={`vs ${crews.reduce((s, c) => s + c.planned, 0)} planned`} tone={totalHours > crews.reduce((s, c) => s + c.planned, 0) ? "warning" : "neutral"} />
-        <Kpi label="Labour cost" value={`£${(totalCost / 1000).toFixed(1)}k`} delta="planned × actual hrs" tone="danger" trend="up" />
+        <Kpi
+          label="Total hours MTD"
+          value={`${totalHours.toFixed(0)}`}
+          delta={totalPlanned > 0 ? `vs ${totalPlanned} planned` : "no planned hours set"}
+          tone={totalPlanned > 0 && totalHours > totalPlanned ? "warning" : "neutral"}
+        />
+        <Kpi
+          label="Labour cost"
+          value={`£${(totalCost / 1000).toFixed(1)}k`}
+          delta={`from ${logs.length} log entries`}
+          tone={totalPlanned > 0 && totalHours > totalPlanned ? "danger" : "neutral"}
+          trend="up"
+        />
         <Kpi label="Average rate" value={`£${blendedRate.toFixed(2)}`} delta="weighted blended" />
         <Kpi label="Productivity" value="0.91" delta="m²/hr · target 1.05" tone="warning" />
       </div>
 
       <Card>
-        <CardHead title="Crew performance" subtitle="Planned vs actual hours, by gang" />
+        <CardHead title="Crew performance" subtitle="Live · planned from planner tasks · actual from daily log" />
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead className="bg-[var(--ink-50)] text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
@@ -51,21 +74,36 @@ function LabourPage() {
                 <th className="px-4 py-2.5 text-right font-semibold">% complete</th>
                 <th className="px-4 py-2.5 text-right font-semibold">Rate £/h</th>
                 <th className="px-4 py-2.5 text-right font-semibold">Variance</th>
+                <th className="px-4 py-2.5 text-right font-semibold">Last log</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--ink-200)]">
+              {crews.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">
+                    No labour logged yet. Add entries via the Daily Report.
+                  </td>
+                </tr>
+              )}
               {crews.map((c) => (
                 <tr key={c.name} className="hover:bg-[var(--ink-50)]">
                   <td className="px-4 py-3 font-semibold text-[var(--ink-900)]">{c.name}</td>
                   <td className="px-4 py-3 text-[var(--ink-500)]">{c.role}</td>
-                  <td className="px-4 py-3 text-right font-mono-num">{c.planned}</td>
-                  <td className="px-4 py-3 text-right font-mono-num">{c.actual}</td>
+                  <td className="px-4 py-3 text-right font-mono-num">{c.planned || "—"}</td>
+                  <td className="px-4 py-3 text-right font-mono-num">{c.actual.toFixed(1)}</td>
                   <td className="px-4 py-3 text-right font-mono-num">{c.complete}%</td>
                   <td className="px-4 py-3 text-right font-mono-num">£{c.rate.toFixed(2)}</td>
-                  <td className={`px-4 py-3 text-right font-mono-num font-semibold ${c.variance > 0 ? "text-[var(--red-500)]" : "text-[var(--green-600)]"}`}>
-                    {c.variance > 0 ? <TrendingUp className="mr-1 inline h-3 w-3" /> : <TrendingDown className="mr-1 inline h-3 w-3" />}
-                    {c.variance > 0 ? "+" : ""}{c.variance}%
+                  <td className={`px-4 py-3 text-right font-mono-num font-semibold ${c.planned === 0 ? "text-[var(--ink-500)]" : c.variance > 0 ? "text-[var(--red-500)]" : "text-[var(--green-600)]"}`}>
+                    {c.planned === 0 ? (
+                      "—"
+                    ) : (
+                      <>
+                        {c.variance > 0 ? <TrendingUp className="mr-1 inline h-3 w-3" /> : <TrendingDown className="mr-1 inline h-3 w-3" />}
+                        {c.variance > 0 ? "+" : ""}{c.variance}%
+                      </>
+                    )}
                   </td>
+                  <td className="px-4 py-3 text-right text-[12px] text-[var(--ink-500)]">{c.lastLog ?? "—"}</td>
                 </tr>
               ))}
             </tbody>

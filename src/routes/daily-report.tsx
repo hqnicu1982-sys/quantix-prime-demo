@@ -2,10 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Section, Card, CardHead } from "@/components/Primitives";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { dailyReport } from "@/lib/mockData";
-import { Download, Send, Cloud, Clock } from "lucide-react";
+import { dailyReport, team, currentUser } from "@/lib/mockData";
+import { Download, Send, Cloud, Clock, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ProjectBanner } from "@/components/ProjectBanner";
+import { useProject } from "@/lib/ProjectContext";
+import { useLabourLogsForDate, deleteLabourLog } from "@/lib/laborLog";
+import { useProjectCrews } from "@/lib/labour";
+import { LogLabourDialog } from "@/components/daily-report/LogLabourDialog";
 
 export const Route = createFileRoute("/daily-report")({
   head: () => ({ meta: [{ title: "Daily Site Report — Quantix Prime" }] }),
@@ -13,6 +17,17 @@ export const Route = createFileRoute("/daily-report")({
 });
 
 function DailyReport() {
+  const { current } = useProject();
+  const today = new Date().toISOString().slice(0, 10);
+  const logs = useLabourLogsForDate(current.id, today);
+  const crews = useProjectCrews(current.id);
+  const canDelete = currentUser.tier === "Admin" || currentUser.tier === "Pro Control";
+  const totalHours = logs.reduce((s, l) => s + l.hours, 0);
+  const totalCost = logs.reduce((s, l) => {
+    const crew = crews.find((c) => c.assignment.memberId === l.memberId);
+    return s + (crew ? l.hours * crew.rate : 0);
+  }, 0);
+
   return (
     <Section
       title={`Daily Site Report — ${dailyReport.date}`}
@@ -40,7 +55,11 @@ function DailyReport() {
 
       {/* Labour */}
       <Card>
-        <CardHead title="Labour" subtitle={`${dailyReport.labour.length} crews on site`} />
+        <CardHead
+          title="Labour"
+          subtitle={`${logs.length} entries · ${totalHours.toFixed(1)}h · £${totalCost.toFixed(0)}`}
+          right={<LogLabourDialog projectId={current.id} date={today} />}
+        />
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead className="bg-[var(--ink-50)] text-left text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
@@ -49,21 +68,61 @@ function DailyReport() {
                 <th className="px-3 py-2.5">In</th>
                 <th className="px-3 py-2.5">Out</th>
                 <th className="px-3 py-2.5 text-right">Hours</th>
+                <th className="px-3 py-2.5 text-right">Cost</th>
                 <th className="px-3 py-2.5">Work</th>
+                {canDelete && <th className="px-3 py-2.5" />}
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--ink-200)]">
-              {dailyReport.labour.map((l, i) => (
-                <tr key={i}>
-                  <td className="px-4 py-2.5 font-medium">{l.crew}</td>
-                  <td className="px-3 py-2.5 font-mono tabular-nums">
-                    {l.inTime} {l.late && <StatusBadge tone="warning" className="ml-1">Late</StatusBadge>}
+              {logs.length === 0 ? (
+                <tr>
+                  <td colSpan={canDelete ? 7 : 6} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">
+                    No hours logged today. Click <strong>Log labour</strong> to add an entry.
                   </td>
-                  <td className="px-3 py-2.5 font-mono tabular-nums">{l.outTime}</td>
-                  <td className="px-3 py-2.5 text-right font-mono font-semibold tabular-nums">{l.hours}h</td>
-                  <td className="px-3 py-2.5 text-[var(--ink-700)]">{l.work}</td>
                 </tr>
-              ))}
+              ) : (
+                logs.map((l) => {
+                  const crew = crews.find((c) => c.assignment.memberId === l.memberId);
+                  const member = team.find((m) => m.id === l.memberId);
+                  const cost = crew ? l.hours * crew.rate : 0;
+                  return (
+                    <tr key={l.id}>
+                      <td className="px-4 py-2.5 font-medium">
+                        {member?.name ?? l.memberId}
+                        {crew?.crewName && (
+                          <span className="ml-1.5 text-[11.5px] font-normal text-[var(--ink-500)]">· {crew.crewName}</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono tabular-nums">
+                        {l.inTime} {l.late && <StatusBadge tone="warning" className="ml-1">Late</StatusBadge>}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono tabular-nums">{l.outTime}</td>
+                      <td className="px-3 py-2.5 text-right font-mono font-semibold tabular-nums">{l.hours}h</td>
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums">£{cost.toFixed(0)}</td>
+                      <td className="px-3 py-2.5 text-[var(--ink-700)]">
+                        {l.work}
+                        {l.taskId && (
+                          <span className="ml-1.5 rounded bg-[var(--ink-50)] px-1.5 py-0.5 font-mono text-[10.5px] text-[var(--ink-500)]">{l.taskId}</span>
+                        )}
+                      </td>
+                      {canDelete && (
+                        <td className="px-3 py-2.5 text-right">
+                          <button
+                            className="text-[var(--ink-500)] hover:text-[var(--red-500)]"
+                            onClick={() => {
+                              deleteLabourLog(l.id);
+                              toast.success("Entry removed");
+                            }}
+                            aria-label="Delete entry"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

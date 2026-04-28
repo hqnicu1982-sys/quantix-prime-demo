@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { effectiveRate } from "./labour";
 
 // ============================================================================
 // Planner — schedule of works per project.
@@ -37,6 +38,7 @@ export type PlannerTask = {
   dependsOn: string[];   // other task ids (FS)
   notes?: string;
   isMilestone?: boolean;
+  plannedHours?: number; // total man-hours estimated for the task
   createdAt: number;
   updatedAt: number;
 };
@@ -440,3 +442,27 @@ export const STATUS_BAR: Record<TaskStatus, string> = {
   blocked: "var(--amber-500)",
   done: "var(--green-600)",
 };
+
+// ---------------------------------------------------------------------------
+// Cost helpers — bridge planner ↔ labour rates
+// ---------------------------------------------------------------------------
+
+export function taskPlannedCost(task: PlannerTask, projectId: string): number {
+  if (!task.plannedHours || !task.crewId) return 0;
+  return task.plannedHours * effectiveRate(task.crewId, projectId);
+}
+
+export function taskActualCost(
+  task: PlannerTask,
+  projectId: string,
+  actualHours: number,
+): number {
+  if (!task.crewId || actualHours <= 0) return 0;
+  return actualHours * effectiveRate(task.crewId, projectId);
+}
+
+export function totalPlannedCost(tasks: PlannerTask[], projectId: string): number {
+  return tasks
+    .filter((t) => t.status !== "done")
+    .reduce((s, t) => s + taskPlannedCost(t, projectId), 0);
+}
