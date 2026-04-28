@@ -190,6 +190,14 @@ function Calculator() {
   }, []);
   const brand = getBrand(brandId);
 
+  // Bespoke systems for the active project — merged into the dropdown.
+  const { current } = useProject();
+  const bespokes = useBespokeSystems(current.id);
+  const COMBINED: SystemDef[] = useMemo(
+    () => [...bespokes.map(bespokeToSystemDef), ...LIBRARY],
+    [bespokes],
+  );
+
   // Compare-mode state
   const [leftCode,  setLeftCode]  = useState<string>(LIBRARY[0].code);
   const [rightCode, setRightCode] = useState<string>(LIBRARY[1].code);
