@@ -9,6 +9,8 @@ import {
 import { toast } from "sonner";
 import { pushToTray } from "@/lib/compareTray";
 import { fireTier, acousticTier, heightTier, thicknessTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
+import { findSystem, scaledTotals } from "@/lib/systemLibrary";
+import { estimateCost } from "@/lib/calculatorPricing";
 
 export const Route = createFileRoute("/catalog")({ component: Catalog });
 
@@ -49,6 +51,20 @@ function Catalog() {
   const [stud, setStud] = useState("Any");
   const [sort, setSort] = useState<"best"|"height"|"thick">("best");
 
+  // Per-m² cost lookup (where we have a quantity build-up in the shared library)
+  const costFor = (code: string): { perM2: number; materials: number; labour: number; pricedRatio: number } | null => {
+    const sys = findSystem(code);
+    if (!sys) return null;
+    const totals = scaledTotals(sys, 1, 1.05); // 1 m², 5 % waste — comparable across systems
+    const c = estimateCost(totals, 1, 1.05);
+    return {
+      perM2: c.perM2,
+      materials: c.materials,
+      labour: c.labour,
+      pricedRatio: c.totalLines > 0 ? c.pricedLines / c.totalLines : 0,
+    };
+  };
+
   const results = useMemo(() => {
     let r = allMatches.filter(m =>
       m.family === picked &&
@@ -60,6 +76,11 @@ function Catalog() {
     );
     if (sort === "height") r = [...r].sort((a,b) => b.height - a.height);
     if (sort === "thick")  r = [...r].sort((a,b) => a.thick  - b.thick);
+    if (sort === "price")  r = [...r].sort((a,b) => {
+      const ca = costFor(a.code)?.perM2 ?? Infinity;
+      const cb = costFor(b.code)?.perM2 ?? Infinity;
+      return ca - cb;
+    });
     return r;
   }, [picked, q, minH, minRw, minFire, maxThick, sort]);
 
@@ -190,6 +211,7 @@ function Catalog() {
                   <option value="best">Best match</option>
                   <option value="height">Tallest height</option>
                   <option value="thick">Thinnest build-up</option>
+                  <option value="price">Cheapest £/m²</option>
                 </select>
               </div>
               <span className="font-mono-num rounded-full bg-[var(--accent-500)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--accent-500)]">
