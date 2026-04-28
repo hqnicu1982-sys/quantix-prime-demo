@@ -27,6 +27,14 @@ import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as ProjectsFitzroviaRouteImport } from './routes/projects.fitzrovia'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
 import { Route as ProjectsFitzroviaIndexRouteImport } from './routes/projects.fitzrovia.index'
+import { Route as ProjectsFitzroviaTeamRouteImport } from './routes/projects.fitzrovia.team'
+import { Route as ProjectsFitzroviaSpecificationRouteImport } from './routes/projects.fitzrovia.specification'
+import { Route as ProjectsFitzroviaReportsRouteImport } from './routes/projects.fitzrovia.reports'
+import { Route as ProjectsFitzroviaPlannerRouteImport } from './routes/projects.fitzrovia.planner'
+import { Route as ProjectsFitzroviaLabourRouteImport } from './routes/projects.fitzrovia.labour'
+import { Route as ProjectsFitzroviaInvoicesRouteImport } from './routes/projects.fitzrovia.invoices'
+import { Route as ProjectsFitzroviaCostedBoqRouteImport } from './routes/projects.fitzrovia.costed-boq'
+import { Route as ProjectsFitzroviaCalloffsRouteImport } from './routes/projects.fitzrovia.calloffs'
 
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
@@ -118,6 +126,52 @@ const ProjectsFitzroviaIndexRoute = ProjectsFitzroviaIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProjectsFitzroviaRoute,
 } as any)
+const ProjectsFitzroviaTeamRoute = ProjectsFitzroviaTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => ProjectsFitzroviaRoute,
+} as any)
+const ProjectsFitzroviaSpecificationRoute =
+  ProjectsFitzroviaSpecificationRouteImport.update({
+    id: '/specification',
+    path: '/specification',
+    getParentRoute: () => ProjectsFitzroviaRoute,
+  } as any)
+const ProjectsFitzroviaReportsRoute =
+  ProjectsFitzroviaReportsRouteImport.update({
+    id: '/reports',
+    path: '/reports',
+    getParentRoute: () => ProjectsFitzroviaRoute,
+  } as any)
+const ProjectsFitzroviaPlannerRoute =
+  ProjectsFitzroviaPlannerRouteImport.update({
+    id: '/planner',
+    path: '/planner',
+    getParentRoute: () => ProjectsFitzroviaRoute,
+  } as any)
+const ProjectsFitzroviaLabourRoute = ProjectsFitzroviaLabourRouteImport.update({
+  id: '/labour',
+  path: '/labour',
+  getParentRoute: () => ProjectsFitzroviaRoute,
+} as any)
+const ProjectsFitzroviaInvoicesRoute =
+  ProjectsFitzroviaInvoicesRouteImport.update({
+    id: '/invoices',
+    path: '/invoices',
+    getParentRoute: () => ProjectsFitzroviaRoute,
+  } as any)
+const ProjectsFitzroviaCostedBoqRoute =
+  ProjectsFitzroviaCostedBoqRouteImport.update({
+    id: '/costed-boq',
+    path: '/costed-boq',
+    getParentRoute: () => ProjectsFitzroviaRoute,
+  } as any)
+const ProjectsFitzroviaCalloffsRoute =
+  ProjectsFitzroviaCalloffsRouteImport.update({
+    id: '/calloffs',
+    path: '/calloffs',
+    getParentRoute: () => ProjectsFitzroviaRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -137,6 +191,14 @@ export interface FileRoutesByFullPath {
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaRouteWithChildren
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/fitzrovia/calloffs': typeof ProjectsFitzroviaCalloffsRoute
+  '/projects/fitzrovia/costed-boq': typeof ProjectsFitzroviaCostedBoqRoute
+  '/projects/fitzrovia/invoices': typeof ProjectsFitzroviaInvoicesRoute
+  '/projects/fitzrovia/labour': typeof ProjectsFitzroviaLabourRoute
+  '/projects/fitzrovia/planner': typeof ProjectsFitzroviaPlannerRoute
+  '/projects/fitzrovia/reports': typeof ProjectsFitzroviaReportsRoute
+  '/projects/fitzrovia/specification': typeof ProjectsFitzroviaSpecificationRoute
+  '/projects/fitzrovia/team': typeof ProjectsFitzroviaTeamRoute
   '/projects/fitzrovia/': typeof ProjectsFitzroviaIndexRoute
 }
 export interface FileRoutesByTo {
@@ -155,6 +217,14 @@ export interface FileRoutesByTo {
   '/team': typeof TeamRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects': typeof ProjectsIndexRoute
+  '/projects/fitzrovia/calloffs': typeof ProjectsFitzroviaCalloffsRoute
+  '/projects/fitzrovia/costed-boq': typeof ProjectsFitzroviaCostedBoqRoute
+  '/projects/fitzrovia/invoices': typeof ProjectsFitzroviaInvoicesRoute
+  '/projects/fitzrovia/labour': typeof ProjectsFitzroviaLabourRoute
+  '/projects/fitzrovia/planner': typeof ProjectsFitzroviaPlannerRoute
+  '/projects/fitzrovia/reports': typeof ProjectsFitzroviaReportsRoute
+  '/projects/fitzrovia/specification': typeof ProjectsFitzroviaSpecificationRoute
+  '/projects/fitzrovia/team': typeof ProjectsFitzroviaTeamRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaIndexRoute
 }
 export interface FileRoutesById {
@@ -176,6 +246,14 @@ export interface FileRoutesById {
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaRouteWithChildren
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/fitzrovia/calloffs': typeof ProjectsFitzroviaCalloffsRoute
+  '/projects/fitzrovia/costed-boq': typeof ProjectsFitzroviaCostedBoqRoute
+  '/projects/fitzrovia/invoices': typeof ProjectsFitzroviaInvoicesRoute
+  '/projects/fitzrovia/labour': typeof ProjectsFitzroviaLabourRoute
+  '/projects/fitzrovia/planner': typeof ProjectsFitzroviaPlannerRoute
+  '/projects/fitzrovia/reports': typeof ProjectsFitzroviaReportsRoute
+  '/projects/fitzrovia/specification': typeof ProjectsFitzroviaSpecificationRoute
+  '/projects/fitzrovia/team': typeof ProjectsFitzroviaTeamRoute
   '/projects/fitzrovia/': typeof ProjectsFitzroviaIndexRoute
 }
 export interface FileRouteTypes {
@@ -198,6 +276,14 @@ export interface FileRouteTypes {
     | '/price-lists/upload'
     | '/projects/fitzrovia'
     | '/projects/'
+    | '/projects/fitzrovia/calloffs'
+    | '/projects/fitzrovia/costed-boq'
+    | '/projects/fitzrovia/invoices'
+    | '/projects/fitzrovia/labour'
+    | '/projects/fitzrovia/planner'
+    | '/projects/fitzrovia/reports'
+    | '/projects/fitzrovia/specification'
+    | '/projects/fitzrovia/team'
     | '/projects/fitzrovia/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -216,6 +302,14 @@ export interface FileRouteTypes {
     | '/team'
     | '/price-lists/upload'
     | '/projects'
+    | '/projects/fitzrovia/calloffs'
+    | '/projects/fitzrovia/costed-boq'
+    | '/projects/fitzrovia/invoices'
+    | '/projects/fitzrovia/labour'
+    | '/projects/fitzrovia/planner'
+    | '/projects/fitzrovia/reports'
+    | '/projects/fitzrovia/specification'
+    | '/projects/fitzrovia/team'
     | '/projects/fitzrovia'
   id:
     | '__root__'
@@ -236,6 +330,14 @@ export interface FileRouteTypes {
     | '/price-lists/upload'
     | '/projects/fitzrovia'
     | '/projects/'
+    | '/projects/fitzrovia/calloffs'
+    | '/projects/fitzrovia/costed-boq'
+    | '/projects/fitzrovia/invoices'
+    | '/projects/fitzrovia/labour'
+    | '/projects/fitzrovia/planner'
+    | '/projects/fitzrovia/reports'
+    | '/projects/fitzrovia/specification'
+    | '/projects/fitzrovia/team'
     | '/projects/fitzrovia/'
   fileRoutesById: FileRoutesById
 }
@@ -385,14 +487,86 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsFitzroviaIndexRouteImport
       parentRoute: typeof ProjectsFitzroviaRoute
     }
+    '/projects/fitzrovia/team': {
+      id: '/projects/fitzrovia/team'
+      path: '/team'
+      fullPath: '/projects/fitzrovia/team'
+      preLoaderRoute: typeof ProjectsFitzroviaTeamRouteImport
+      parentRoute: typeof ProjectsFitzroviaRoute
+    }
+    '/projects/fitzrovia/specification': {
+      id: '/projects/fitzrovia/specification'
+      path: '/specification'
+      fullPath: '/projects/fitzrovia/specification'
+      preLoaderRoute: typeof ProjectsFitzroviaSpecificationRouteImport
+      parentRoute: typeof ProjectsFitzroviaRoute
+    }
+    '/projects/fitzrovia/reports': {
+      id: '/projects/fitzrovia/reports'
+      path: '/reports'
+      fullPath: '/projects/fitzrovia/reports'
+      preLoaderRoute: typeof ProjectsFitzroviaReportsRouteImport
+      parentRoute: typeof ProjectsFitzroviaRoute
+    }
+    '/projects/fitzrovia/planner': {
+      id: '/projects/fitzrovia/planner'
+      path: '/planner'
+      fullPath: '/projects/fitzrovia/planner'
+      preLoaderRoute: typeof ProjectsFitzroviaPlannerRouteImport
+      parentRoute: typeof ProjectsFitzroviaRoute
+    }
+    '/projects/fitzrovia/labour': {
+      id: '/projects/fitzrovia/labour'
+      path: '/labour'
+      fullPath: '/projects/fitzrovia/labour'
+      preLoaderRoute: typeof ProjectsFitzroviaLabourRouteImport
+      parentRoute: typeof ProjectsFitzroviaRoute
+    }
+    '/projects/fitzrovia/invoices': {
+      id: '/projects/fitzrovia/invoices'
+      path: '/invoices'
+      fullPath: '/projects/fitzrovia/invoices'
+      preLoaderRoute: typeof ProjectsFitzroviaInvoicesRouteImport
+      parentRoute: typeof ProjectsFitzroviaRoute
+    }
+    '/projects/fitzrovia/costed-boq': {
+      id: '/projects/fitzrovia/costed-boq'
+      path: '/costed-boq'
+      fullPath: '/projects/fitzrovia/costed-boq'
+      preLoaderRoute: typeof ProjectsFitzroviaCostedBoqRouteImport
+      parentRoute: typeof ProjectsFitzroviaRoute
+    }
+    '/projects/fitzrovia/calloffs': {
+      id: '/projects/fitzrovia/calloffs'
+      path: '/calloffs'
+      fullPath: '/projects/fitzrovia/calloffs'
+      preLoaderRoute: typeof ProjectsFitzroviaCalloffsRouteImport
+      parentRoute: typeof ProjectsFitzroviaRoute
+    }
   }
 }
 
 interface ProjectsFitzroviaRouteChildren {
+  ProjectsFitzroviaCalloffsRoute: typeof ProjectsFitzroviaCalloffsRoute
+  ProjectsFitzroviaCostedBoqRoute: typeof ProjectsFitzroviaCostedBoqRoute
+  ProjectsFitzroviaInvoicesRoute: typeof ProjectsFitzroviaInvoicesRoute
+  ProjectsFitzroviaLabourRoute: typeof ProjectsFitzroviaLabourRoute
+  ProjectsFitzroviaPlannerRoute: typeof ProjectsFitzroviaPlannerRoute
+  ProjectsFitzroviaReportsRoute: typeof ProjectsFitzroviaReportsRoute
+  ProjectsFitzroviaSpecificationRoute: typeof ProjectsFitzroviaSpecificationRoute
+  ProjectsFitzroviaTeamRoute: typeof ProjectsFitzroviaTeamRoute
   ProjectsFitzroviaIndexRoute: typeof ProjectsFitzroviaIndexRoute
 }
 
 const ProjectsFitzroviaRouteChildren: ProjectsFitzroviaRouteChildren = {
+  ProjectsFitzroviaCalloffsRoute: ProjectsFitzroviaCalloffsRoute,
+  ProjectsFitzroviaCostedBoqRoute: ProjectsFitzroviaCostedBoqRoute,
+  ProjectsFitzroviaInvoicesRoute: ProjectsFitzroviaInvoicesRoute,
+  ProjectsFitzroviaLabourRoute: ProjectsFitzroviaLabourRoute,
+  ProjectsFitzroviaPlannerRoute: ProjectsFitzroviaPlannerRoute,
+  ProjectsFitzroviaReportsRoute: ProjectsFitzroviaReportsRoute,
+  ProjectsFitzroviaSpecificationRoute: ProjectsFitzroviaSpecificationRoute,
+  ProjectsFitzroviaTeamRoute: ProjectsFitzroviaTeamRoute,
   ProjectsFitzroviaIndexRoute: ProjectsFitzroviaIndexRoute,
 }
 

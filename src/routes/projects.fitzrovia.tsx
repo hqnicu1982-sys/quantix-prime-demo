@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/projects/fitzrovia")({ component: ProjectLayout });
 
-const tabs = [
+type Tab = { to: string; label: string; exact?: boolean; badge?: number };
+const tabs: Tab[] = [
   { to: "/projects/fitzrovia", label: "Overview", exact: true },
   { to: "/projects/fitzrovia/specification", label: "Specification" },
   { to: "/projects/fitzrovia/costed-boq", label: "Costed BoQ" },
@@ -17,7 +18,7 @@ const tabs = [
   { to: "/projects/fitzrovia/labour", label: "Labour" },
   { to: "/projects/fitzrovia/reports", label: "Reports" },
   { to: "/projects/fitzrovia/team", label: "Team" },
-] as const;
+];
 
 function ProjectLayout() {
   const location = useLocation();
@@ -50,7 +51,7 @@ function ProjectLayout() {
             return (
               <Link
                 key={t.to}
-                to={t.to}
+                to={t.to as "/projects/fitzrovia"}
                 className={cn(
                   "-mb-px whitespace-nowrap border-b-2 py-2.5 transition-colors",
                   active
@@ -59,7 +60,7 @@ function ProjectLayout() {
                 )}
               >
                 {t.label}
-                {"badge" in t && t.badge && (
+                {t.badge && (
                   <span className="ml-1.5 rounded-full bg-[var(--accent-500)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-500)]">
                     {t.badge}
                   </span>
