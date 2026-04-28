@@ -17,7 +17,13 @@ export type LabourLogEntry = {
   work: string;
   late?: boolean;
   createdAt: number;
+  status?: LabourLogStatus; // approval workflow — defaults to 'submitted'
+  approvedBy?: string;       // member id of approver
+  approvedAt?: number;       // ms timestamp
+  rejectionReason?: string;
 };
+
+export type LabourLogStatus = "submitted" | "approved" | "rejected";
 
 const KEY = "qp-labour-log";
 const SEED_KEY = "qp-labour-log-seeded-v1";
@@ -79,6 +85,9 @@ function ensureSeed() {
     ...s,
     id: `log-seed-${i}`,
     createdAt: Date.now() - i * 1000,
+    status: "approved",
+    approvedBy: "sm",
+    approvedAt: Date.now() - i * 1000,
   }));
   write(list);
   localStorage.setItem(SEED_KEY, "1");
@@ -98,14 +107,24 @@ export function getLabourLogsForDate(projectId: string, date: string): LabourLog
 
 export function getActualHours(projectId: string, memberId: string): number {
   return getLabourLogs(projectId)
-    .filter((e) => e.memberId === memberId)
+    .filter((e) => e.memberId === memberId && (e.status ?? "submitted") === "approved")
     .reduce((s, e) => s + e.hours, 0);
 }
 
 export function getActualHoursForTask(projectId: string, taskId: string): number {
   return getLabourLogs(projectId)
-    .filter((e) => e.taskId === taskId)
+    .filter((e) => e.taskId === taskId && (e.status ?? "submitted") === "approved")
     .reduce((s, e) => s + e.hours, 0);
+}
+
+export function getPendingHours(projectId: string, memberId?: string): number {
+  return getLabourLogs(projectId)
+    .filter((e) => (e.status ?? "submitted") === "submitted" && (!memberId || e.memberId === memberId))
+    .reduce((s, e) => s + e.hours, 0);
+}
+
+export function getPendingLogs(projectId: string): LabourLogEntry[] {
+  return getLabourLogs(projectId).filter((e) => (e.status ?? "submitted") === "submitted");
 }
 
 export function getLastLogDate(projectId: string, memberId: string): string | undefined {
@@ -125,6 +144,7 @@ export function addLabourLog(
   const next: LabourLogEntry = {
     ...entry,
     hours,
+    status: entry.status ?? "submitted",
     id: uid(),
     createdAt: Date.now(),
   };
@@ -134,6 +154,22 @@ export function addLabourLog(
 
 export function deleteLabourLog(id: string) {
   write(read().filter((e) => e.id !== id));
+}
+
+export function approveLabourLog(id: string, approverId: string) {
+  write(
+    read().map((e) =>
+      e.id === id ? { ...e, status: "approved", approvedBy: approverId, approvedAt: Date.now(), rejectionReason: undefined } : e,
+    ),
+  );
+}
+
+export function rejectLabourLog(id: string, approverId: string, reason?: string) {
+  write(
+    read().map((e) =>
+      e.id === id ? { ...e, status: "rejected", approvedBy: approverId, approvedAt: Date.now(), rejectionReason: reason } : e,
+    ),
+  );
 }
 
 // ---------- React hooks ----------

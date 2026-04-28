@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ExternalLink, AlertTriangle, CheckCircle2, CircleDollarSign } from "lucide-react";
+import { useInvoices, useInvoiceTotals, markInvoicePaid } from "@/lib/invoiceRegistry";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/projects/$projectId/invoices")({ component: InvoicesPage });
 
@@ -14,14 +16,80 @@ const invoices = [
 ];
 
 function InvoicesPage() {
+  const { projectId } = Route.useParams();
+  const registry = useInvoices(projectId);
+  const totals = useInvoiceTotals(projectId);
+  const today = new Date().toISOString().slice(0, 10);
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Invoices MTD" value="14" delta="£68.4k total" />
-        <Kpi label="Auto-matched" value="79%" delta="11 of 14" tone="success" />
-        <Kpi label="Variances" value="2" delta={`£${(1247 + 82).toLocaleString()} pending`} tone="warning" />
-        <Kpi label="Paid" value="£42.8k" delta="62% of MTD" tone="success" />
+        <Kpi label="Receivables" value={`£${(totals.receivables / 1000).toFixed(0)}k`} delta={totals.overdueReceivable > 0 ? `£${(totals.overdueReceivable / 1000).toFixed(0)}k overdue` : "all current"} tone={totals.overdueReceivable > 0 ? "warning" : "success"} />
+        <Kpi label="Payables" value={`£${(totals.payables / 1000).toFixed(0)}k`} delta={totals.overduePayable > 0 ? `£${(totals.overduePayable / 1000).toFixed(0)}k overdue` : "all current"} tone={totals.overduePayable > 0 ? "danger" : "neutral"} />
+        <Kpi label="Net position" value={`£${(totals.net / 1000).toFixed(0)}k`} delta={totals.net >= 0 ? "positive" : "negative"} tone={totals.net >= 0 ? "success" : "danger"} />
+        <Kpi label="Paid out MTD" value={`£${(totals.paidOut / 1000).toFixed(0)}k`} delta={`£${(totals.paidIn / 1000).toFixed(0)}k received`} />
       </div>
+
+      <Card>
+        <CardHead
+          title="Invoice ledger"
+          subtitle="Live receivables & payables · feeds the financial dashboard"
+        />
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead className="bg-[var(--ink-50)] text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+              <tr>
+                <th className="px-4 py-2.5 text-left font-semibold">Direction</th>
+                <th className="px-4 py-2.5 text-left font-semibold">Counterparty</th>
+                <th className="px-4 py-2.5 text-left font-semibold">Reference</th>
+                <th className="px-4 py-2.5 text-left font-semibold">Issued</th>
+                <th className="px-4 py-2.5 text-left font-semibold">Due</th>
+                <th className="px-4 py-2.5 text-right font-semibold">Amount</th>
+                <th className="px-4 py-2.5 text-left font-semibold">Status</th>
+                <th className="px-4 py-2.5" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--ink-200)]">
+              {registry.length === 0 && (
+                <tr><td colSpan={8} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">No invoices in the ledger yet.</td></tr>
+              )}
+              {registry.map((inv) => {
+                const overdue = (inv.status === "outstanding") && inv.due < today;
+                return (
+                  <tr key={inv.id} className="hover:bg-[var(--ink-50)]">
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold ${inv.direction === "receivable" ? "bg-[var(--green-600)]/10 text-[var(--green-600)]" : "bg-[var(--accent-500)]/10 text-[var(--accent-500)]"}`}>
+                        <CircleDollarSign className="h-3 w-3" />
+                        {inv.direction === "receivable" ? "In" : "Out"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-semibold">{inv.counterparty}</td>
+                    <td className="px-4 py-3 font-mono-num text-[12px] text-[var(--ink-700)]">{inv.reference}</td>
+                    <td className="px-4 py-3 text-[12px] text-[var(--ink-500)]">{inv.issued}</td>
+                    <td className={`px-4 py-3 text-[12px] ${overdue ? "font-semibold text-[var(--red-500)]" : "text-[var(--ink-500)]"}`}>{inv.due}</td>
+                    <td className="px-4 py-3 text-right font-mono-num font-semibold">£{inv.amount.toLocaleString()}</td>
+                    <td className="px-4 py-3">
+                      {inv.status === "paid" ? (
+                        <span className="inline-flex items-center gap-1 rounded bg-[var(--green-600)]/10 px-2 py-0.5 text-[10.5px] font-semibold text-[var(--green-600)]"><CheckCircle2 className="h-3 w-3" /> Paid</span>
+                      ) : overdue ? (
+                        <span className="inline-flex items-center gap-1 rounded bg-[var(--red-500)]/10 px-2 py-0.5 text-[10.5px] font-semibold text-[var(--red-500)]"><AlertTriangle className="h-3 w-3" /> Overdue</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded bg-[var(--ink-50)] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--ink-500)]">Outstanding</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {inv.status !== "paid" && (
+                        <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => { markInvoicePaid(inv.id); toast.success(`${inv.reference} marked paid`); }}>
+                          Mark paid
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       <Card>
         <CardHead

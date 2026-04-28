@@ -3,11 +3,11 @@ import { Section, Card, CardHead } from "@/components/Primitives";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { dailyReport, team, currentUser } from "@/lib/mockData";
-import { Download, Send, Cloud, Clock, Trash2 } from "lucide-react";
+import { Download, Send, Cloud, Clock, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { ProjectBanner } from "@/components/ProjectBanner";
 import { useProject } from "@/lib/ProjectContext";
-import { useLabourLogsForDate, deleteLabourLog } from "@/lib/laborLog";
+import { useLabourLogsForDate, deleteLabourLog, approveLabourLog, rejectLabourLog } from "@/lib/laborLog";
 import { useProjectCrews } from "@/lib/labour";
 import { LogLabourDialog } from "@/components/daily-report/LogLabourDialog";
 
@@ -21,12 +21,16 @@ function DailyReport() {
   const today = new Date().toISOString().slice(0, 10);
   const logs = useLabourLogsForDate(current.id, today);
   const crews = useProjectCrews(current.id);
-  const canDelete = currentUser.tier === "Admin" || currentUser.tier === "Pro Control";
-  const totalHours = logs.reduce((s, l) => s + l.hours, 0);
-  const totalCost = logs.reduce((s, l) => {
+  const canApprove = currentUser.tier === "Admin" || currentUser.tier === "Pro Control";
+  const canDelete = canApprove;
+  const approvedLogs = logs.filter((l) => (l.status ?? "submitted") === "approved");
+  const pendingLogs = logs.filter((l) => (l.status ?? "submitted") === "submitted");
+  const totalHours = approvedLogs.reduce((s, l) => s + l.hours, 0);
+  const totalCost = approvedLogs.reduce((s, l) => {
     const crew = crews.find((c) => c.assignment.memberId === l.memberId);
     return s + (crew ? l.hours * crew.rate : 0);
   }, 0);
+  const pendingHours = pendingLogs.reduce((s, l) => s + l.hours, 0);
 
   return (
     <Section
@@ -57,7 +61,7 @@ function DailyReport() {
       <Card>
         <CardHead
           title="Labour"
-          subtitle={`${logs.length} entries · ${totalHours.toFixed(1)}h · £${totalCost.toFixed(0)}`}
+          subtitle={`${approvedLogs.length} approved · ${totalHours.toFixed(1)}h · £${totalCost.toFixed(0)}${pendingLogs.length ? ` · ${pendingLogs.length} pending (${pendingHours.toFixed(1)}h)` : ""}`}
           right={<LogLabourDialog projectId={current.id} date={today} />}
         />
         <div className="overflow-x-auto">
@@ -70,13 +74,14 @@ function DailyReport() {
                 <th className="px-3 py-2.5 text-right">Hours</th>
                 <th className="px-3 py-2.5 text-right">Cost</th>
                 <th className="px-3 py-2.5">Work</th>
+                <th className="px-3 py-2.5">Status</th>
                 {canDelete && <th className="px-3 py-2.5" />}
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--ink-200)]">
               {logs.length === 0 ? (
                 <tr>
-                  <td colSpan={canDelete ? 7 : 6} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">
+                  <td colSpan={canDelete ? 8 : 7} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">
                     No hours logged today. Click <strong>Log labour</strong> to add an entry.
                   </td>
                 </tr>
@@ -85,6 +90,7 @@ function DailyReport() {
                   const crew = crews.find((c) => c.assignment.memberId === l.memberId);
                   const member = team.find((m) => m.id === l.memberId);
                   const cost = crew ? l.hours * crew.rate : 0;
+                  const status = l.status ?? "submitted";
                   return (
                     <tr key={l.id}>
                       <td className="px-4 py-2.5 font-medium">
@@ -103,6 +109,28 @@ function DailyReport() {
                         {l.work}
                         {l.taskId && (
                           <span className="ml-1.5 rounded bg-[var(--ink-50)] px-1.5 py-0.5 font-mono text-[10.5px] text-[var(--ink-500)]">{l.taskId}</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        {status === "approved" ? (
+                          <StatusBadge tone="success">Approved</StatusBadge>
+                        ) : status === "rejected" ? (
+                          <StatusBadge tone="danger">Rejected</StatusBadge>
+                        ) : canApprove ? (
+                          <div className="flex gap-1">
+                            <button
+                              className="rounded border border-[var(--green-600)]/30 bg-[var(--green-600)]/10 p-1 text-[var(--green-600)] hover:bg-[var(--green-600)]/20"
+                              onClick={() => { approveLabourLog(l.id, currentUser.id); toast.success("Hours approved", { description: `${l.hours}h · ${member?.name ?? l.memberId}` }); }}
+                              aria-label="Approve"
+                            ><Check className="h-3 w-3" /></button>
+                            <button
+                              className="rounded border border-[var(--red-500)]/30 bg-[var(--red-500)]/10 p-1 text-[var(--red-500)] hover:bg-[var(--red-500)]/20"
+                              onClick={() => { rejectLabourLog(l.id, currentUser.id); toast.error("Hours rejected"); }}
+                              aria-label="Reject"
+                            ><X className="h-3 w-3" /></button>
+                          </div>
+                        ) : (
+                          <StatusBadge tone="warning">Pending</StatusBadge>
                         )}
                       </td>
                       {canDelete && (

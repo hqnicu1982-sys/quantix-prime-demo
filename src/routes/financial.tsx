@@ -14,6 +14,7 @@ import { useProject } from "@/lib/ProjectContext";
 import { useProjectData } from "@/lib/projectData";
 import { exportProjectPack } from "@/lib/exportProjectPack";
 import { FileDown } from "lucide-react";
+import { useInvoiceTotals } from "@/lib/invoiceRegistry";
 
 export const Route = createFileRoute("/financial")({
   head: () => ({ meta: [{ title: "Financial Dashboard — Quantix Prime" }] }),
@@ -31,6 +32,7 @@ function Financial() {
   const [period, setPeriod] = useState<"This month" | "Last month" | "QTD" | "YTD">("This month");
   const { current } = useProject();
   const projectData = useProjectData(current.id);
+  const invoiceTotals = useInvoiceTotals(current.id);
   const cyclePeriod = () => {
     const opts = ["This month", "Last month", "QTD", "YTD"] as const;
     const next = opts[(opts.indexOf(period) + 1) % opts.length];
@@ -114,9 +116,24 @@ function Financial() {
               </ResponsiveContainer>
             </div>
             <div className="grid grid-cols-3 divide-x divide-[var(--ink-200)] border-t border-[var(--ink-200)] text-center">
-              <div className="px-2 py-3"><p className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">Receivables</p><p className="font-mono mt-1 text-[14px] font-semibold tabular-nums">£284k</p></div>
-              <div className="px-2 py-3"><p className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">Payables</p><p className="font-mono mt-1 text-[14px] font-semibold tabular-nums">£156k</p></div>
-              <div className="px-2 py-3"><p className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">Net</p><p className="font-mono mt-1 text-[14px] font-semibold tabular-nums text-[var(--green-600)]">£128k</p></div>
+              <div className="px-2 py-3">
+                <p className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">Receivables</p>
+                <p className="font-mono mt-1 text-[14px] font-semibold tabular-nums">£{(invoiceTotals.receivables / 1000).toFixed(0)}k</p>
+                {invoiceTotals.overdueReceivable > 0 && (
+                  <p className="mt-0.5 text-[10px] text-[var(--red-500)]">£{(invoiceTotals.overdueReceivable / 1000).toFixed(0)}k overdue</p>
+                )}
+              </div>
+              <div className="px-2 py-3">
+                <p className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">Payables</p>
+                <p className="font-mono mt-1 text-[14px] font-semibold tabular-nums">£{(invoiceTotals.payables / 1000).toFixed(0)}k</p>
+                {invoiceTotals.overduePayable > 0 && (
+                  <p className="mt-0.5 text-[10px] text-[var(--red-500)]">£{(invoiceTotals.overduePayable / 1000).toFixed(0)}k overdue</p>
+                )}
+              </div>
+              <div className="px-2 py-3">
+                <p className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">Net</p>
+                <p className={`font-mono mt-1 text-[14px] font-semibold tabular-nums ${invoiceTotals.net >= 0 ? "text-[var(--green-600)]" : "text-[var(--red-500)]"}`}>£{(invoiceTotals.net / 1000).toFixed(0)}k</p>
+              </div>
             </div>
           </Card>
 
