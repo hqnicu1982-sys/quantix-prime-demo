@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { effectiveRate, getPriceWorkRate } from "./labour";
 
 // ============================================================================
 // Labour Log — persistent record of hours worked per member per day.
@@ -21,9 +22,36 @@ export type LabourLogEntry = {
   approvedBy?: string;       // member id of approver
   approvedAt?: number;       // ms timestamp
   rejectionReason?: string;
+  // Pay mode — defaults to "hourly". When "pw", cost is driven by PW rate × qty
+  // rather than hours × £/h. Hours remain attendance info.
+  payMode?: "hourly" | "pw";
+  pwRateId?: string;
+  pwQty?: number;
+  pwAmount?: number; // snapshot at write time
 };
 
 export type LabourLogStatus = "submitted" | "approved" | "rejected";
+
+// ---------- cost helpers ----------
+/**
+ * Returns the cost (in £) of a single labour log entry, respecting its pay mode.
+ * - hourly (default): hours × effectiveRate(memberId, projectId)
+ * - pw: snapshot pwAmount, or recomputed qty × rate from the live PW catalog
+ */
+export function computeEntryCost(entry: LabourLogEntry): number {
+  if (entry.payMode === "pw") {
+    if (typeof entry.pwAmount === "number") return entry.pwAmount;
+    if (entry.pwRateId) {
+      const r = getPriceWorkRate(entry.projectId, entry.pwRateId);
+      if (r) {
+        const qty = entry.pwQty ?? (r.unit === "lump" ? 1 : 0);
+        return qty * r.rate;
+      }
+    }
+    return 0;
+  }
+  return entry.hours * effectiveRate(entry.memberId, entry.projectId);
+}
 
 const KEY = "qp-labour-log";
 const SEED_KEY = "qp-labour-log-seeded-v1";
