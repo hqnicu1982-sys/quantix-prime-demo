@@ -1,10 +1,52 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { fitzrovia, fitzroviaSystems, fitzroviaHealth, fitzroviaActivity, fmtMoney } from "@/lib/mockData";
+import { useProject } from "@/lib/ProjectContext";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
 
 function Overview() {
+  const { projectId } = Route.useParams();
+  const { all } = useProject();
+  const project = all.find((p) => p.id === projectId);
+
+  // Fitzrovia uses curated mock data; other projects show generic project KPIs derived from the project record.
+  if (projectId !== "fitzrovia") {
+    if (!project) return null;
+    const spent = project.contractValue * (project.progress / 100) * 0.85;
+    return (
+      <div className="space-y-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Kpi label="Contract" value={fmtMoney(project.contractValue, { compact: true })} />
+          <Kpi label="Spent" value={fmtMoney(spent, { compact: true })} delta={`${project.progress}% complete`} />
+          <Kpi label="Forecast margin" value={`${project.margin.toFixed(1)}%`} tone={project.margin >= 18 ? "success" : project.margin >= 12 ? "warning" : "danger"} />
+          <Kpi label="Progress" value={`${project.progress}%`} />
+        </div>
+        <Card>
+          <CardHead title="Project setup" subtitle="Add specification, then build a costed BoQ" />
+          <div className="space-y-3 p-5 text-[13px] text-[var(--ink-700)]">
+            <p>This project has no curated demo data yet. Use the tabs above to:</p>
+            <ul className="ml-4 list-disc space-y-1 text-[var(--ink-500)]">
+              <li>Upload <strong className="text-[var(--ink-900)]">Specification</strong> documents</li>
+              <li>Build a <strong className="text-[var(--ink-900)]">Costed BoQ</strong> from the calculator</li>
+              <li>Create a <strong className="text-[var(--ink-900)]">Planner</strong> programme</li>
+              <li>Invite your team and set <strong className="text-[var(--ink-900)]">Labour</strong> rates</li>
+            </ul>
+          </div>
+        </Card>
+        <div className="flex justify-center">
+          <Link
+            to="/projects/$projectId/costed-boq"
+            params={{ projectId }}
+            className="text-[12.5px] font-medium text-[var(--accent-500)] hover:underline"
+          >
+            Open Costed BoQ →
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -106,7 +148,13 @@ function Overview() {
       </div>
 
       <div className="flex justify-center">
-        <Link to="/projects/fitzrovia/costed-boq" className="text-[12.5px] font-medium text-[var(--accent-500)] hover:underline">Open Costed BoQ →</Link>
+        <Link
+          to="/projects/$projectId/costed-boq"
+          params={{ projectId }}
+          className="text-[12.5px] font-medium text-[var(--accent-500)] hover:underline"
+        >
+          Open Costed BoQ →
+        </Link>
       </div>
     </div>
   );
