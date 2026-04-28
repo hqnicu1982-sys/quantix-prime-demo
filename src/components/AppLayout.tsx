@@ -80,11 +80,19 @@ function PersonaToggle() {
 
 function NavLinkItem({ item, onClick }: { item: NavItem; onClick?: () => void }) {
   const location = useLocation();
-  const active = location.pathname === item.to;
+  // resolve dynamic segments for active comparison
+  const resolvedTo = item.params
+    ? Object.entries(item.params).reduce(
+        (acc, [k, v]) => acc.replace(`$${k}`, v),
+        item.to,
+      )
+    : item.to;
+  const active = location.pathname === resolvedTo;
   const Icon = item.icon;
   return (
     <Link
-      to={item.to}
+      to={item.to as "/"}
+      params={item.params as never}
       onClick={onClick}
       className={cn(
         "group relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",
