@@ -22,6 +22,7 @@ import { useProject } from "@/lib/ProjectContext";
 import { addSystemToBoQ } from "@/lib/projectData";
 import { useBespokeSystems, buildUpToMaterials, type BespokeSystem, type BespokeBuildUp } from "@/lib/bespokeSystems";
 import { BespokeBuildUpDialog } from "@/components/calculator/BespokeBuildUpDialog";
+import { estimateCost, fmtMoneyShort } from "@/lib/calculatorPricing";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
