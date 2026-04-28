@@ -15,6 +15,7 @@ const tabs: Tab[] = [
   { to: "/projects/fitzrovia/planner", label: "Planner" },
   { to: "/projects/fitzrovia/calloffs", label: "Call-offs", badge: 3 },
   { to: "/projects/fitzrovia/invoices", label: "Invoices" },
+  { to: "/projects/fitzrovia/variations", label: "Variations" },
   { to: "/projects/fitzrovia/labour", label: "Labour" },
   { to: "/projects/fitzrovia/reports", label: "Reports" },
   { to: "/projects/fitzrovia/team", label: "Team" },
