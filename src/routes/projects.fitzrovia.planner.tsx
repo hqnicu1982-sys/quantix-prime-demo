@@ -1,80 +1,188 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Filter } from "lucide-react";
+import {
+  computeKpis,
+  computeReadiness,
+  PLANNER_TODAY,
+  useProjectTasks,
+  type PlannerTask,
+  type TaskStatus,
+} from "@/lib/planner";
+import { GanttChart } from "@/components/planner/GanttChart";
+import { TaskDetailDialog } from "@/components/planner/TaskDetailDialog";
+import { NewTaskDialog } from "@/components/planner/NewTaskDialog";
+import { BlockersPanel } from "@/components/planner/BlockersPanel";
+import { useProjectVariations } from "@/lib/variations";
 
-export const Route = createFileRoute("/projects/fitzrovia/planner")({ component: PlannerPage });
+export const Route = createFileRoute("/projects/fitzrovia/planner")({
+  component: PlannerPage,
+});
 
-const tasks = [
-  { id: "T-101", level: "L4", area: "Bedroom partitions", crew: "Marcin's Crew", start: "08 Apr", end: "24 Apr", progress: 76, status: "behind" as const },
-  { id: "T-102", level: "L4", area: "Corridor robust walls", crew: "Marcin's Crew", start: "20 Apr", end: "02 May", progress: 35, status: "on-track" as const },
-  { id: "T-103", level: "L5", area: "Bedroom partitions", crew: "Paweł's Crew", start: "22 Apr", end: "10 May", progress: 12, status: "starting" as const },
-  { id: "T-104", level: "L5", area: "Ceiling MF grid", crew: "Andy's Tapers", start: "28 Apr", end: "15 May", progress: 0, status: "scheduled" as const },
-  { id: "T-105", level: "L6", area: "Shaft walls", crew: "Subcontractor TBC", start: "05 May", end: "20 May", progress: 0, status: "blocked" as const },
-  { id: "T-106", level: "All", area: "Tape & joint", crew: "Andy's Tapers", start: "12 May", end: "08 Jun", progress: 0, status: "scheduled" as const },
+// Mock call-off statuses (mirrors src/routes/projects.fitzrovia.calloffs.tsx)
+const CALL_OFFS: { id: string; status: "draft" | "pending" | "approved" | "delivered" }[] = [
+  { id: "CO-247", status: "approved" },
+  { id: "CO-246", status: "delivered" },
+  { id: "CO-245", status: "delivered" },
+  { id: "CO-248", status: "draft" },
+  { id: "CO-249", status: "pending" },
 ];
 
-const statusStyle = {
-  "on-track": "bg-[var(--green-600)]/10 text-[var(--green-600)]",
-  "behind": "bg-[var(--red-500)]/10 text-[var(--red-500)]",
-  "starting": "bg-[var(--accent-500)]/10 text-[var(--accent-500)]",
-  "scheduled": "bg-[var(--ink-50)] text-[var(--ink-500)]",
-  "blocked": "bg-[var(--amber-500)]/10 text-[var(--amber-500)]",
-} as const;
-
 function PlannerPage() {
+  const PID = "fitzrovia";
+  const tasks = useProjectTasks(PID);
+  const variations = useProjectVariations(PID);
+  const approvedVariationIds = variations
+    .filter((v) => v.status === "approved")
+    .map((v) => v.id);
+
+  const [zoom, setZoom] = useState<"day" | "week" | "month">("day");
+  const [statusFilter, setStatusFilter] = useState<"all" | TaskStatus>("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const filtered = useMemo(
+    () => (statusFilter === "all" ? tasks : tasks.filter((t) => t.status === statusFilter)),
+    [tasks, statusFilter],
+  );
+
+  const kpis = useMemo(() => computeKpis(tasks), [tasks]);
+  const readyCount = useMemo(
+    () =>
+      tasks.filter((t) => {
+        if (t.status === "done") return false;
+        const r = computeReadiness(t, tasks, {
+          callOffs: CALL_OFFS,
+          approvedVariationIds,
+        });
+        return r.ready;
+      }).length,
+    [tasks, approvedVariationIds],
+  );
+
+  const blockedIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const t of tasks) {
+      const r = computeReadiness(t, tasks, { callOffs: CALL_OFFS, approvedVariationIds });
+      if (!r.ready) s.add(t.id);
+    }
+    return s;
+  }, [tasks, approvedVariationIds]);
+
+  const selected: PlannerTask | null = selectedId
+    ? tasks.find((t) => t.id === selectedId) ?? null
+    : null;
+
+  const varianceLabel =
+    kpis.varianceDays > 0
+      ? `+${kpis.varianceDays} d ahead`
+      : kpis.varianceDays < 0
+        ? `${kpis.varianceDays} d behind`
+        : "on baseline";
+
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Programme status" value="+3 d" delta="ahead of baseline" tone="success" trend="up" />
-        <Kpi label="Active tasks" value="6" delta="2 starting this week" />
-        <Kpi label="Crews on site" value="4" delta="22 operatives" />
-        <Kpi label="Blocked" value="1" delta="L6 shaft sub TBC" tone="warning" />
+        <Kpi
+          label="Programme status"
+          value={varianceLabel}
+          delta={`${kpis.total} tasks total`}
+          tone={kpis.varianceDays >= 0 ? "success" : "danger"}
+          trend={kpis.varianceDays >= 0 ? "up" : "down"}
+        />
+        <Kpi
+          label="Active tasks"
+          value={String(kpis.active)}
+          delta={`${kpis.startingThisWeek} starting this week`}
+        />
+        <Kpi
+          label="Crews on site"
+          value={String(kpis.crewsOnSite)}
+          delta={`anchor ${PLANNER_TODAY.toLocaleDateString("en-GB")}`}
+        />
+        <Kpi
+          label="Ready to start"
+          value={`${readyCount}/${tasks.length - kpis.done}`}
+          delta={`${blockedIds.size} blocked`}
+          tone={blockedIds.size > 0 ? "warning" : "success"}
+        />
       </div>
 
       <Card>
         <CardHead
-          title="Programme — next 8 weeks"
-          subtitle="Tasks linked to BoQ scope and crew assignment"
-          right={<Button size="sm" variant="outline" asChild><Link to="/planner">Full planner <ExternalLink className="ml-1.5 h-3.5 w-3.5" /></Link></Button>}
+          title="Programme — interactive Gantt"
+          subtitle="Drag bars to move · drag edges to resize · click for details"
+          right={
+            <div className="flex items-center gap-2">
+              <Filter className="h-3.5 w-3.5 text-[var(--ink-500)]" />
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
+              >
+                <SelectTrigger className="h-8 w-[130px] text-[12px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="starting">Starting</SelectItem>
+                  <SelectItem value="on-track">On track</SelectItem>
+                  <SelectItem value="behind">Behind</SelectItem>
+                  <SelectItem value="blocked">Blocked</SelectItem>
+                  <SelectItem value="done">Done</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex rounded-md border border-[var(--ink-200)] p-0.5">
+                {(["day", "week", "month"] as const).map((z) => (
+                  <Button
+                    key={z}
+                    variant={zoom === z ? "default" : "ghost"}
+                    size="sm"
+                    className="h-6 px-2 text-[11px] capitalize"
+                    onClick={() => setZoom(z)}
+                  >
+                    {z}
+                  </Button>
+                ))}
+              </div>
+              <NewTaskDialog projectId={PID} />
+            </div>
+          }
         />
-        <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
-            <thead className="bg-[var(--ink-50)] text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
-              <tr>
-                <th className="px-4 py-2.5 text-left font-semibold">Task</th>
-                <th className="px-4 py-2.5 text-left font-semibold">Level</th>
-                <th className="px-4 py-2.5 text-left font-semibold">Crew</th>
-                <th className="px-4 py-2.5 text-left font-semibold">Window</th>
-                <th className="px-4 py-2.5 text-left font-semibold">Progress</th>
-                <th className="px-4 py-2.5 text-left font-semibold">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--ink-200)]">
-              {tasks.map((t) => (
-                <tr key={t.id} className="hover:bg-[var(--ink-50)]">
-                  <td className="px-4 py-3">
-                    <p className="font-semibold text-[var(--ink-900)]">{t.area}</p>
-                    <p className="font-mono-num text-[11px] text-[var(--ink-500)]">{t.id}</p>
-                  </td>
-                  <td className="px-4 py-3"><span className="rounded bg-[var(--ink-50)] px-2 py-0.5 text-[11px] font-semibold">{t.level}</span></td>
-                  <td className="px-4 py-3 text-[var(--ink-700)]">{t.crew}</td>
-                  <td className="px-4 py-3 text-[12px] text-[var(--ink-500)]">{t.start} → {t.end}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-[var(--ink-50)]">
-                        <div className={`h-full ${t.status === "behind" ? "bg-[var(--red-500)]" : "bg-[var(--accent-500)]"}`} style={{ width: `${t.progress}%` }} />
-                      </div>
-                      <span className="font-mono-num text-[11.5px] text-[var(--ink-500)]">{t.progress}%</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3"><span className={`rounded px-2 py-0.5 text-[10.5px] font-semibold capitalize ${statusStyle[t.status]}`}>{t.status.replace("-", " ")}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <GanttChart
+          projectId={PID}
+          tasks={filtered}
+          zoom={zoom}
+          blockedIds={blockedIds}
+          onSelectTask={setSelectedId}
+        />
       </Card>
+
+      <BlockersPanel
+        projectId={PID}
+        tasks={tasks}
+        callOffs={CALL_OFFS}
+        approvedVariationIds={approvedVariationIds}
+        onSelectTask={setSelectedId}
+      />
+
+      <TaskDetailDialog
+        projectId={PID}
+        task={selected}
+        allTasks={tasks}
+        open={!!selected}
+        onOpenChange={(o) => !o && setSelectedId(null)}
+        callOffs={CALL_OFFS}
+        approvedVariationIds={approvedVariationIds}
+      />
     </div>
   );
 }
