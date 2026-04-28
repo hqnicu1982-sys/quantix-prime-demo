@@ -7,6 +7,7 @@ import { FileText, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { InviteMemberDialog } from "@/components/team/InviteMemberDialog";
+import { PermissionMatrix } from "@/components/team/PermissionMatrix";
 import { useInvites, useMemberRates, getMemberRate, removeInvite } from "@/lib/labour";
 
 export const Route = createFileRoute("/team")({ component: Team });
