@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Calendar, Package, ClipboardList, FileSpreadsheet, Plug, Users2,
   Menu, X, Bell, Search, Settings, HardHat, LineChart, Check, FolderKanban, Library,
   Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Hammer, Sun, Moon,
-  ChevronDown,
+  ChevronDown, GitBranch,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -34,6 +34,7 @@ const navGroups: NavGroup[] = [
     { to: "/price-intelligence", label: "Price Intelligence", icon: BarChart3 },
     { to: "/price-lists/upload", label: "Price List Upload", icon: Upload },
     { to: "/calloffs", label: "Call-offs", icon: ShoppingCart },
+    { to: "/variations", label: "Variations", icon: GitBranch, badge: "NEW" },
     { to: "/invoices", label: "Invoice Recon", icon: Receipt, badge: "BETA" },
     { to: "/financial", label: "Financial", icon: TrendingUp },
   ]},
@@ -169,6 +170,7 @@ function Breadcrumb() {
     "/price-intelligence": "Price Intelligence",
     "/price-lists/upload": "Price List Upload",
     "/calloffs": "Call-offs",
+    "/variations": "Variations",
     "/invoices": "Invoice Reconciliation",
     "/financial": "Financial Dashboard",
     "/planner": "Planner",

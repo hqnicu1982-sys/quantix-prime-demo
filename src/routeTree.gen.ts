@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VariationsRouteImport } from './routes/variations'
 import { Route as TeamRouteImport } from './routes/team'
 import { Route as ReadinessRouteImport } from './routes/readiness'
 import { Route as ProjectsRouteImport } from './routes/projects'
@@ -27,6 +28,7 @@ import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as ProjectsFitzroviaRouteImport } from './routes/projects.fitzrovia'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
 import { Route as ProjectsFitzroviaIndexRouteImport } from './routes/projects.fitzrovia.index'
+import { Route as ProjectsFitzroviaVariationsRouteImport } from './routes/projects.fitzrovia.variations'
 import { Route as ProjectsFitzroviaTeamRouteImport } from './routes/projects.fitzrovia.team'
 import { Route as ProjectsFitzroviaSpecificationRouteImport } from './routes/projects.fitzrovia.specification'
 import { Route as ProjectsFitzroviaReportsRouteImport } from './routes/projects.fitzrovia.reports'
@@ -36,6 +38,11 @@ import { Route as ProjectsFitzroviaInvoicesRouteImport } from './routes/projects
 import { Route as ProjectsFitzroviaCostedBoqRouteImport } from './routes/projects.fitzrovia.costed-boq'
 import { Route as ProjectsFitzroviaCalloffsRouteImport } from './routes/projects.fitzrovia.calloffs'
 
+const VariationsRoute = VariationsRouteImport.update({
+  id: '/variations',
+  path: '/variations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
   path: '/team',
@@ -126,6 +133,12 @@ const ProjectsFitzroviaIndexRoute = ProjectsFitzroviaIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProjectsFitzroviaRoute,
 } as any)
+const ProjectsFitzroviaVariationsRoute =
+  ProjectsFitzroviaVariationsRouteImport.update({
+    id: '/variations',
+    path: '/variations',
+    getParentRoute: () => ProjectsFitzroviaRoute,
+  } as any)
 const ProjectsFitzroviaTeamRoute = ProjectsFitzroviaTeamRouteImport.update({
   id: '/team',
   path: '/team',
@@ -188,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/team': typeof TeamRoute
+  '/variations': typeof VariationsRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaRouteWithChildren
   '/projects/': typeof ProjectsIndexRoute
@@ -199,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/projects/fitzrovia/reports': typeof ProjectsFitzroviaReportsRoute
   '/projects/fitzrovia/specification': typeof ProjectsFitzroviaSpecificationRoute
   '/projects/fitzrovia/team': typeof ProjectsFitzroviaTeamRoute
+  '/projects/fitzrovia/variations': typeof ProjectsFitzroviaVariationsRoute
   '/projects/fitzrovia/': typeof ProjectsFitzroviaIndexRoute
 }
 export interface FileRoutesByTo {
@@ -215,6 +230,7 @@ export interface FileRoutesByTo {
   '/price-intelligence': typeof PriceIntelligenceRoute
   '/readiness': typeof ReadinessRoute
   '/team': typeof TeamRoute
+  '/variations': typeof VariationsRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects': typeof ProjectsIndexRoute
   '/projects/fitzrovia/calloffs': typeof ProjectsFitzroviaCalloffsRoute
@@ -225,6 +241,7 @@ export interface FileRoutesByTo {
   '/projects/fitzrovia/reports': typeof ProjectsFitzroviaReportsRoute
   '/projects/fitzrovia/specification': typeof ProjectsFitzroviaSpecificationRoute
   '/projects/fitzrovia/team': typeof ProjectsFitzroviaTeamRoute
+  '/projects/fitzrovia/variations': typeof ProjectsFitzroviaVariationsRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaIndexRoute
 }
 export interface FileRoutesById {
@@ -243,6 +260,7 @@ export interface FileRoutesById {
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/team': typeof TeamRoute
+  '/variations': typeof VariationsRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/fitzrovia': typeof ProjectsFitzroviaRouteWithChildren
   '/projects/': typeof ProjectsIndexRoute
@@ -254,6 +272,7 @@ export interface FileRoutesById {
   '/projects/fitzrovia/reports': typeof ProjectsFitzroviaReportsRoute
   '/projects/fitzrovia/specification': typeof ProjectsFitzroviaSpecificationRoute
   '/projects/fitzrovia/team': typeof ProjectsFitzroviaTeamRoute
+  '/projects/fitzrovia/variations': typeof ProjectsFitzroviaVariationsRoute
   '/projects/fitzrovia/': typeof ProjectsFitzroviaIndexRoute
 }
 export interface FileRouteTypes {
@@ -273,6 +292,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/readiness'
     | '/team'
+    | '/variations'
     | '/price-lists/upload'
     | '/projects/fitzrovia'
     | '/projects/'
@@ -284,6 +304,7 @@ export interface FileRouteTypes {
     | '/projects/fitzrovia/reports'
     | '/projects/fitzrovia/specification'
     | '/projects/fitzrovia/team'
+    | '/projects/fitzrovia/variations'
     | '/projects/fitzrovia/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -300,6 +321,7 @@ export interface FileRouteTypes {
     | '/price-intelligence'
     | '/readiness'
     | '/team'
+    | '/variations'
     | '/price-lists/upload'
     | '/projects'
     | '/projects/fitzrovia/calloffs'
@@ -310,6 +332,7 @@ export interface FileRouteTypes {
     | '/projects/fitzrovia/reports'
     | '/projects/fitzrovia/specification'
     | '/projects/fitzrovia/team'
+    | '/projects/fitzrovia/variations'
     | '/projects/fitzrovia'
   id:
     | '__root__'
@@ -327,6 +350,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/readiness'
     | '/team'
+    | '/variations'
     | '/price-lists/upload'
     | '/projects/fitzrovia'
     | '/projects/'
@@ -338,6 +362,7 @@ export interface FileRouteTypes {
     | '/projects/fitzrovia/reports'
     | '/projects/fitzrovia/specification'
     | '/projects/fitzrovia/team'
+    | '/projects/fitzrovia/variations'
     | '/projects/fitzrovia/'
   fileRoutesById: FileRoutesById
 }
@@ -356,11 +381,19 @@ export interface RootRouteChildren {
   ProjectsRoute: typeof ProjectsRouteWithChildren
   ReadinessRoute: typeof ReadinessRoute
   TeamRoute: typeof TeamRoute
+  VariationsRoute: typeof VariationsRoute
   PriceListsUploadRoute: typeof PriceListsUploadRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/variations': {
+      id: '/variations'
+      path: '/variations'
+      fullPath: '/variations'
+      preLoaderRoute: typeof VariationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/team': {
       id: '/team'
       path: '/team'
@@ -487,6 +520,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsFitzroviaIndexRouteImport
       parentRoute: typeof ProjectsFitzroviaRoute
     }
+    '/projects/fitzrovia/variations': {
+      id: '/projects/fitzrovia/variations'
+      path: '/variations'
+      fullPath: '/projects/fitzrovia/variations'
+      preLoaderRoute: typeof ProjectsFitzroviaVariationsRouteImport
+      parentRoute: typeof ProjectsFitzroviaRoute
+    }
     '/projects/fitzrovia/team': {
       id: '/projects/fitzrovia/team'
       path: '/team'
@@ -555,6 +595,7 @@ interface ProjectsFitzroviaRouteChildren {
   ProjectsFitzroviaReportsRoute: typeof ProjectsFitzroviaReportsRoute
   ProjectsFitzroviaSpecificationRoute: typeof ProjectsFitzroviaSpecificationRoute
   ProjectsFitzroviaTeamRoute: typeof ProjectsFitzroviaTeamRoute
+  ProjectsFitzroviaVariationsRoute: typeof ProjectsFitzroviaVariationsRoute
   ProjectsFitzroviaIndexRoute: typeof ProjectsFitzroviaIndexRoute
 }
 
@@ -567,6 +608,7 @@ const ProjectsFitzroviaRouteChildren: ProjectsFitzroviaRouteChildren = {
   ProjectsFitzroviaReportsRoute: ProjectsFitzroviaReportsRoute,
   ProjectsFitzroviaSpecificationRoute: ProjectsFitzroviaSpecificationRoute,
   ProjectsFitzroviaTeamRoute: ProjectsFitzroviaTeamRoute,
+  ProjectsFitzroviaVariationsRoute: ProjectsFitzroviaVariationsRoute,
   ProjectsFitzroviaIndexRoute: ProjectsFitzroviaIndexRoute,
 }
 
@@ -602,6 +644,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProjectsRoute: ProjectsRouteWithChildren,
   ReadinessRoute: ReadinessRoute,
   TeamRoute: TeamRoute,
+  VariationsRoute: VariationsRoute,
   PriceListsUploadRoute: PriceListsUploadRoute,
 }
 export const routeTree = rootRouteImport
