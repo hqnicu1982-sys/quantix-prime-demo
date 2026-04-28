@@ -330,6 +330,7 @@ function Calculator() {
             waste={waste}   setWaste={setWaste}
             area={area} wasteFactor={wasteFactor}
             onPromote={promoteToCalculator}
+            combined={COMBINED}
           />
         ) : (
           /* ===================== SINGLE-SYSTEM MODE ===================== */
@@ -342,6 +343,9 @@ function Calculator() {
             reuseOffcuts={reuseOffcuts} setReuseOffcuts={setReuseOffcuts}
             area={area} wasteFactor={wasteFactor}
             navigate={navigate}
+            combined={COMBINED}
+            projectId={current.id}
+            projectName={current.name}
           />
         )}
       </div>
