@@ -1230,14 +1230,6 @@ function perfChipsFor(sys: SystemDef) {
   ];
 }
 
-function scaledTotals(sys: SystemDef, area: number, wasteFactor: number) {
-  return Object.entries(sys.totalsPerM2).map(([item, { qty, unit }]) => ({
-    item,
-    unit,
-    qty: qty * area * wasteFactor,
-  }));
-}
-
 function fmtQty(n: number) {
   if (n >= 100) return Math.round(n).toLocaleString();
   if (n >= 10)  return n.toFixed(1);
