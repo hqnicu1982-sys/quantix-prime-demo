@@ -18,11 +18,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
-import { team } from "@/lib/mockData";
 import { addDays, addTask, isoDate, PLANNER_TODAY } from "@/lib/planner";
+import { useProjectCrews } from "@/lib/labour";
 import { toast } from "sonner";
 
 export function NewTaskDialog({ projectId }: { projectId: string }) {
+  const crews = useProjectCrews(projectId);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [level, setLevel] = useState("L4");
@@ -84,8 +85,10 @@ export function NewTaskDialog({ projectId }: { projectId: string }) {
               <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">— Unassigned —</SelectItem>
-                {team.filter((m) => m.tier === "Operative" || m.tier === "Site User").map((m) => (
-                  <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                {crews.map((c) => (
+                  <SelectItem key={c.assignment.memberId} value={c.assignment.memberId}>
+                    {c.member?.name ?? "?"} · {c.crewName} · £{c.rate.toFixed(2)}/h
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
