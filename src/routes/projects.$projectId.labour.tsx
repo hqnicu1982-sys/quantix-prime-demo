@@ -5,7 +5,7 @@ import { useProjectCrews } from "@/lib/labour";
 import { useLabourLogs, getLastLogDate } from "@/lib/laborLog";
 import { useProjectTasks } from "@/lib/planner";
 
-export const Route = createFileRoute("/projects/fitzrovia/labour")({ component: LabourPage });
+export const Route = createFileRoute("/projects/$projectId/labour")({ component: LabourPage });
 
 function LabourPage() {
   const PID = "fitzrovia";

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { fitzrovia, fitzroviaSystems, fitzroviaHealth, fitzroviaActivity, fmtMoney } from "@/lib/mockData";
 
-export const Route = createFileRoute("/projects/fitzrovia/")({ component: Overview });
+export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
 
 function Overview() {
   return (

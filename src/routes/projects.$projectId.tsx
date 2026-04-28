@@ -1,32 +1,50 @@
-import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, notFound } from "@tanstack/react-router";
 import { Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { Share2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useProject } from "@/lib/ProjectContext";
+import { useEffect } from "react";
+import { fmtMoney } from "@/lib/mockData";
 
-export const Route = createFileRoute("/projects/fitzrovia")({ component: ProjectLayout });
-
-type Tab = { to: string; label: string; exact?: boolean; badge?: number };
-const tabs: Tab[] = [
-  { to: "/projects/fitzrovia", label: "Overview", exact: true },
-  { to: "/projects/fitzrovia/specification", label: "Specification" },
-  { to: "/projects/fitzrovia/costed-boq", label: "Costed BoQ" },
-  { to: "/projects/fitzrovia/planner", label: "Planner" },
-  { to: "/projects/fitzrovia/calloffs", label: "Call-offs", badge: 3 },
-  { to: "/projects/fitzrovia/invoices", label: "Invoices" },
-  { to: "/projects/fitzrovia/variations", label: "Variations" },
-  { to: "/projects/fitzrovia/labour", label: "Labour" },
-  { to: "/projects/fitzrovia/reports", label: "Reports" },
-  { to: "/projects/fitzrovia/team", label: "Team" },
-];
+export const Route = createFileRoute("/projects/$projectId")({ component: ProjectLayout });
 
 function ProjectLayout() {
+  const { projectId } = Route.useParams();
   const location = useLocation();
+  const { all, current, setCurrent } = useProject();
+  const project = all.find((p) => p.id === projectId);
+
+  // keep the global ProjectContext in sync with the URL param
+  useEffect(() => {
+    if (project && current.id !== project.id) setCurrent(project.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+
+  if (!project) {
+    throw notFound();
+  }
+
+  const tabs = [
+    { to: `/projects/${projectId}`, label: "Overview", exact: true },
+    { to: `/projects/${projectId}/specification`, label: "Specification" },
+    { to: `/projects/${projectId}/costed-boq`, label: "Costed BoQ" },
+    { to: `/projects/${projectId}/planner`, label: "Planner" },
+    { to: `/projects/${projectId}/calloffs`, label: "Call-offs" },
+    { to: `/projects/${projectId}/invoices`, label: "Invoices" },
+    { to: `/projects/${projectId}/variations`, label: "Variations" },
+    { to: `/projects/${projectId}/labour`, label: "Labour" },
+    { to: `/projects/${projectId}/reports`, label: "Reports" },
+    { to: `/projects/${projectId}/team`, label: "Team" },
+  ];
+
+  const subtitle = `${project.mainContractor} · ${project.subtitle} · ${project.startDate} → ${project.endDate} · ${fmtMoney(project.contractValue, { compact: true })} contract`;
+
   return (
     <Section
-      title="Hotel Fitzrovia"
-      subtitle="Kier Construction · Fitzrovia W1T 4JQ · 04 Feb 2026 → 19 Dec 2026 · £2,100,000 contract"
+      title={project.name}
+      subtitle={subtitle}
       right={
         <>
           <Button
@@ -39,7 +57,7 @@ function ProjectLayout() {
           >
             <Share2 className="mr-1.5 h-3.5 w-3.5" /> Share
           </Button>
-          <Button size="sm" onClick={() => toast.success("New call-off", { description: "Draft created for Hotel Fitzrovia" })}>
+          <Button size="sm" onClick={() => toast.success("New call-off", { description: `Draft created for ${project.name}` })}>
             <Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off
           </Button>
         </>
@@ -52,7 +70,10 @@ function ProjectLayout() {
             return (
               <Link
                 key={t.to}
-                to={t.to as "/projects/fitzrovia"}
+                to="/projects/$projectId"
+                params={{ projectId }}
+                // override 'to' via href trick — we want the actual subpath
+                href={t.to}
                 className={cn(
                   "-mb-px whitespace-nowrap border-b-2 py-2.5 transition-colors",
                   active
@@ -61,11 +82,6 @@ function ProjectLayout() {
                 )}
               >
                 {t.label}
-                {t.badge && (
-                  <span className="ml-1.5 rounded-full bg-[var(--accent-500)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-500)]">
-                    {t.badge}
-                  </span>
-                )}
               </Link>
             );
           })}

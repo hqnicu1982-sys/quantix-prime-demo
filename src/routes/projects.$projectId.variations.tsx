@@ -5,7 +5,7 @@ import { NewVariationDialog } from "@/components/variations/NewVariationDialog";
 import { VariationsTable } from "@/components/variations/VariationsTable";
 import { CostBreakdownPanel } from "@/components/variations/CostBreakdownPanel";
 
-export const Route = createFileRoute("/projects/fitzrovia/variations")({
+export const Route = createFileRoute("/projects/$projectId/variations")({
   component: FitzroviaVariations,
 });
 

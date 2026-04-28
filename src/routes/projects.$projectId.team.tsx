@@ -8,7 +8,7 @@ import { InviteMemberDialog } from "@/components/team/InviteMemberDialog";
 import { AssignToProjectDialog } from "@/components/team/AssignToProjectDialog";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/projects/fitzrovia/team")({ component: TeamPage });
+export const Route = createFileRoute("/projects/$projectId/team")({ component: TeamPage });
 
 const tierTone = {
   Admin: "bg-purple-500/10 text-purple-600",

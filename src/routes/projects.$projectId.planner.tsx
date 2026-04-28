@@ -25,7 +25,7 @@ import { NewTaskDialog } from "@/components/planner/NewTaskDialog";
 import { BlockersPanel } from "@/components/planner/BlockersPanel";
 import { useProjectVariations } from "@/lib/variations";
 
-export const Route = createFileRoute("/projects/fitzrovia/planner")({
+export const Route = createFileRoute("/projects/$projectId/planner")({
   component: PlannerPage,
 });
 
