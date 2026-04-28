@@ -20,6 +20,8 @@ import { BrandSelector } from "@/components/calculator/BrandSelector";
 import { getBrand, readActiveBrand, subscribeBrand, type BrandId } from "@/lib/systemBrands";
 import { useProject } from "@/lib/ProjectContext";
 import { addSystemToBoQ } from "@/lib/projectData";
+import { useBespokeSystems, buildUpToMaterials, type BespokeSystem, type BespokeBuildUp } from "@/lib/bespokeSystems";
+import { BespokeBuildUpDialog } from "@/components/calculator/BespokeBuildUpDialog";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
