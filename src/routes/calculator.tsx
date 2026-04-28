@@ -22,6 +22,7 @@ import { useProject } from "@/lib/ProjectContext";
 import { addSystemToBoQ } from "@/lib/projectData";
 import { useBespokeSystems, buildUpToMaterials, type BespokeSystem, type BespokeBuildUp } from "@/lib/bespokeSystems";
 import { BespokeBuildUpDialog } from "@/components/calculator/BespokeBuildUpDialog";
+import { estimateCost, fmtMoneyShort } from "@/lib/calculatorPricing";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
@@ -381,6 +382,7 @@ function SingleView({
   const errs = validateGeometry(length, height, waste);
   const invalid = hasErrors(errs);
   const totals = scaledTotals(sys, area, wasteFactor);
+  const cost = estimateCost(totals, area, wasteFactor);
 
   // Recommendation: pick the smallest board ≥ wall height to minimise off-cuts.
   // Wall height in mm; board catalogue (W × H, mm).
@@ -845,6 +847,41 @@ function SingleView({
             <p className="mt-1 text-[11.5px] text-[var(--ink-500)]">{length || "—"} m × {height || "—"} m · waste {waste}%</p>
           </div>
 
+          {/* COST ESTIMATE — bridges Calculator with Costed BoQ pricing */}
+          <div className="border-b border-[var(--ink-200)]/60 bg-gradient-to-br from-[var(--accent-500)]/[0.04] to-transparent px-5 py-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Cost estimate</p>
+              <span className="font-mono-num text-[10px] text-[var(--ink-500)]">
+                {cost.pricedLines}/{cost.totalLines} priced
+              </span>
+            </div>
+            <div className="mt-2 flex items-baseline justify-between">
+              <p className={"font-display text-[28px] font-bold leading-none tracking-tight " + (invalid ? "text-[var(--ink-500)]" : "text-[var(--ink-900)]")}>
+                {invalid ? "—" : fmtMoneyShort(cost.total)}
+              </p>
+              <p className="font-mono-num text-[12px] font-semibold text-[var(--accent-500)]">
+                {invalid ? "—" : `${fmtMoneyShort(cost.perM2)} / m²`}
+              </p>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-[11.5px]">
+              <div className="rounded-md bg-[var(--ink-50)]/60 px-2.5 py-2">
+                <p className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">Materials</p>
+                <p className="font-mono-num mt-0.5 font-semibold text-[var(--ink-900)]">{invalid ? "—" : fmtMoneyShort(cost.materials)}</p>
+                <p className="text-[10px] text-[var(--ink-500)]">best-supplier price</p>
+              </div>
+              <div className="rounded-md bg-[var(--ink-50)]/60 px-2.5 py-2">
+                <p className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">Labour</p>
+                <p className="font-mono-num mt-0.5 font-semibold text-[var(--ink-900)]">{invalid ? "—" : fmtMoneyShort(cost.labour)}</p>
+                <p className="text-[10px] text-[var(--ink-500)]">{invalid ? "—" : `${cost.hours.toFixed(0)} h @ £${cost.labourRate.toFixed(2)}/m²`}</p>
+              </div>
+            </div>
+            {!invalid && cost.pricedLines < cost.totalLines && (
+              <p className="mt-2 text-[10.5px] text-[var(--ink-500)]">
+                {cost.totalLines - cost.pricedLines} line{cost.totalLines - cost.pricedLines === 1 ? "" : "s"} not in catalogue — material total is a lower bound.
+              </p>
+            )}
+          </div>
+
           <div className="border-b border-[var(--ink-200)]/60 px-5 py-4">
             <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">System build-up</p>
             <ul className="mt-2 divide-y divide-[var(--ink-200)]/60 text-[12.5px]">
@@ -860,11 +897,17 @@ function SingleView({
           <div className="px-5 py-4">
             <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Aggregated totals</p>
             <ul className="mt-2 divide-y divide-[var(--ink-200)]/60 text-[12.5px]">
-              {totals.map(t => (
-                <li key={t.item} className="flex items-start justify-between gap-3 py-2.5">
-                  <span className="text-[var(--ink-900)]">{t.item}</span>
-                  <span className="font-mono-num shrink-0 font-semibold text-[var(--ink-900)]">
-                    {fmtQty(t.qty)} <span className="font-normal text-[var(--ink-500)]">{t.unit}</span>
+              {cost.lines.map(l => (
+                <li key={l.item} className="grid grid-cols-[1fr_auto_auto] items-start gap-3 py-2.5">
+                  <span className="text-[var(--ink-900)]">{l.item}</span>
+                  <span className="font-mono-num shrink-0 text-right font-semibold text-[var(--ink-900)]">
+                    {fmtQty(l.qty)} <span className="font-normal text-[var(--ink-500)]">{l.unit}</span>
+                  </span>
+                  <span
+                    className={"font-mono-num shrink-0 w-[58px] text-right font-semibold " + (l.lineCost == null ? "text-[var(--ink-500)]" : "text-[var(--accent-500)]")}
+                    title={l.lineCost == null ? "No price in catalogue" : `${l.supplier?.toUpperCase()} @ £${l.unitPrice?.toFixed(2)}/${l.unit}`}
+                  >
+                    {l.lineCost == null ? "—" : fmtMoneyShort(l.lineCost)}
                   </span>
                 </li>
               ))}
