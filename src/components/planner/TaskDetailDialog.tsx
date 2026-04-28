@@ -23,10 +23,13 @@ import {
   computeReadiness,
   deleteTask,
   updateTask,
+  taskPlannedCost,
+  taskActualCost,
   type PlannerTask,
   type TaskStatus,
 } from "@/lib/planner";
-import { team } from "@/lib/mockData";
+import { useProjectCrews } from "@/lib/labour";
+import { getActualHoursForTask } from "@/lib/laborLog";
 import { AlertTriangle, CheckCircle2, Trash2, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
@@ -60,6 +63,7 @@ export function TaskDetailDialog({
   approvedVariationIds,
 }: Props) {
   const [draft, setDraft] = useState<PlannerTask | null>(task);
+  const crews = useProjectCrews(projectId);
 
   useEffect(() => setDraft(task), [task?.id]);
 
@@ -69,6 +73,12 @@ export function TaskDetailDialog({
     callOffs,
     approvedVariationIds,
   });
+
+  const selectedCrew = crews.find((c) => c.assignment.memberId === draft.crewId);
+  const plannedCost = taskPlannedCost(draft, projectId);
+  const actualHours = getActualHoursForTask(projectId, draft.id);
+  const actualCost = taskActualCost(draft, projectId, actualHours);
+  const variance = plannedCost > 0 ? ((actualCost - plannedCost) / plannedCost) * 100 : 0;
 
   const save = () => {
     updateTask(projectId, draft.id, {
@@ -81,6 +91,7 @@ export function TaskDetailDialog({
       progress: draft.progress,
       status: draft.status,
       notes: draft.notes,
+      plannedHours: draft.plannedHours,
     });
     onOpenChange(false);
   };
@@ -191,13 +202,11 @@ export function TaskDetailDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">— Unassigned —</SelectItem>
-                {team
-                  .filter((m) => m.tier === "Operative" || m.tier === "Site User")
-                  .map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name} · {m.role}
-                    </SelectItem>
-                  ))}
+                {crews.map((c) => (
+                  <SelectItem key={c.assignment.memberId} value={c.assignment.memberId}>
+                    {c.member?.name ?? "?"} · {c.crewName} · £{c.rate.toFixed(2)}/h
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -231,6 +240,22 @@ export function TaskDetailDialog({
             />
           </div>
           <div className="col-span-2">
+            <Label className="text-[11px]">Planned hours (man-hours)</Label>
+            <Input
+              type="number"
+              min={0}
+              step={0.5}
+              value={draft.plannedHours ?? ""}
+              onChange={(e) =>
+                setDraft({
+                  ...draft,
+                  plannedHours: e.target.value ? Number(e.target.value) : undefined,
+                })
+              }
+              placeholder="e.g. 80"
+            />
+          </div>
+          <div className="col-span-2">
             <Label className="text-[11px]">Notes</Label>
             <Textarea
               value={draft.notes ?? ""}
@@ -238,6 +263,52 @@ export function TaskDetailDialog({
               rows={2}
             />
           </div>
+        </div>
+
+        {/* Cost panel */}
+        <div className="rounded-md border border-[var(--ink-200)] bg-[var(--ink-50)]/40 p-3 text-[12px]">
+          <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+            Cost
+          </p>
+          {!selectedCrew ? (
+            <p className="mt-1 text-[var(--ink-500)]">Assign a crew to see cost estimate.</p>
+          ) : (
+            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+              <div>
+                <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">Rate</p>
+                <p className="font-mono-num font-semibold">£{selectedCrew.rate.toFixed(2)}/h</p>
+              </div>
+              <div>
+                <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">Planned</p>
+                <p className="font-mono-num font-semibold">
+                  {draft.plannedHours ?? 0}h · £{plannedCost.toFixed(0)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">Actual</p>
+                <p className="font-mono-num font-semibold">
+                  {actualHours.toFixed(1)}h · £{actualCost.toFixed(0)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">Variance</p>
+                <p
+                  className={cn(
+                    "font-mono-num font-semibold",
+                    plannedCost === 0
+                      ? "text-[var(--ink-500)]"
+                      : variance > 0
+                        ? "text-[var(--red-500)]"
+                        : "text-[var(--green-600)]",
+                  )}
+                >
+                  {plannedCost === 0
+                    ? "—"
+                    : `${variance > 0 ? "+" : ""}${variance.toFixed(1)}%`}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Linked items */}
