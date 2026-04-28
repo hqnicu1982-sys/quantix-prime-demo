@@ -1,81 +1,143 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Card, CardHead, Section } from "@/components/Primitives";
+import { useMemo, useState } from "react";
+import { Card, CardHead, Kpi, Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { ganttRows } from "@/lib/mockData";
-import { Calendar, Download, Plus, AlertCircle } from "lucide-react";
+import { Calendar, Download } from "lucide-react";
 import { toast } from "sonner";
 import { ProjectBanner } from "@/components/ProjectBanner";
+import {
+  computeKpis,
+  computeReadiness,
+  useProjectTasks,
+  type PlannerTask,
+} from "@/lib/planner";
+import { GanttChart } from "@/components/planner/GanttChart";
+import { TaskDetailDialog } from "@/components/planner/TaskDetailDialog";
+import { NewTaskDialog } from "@/components/planner/NewTaskDialog";
+import { BlockersPanel } from "@/components/planner/BlockersPanel";
+import { useProject } from "@/lib/ProjectContext";
+import { useProjectVariations } from "@/lib/variations";
 
 export const Route = createFileRoute("/planner")({ component: Planner });
 
-const colorMap: Record<string, string> = {
-  blue: "bg-[var(--accent-500)]",
-  green: "bg-[var(--green-600)]",
-  amber: "bg-[var(--amber-500)]",
-  red: "bg-[var(--red-500)]",
-  purple: "bg-purple-500",
-  grey: "bg-[var(--ink-500)]",
-};
-
-const TOTAL_DAYS = 21;
+const CALL_OFFS: { id: string; status: "draft" | "pending" | "approved" | "delivered" }[] = [
+  { id: "CO-247", status: "approved" },
+  { id: "CO-246", status: "delivered" },
+  { id: "CO-245", status: "delivered" },
+  { id: "CO-248", status: "draft" },
+  { id: "CO-249", status: "pending" },
+];
 
 function Planner() {
+  const { current } = useProject();
+  const PID = current.id;
+  const tasks = useProjectTasks(PID);
+  const variations = useProjectVariations(PID);
+  const approvedVariationIds = variations
+    .filter((v) => v.status === "approved")
+    .map((v) => v.id);
+
+  const [zoom, setZoom] = useState<"day" | "week" | "month">("day");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const kpis = useMemo(() => computeKpis(tasks), [tasks]);
+  const blockedIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const t of tasks) {
+      const r = computeReadiness(t, tasks, { callOffs: CALL_OFFS, approvedVariationIds });
+      if (!r.ready) s.add(t.id);
+    }
+    return s;
+  }, [tasks, approvedVariationIds]);
+
+  const selected: PlannerTask | null = selectedId
+    ? tasks.find((t) => t.id === selectedId) ?? null
+    : null;
+
   return (
     <Section
       title="Execution Planner"
-      subtitle="Look-ahead 2-3 weeks · constraint-aware · auto-syncs material readiness"
+      subtitle={`${current.name} · ${tasks.length} tasks · interactive Gantt with constraint awareness`}
       right={
         <>
-          <Button variant="outline" size="sm" onClick={() => toast("Centred on today")}><Calendar className="mr-1.5 h-3.5 w-3.5" /> Today</Button>
-          <Button variant="outline" size="sm" onClick={() => toast.success("Planner exported", { description: "gantt-fitzrovia.pdf downloaded" })}><Download className="mr-1.5 h-3.5 w-3.5" /> Export PDF</Button>
-          <Button size="sm" onClick={() => toast.success("New task added", { description: "Draft task created · assign crew to schedule" })}><Plus className="mr-1.5 h-3.5 w-3.5" /> New task</Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => toast("Today line follows real date · scroll horizontally to centre")}
+          >
+            <Calendar className="mr-1.5 h-3.5 w-3.5" /> Today
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => toast.success("Planner exported", { description: `gantt-${PID}.pdf` })}
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" /> Export PDF
+          </Button>
+          <NewTaskDialog projectId={PID} />
         </>
       }
     >
       <ProjectBanner scope="Execution Planner" />
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Kpi label="Total tasks" value={String(kpis.total)} delta={`${kpis.done} done`} />
+        <Kpi label="Active" value={String(kpis.active)} delta={`${kpis.startingThisWeek} this week`} />
+        <Kpi label="Crews on site" value={String(kpis.crewsOnSite)} />
+        <Kpi
+          label="Blocked"
+          value={String(blockedIds.size)}
+          delta={blockedIds.size === 0 ? "all clear" : "see blockers panel"}
+          tone={blockedIds.size > 0 ? "warning" : "success"}
+        />
+      </div>
+
       <Card>
-        <CardHead title="Gantt view" subtitle="Apr 20 → May 10 · 14 tasks" />
-        <div className="overflow-x-auto p-5">
-          <div className="min-w-[900px]">
-            {/* Week headers */}
-            <div className="flex border-b border-[var(--ink-200)] pb-2 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
-              <div className="w-[200px] shrink-0">Task</div>
-              <div className="grid flex-1" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
-                <div className="border-l border-[var(--ink-200)] pl-2">Apr 20</div>
-                <div className="border-l border-[var(--ink-200)] pl-2">Apr 27</div>
-                <div className="border-l border-[var(--ink-200)] pl-2">May 4</div>
-              </div>
-            </div>
-
-            {/* Rows */}
-            <div className="relative mt-2">
-              {/* Today line */}
-              <div className="pointer-events-none absolute top-0 bottom-0 z-10 w-px border-l-2 border-dashed border-[var(--accent-500)]" style={{ left: `calc(200px + ${(0 / TOTAL_DAYS) * 100}% * (100% - 200px) / 100%)` }}>
-                <span className="absolute -top-3 -translate-x-1/2 rounded bg-[var(--accent-500)] px-1 py-0.5 text-[9px] font-bold uppercase text-white">Today</span>
-              </div>
-
-              {ganttRows.map((r) => (
-                <div key={r.id} className="flex items-center border-b border-[var(--ink-200)]/60 py-1.5">
-                  <div className="w-[200px] shrink-0 pr-2 text-[12px]">
-                    <p className="font-semibold">{r.level}</p>
-                    <p className="text-[11px] text-[var(--ink-500)]">{r.task} · {r.crew}</p>
-                  </div>
-                  <div className="relative flex-1">
-                    <div className="h-6 rounded bg-[var(--ink-50)]/30" />
-                    <div
-                      className={`absolute top-0 flex h-6 items-center rounded px-2 text-[10.5px] font-medium text-white ${colorMap[r.color]}`}
-                      style={{ left: `${(r.startDay / TOTAL_DAYS) * 100}%`, width: `${(r.duration / TOTAL_DAYS) * 100}%` }}
-                    >
-                      {r.isMilestone ? <span className="text-[14px]">◆</span> : <span className="truncate">{r.progress}%</span>}
-                      {r.alert && <AlertCircle className="ml-1 h-3 w-3 shrink-0" />}
-                    </div>
-                  </div>
-                </div>
+        <CardHead
+          title="Gantt"
+          subtitle="Drag to move · resize edges · click for details"
+          right={
+            <div className="flex rounded-md border border-[var(--ink-200)] p-0.5">
+              {(["day", "week", "month"] as const).map((z) => (
+                <Button
+                  key={z}
+                  variant={zoom === z ? "default" : "ghost"}
+                  size="sm"
+                  className="h-6 px-2 text-[11px] capitalize"
+                  onClick={() => setZoom(z)}
+                >
+                  {z}
+                </Button>
               ))}
             </div>
-          </div>
-        </div>
+          }
+        />
+        <GanttChart
+          projectId={PID}
+          tasks={tasks}
+          zoom={zoom}
+          blockedIds={blockedIds}
+          onSelectTask={setSelectedId}
+        />
       </Card>
+
+      <BlockersPanel
+        projectId={PID}
+        tasks={tasks}
+        callOffs={CALL_OFFS}
+        approvedVariationIds={approvedVariationIds}
+        onSelectTask={setSelectedId}
+      />
+
+      <TaskDetailDialog
+        projectId={PID}
+        task={selected}
+        allTasks={tasks}
+        open={!!selected}
+        onOpenChange={(o) => !o && setSelectedId(null)}
+        callOffs={CALL_OFFS}
+        approvedVariationIds={approvedVariationIds}
+      />
     </Section>
   );
 }

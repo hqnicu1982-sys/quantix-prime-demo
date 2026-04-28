@@ -1,110 +1,111 @@
-# Plan: Variations MVP (Pașii 1-3 + 5)
+# Planner — logica actuală și plan de îmbunătățire
 
-## Scope
-Livrăm **doar tab-ul Variations** cu CRUD + workflow de approval. Nu atingem încă BoQ, Call-offs, Financial sau Calculator. Userul poate crea VO-uri, le mută prin status, vede totaluri — dar nu se reflectă încă în BoQ live. Integrarea full vine în iterația următoare.
+## 1. Cum arată Plannerul ACUM
 
-**Decizii implicite (poți schimba după ce vezi MVP-ul):**
-- Workflow: 4 statusuri — `draft → submitted → approved → rejected` (+ `implemented` later)
-- Sursă VO: doar manual din dialog (auto-detect din Calculator vine în iter 2)
+Există două ecrane separate, ambele 100% statice (date hardcodate, fără persistență, fără legătură reală cu restul aplicației):
 
-## Ce construim
+**A. `/planner` — "Execution Planner" global** (`src/routes/planner.tsx`)
+- Gantt vizual primitiv pe 21 zile fixe (`TOTAL_DAYS = 21`)
+- Citește `ganttRows` din `mockData.ts` — array hardcodat cu `startDay`, `duration`, `progress`, `color`
+- Linie "Today" lipită la `left: 0` (calcul greșit — nu reflectă data reală)
+- Butoane Today / Export PDF / New task → doar `toast()`, fără efect
+- Nu știe de proiectul curent, nu reacționează la persona
 
-### 1. Model de date — `src/lib/variations.ts`
-```text
-ProjectVariation {
-  id: "VO-001" (auto-incremented per project)
-  title, reason
-  raisedBy: "client" | "contractor" | "designer" | "site"
-  raisedDate (ISO)
-  status: "draft" | "submitted" | "approved" | "rejected"
+**B. `/projects/fitzrovia/planner` — tab pe proiect** (`src/routes/projects.fitzrovia.planner.tsx`)
+- Array local `tasks` cu 6 rânduri hardcodate (text "08 Apr → 24 Apr", nu Date reale)
+- 4 KPI-uri (Programme status, Active, Crews, Blocked) — toate strings statice
+- Tabel simplu cu progress bar; status colorat
+- Zero interacțiune: nu poți adăuga / muta / edita
+
+**Ce LIPSEȘTE complet din logică:**
+- Nicio sursă reală de date (nu există `src/lib/planner.ts`, nu se folosește `localStorage`)
+- Niciun link cu BoQ (taskurile ar trebui să consume linii de scope)
+- Nicio legătură cu Call-offs (un task n-ar trebui să poată începe fără materialul livrat)
+- Nicio legătură cu Variations (VO aprobate ar trebui să adauge / decală taskuri)
+- Nicio legătură cu Labour (crew-urile sunt strings, nu IDs din `team`)
+- Fără dependențe între taskuri (FS, SS), fără calcul de critical path
+- Fără reactivitate la date reale (today line e fake)
+
+## 2. Plan de îmbunătățire — 3 etape
+
+### Etapa 1 — Fundație: model de date real + persistență
+
+Creez `src/lib/planner.ts` cu pattern identic `variations.ts` / `projectData.ts`:
+
+```ts
+PlannerTask {
+  id: "T-001"
+  projectId
+  title, level, area
+  crewId           // referință la team[].id (nu mai e string liber)
+  start: ISO date  // Date real, nu "08 Apr"
+  end: ISO date
+  progress: 0-100
+  status: "scheduled" | "starting" | "on-track" | "behind" | "blocked" | "done"
   
-  changes: VariationChange[]
-  costImpact: number       // suma changes
-  timeImpactDays: number
-  approvedValue?: number   // setat când status = approved
-  approvedDate?: string
+  // legături reale
+  boqLineIds: string[]          // scope din costed BoQ
+  calloffIds: string[]          // materiale necesare
+  variationId?: string          // dacă a venit dintr-un VO aprobat
+  dependsOn: string[]           // alte task IDs (FS dependency)
   
-  attachments: { name: string }[]  // mock — doar nume fișier
-}
-
-VariationChange {
-  id, op: "add_system" | "modify_system" | "remove_line" | "add_line" | "adjust_qty"
-  description: string      // ex: "Add 1 extra layer Soundbloc 15mm to Bedrooms L3"
-  qty?: number
-  unit?: string
-  ratePerUnit?: number
-  lineTotal: number        // qty × rate, sau manual
+  blockers: { type: "material"|"labour"|"design"|"sub", note: string }[]
 }
 ```
 
-Storage: `localStorage` cheie `qp-project-variations-{projectId}`, pattern identic cu `projectData.ts` (CustomEvent pentru reactivitate).
+Storage: `localStorage` cheie `qp-planner-{projectId}` + `CustomEvent` pentru reactivitate.
 
-API:
-- `useProjectVariations(projectId)` — hook
-- `addVariation(projectId, input)`, `updateVariation`, `setStatus(id, status, approvedValue?)`, `deleteVariation`
-- `getNextVoNumber(projectId)` → "VO-001", "VO-002", …
-- `summarize(variations)` → `{ approved, pending, rejected, totalImpact, timeImpactDays }`
+API: `useProjectTasks(projectId)`, `addTask`, `updateTask`, `moveTask(id, deltaDays)`, `setProgress`, `computeKpis(tasks)` (programme variance, active count, blocked count, crews on site).
 
-### 2. Componente UI
+Seed: convertesc cele 6 taskuri demo Fitzrovia + 14 din `ganttRows` în formatul nou, cu Date reale (ancora = 28 Apr 2026 = data curentă din header).
 
-**`src/components/variations/VariationStatusBadge.tsx`**
-Badge color-coded: draft (gri), submitted (galben), approved (verde), rejected (roșu).
+### Etapa 2 — Gantt interactiv real
 
-**`src/components/variations/VariationsTable.tsx`**
-Coloane: ID · Title · Raised by · Date · Cost impact · Time (days) · Status · Actions (View / Submit / Approve / Reject / Delete). Filtre rapide pe status.
+Creez `src/components/planner/GanttChart.tsx`:
+- Scală timp **dinamică** (zoom: zi / săptămână / lună), nu mai hardcodată la 21
+- Linie "Today" calculată din `new Date()`, plasată corect pe axă
+- Bare cu **drag-to-move** și **resize** edge (mouse handlers, fără bibliotecă)
+- Linii subțiri pentru **dependențe** (FS arrow între task end → task start)
+- Click pe bară → `TaskDetailDialog` cu toate câmpurile + blockers + linkuri către BoQ / Call-off / VO source
+- Highlight visual pentru **critical path** (taskuri unde slack = 0)
+- Filtre: by crew, by level, by status, by source (baseline / VO)
 
-**`src/components/variations/NewVariationDialog.tsx`**
-- Câmpuri header: title*, reason, raised by (radio), raised date
-- Attachments: input file (mock — doar reține `name`)
-- **Changes editor** (lista dinamică, "+ Add change"):
-  - op (select), description (text), qty + unit + rate (number) → lineTotal auto
-- Time impact (days)
-- Auto-totals: costImpact = sum(lineTotal)
-- Footer: "Save as draft" / "Save & submit"
+Înlocuiește atât tabelul Fitzrovia cât și gantt-ul global; ruta `/planner` devine vedere multi-proiect (toggle proiect curent).
 
-**`src/components/variations/VariationDetailDrawer.tsx`** (sau dialog read-only cu edit toggle)
-- Toate detaliile + listă changes + attachments
-- Buttons în funcție de status:
-  - `draft` → Edit · Submit · Delete
-  - `submitted` → Approve (cere `approvedValue`, default = costImpact) · Reject (cere reason scurt)
-  - `approved` / `rejected` → doar view + Reopen to draft
+### Etapa 3 — Constraint-awareness (USP-ul real)
 
-### 3. Rute noi
+Asta diferențiază Plannerul de un Gantt generic Excel. Adaug în `planner.ts` o funcție `computeReadiness(task, project)`:
 
-**`src/routes/variations.tsx`** — vedere generică pe `useProject().current`
-- `<ProjectBanner scope="Variations" />`
-- Header KPIs (4 carduri Kpi):
-  - Approved value (£)
-  - Pending value (£) — submitted
-  - Net contract = contractValue + approved
-  - % uplift vs contract
-- `<NewVariationDialog />` trigger
-- `<VariationsTable />`
+```text
+Pentru fiecare task, verifică:
+1. Material gate     → toate calloffIds au status = "delivered" înainte de task.start?
+2. Labour gate       → crewId e disponibil în fereastra start→end? (cross-check cu alte taskuri)
+3. Predecessor gate  → toate dependsOn au progress = 100?
+4. VO gate           → dacă variationId există, statusul VO = "approved"?
 
-**`src/routes/projects.fitzrovia.variations.tsx`** — wrapper care folosește exact aceeași listă (filtrată pe `fitzrovia`), pentru ca tab-ul Fitzrovia să fie consistent.
+Returnează: { ready: bool, blockers: [...], suggestedStart: Date }
+```
 
-### 4. Integrări minore navigation
+Integrare UI:
+- **Badge "Not ready"** pe bara taskului dacă vreun gate pică
+- **KPI "Ready to start this week"** = câte taskuri din look-ahead 7 zile au gate-uri OK
+- **Panou "Blockers"** sub Gantt: listă consolidată cu link direct (ex. "T-105 blocked: PO-2026-031 not yet ordered → New call-off")
+- **Auto-suggest reschedule**: buton "Push to ready date" care apelează `moveTask` cu `suggestedStart`
+- **Look-ahead 3-week view**: tab dedicat care arată doar taskurile din fereastra curentă + 21 zile, sortate după ready/blocked
 
-- `src/routes/projects.fitzrovia.tsx` — adaugă `{ to: "/projects/fitzrovia/variations", label: "Variations" }` în array-ul de tabs (între Invoices și Labour)
-- `src/components/AppLayout.tsx` — adaugă link "Variations" în nav-ul principal (lângă Costed BoQ / Call-offs)
+## 3. Modificări de fișiere
 
-### 5. Seed mock pentru Fitzrovia
-La prima accesare, dacă nu există variations pentru `fitzrovia`, seed cu 2-3 exemple:
-- VO-001 "Upgrade acoustic spec L3-L5" — approved, £8,400
-- VO-002 "Add bulkheads in lobby" — submitted, £3,200
-- VO-003 "Remove partition in meeting room" — draft, -£1,100
+**Create:**
+- `src/lib/planner.ts` (model + hooks + seed + readiness logic)
+- `src/components/planner/GanttChart.tsx` (canvas/SVG-based, drag&drop)
+- `src/components/planner/TaskDetailDialog.tsx`
+- `src/components/planner/NewTaskDialog.tsx` (cu picker pentru BoQ lines, crew, dependsOn)
+- `src/components/planner/BlockersPanel.tsx`
+- `src/components/planner/LookAheadView.tsx`
 
-## Out of scope (iterația următoare)
-- Buton "Add as variation" în Calculator
-- Toggle baseline/VO în Costed BoQ + badges pe linii
-- VO lines eligible la Call-offs
-- Card Variations în Financial
-- Status `implemented` care merge linii efectiv în BoQ live
-- Export PDF VO pack
+**Edit:**
+- `src/routes/planner.tsx` — devine vedere multi-proiect cu toggle, folosește `GanttChart` real
+- `src/routes/projects.fitzrovia.planner.tsx` — KPI-uri din `computeKpis()`, înlocuiește tabelul cu `GanttChart` + `BlockersPanel` + tab `LookAheadView`
+- `src/lib/mockData.ts` — păstrez `ganttRows` ca seed legacy, dar adaug `plannerSeed` în formatul nou
 
-## Fișiere
-**Create (6):** `src/lib/variations.ts`, `src/components/variations/VariationStatusBadge.tsx`, `VariationsTable.tsx`, `NewVariationDialog.tsx`, `VariationDetailDrawer.tsx`, `src/routes/variations.tsx`, `src/routes/projects.fitzrovia.variations.tsx`
-
-**Edit (2):** `src/routes/projects.fitzrovia.tsx` (tab nav), `src/components/AppLayout.tsx` (sidebar link)
-
-După ce aprobi, implementez direct — totul stă pe localStorage, nu necesită Cloud.
+**Tot pe `localStorage`, fără Cloud.** Pot livra etapele incremental — confirmă dacă mergem direct cu toate 3 sau doar cu Etapa 1+2 (fundație + Gantt) și lăsăm constraint-awareness într-o iterație separată.
