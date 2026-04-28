@@ -147,9 +147,116 @@ export function CostBreakdownPanel({
               hint={`${upliftPct >= 0 ? "+" : ""}${upliftPct.toFixed(2)}% uplift · ${potentialPct >= 0 ? "+" : ""}${potentialPct.toFixed(2)}% if all approved`}
             />
           </div>
+
+          <UpliftChart
+            baseline={baseline}
+            approved={approvedNet}
+            pending={pendingNet}
+            upliftPct={upliftPct}
+            potentialPct={potentialPct}
+          />
         </>
       )}
     </Card>
+  );
+}
+
+function UpliftChart({
+  baseline,
+  approved,
+  pending,
+  upliftPct,
+  potentialPct,
+}: {
+  baseline: number;
+  approved: number;
+  pending: number;
+  upliftPct: number;
+  potentialPct: number;
+}) {
+  // Use absolute values so credits (negative) still render visually; tone reflects sign.
+  const total = baseline + Math.abs(approved) + Math.abs(pending);
+  const pct = (n: number) => (total > 0 ? (n / total) * 100 : 0);
+  const baseW = pct(baseline);
+  const apprW = pct(Math.abs(approved));
+  const pendW = pct(Math.abs(pending));
+
+  const apprColor = approved >= 0 ? "var(--green-600)" : "var(--red-500)";
+  const pendColor = pending >= 0 ? "rgb(180 83 9)" : "var(--red-500)"; // amber-700
+
+  return (
+    <div className="border-t border-[var(--ink-200)] px-5 py-4">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-[10.5px] font-medium uppercase tracking-wider text-[var(--ink-500)]">
+          Uplift vs baseline
+        </p>
+        <div className="flex items-center gap-3 text-[11px] text-[var(--ink-500)]">
+          <Legend swatch="var(--ink-300)" label="Baseline" />
+          <Legend swatch={apprColor} label={`Approved ${approved >= 0 ? "+" : ""}${upliftPct.toFixed(2)}%`} />
+          <Legend swatch={pendColor} label={`Pending ${pending >= 0 ? "+" : ""}${(potentialPct - upliftPct).toFixed(2)}%`} />
+        </div>
+      </div>
+
+      <div className="flex h-7 w-full overflow-hidden rounded-md border border-[var(--ink-200)] bg-[var(--ink-50)]">
+        <Segment width={baseW} color="var(--ink-300)" label={fmt(baseline)} title="Baseline contract" />
+        {apprW > 0 && (
+          <Segment width={apprW} color={apprColor} label={fmt(approved)} title="Approved net" textLight />
+        )}
+        {pendW > 0 && (
+          <Segment width={pendW} color={pendColor} label={fmt(pending)} title="Pending net" textLight striped />
+        )}
+      </div>
+
+      <div className="mt-2 flex justify-between text-[10.5px] tabular-nums text-[var(--ink-500)]">
+        <span>£0</span>
+        <span>{fmt(baseline + approved + pending)} potential ceiling</span>
+      </div>
+    </div>
+  );
+}
+
+function Legend({ swatch, label }: { swatch: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="h-2.5 w-2.5 rounded-sm" style={{ background: swatch }} />
+      {label}
+    </span>
+  );
+}
+
+function Segment({
+  width,
+  color,
+  label,
+  title,
+  textLight,
+  striped,
+}: {
+  width: number;
+  color: string;
+  label: string;
+  title: string;
+  textLight?: boolean;
+  striped?: boolean;
+}) {
+  if (width <= 0) return null;
+  const showLabel = width > 8;
+  return (
+    <div
+      title={`${title}: ${label}`}
+      className={cn(
+        "flex items-center justify-center overflow-hidden text-[10.5px] font-semibold tabular-nums transition-all",
+        textLight ? "text-white" : "text-[var(--ink-900)]",
+      )}
+      style={{
+        width: `${width}%`,
+        background: striped
+          ? `repeating-linear-gradient(135deg, ${color} 0 6px, color-mix(in oklab, ${color} 70%, white) 6px 12px)`
+          : color,
+      }}
+    >
+      {showLabel && <span className="truncate px-1">{label}</span>}
+    </div>
   );
 }
 
