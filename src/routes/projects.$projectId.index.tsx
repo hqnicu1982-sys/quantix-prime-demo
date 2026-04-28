@@ -6,7 +6,6 @@ import { useProjectData } from "@/lib/projectData";
 import { useProjectTasks } from "@/lib/planner";
 import { useAssignments } from "@/lib/labour";
 import { CheckCircle2, Circle, ArrowRight } from "lucide-react";
-import type { LinkProps } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
 
@@ -154,7 +153,7 @@ type SetupStep = {
   hint: string;
   done: boolean;
   detail?: string;
-  to: LinkProps["to"];
+  to: "/projects/$projectId/specification" | "/projects/$projectId/costed-boq" | "/projects/$projectId/planner" | "/projects/$projectId/team" | "/projects/$projectId/calloffs";
   cta: string;
 };
 
