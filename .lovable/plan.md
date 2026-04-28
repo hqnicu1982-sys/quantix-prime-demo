@@ -1,61 +1,43 @@
-# Cost & Labour în Live Summary (Calculator)
+# £/m² pe cardurile din System Catalog
 
-## Răspuns scurt la întrebare
-Da — `Calculator` și `Costed BoQ` împart același model de date: calculatorul produce cantități (`totalsPerM2 × area × waste`) iar Costed BoQ are prețurile per material (`costedBoqRows` cu `rate`, `ccf`, `minster`). În prezent **Live Summary nu afișează niciun cost** — doar cantități. Le pot lega printr-un mic helper de pricing și pot adăuga labour folosind `calculatorResults.labourRate` (£24.50/m² mock).
+## Situația curentă
+- `src/routes/catalog.tsx` afișează 7 sisteme cu **doar performance specs** (height, fire, Rw, thickness). Nu există cantități de material per m².
+- `src/routes/calculator.tsx` are `LIBRARY` cu `totalsPerM2` (cantități per m²) doar pentru **3 sisteme**: `GIWL-146-I-80-1L-DL15 (B)`, `GIWL-92-C-50-2L-WB12.5`, `GIWL-146-I-80-2L-SB15`.
+- Costed BoQ (`costedBoqRows`) are prețurile per material — bridged deja prin `src/lib/calculatorPricing.ts` (helper-ul nou `estimateCost`).
 
-## Ce vom afișa în noul Live Summary
+## Problema
+Doar 3 din 7 carduri pot avea un cost real onest. Restul (`GDWL-DL15-1L`, `C-48/70-1L-WB15`, `C-92/146-2L-SB`, `S-CW-120`, `MF-CASOLINE`) n-au build-up cantitativ — n-aș vrea să inventez prețuri.
 
-Bloc nou „Cost estimate" plasat sub „Wall area", deasupra build-up-ului:
+## Soluție (în 2 pași — propun să facem doar pasul 1 acum)
 
+### Pas 1 — Cost real unde avem date, „—" cinstit unde nu avem
+1. **Mut `LIBRARY` + `scaledTotals` într-un modul shared** `src/lib/systemLibrary.ts` (nu e nevoie să dublez datele între calculator și catalog).
+2. **Calculator** îl re-importă (fără refactor logic).
+3. **Catalog**: pentru fiecare card, dacă `m.code` există în `systemLibrary`, calculez `estimateCost(scaledTotals(sys, 1, 1.05), 1, 1.05)` (per 1 m², 5% waste) și afișez un nou chip `£ NN /m²` cu split material+labour în tooltip. Dacă nu e în library → chip discret „price n/a · open in calculator".
+4. **Sort**: adaug opțiunea „Cheapest £/m²" care ridică în top sistemele cu price și împinge n/a-urile la coadă.
+
+### Pas 2 (opțional, viitor)
+Extind `LIBRARY` cu `totalsPerM2` pentru celelalte 4 sisteme (GypWall CLASSIC, QUIET, ShaftWall, CasoLine MF). Vine cu cantități realiste din NBS — dar e un job de date separat, nu de UI.
+
+## Fișiere modificate
+- **Creat**: `src/lib/systemLibrary.ts` — exportă `LIBRARY`, `SystemDef`, `scaledTotals`.
+- **Editat**: `src/routes/calculator.tsx` — import din modulul shared (no behavior change).
+- **Editat**: `src/routes/catalog.tsx` — cost chip în card + opțiune sort „cheapest".
+
+## UI pe card
 ```text
-┌─ COST ESTIMATE ────────────────────────────┐
-│  Total system            £ 12,480          │
-│  └ £ 62.40 / m²                            │
-│                                            │
-│  Materials   £  8,540   (best-supplier)    │
-│  Labour      £  3,940   (160 h @ £24.50)   │
-│                                            │
-│  Coverage: 6 / 7 lines priced  •  1 review │
-└────────────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│ GIWL-92-C-50-2L-WB12.5    [HIGH]    │
+│ Independent lining · 2× WallBoard   │
+│                                      │
+│ [Height][Fire][Rw][Thick]            │
+│                                      │
+│ £ 38 /m²  · 65% mat / 35% labour     │
+│ ─────────────────────────────────    │
+│ [Compare]            Load → calc →   │
+└──────────────────────────────────────┘
 ```
 
-Plus, în lista existentă „Aggregated totals", adaug a 3-a coloană cu costul pe linie:
+Pentru cardurile fără date: chip gri `price n/a` cu tooltip „No quantity build-up yet — open in calculator to estimate manually".
 
-```text
-Gyproc WallBoard 12.5     105.0 m²    £  411
-Gypframe Stud (3.0m)       21.0 lengths £ 260
-Jointing                    60.0 kg    £   —   ⓘ no price
-```
-
-## Surse de date (re-folosim ce există, zero date noi)
-
-- **Material price**: `costedBoqRows` din `src/lib/mockData.ts` — match pe `name` (case-insensitive contains) → folosim `Math.min(ccf ?? rate, minster ?? rate)` ca „best price". Liniile fără match → marcate „no price" (nu mint un preț).
-- **Labour**: `calculatorResults.labourRate` (£24.50/m²) × `area × wasteFactor` pentru cost; productivitate 0.4 h/m² ca să afișăm și ore.
-- **Coverage**: `priced / totalLines` — onest pentru utilizator (mock-ul nu acoperă toate materialele BG).
-
-## Fișiere de modificat / creat
-
-1. **`src/lib/calculatorPricing.ts`** (nou, ~50 linii)
-   - `priceMaterial(name) → { unitPrice, supplier } | null` — caută în `costedBoqRows`.
-   - `estimateCost(totals, area, wasteFactor) → { materials, labour, total, perM2, hours, pricedLines, totalLines, lines: [...] }`
-   - Productivitate: `HOURS_PER_M2 = 0.4` (export ca const).
-
-2. **`src/routes/calculator.tsx`**
-   - Import helper-ul nou; calculez `cost = estimateCost(totals, area, wasteFactor)`.
-   - Adaug bloc „Cost estimate" în aside-ul Live Summary (între „Wall area" și „System build-up").
-   - Adaug a 3-a coloană (cost £) în lista „Aggregated totals" — cu fallback `—` și tooltip „no price in catalogue" pentru linii ne-prețuite.
-   - Pasez `cost.total` și `cost.perM2` și la `AddToBoqButton` (toast cu valoarea).
-
-3. **`src/routes/projects.$projectId.calloffs.tsx`** — *nimic*. Live Summary rămâne o feature izolată în calculator; nu propag costul în BoQ-ul proiectului în acest task (rămâne pe rate de la furnizor în Costed BoQ).
-
-## Edge cases tratate
-- `invalid` (input rupt): blocul Cost arată `—`, nu zerouri false.
-- 0 linii prețuite: arătăm doar Labour + un hint „add prices in Costed BoQ".
-- Sistem bespoke (fără rate fixe): folosim totuși matching pe nume material; ce nu se găsește = „no price".
-
-## Ce NU includem (pot fi follow-ups dacă vrei)
-- Toggle CCF vs Minster vs Best (acum doar best).
-- Markup / margin pe deasupra costului.
-- Persistarea „cost snapshot" în `projectData` când apeși „Add to Costed BoQ".
-
-Confirmi planul ca să-l implementez?
+Confirmi planul (Pas 1)?
