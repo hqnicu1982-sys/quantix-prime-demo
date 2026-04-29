@@ -5,8 +5,15 @@ import { ExternalLink, AlertTriangle, CheckCircle2, CircleDollarSign } from "luc
 import { useInvoices, useInvoiceTotals, markInvoicePaid } from "@/lib/invoiceRegistry";
 import { toast } from "sonner";
 import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/projects/$projectId/invoices")({ component: InvoicesPage });
+export const Route = createFileRoute("/projects/$projectId/invoices")({ component: GuardedInvoicesPage });
+
+function GuardedInvoicesPage() {
+  const allowed = useCan("view.invoices");
+  if (!allowed) return <NoAccess cap="view.invoices" title="Invoices restricted" />;
+  return <InvoicesPage />;
+}
 
 const invoices = [
   { id: "CCF-10824", supplier: "CCF", date: "18 Apr", po: 7093, invoiced: 8340, variance: 1247, status: "variance" as const },
