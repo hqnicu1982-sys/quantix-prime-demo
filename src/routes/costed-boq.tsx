@@ -17,6 +17,7 @@ import { useProjectData, removeSystem } from "@/lib/projectData";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useCan } from "@/lib/permissions";
 import { Gated } from "@/components/auth/Gated";
+import { NoAccess } from "@/components/auth/NoAccess";
 
 const searchSchema = z.object({
   tab:    fallback(z.enum(["all", "review", "missing", "savings"]), "all").default("all"),
@@ -29,8 +30,14 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/costed-boq")({
   head: () => ({ meta: [{ title: "Costed BoQ — Quantix Prime" }] }),
   validateSearch: zodValidator(searchSchema),
-  component: CostedBoq,
+  component: GuardedCostedBoq,
 });
+
+function GuardedCostedBoq() {
+  const allowed = useCan("view.boq");
+  if (!allowed) return <NoAccess cap="view.boq" title="Costed BoQ restricted" />;
+  return <CostedBoq />;
+}
 
 const TABS = [
   { id: "all" as const,     label: "All items" },
