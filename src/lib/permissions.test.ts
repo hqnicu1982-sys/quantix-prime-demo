@@ -25,6 +25,7 @@ const ACTIONS: Array<{ name: string; cap: Capability }> = [
   { name: "Team · Edit PW rates", cap: "edit.pwRates" },
   { name: "Settings · Labour rates", cap: "view.settings.labour" },
   { name: "Planner · Edit task", cap: "edit.planner" },
+  { name: "Specification · Upload docs / edit notes", cap: "edit.specification" },
 ];
 
 const TIERS: Tier[] = ["Admin", "Pro Control", "Pro", "Site User", "Operative"];
