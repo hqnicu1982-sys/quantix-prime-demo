@@ -260,7 +260,6 @@ const ROUTE_GUARDS = {
   "src/routes/variations.tsx": "view.variations",
   "src/routes/costed-boq.tsx": "view.boq",
   "src/routes/price-intelligence.tsx": "view.priceIntel",
-  "src/routes/catalog.tsx": "view.priceIntel",
   "src/routes/integrations.tsx": "view.integrations",
   "src/routes/team.tsx": "view.team",
   "src/routes/settings.labour.tsx": "view.settings.labour",
