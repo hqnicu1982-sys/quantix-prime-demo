@@ -25,15 +25,8 @@ import { BespokeBuildUpDialog } from "@/components/calculator/BespokeBuildUpDial
 import { estimateCost, fmtMoneyShort } from "@/lib/calculatorPricing";
 import { LIBRARY, scaledTotals, type SystemDef, type Totals } from "@/lib/systemLibrary";
 import { useCan } from "@/lib/permissions";
-import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/calculator")({ component: GuardedCalculator });
-
-function GuardedCalculator() {
-  const allowed = useCan("view.boq");
-  if (!allowed) return <NoAccess cap="view.boq" title="Calculator restricted" />;
-  return <Calculator />;
-}
+export const Route = createFileRoute("/calculator")({ component: Calculator });
 
 // =============================================================================
 // COMPONENT
