@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useCurrentUser } from "@/lib/currentUser";
 import { useCan } from "@/lib/permissions";
 import { MyScopeCard } from "@/components/dashboard/MyScopeCard";
+import { ApprovalInboxCard } from "@/components/dashboard/ApprovalInboxCard";
 import { LiveLabourCostCard } from "@/components/financial/LiveLabourCostCard";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
@@ -51,6 +52,7 @@ function Overview() {
           </div>
         )}
         {isOnProject && <MyScopeCard projectId={projectId} />}
+        <ApprovalInboxCard />
         <ProjectSetupChecklist projectId={projectId} />
       </div>
     );
@@ -79,6 +81,8 @@ function Overview() {
       )}
 
       {isOnProject && <MyScopeCard projectId={projectId} />}
+
+      <ApprovalInboxCard />
 
       {(canSeeFinancials || canSeeFinancialsLite) && <LiveLabourCostCard projectId={projectId} />}
 
