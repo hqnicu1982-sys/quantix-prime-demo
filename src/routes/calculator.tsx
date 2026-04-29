@@ -813,7 +813,7 @@ function SingleView({
             <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Aggregated totals</p>
             <ul className="mt-2 divide-y divide-[var(--ink-200)]/60 text-[12.5px]">
               {cost.lines.map(l => (
-                <li key={l.item} className="grid grid-cols-[1fr_auto_auto] items-start gap-3 py-2.5">
+                <li key={l.item} className={"grid items-start gap-3 py-2.5 " + (canSeePricing ? "grid-cols-[1fr_auto_auto]" : "grid-cols-[1fr_auto]")}>
                   <span className="text-[var(--ink-900)]">{l.item}</span>
                   <span className="font-mono-num shrink-0 text-right font-semibold text-[var(--ink-900)]">
                     {fmtQty(l.qty)} <span className="font-normal text-[var(--ink-500)]">{l.unit}</span>
