@@ -25,15 +25,8 @@ import { BespokeBuildUpDialog } from "@/components/calculator/BespokeBuildUpDial
 import { estimateCost, fmtMoneyShort } from "@/lib/calculatorPricing";
 import { LIBRARY, scaledTotals, type SystemDef, type Totals } from "@/lib/systemLibrary";
 import { useCan } from "@/lib/permissions";
-import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/calculator")({ component: GuardedCalculator });
-
-function GuardedCalculator() {
-  const allowed = useCan("view.boq");
-  if (!allowed) return <NoAccess cap="view.boq" title="Calculator restricted" />;
-  return <Calculator />;
-}
+export const Route = createFileRoute("/calculator")({ component: Calculator });
 
 // =============================================================================
 // COMPONENT
@@ -91,6 +84,7 @@ function seedBuildUpFromLibrary(code: string): BespokeBuildUp {
 
 function Calculator() {
   const navigate = useNavigate();
+  const canSeePricing = useCan("view.financials.lite");
   const [mode, setMode] = useState<Mode>("code");
   const [length, setLength] = useState("50");
   const [height, setHeight] = useState("4");
@@ -262,6 +256,7 @@ function Calculator() {
             combined={COMBINED}
             projectId={current.id}
             projectName={current.name}
+            canSeePricing={canSeePricing}
           />
         )}
       </div>
@@ -278,7 +273,7 @@ function SingleView({
   boardSize, setBoardSize,
   reuseOffcuts, setReuseOffcuts,
   area, wasteFactor, navigate,
-  combined, projectId, projectName,
+  combined, projectId, projectName, canSeePricing,
 }: {
   activeCode: string; setActiveCode: (v: string) => void;
   length: string; setLength: (v: string) => void;
@@ -291,6 +286,7 @@ function SingleView({
   combined: SystemDef[];
   projectId: string;
   projectName: string;
+  canSeePricing: boolean;
 }) {
   const sys = combined.find(s => s.code === activeCode) ?? LIBRARY[0];
   const isBespoke = activeCode.startsWith("BSP-");
@@ -508,7 +504,7 @@ function SingleView({
                     <th className="px-3 py-2 text-left font-semibold">Board size</th>
                     <th className="px-3 py-2 text-right font-semibold">Pieces / column</th>
                     <th className="px-3 py-2 text-right font-semibold">{reuseOffcuts ? "Net waste (after reuse)" : "Off-cut waste"}</th>
-                    <th className="px-3 py-2 text-right font-semibold">Scrap cost (this wall)</th>
+                    {canSeePricing && <th className="px-3 py-2 text-right font-semibold">Scrap cost (this wall)</th>}
                     <th className="px-3 py-2 text-right font-semibold sr-only">Action</th>
                   </tr>
                 </thead>
@@ -571,7 +567,7 @@ function SingleView({
                             {w}%
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-right">
+                        {canSeePricing && <td className="px-3 py-2 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <span
                               className="font-mono-num text-[12.5px] font-semibold"
@@ -585,7 +581,7 @@ function SingleView({
                               </span>
                             )}
                           </div>
-                        </td>
+                        </td>}
                         <td className="px-3 py-2 text-right">
                           {isSelected ? (
                             <span className="text-[11px] font-semibold text-[var(--accent-500)]">In use</span>
@@ -631,8 +627,10 @@ function SingleView({
                   {projectPlan && (
                     <>
                       <span className="font-mono-num">{projectPlan.totalBoardsBought} boards</span>
-                      <span aria-hidden="true">·</span>
-                      <span className="font-mono-num">£{projectPlan.totalCost.toFixed(0)}</span>
+                      {canSeePricing && <>
+                        <span aria-hidden="true">·</span>
+                        <span className="font-mono-num">£{projectPlan.totalCost.toFixed(0)}</span>
+                      </>}
                     </>
                   )}
                   <ChevronDown className={"h-4 w-4 transition-transform " + (planOpen ? "rotate-180" : "")} />
@@ -687,9 +685,11 @@ function SingleView({
                       <Stat label="Boards bought" value={`${projectPlan.totalBoardsBought}`} />
                       <Stat label="Wall area covered" value={`${projectPlan.totalWallAreaM2.toFixed(1)} m²`} />
                       <Stat label="Net waste" value={`${projectPlan.netWastePct}%`} tone={projectPlan.netWastePct <= 10 ? "good" : projectPlan.netWastePct <= 20 ? "warn" : "bad"} />
-                      <div className="my-1 border-t border-[var(--ink-200)]" />
-                      <Stat label="Board cost" value={`£${projectPlan.totalCost.toFixed(0)}`} strong />
-                      <Stat label="Of which scrap" value={`£${projectPlan.scrapCost.toFixed(0)}`} tone="bad" />
+                      {canSeePricing && <>
+                        <div className="my-1 border-t border-[var(--ink-200)]" />
+                        <Stat label="Board cost" value={`£${projectPlan.totalCost.toFixed(0)}`} strong />
+                        <Stat label="Of which scrap" value={`£${projectPlan.scrapCost.toFixed(0)}`} tone="bad" />
+                      </>}
                     </div>
                   </div>
                 </div>
@@ -763,7 +763,7 @@ function SingleView({
           </div>
 
           {/* COST ESTIMATE — bridges Calculator with Costed BoQ pricing */}
-          <div className="border-b border-[var(--ink-200)]/60 bg-gradient-to-br from-[var(--accent-500)]/[0.04] to-transparent px-5 py-4">
+          {canSeePricing && <div className="border-b border-[var(--ink-200)]/60 bg-gradient-to-br from-[var(--accent-500)]/[0.04] to-transparent px-5 py-4">
             <div className="flex items-center justify-between">
               <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Cost estimate</p>
               <span className="font-mono-num text-[10px] text-[var(--ink-500)]">
@@ -795,7 +795,7 @@ function SingleView({
                 {cost.totalLines - cost.pricedLines} line{cost.totalLines - cost.pricedLines === 1 ? "" : "s"} not in catalogue — material total is a lower bound.
               </p>
             )}
-          </div>
+          </div>}
 
           <div className="border-b border-[var(--ink-200)]/60 px-5 py-4">
             <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">System build-up</p>
@@ -813,30 +813,30 @@ function SingleView({
             <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Aggregated totals</p>
             <ul className="mt-2 divide-y divide-[var(--ink-200)]/60 text-[12.5px]">
               {cost.lines.map(l => (
-                <li key={l.item} className="grid grid-cols-[1fr_auto_auto] items-start gap-3 py-2.5">
+                <li key={l.item} className={"grid items-start gap-3 py-2.5 " + (canSeePricing ? "grid-cols-[1fr_auto_auto]" : "grid-cols-[1fr_auto]")}>
                   <span className="text-[var(--ink-900)]">{l.item}</span>
                   <span className="font-mono-num shrink-0 text-right font-semibold text-[var(--ink-900)]">
                     {fmtQty(l.qty)} <span className="font-normal text-[var(--ink-500)]">{l.unit}</span>
                   </span>
-                  <span
+                  {canSeePricing && <span
                     className={"font-mono-num shrink-0 w-[58px] text-right font-semibold " + (l.lineCost == null ? "text-[var(--ink-500)]" : "text-[var(--accent-500)]")}
                     title={l.lineCost == null ? "No price in catalogue" : `${l.supplier?.toUpperCase()} @ £${l.unitPrice?.toFixed(2)}/${l.unit}`}
                   >
                     {l.lineCost == null ? "—" : fmtMoneyShort(l.lineCost)}
-                  </span>
+                  </span>}
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="space-y-2 border-t border-[var(--ink-200)]/60 bg-[var(--ink-50)]/40 p-4">
+          {canSeePricing && <div className="space-y-2 border-t border-[var(--ink-200)]/60 bg-[var(--ink-50)]/40 p-4">
             <Button className="w-full gap-2" size="lg" disabled={invalid} onClick={() => toast.success("BoQ exported", { description: "CSV ready" })}>
               <Download className="h-4 w-4" /> Export BoQ
             </Button>
             <Button className="w-full" variant="outline" disabled={invalid} onClick={() => { toast.success("Added to project BoQ"); navigate({ to: "/costed-boq" }); }}>
               Add to Costed BoQ
             </Button>
-          </div>
+          </div>}
         </div>
       </aside>
 

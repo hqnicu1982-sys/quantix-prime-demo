@@ -12,15 +12,8 @@ import { fireTier, acousticTier, heightTier, thicknessTier, bestTier, tierColorV
 import { findSystem, scaledTotals } from "@/lib/systemLibrary";
 import { estimateCost } from "@/lib/calculatorPricing";
 import { useCan } from "@/lib/permissions";
-import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/catalog")({ component: GuardedCatalog });
-
-function GuardedCatalog() {
-  const allowed = useCan("view.priceIntel");
-  if (!allowed) return <NoAccess cap="view.priceIntel" title="Catalog restricted" />;
-  return <Catalog />;
-}
+export const Route = createFileRoute("/catalog")({ component: Catalog });
 
 // ---- Domain ----
 type Family = { id: string; name: string; blurb: string; status: "live" | "beta" | "roadmap"; icon: React.ComponentType<{ className?: string }> };
@@ -48,6 +41,7 @@ const allMatches = [
 
 function Catalog() {
   const navigate = useNavigate();
+  const canSeePricing = useCan("view.financials.lite");
   const [picked, setPicked] = useState<string>("lining");
   const [q, setQ] = useState("");
   const [minH, setMinH] = useState("");
@@ -58,6 +52,8 @@ function Catalog() {
   const [board, setBoard] = useState("Any");
   const [stud, setStud] = useState("Any");
   const [sort, setSort] = useState<"best"|"height"|"thick"|"price">("best");
+  // If the user lost pricing visibility but had "price" selected, fall back to "best"
+  const effectiveSort = !canSeePricing && sort === "price" ? "best" : sort;
 
   // Per-m² cost lookup (where we have a quantity build-up in the shared library)
   const costFor = (code: string): { perM2: number; materials: number; labour: number; pricedRatio: number } | null => {
@@ -82,15 +78,15 @@ function Catalog() {
       (!minFire || m.fire   >= +minFire) &&
       (!maxThick|| m.thick  <= +maxThick)
     );
-    if (sort === "height") r = [...r].sort((a,b) => b.height - a.height);
-    if (sort === "thick")  r = [...r].sort((a,b) => a.thick  - b.thick);
-    if (sort === "price")  r = [...r].sort((a,b) => {
+    if (effectiveSort === "height") r = [...r].sort((a,b) => b.height - a.height);
+    if (effectiveSort === "thick")  r = [...r].sort((a,b) => a.thick  - b.thick);
+    if (effectiveSort === "price")  r = [...r].sort((a,b) => {
       const ca = costFor(a.code)?.perM2 ?? Infinity;
       const cb = costFor(b.code)?.perM2 ?? Infinity;
       return ca - cb;
     });
     return r;
-  }, [picked, q, minH, minRw, minFire, maxThick, sort]);
+  }, [picked, q, minH, minRw, minFire, maxThick, effectiveSort]);
 
   return (
     <div className="glass-bg -m-6 min-h-[calc(100vh-4rem)] p-6 md:-m-8 md:p-10">
@@ -219,7 +215,7 @@ function Catalog() {
                   <option value="best">Best match</option>
                   <option value="height">Tallest height</option>
                   <option value="thick">Thinnest build-up</option>
-                  <option value="price">Cheapest £/m²</option>
+                  {canSeePricing && <option value="price">Cheapest £/m²</option>}
                 </select>
               </div>
               <span className="font-mono-num rounded-full bg-[var(--accent-500)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--accent-500)]">
@@ -280,7 +276,7 @@ function Catalog() {
                       <SpecChip icon={<Layers  className="h-3 w-3" />} v={`${m.thick} mm`}                  k="Thick"  tier={tT} />
                     </div>
 
-                    {(() => {
+                    {canSeePricing && (() => {
                       const c = costFor(m.code);
                       if (!c) {
                         return (

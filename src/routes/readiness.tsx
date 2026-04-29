@@ -6,16 +6,8 @@ import { readinessRows } from "@/lib/mockData";
 import { AlertCircle, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { ProjectBanner } from "@/components/ProjectBanner";
-import { useCan } from "@/lib/permissions";
-import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/readiness")({ component: GuardedReadiness });
-
-function GuardedReadiness() {
-  const allowed = useCan("view.boq");
-  if (!allowed) return <NoAccess cap="view.boq" title="Readiness restricted" />;
-  return <Readiness />;
-}
+export const Route = createFileRoute("/readiness")({ component: Readiness });
 
 function Readiness() {
   const ready = readinessRows.filter((r) => r.status === "READY").length;
