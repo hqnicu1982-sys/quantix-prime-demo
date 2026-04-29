@@ -427,6 +427,22 @@ function MobileTabBar() {
 }
 
 export function AppLayout() {
+  // Defer rendering to after mount to avoid SSR/CSR hydration mismatches.
+  // Several pieces of state (current user, persona, theme, custom projects)
+  // depend on localStorage, which only exists on the client. Rendering a
+  // matching shell on the server and switching to the real UI after mount
+  // keeps React's hydration check happy without sacrificing SSR for routing.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] text-foreground" suppressHydrationWarning>
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-pulse rounded-full bg-[var(--ink-200)]" aria-hidden />
+        </div>
+      </div>
+    );
+  }
   return (
     <ProjectProvider>
       <LayoutInner />
