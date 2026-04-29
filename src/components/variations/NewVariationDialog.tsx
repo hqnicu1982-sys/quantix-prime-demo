@@ -25,6 +25,7 @@ import {
 } from "@/lib/variations";
 import { toast } from "sonner";
 import { useProject } from "@/lib/ProjectContext";
+import { useCan } from "@/lib/permissions";
 
 export function NewVariationDialog({
   trigger,
@@ -35,6 +36,7 @@ export function NewVariationDialog({
 }) {
   const { current } = useProject();
   const pid = projectId ?? current.id;
+  const canEdit = useCan("edit.variations");
 
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -297,8 +299,12 @@ export function NewVariationDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button variant="outline" onClick={() => save(false)} disabled={!canSave}>Save as draft</Button>
-          <Button onClick={() => save(true)} disabled={!canSave}>Save & submit</Button>
+          {canEdit && (
+            <>
+              <Button variant="outline" onClick={() => save(false)} disabled={!canSave}>Save as draft</Button>
+              <Button onClick={() => save(true)} disabled={!canSave}>Save & submit</Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

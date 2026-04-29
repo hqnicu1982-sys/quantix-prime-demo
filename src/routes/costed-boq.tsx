@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectData, removeSystem } from "@/lib/projectData";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useCan } from "@/lib/permissions";
+import { Gated } from "@/components/auth/Gated";
 
 const searchSchema = z.object({
   tab:    fallback(z.enum(["all", "review", "missing", "savings"]), "all").default("all"),
@@ -45,6 +47,8 @@ function CostedBoq() {
   const search = Route.useSearch();
   const { current } = useProject();
   const projectData = useProjectData(current.id);
+  const canEditBoq = useCan("edit.boq");
+  const canCreateCalloffs = useCan("create.calloffs");
   const set = (patch: Record<string, unknown>) =>
     navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, ...patch }), replace: true });
 
@@ -214,16 +218,18 @@ function CostedBoq() {
           </span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setSelected(new Set())}>Clear</Button>
-            <Button size="sm" onClick={() => {
-              const picks = Object.keys(projectData.supplierChoices).length;
-              toast.success(`${selected.size} draft call-offs created`, {
-                description: picks > 0
-                  ? `Using ${picks} agreed supplier${picks === 1 ? "" : "s"} for ${current.name}`
-                  : `No supplier picks yet — defaults from Price Intelligence`,
-              });
-              setSelected(new Set());
-              goto({ to: "/calloffs" });
-            }}>Generate call-offs ({selected.size})</Button>
+            {canCreateCalloffs && (
+              <Button size="sm" onClick={() => {
+                const picks = Object.keys(projectData.supplierChoices).length;
+                toast.success(`${selected.size} draft call-offs created`, {
+                  description: picks > 0
+                    ? `Using ${picks} agreed supplier${picks === 1 ? "" : "s"} for ${current.name}`
+                    : `No supplier picks yet — defaults from Price Intelligence`,
+                });
+                setSelected(new Set());
+                goto({ to: "/calloffs" });
+              }}>Generate call-offs ({selected.size})</Button>
+            )}
           </div>
         </div>
       )}
@@ -331,20 +337,28 @@ function CostedBoq() {
                 <DialogDescription>{reviewRow.reviewNote ?? "Pick the correct supplier price."}</DialogDescription>
               </DialogHeader>
               <div className="space-y-2 text-[13px]">
-                <button
-                  onClick={() => { toast.success("CCF price assigned", { description: `£${(reviewRow.minster ?? 0).toFixed(2)}/${reviewRow.unit}` }); setReviewRow(null); }}
-                  className="flex w-full items-center justify-between rounded-md border border-[var(--ink-200)] px-3 py-2 hover:border-[var(--green-600)]"
-                >
-                  <span><strong>Glasroc F FireCase 20mm</strong><br /><span className="text-[11px] text-[var(--ink-500)]">68% match · CCF</span></span>
-                  <span className="font-mono">£17.85</span>
-                </button>
-                <button
-                  onClick={() => { toast.success("Alternative match assigned"); setReviewRow(null); }}
-                  className="flex w-full items-center justify-between rounded-md border border-[var(--ink-200)] px-3 py-2 hover:border-[var(--green-600)]"
-                >
-                  <span><strong>Glasroc S Multi-Board 20mm</strong><br /><span className="text-[11px] text-[var(--ink-500)]">52% match · Minster</span></span>
-                  <span className="font-mono">£19.20</span>
-                </button>
+                {canEditBoq ? (
+                  <>
+                    <button
+                      onClick={() => { toast.success("CCF price assigned", { description: `£${(reviewRow.minster ?? 0).toFixed(2)}/${reviewRow.unit}` }); setReviewRow(null); }}
+                      className="flex w-full items-center justify-between rounded-md border border-[var(--ink-200)] px-3 py-2 hover:border-[var(--green-600)]"
+                    >
+                      <span><strong>Glasroc F FireCase 20mm</strong><br /><span className="text-[11px] text-[var(--ink-500)]">68% match · CCF</span></span>
+                      <span className="font-mono">£17.85</span>
+                    </button>
+                    <button
+                      onClick={() => { toast.success("Alternative match assigned"); setReviewRow(null); }}
+                      className="flex w-full items-center justify-between rounded-md border border-[var(--ink-200)] px-3 py-2 hover:border-[var(--green-600)]"
+                    >
+                      <span><strong>Glasroc S Multi-Board 20mm</strong><br /><span className="text-[11px] text-[var(--ink-500)]">52% match · Minster</span></span>
+                      <span className="font-mono">£19.20</span>
+                    </button>
+                  </>
+                ) : (
+                  <p className="rounded-md border border-dashed border-[var(--ink-200)] px-3 py-3 text-center text-[11.5px] italic text-[var(--ink-500)]">
+                    You don't have permission to edit BoQ prices. Ask a QS or Admin.
+                  </p>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setReviewRow(null)}>Cancel</Button>
@@ -369,9 +383,11 @@ function CostedBoq() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOptimiseOpen(false)}>Cancel</Button>
-            <Button onClick={() => { toast.success("Split applied", { description: "Best-supplier prices saved to BoQ" }); setOptimiseOpen(false); }}>
-              <Check className="mr-1.5 h-3.5 w-3.5" />Apply split
-            </Button>
+            {canEditBoq && (
+              <Button onClick={() => { toast.success("Split applied", { description: "Best-supplier prices saved to BoQ" }); setOptimiseOpen(false); }}>
+                <Check className="mr-1.5 h-3.5 w-3.5" />Apply split
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -491,6 +507,7 @@ function CustomSystemsPanel({
   systems: ReturnType<typeof useProjectData>["systems"];
   lines: ReturnType<typeof useProjectData>["boqLines"];
 }) {
+  const canEditBoq = useCan("edit.boq");
   if (systems.length === 0) {
     return (
       <div className="rounded-md border border-dashed border-[var(--ink-200)] bg-[var(--ink-50)]/40 px-4 py-3 text-[12.5px] text-[var(--ink-500)]">
@@ -537,17 +554,19 @@ function CustomSystemsPanel({
                 <span className="shrink-0 rounded bg-[var(--ink-50)] px-2 py-0.5 text-[10.5px] font-medium text-[var(--ink-700)]">
                   {sysLines.length} lines
                 </span>
-                <button
-                  onClick={() => {
-                    removeSystem(projectId, s.id);
-                    toast.success("System removed");
-                  }}
-                  className="rounded p-1 text-[var(--ink-500)] hover:bg-[var(--red-500)]/10 hover:text-[var(--red-500)]"
-                  aria-label="Remove system"
-                  title="Remove from BoQ"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                {canEditBoq && (
+                  <button
+                    onClick={() => {
+                      removeSystem(projectId, s.id);
+                      toast.success("System removed");
+                    }}
+                    className="rounded p-1 text-[var(--ink-500)] hover:bg-[var(--red-500)]/10 hover:text-[var(--red-500)]"
+                    aria-label="Remove system"
+                    title="Remove from BoQ"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
               <details className="mt-1.5">
                 <summary className="cursor-pointer text-[11px] text-[var(--ink-500)] hover:text-[var(--ink-900)]">

@@ -9,6 +9,8 @@ import { Link } from "@tanstack/react-router";
 import { InviteMemberDialog } from "@/components/team/InviteMemberDialog";
 import { PermissionMatrix } from "@/components/team/PermissionMatrix";
 import { useInvites, useMemberRates, getMemberRate, removeInvite } from "@/lib/labour";
+import { useCan } from "@/lib/permissions";
+import { Gated } from "@/components/auth/Gated";
 
 export const Route = createFileRoute("/team")({ component: Team });
 
@@ -24,6 +26,7 @@ function Team() {
   const invites = useInvites();
   const memberRates = useMemberRates();
   void memberRates; // subscribe to refresh
+  const canEditTeam = useCan("edit.team");
   return (
     <Section
       title="Team & Roles"
@@ -105,7 +108,9 @@ function Team() {
                   <p className="text-[11px] text-[var(--ink-500)]">{inv.email} · £{inv.rate.toFixed(2)}/h · {inv.tier}</p>
                 </div>
                 <StatusBadge tone="warning">Pending</StatusBadge>
-                <Button variant="ghost" size="sm" onClick={() => { removeInvite(inv.id); toast("Invite revoked"); }}>Revoke</Button>
+                {canEditTeam && (
+                  <Button variant="ghost" size="sm" onClick={() => { removeInvite(inv.id); toast("Invite revoked"); }}>Revoke</Button>
+                )}
               </div>
             ))}
           </div>

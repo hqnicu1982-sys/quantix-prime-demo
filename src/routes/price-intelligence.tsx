@@ -9,6 +9,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectData, selectSupplier } from "@/lib/projectData";
 import { ProjectBanner } from "@/components/ProjectBanner";
+import { useCan } from "@/lib/permissions";
 
 export const Route = createFileRoute("/price-intelligence")({ component: PriceIntel });
 
@@ -16,6 +17,7 @@ function PriceIntel() {
   const navigate = useNavigate();
   const { current } = useProject();
   const data = useProjectData(current.id);
+  const canCreateCalloffs = useCan("create.calloffs");
   return (
     <Section
       title="Price Intelligence"
@@ -73,17 +75,19 @@ function PriceIntel() {
                       <Check className="h-3 w-3" /> Selected for {current.name}
                     </span>
                   ) : <span />}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-6 px-2 text-[11px]"
-                    onClick={() => {
-                      selectSupplier(current.id, m.item, m.supplier);
-                      toast.success(`${m.supplier} selected`, { description: `${m.item} → ${current.name}` });
-                    }}
-                  >
-                    Select for project
-                  </Button>
+                  {canCreateCalloffs && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-[11px]"
+                      onClick={() => {
+                        selectSupplier(current.id, m.item, m.supplier);
+                        toast.success(`${m.supplier} selected`, { description: `${m.item} → ${current.name}` });
+                      }}
+                    >
+                      Select for project
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}

@@ -9,6 +9,7 @@ import {
 } from "@/lib/planner";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useCan } from "@/lib/permissions";
 
 type Props = {
   projectId: string;
@@ -25,6 +26,7 @@ export function BlockersPanel({
   approvedVariationIds,
   onSelectTask,
 }: Props) {
+  const canEditPlanner = useCan("edit.planner");
   const blocked = tasks
     .map((t) => ({ task: t, r: computeReadiness(t, tasks, { callOffs, approvedVariationIds }) }))
     .filter((x) => !x.r.ready && x.task.status !== "done");
@@ -67,7 +69,7 @@ export function BlockersPanel({
                   ))}
                 </ul>
                 <div className="mt-1.5 flex flex-wrap gap-2">
-                  {r.suggestedStart && r.suggestedStart !== task.start && (
+                  {canEditPlanner && r.suggestedStart && r.suggestedStart !== task.start && (
                     <Button
                       size="sm"
                       variant="outline"
