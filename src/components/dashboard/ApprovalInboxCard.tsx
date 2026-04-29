@@ -3,10 +3,9 @@ import { Card, CardHead } from "@/components/Primitives";
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectData } from "@/lib/projectData";
 import { useLabourLogs, computeEntryCost } from "@/lib/laborLog";
-import { useProjectInvoices } from "@/lib/invoiceRegistry";
+import { useInvoices, type RegistryInvoice } from "@/lib/invoiceRegistry";
 import { useProjectVariations } from "@/lib/variations";
 import { useCan } from "@/lib/permissions";
-import { team } from "@/lib/mockData";
 import { ClipboardCheck, FileSignature, Truck, GitBranch, ArrowRight, Inbox } from "lucide-react";
 
 /**
@@ -25,7 +24,7 @@ export function ApprovalInboxCard() {
 
   const data = useProjectData(projectId);
   const labourLogs = useLabourLogs(projectId);
-  const invoices = useProjectInvoices(projectId);
+  const invoices = useInvoices(projectId);
   const variations = useProjectVariations(projectId);
 
   const anyCap = canApproveLabour || canApproveCalloffs || canSignInvoices || canEditVariations;
@@ -51,23 +50,24 @@ export function ApprovalInboxCard() {
 
   if (canApproveCalloffs) {
     const pending = data.callOffs.filter((c) => c.status === "draft");
-    const totalValue = pending.reduce((s, c) => s + (c.value ?? 0), 0);
+    // ProjectCallOff has no monetary value yet — surface count + line count
+    const totalLines = pending.reduce((s, c) => s + c.lineIds.length, 0);
     sections.push({
       key: "calloffs",
       show: pending.length > 0,
       icon: <Truck className="h-4 w-4" />,
       title: "Call-offs to approve",
       count: pending.length,
-      subtitle: `£${totalValue.toFixed(0)} across ${pending.length} draft${pending.length === 1 ? "" : "s"}`,
+      subtitle: `${totalLines} line${totalLines === 1 ? "" : "s"} across ${pending.length} draft${pending.length === 1 ? "" : "s"}`,
       to: "/projects/$projectId/calloffs",
       params: { projectId },
     });
   }
 
   if (canSignInvoices) {
-    const pending = invoices.filter((i) => i.status === "outstanding" || i.status === "overdue");
-    const overdue = pending.filter((i) => i.status === "overdue").length;
-    const totalValue = pending.reduce((s, i) => s + i.amount, 0);
+    const pending = invoices.filter((i: RegistryInvoice) => i.status === "outstanding" || i.status === "overdue");
+    const overdue = pending.filter((i: RegistryInvoice) => i.status === "overdue").length;
+    const totalValue = pending.reduce((s: number, i: RegistryInvoice) => s + i.amount, 0);
     sections.push({
       key: "invoices",
       show: pending.length > 0,
