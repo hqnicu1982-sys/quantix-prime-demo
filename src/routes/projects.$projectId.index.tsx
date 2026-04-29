@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useCurrentUser } from "@/lib/currentUser";
 import { useCan } from "@/lib/permissions";
 import { MyScopeCard } from "@/components/dashboard/MyScopeCard";
+import { LiveLabourCostCard } from "@/components/financial/LiveLabourCostCard";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
 
@@ -78,6 +79,8 @@ function Overview() {
       )}
 
       {isOnProject && <MyScopeCard projectId={projectId} />}
+
+      {(canSeeFinancials || canSeeFinancialsLite) && <LiveLabourCostCard projectId={projectId} />}
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
