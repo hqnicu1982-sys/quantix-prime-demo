@@ -54,7 +54,9 @@ function DailyReport() {
       right={
         <>
           <Button variant="outline" size="sm" onClick={() => toast("PDF preview", { description: `Daily report ${dailyReport.date} ready` })}><Download className="mr-1.5 h-3.5 w-3.5" />Preview PDF</Button>
-          <Button size="sm" onClick={() => toast.success("Submitted to Kier", { description: `Daily report ${dailyReport.date} sent to ${dailyReport.mainContractor}` })}><Send className="mr-1.5 h-3.5 w-3.5" />Submit to Kier</Button>
+          {canApprove && (
+            <Button size="sm" onClick={() => toast.success("Submitted to Kier", { description: `Daily report ${dailyReport.date} sent to ${dailyReport.mainContractor}` })}><Send className="mr-1.5 h-3.5 w-3.5" />Submit to Kier</Button>
+          )}
         </>
       }
     >
