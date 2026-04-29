@@ -30,7 +30,8 @@ export type Capability =
   | "view.variations"
   | "edit.variations"
   | "view.integrations"
-  | "view.settings.labour";
+  | "view.settings.labour"
+  | "edit.specification";   // upload/edit/delete system docs & notes
 
 export const TIER_CAPS: Record<Tier, Capability[]> = {
   Admin: [
@@ -47,6 +48,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.variations", "edit.variations",
     "view.integrations",
     "view.settings.labour",
+    "edit.specification",
   ],
   "Pro Control": [
     "view.financials", "view.financials.lite",
@@ -61,6 +63,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.variations", "edit.variations",
     "view.integrations",
     "view.settings.labour",
+    "edit.specification",
   ],
   Pro: [
     "view.financials.lite",
@@ -73,6 +76,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.team",
     "view.pwRates",
     "view.variations",
+    "edit.specification",
   ],
   "Site User": [
     "view.planner",
