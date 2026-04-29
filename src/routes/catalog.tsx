@@ -11,8 +11,16 @@ import { pushToTray } from "@/lib/compareTray";
 import { fireTier, acousticTier, heightTier, thicknessTier, bestTier, tierColorVar, type Tier } from "@/lib/impact";
 import { findSystem, scaledTotals } from "@/lib/systemLibrary";
 import { estimateCost } from "@/lib/calculatorPricing";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/catalog")({ component: Catalog });
+export const Route = createFileRoute("/catalog")({ component: GuardedCatalog });
+
+function GuardedCatalog() {
+  const allowed = useCan("view.priceIntel");
+  if (!allowed) return <NoAccess cap="view.priceIntel" title="Catalog restricted" />;
+  return <Catalog />;
+}
 
 // ---- Domain ----
 type Family = { id: string; name: string; blurb: string; status: "live" | "beta" | "roadmap"; icon: React.ComponentType<{ className?: string }> };
