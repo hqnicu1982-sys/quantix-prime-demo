@@ -25,6 +25,7 @@ import {
 } from "@/lib/variations";
 import { toast } from "sonner";
 import { useProject } from "@/lib/ProjectContext";
+import { useCan } from "@/lib/permissions";
 
 export function NewVariationDialog({
   trigger,

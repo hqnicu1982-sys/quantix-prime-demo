@@ -65,6 +65,7 @@ export function TaskDetailDialog({
 }: Props) {
   const [draft, setDraft] = useState<PlannerTask | null>(task);
   const crews = useProjectCrews(projectId);
+  const canEditPlanner = useCan("edit.planner");
 
   useEffect(() => setDraft(task), [task?.id]);
 
@@ -366,24 +367,28 @@ export function TaskDetailDialog({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              if (confirm(`Delete ${draft.id}?`)) {
-                deleteTask(projectId, draft.id);
-                onOpenChange(false);
-              }
-            }}
-          >
-            <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
-          </Button>
+          {canEditPlanner && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (confirm(`Delete ${draft.id}?`)) {
+                  deleteTask(projectId, draft.id);
+                  onOpenChange(false);
+                }
+              }}
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button size="sm" onClick={save}>
-            Save
-          </Button>
+          {canEditPlanner && (
+            <Button size="sm" onClick={save}>
+              Save
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
