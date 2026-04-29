@@ -1,11 +1,11 @@
 import { createFileRoute, Link, Outlet, useLocation, notFound, useNavigate } from "@tanstack/react-router";
 import { Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { Share2, Plus, FileDown } from "lucide-react";
+import { Share2, Plus, FileDown, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useProject } from "@/lib/ProjectContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { fmtMoney } from "@/lib/mockData";
 import { Gated } from "@/components/auth/Gated";
 import { useCan } from "@/lib/permissions";
@@ -15,6 +15,17 @@ import { useAssignments } from "@/lib/labour";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { exportProjectPack } from "@/lib/exportProjectPack";
 import { useProjectData } from "@/lib/projectData";
+import { useCustomProjects, deleteCustomProject } from "@/lib/customProjects";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/projects/$projectId")({ component: ProjectLayout });
 
@@ -41,6 +52,9 @@ function ProjectLayout() {
   const project = all.find((p) => p.id === projectId);
   const canSeeMoney = useCan("view.financials.lite");
   const projectData = useProjectData(projectId);
+  const customProjects = useCustomProjects();
+  const isCustom = customProjects.some((p) => p.id === projectId);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   // Site User / Operative may only access projects they're assigned to.
   const me = useCurrentUser();
   const portfolioWide = useCan("view.financials.lite"); // Pro+ see all projects
@@ -114,6 +128,18 @@ function ProjectLayout() {
     }
   };
 
+  const handleConfirmDelete = () => {
+    const name = project.name;
+    const ok = deleteCustomProject(projectId);
+    setConfirmDeleteOpen(false);
+    if (ok) {
+      toast.success("Project deleted", { description: `${name} has been removed.` });
+      navigate({ to: "/projects" });
+    } else {
+      toast.error("Delete failed", { description: "Project not found." });
+    }
+  };
+
   return (
     <Section
       title={project.name}
@@ -133,6 +159,16 @@ function ProjectLayout() {
           <Button variant="outline" size="sm" onClick={handleExportPack}>
             <FileDown className="mr-1.5 h-3.5 w-3.5" /> Export pack
           </Button>
+          {isCustom && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmDeleteOpen(true)}
+              className="text-[var(--red-500)] hover:text-[var(--red-500)]"
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
+            </Button>
+          )}
           <Gated cap="create.calloffs">
             <Button size="sm" onClick={() => toast.success("New call-off", { description: `Draft created for ${project.name}` })}>
               <Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off
@@ -184,6 +220,25 @@ function ProjectLayout() {
         </nav>
       </div>
       <Outlet />
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{project.name}</strong> will be permanently removed from your custom projects. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-[var(--red-500)] text-white hover:bg-[var(--red-500)]/90"
+            >
+              Delete project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Section>
   );
 }
