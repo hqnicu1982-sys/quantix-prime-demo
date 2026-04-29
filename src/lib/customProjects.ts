@@ -59,6 +59,22 @@ export function addCustomProject(p: Omit<Project, "id" | "hasFullData"> & { id?:
   return project;
 }
 
+export function deleteCustomProject(id: string): boolean {
+  const list = read();
+  const next = list.filter((p) => p.id !== id);
+  if (next.length === list.length) return false;
+  write(next);
+  if (typeof window !== "undefined") {
+    // Best-effort cleanup of any per-project extras.
+    try { localStorage.removeItem(EXTRAS_KEY(id)); } catch { /* noop */ }
+  }
+  return true;
+}
+
+export function isCustomProject(id: string): boolean {
+  return read().some((p) => p.id === id);
+}
+
 export function useCustomProjects(): Project[] {
   const [list, setList] = useState<Project[]>([]);
   useEffect(() => {
