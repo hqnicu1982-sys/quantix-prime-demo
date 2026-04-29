@@ -241,6 +241,7 @@ function Calculator() {
             area={area} wasteFactor={wasteFactor}
             onPromote={promoteToCalculator}
             combined={COMBINED}
+            canSeePricing={canSeePricing}
           />
         ) : (
           /* ===================== SINGLE-SYSTEM MODE ===================== */
@@ -256,6 +257,7 @@ function Calculator() {
             combined={COMBINED}
             projectId={current.id}
             projectName={current.name}
+            canSeePricing={canSeePricing}
           />
         )}
       </div>
@@ -272,7 +274,7 @@ function SingleView({
   boardSize, setBoardSize,
   reuseOffcuts, setReuseOffcuts,
   area, wasteFactor, navigate,
-  combined, projectId, projectName,
+  combined, projectId, projectName, canSeePricing,
 }: {
   activeCode: string; setActiveCode: (v: string) => void;
   length: string; setLength: (v: string) => void;
@@ -285,6 +287,7 @@ function SingleView({
   combined: SystemDef[];
   projectId: string;
   projectName: string;
+  canSeePricing: boolean;
 }) {
   const sys = combined.find(s => s.code === activeCode) ?? LIBRARY[0];
   const isBespoke = activeCode.startsWith("BSP-");
