@@ -234,16 +234,75 @@ for (const file of files) {
 if (total === 0) {
   console.log("✓ RBAC audit clean — every mutating onClick is gated.");
   console.log(`  Scanned ${files.length} files in src/routes and src/components.`);
-  process.exit(0);
+  // Continue to route-guard audit (does not exit early).
+} else {
+  console.error(`✗ RBAC audit found ${total} ungated mutating action(s):\n`);
+  for (const r of report) {
+    console.error(`  ${r.file}`);
+    for (const f of r.findings) {
+      console.error(`    L${f.line}  ${f.preview}`);
+    }
+    console.error("");
+  }
+  console.error("Wrap each in <Gated cap=\"...\">…</Gated> or guard with useCan(...).");
+  process.exit(1);
 }
 
-console.error(`✗ RBAC audit found ${total} ungated mutating action(s):\n`);
-for (const r of report) {
-  console.error(`  ${r.file}`);
-  for (const f of r.findings) {
-    console.error(`    L${f.line}  ${f.preview}`);
+// =============================================================================
+// PAGE-LEVEL ROUTE GUARD AUDIT
+// Each route file in this map MUST contain either <NoAccess  or a Guarded*
+// wrapper component referencing the right capability.
+// =============================================================================
+const ROUTE_GUARDS = {
+  "src/routes/financial.tsx": "view.financials",
+  "src/routes/invoices.tsx": "view.invoices",
+  "src/routes/calloffs.tsx": "view.calloffs",
+  "src/routes/variations.tsx": "view.variations",
+  "src/routes/costed-boq.tsx": "view.boq",
+  "src/routes/price-intelligence.tsx": "view.priceIntel",
+  "src/routes/catalog.tsx": "view.priceIntel",
+  "src/routes/integrations.tsx": "view.integrations",
+  "src/routes/team.tsx": "view.team",
+  "src/routes/readiness.tsx": "view.boq",
+  "src/routes/calculator.tsx": "view.boq",
+  "src/routes/settings.labour.tsx": "view.settings.labour",
+  "src/routes/price-lists.upload.tsx": "upload.prices",
+  "src/routes/projects.$projectId.costed-boq.tsx": "view.boq",
+  "src/routes/projects.$projectId.invoices.tsx": "view.invoices",
+  "src/routes/projects.$projectId.variations.tsx": "view.variations",
+  "src/routes/projects.$projectId.reports.tsx": "view.financials.lite",
+  "src/routes/projects.$projectId.calloffs.tsx": "view.calloffs",
+  "src/routes/projects.$projectId.team.tsx": "view.team",
+};
+
+const guardFailures = [];
+for (const [relFile, expectedCap] of Object.entries(ROUTE_GUARDS)) {
+  let src;
+  try {
+    src = readFileSync(join(ROOT, relFile), "utf8");
+  } catch {
+    guardFailures.push({ file: relFile, reason: "file not found" });
+    continue;
   }
-  console.error("");
+  const hasNoAccess = src.includes("<NoAccess");
+  const hasGuarded = /function\s+Guarded[A-Z]\w*/.test(src);
+  const referencesCap = src.includes(`"${expectedCap}"`);
+  if (!(hasNoAccess && hasGuarded && referencesCap)) {
+    guardFailures.push({
+      file: relFile,
+      reason: `missing page guard for cap "${expectedCap}" (NoAccess=${hasNoAccess}, Guarded*=${hasGuarded}, capRef=${referencesCap})`,
+    });
+  }
 }
-console.error("Wrap each in <Gated cap=\"...\">…</Gated> or guard with useCan(...).");
-process.exit(1);
+
+if (guardFailures.length > 0) {
+  console.error(`\n✗ Route guard audit found ${guardFailures.length} unprotected route(s):\n`);
+  for (const f of guardFailures) {
+    console.error(`  ${f.file}\n    ${f.reason}`);
+  }
+  console.error('\nAdd a Guarded* wrapper that returns <NoAccess cap="..." /> when useCan(cap) is false.');
+  process.exit(1);
+}
+
+console.log(`✓ Route guard audit clean — ${Object.keys(ROUTE_GUARDS).length} sensitive routes protected.`);
+process.exit(0);
