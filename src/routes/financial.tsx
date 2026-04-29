@@ -17,6 +17,7 @@ import { FileDown } from "lucide-react";
 import { useInvoiceTotals } from "@/lib/invoiceRegistry";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
+import { LiveLabourCostCard } from "@/components/financial/LiveLabourCostCard";
 
 export const Route = createFileRoute("/financial")({
   head: () => ({ meta: [{ title: "Financial Dashboard — Quantix Prime" }] }),
@@ -74,6 +75,8 @@ function Financial() {
         <Kpi label="Gross margin" value={`${financialKpi.marginPct}%`} delta={`${fmtMoney(financialKpi.margin)} (vs ${financialKpi.marginBudgetPct}% budget)`} tone="warning" />
         <Kpi label="Cash runway" value={`${financialKpi.cashRunway} mo`} delta={`${fmtMoney(financialKpi.cashCurrent)} current`} tone="success" />
       </div>
+
+      <LiveLabourCostCard projectId={current.id} />
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
