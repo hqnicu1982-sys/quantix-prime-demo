@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { FileText, Download, CheckCircle2, AlertTriangle, Layers } from "lucide-react";
+import { FileText, Download, CheckCircle2, AlertTriangle, Layers, Paperclip } from "lucide-react";
 import { fitzroviaSystems, fmtMoney } from "@/lib/mockData";
 import { useCan } from "@/lib/permissions";
+import { SystemDetailsDialog } from "@/components/specification/SystemDetailsDialog";
+import { useAllSystemDetails } from "@/lib/systemDetails";
 
 export const Route = createFileRoute("/projects/$projectId/specification")({ component: SpecificationPage });
 
@@ -24,7 +27,10 @@ const requirements = [
 ];
 
 function SpecificationPage() {
+  const { projectId } = Route.useParams();
   const canSeeMoney = useCan("view.financials.lite");
+  const allDetails = useAllSystemDetails(projectId);
+  const [selected, setSelected] = useState<typeof fitzroviaSystems[number] | null>(null);
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -130,21 +136,46 @@ function SpecificationPage() {
             <CardHead title="Specified systems" />
             <div className="space-y-3 p-5">
               {fitzroviaSystems.map((s) => (
-                <div key={s.name} className="flex items-start gap-3">
+                <button
+                  key={s.name}
+                  onClick={() => setSelected(s)}
+                  className="flex w-full items-start gap-3 rounded-md p-1.5 -m-1.5 text-left transition hover:bg-[var(--ink-50)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-500)]/30"
+                >
                   <Layers className="mt-0.5 h-4 w-4 text-[var(--accent-500)]" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[12.5px] font-semibold">{s.name}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="truncate text-[12.5px] font-semibold">{s.name}</p>
+                      {(allDetails[s.name]?.attachments.length ?? 0) > 0 && (
+                        <span className="inline-flex items-center gap-0.5 rounded bg-[var(--accent-500)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-500)]">
+                          <Paperclip className="h-2.5 w-2.5" />
+                          {allDetails[s.name].attachments.length}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-[var(--ink-500)]">
                       {s.area}
                       {canSeeMoney && <> · {fmtMoney(s.value, { compact: true })}</>}
                     </p>
                   </div>
-                </div>
+                </button>
               ))}
+              <p className="pt-1 text-[10.5px] text-[var(--ink-500)]">
+                Tap a system to view details, attach datasheets or add site notes.
+              </p>
             </div>
           </Card>
         </div>
       </div>
+      {selected && (
+        <SystemDetailsDialog
+          projectId={projectId}
+          systemKey={selected.name}
+          systemMeta={{ area: selected.area, value: selected.value }}
+          open={!!selected}
+          onOpenChange={(o) => { if (!o) setSelected(null); }}
+          canSeeMoney={canSeeMoney}
+        />
+      )}
     </div>
   );
 }
