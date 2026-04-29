@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectData, removeSystem } from "@/lib/projectData";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useCan } from "@/lib/permissions";
+import { Gated } from "@/components/auth/Gated";
 
 const searchSchema = z.object({
   tab:    fallback(z.enum(["all", "review", "missing", "savings"]), "all").default("all"),

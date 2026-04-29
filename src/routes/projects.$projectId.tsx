@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useProject } from "@/lib/ProjectContext";
 import { useEffect } from "react";
 import { fmtMoney } from "@/lib/mockData";
+import { Gated } from "@/components/auth/Gated";
 
 export const Route = createFileRoute("/projects/$projectId")({ component: ProjectLayout });
 
@@ -59,9 +60,11 @@ function ProjectLayout() {
           >
             <Share2 className="mr-1.5 h-3.5 w-3.5" /> Share
           </Button>
-          <Button size="sm" onClick={() => toast.success("New call-off", { description: `Draft created for ${project.name}` })}>
-            <Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off
-          </Button>
+          <Gated cap="create.calloffs">
+            <Button size="sm" onClick={() => toast.success("New call-off", { description: `Draft created for ${project.name}` })}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off
+            </Button>
+          </Gated>
         </>
       }
     >
