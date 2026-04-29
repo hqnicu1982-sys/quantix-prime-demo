@@ -15,11 +15,19 @@ import { useProjectData } from "@/lib/projectData";
 import { exportProjectPack } from "@/lib/exportProjectPack";
 import { FileDown } from "lucide-react";
 import { useInvoiceTotals } from "@/lib/invoiceRegistry";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
 export const Route = createFileRoute("/financial")({
   head: () => ({ meta: [{ title: "Financial Dashboard — Quantix Prime" }] }),
-  component: Financial,
+  component: GuardedFinancial,
 });
+
+function GuardedFinancial() {
+  const allowed = useCan("view.financials");
+  if (!allowed) return <NoAccess cap="view.financials" title="Financial dashboard restricted" />;
+  return <Financial />;
+}
 
 const HEALTH_COLOR: Record<string, string> = {
   healthy: "var(--green-600)",

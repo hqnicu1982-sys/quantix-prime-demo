@@ -7,8 +7,16 @@ import { Plus, Trash2, ArrowLeft, Save } from "lucide-react";
 import { useRoles, upsertRole, deleteRole, useMemberRates, setMemberRate, getRoles } from "@/lib/labour";
 import { team } from "@/lib/mockData";
 import { toast } from "sonner";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/settings/labour")({ component: SettingsLabour });
+export const Route = createFileRoute("/settings/labour")({ component: GuardedSettingsLabour });
+
+function GuardedSettingsLabour() {
+  const allowed = useCan("view.settings.labour");
+  if (!allowed) return <NoAccess cap="view.settings.labour" title="Labour rate settings restricted" />;
+  return <SettingsLabour />;
+}
 
 function SettingsLabour() {
   const roles = useRoles();

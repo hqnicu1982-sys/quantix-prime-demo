@@ -13,8 +13,11 @@ import { Toaster } from "@/components/ui/sonner";
 import { ProjectProvider, useProject } from "@/lib/ProjectContext";
 import { cn } from "@/lib/utils";
 import { CompareTray } from "@/components/CompareTray";
+import { CurrentUserSwitcher } from "@/components/auth/CurrentUserSwitcher";
+import { useCurrentTier } from "@/lib/currentUser";
+import { can, type Capability } from "@/lib/permissions";
 
-type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean; params?: Record<string, string> };
+type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean; params?: Record<string, string>; requires?: Capability };
 type NavGroup = { label: string; persona?: "site" | "commercial"; items: NavItem[] };
 
 const navGroups: NavGroup[] = [
@@ -30,27 +33,26 @@ const navGroups: NavGroup[] = [
     { to: "/projects/$projectId", label: "Hotel Fitzrovia", icon: HardHat, params: { projectId: "fitzrovia" } as Record<string, string> },
   ]},
   { label: "Commercial", persona: "commercial", items: [
-    { to: "/costed-boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true },
-    { to: "/price-intelligence", label: "Price Intelligence", icon: BarChart3 },
-    { to: "/price-lists/upload", label: "Price List Upload", icon: Upload },
-    { to: "/calloffs", label: "Call-offs", icon: ShoppingCart },
-    { to: "/variations", label: "Variations", icon: GitBranch, badge: "NEW" },
-    { to: "/invoices", label: "Invoice Recon", icon: Receipt, badge: "BETA" },
-    { to: "/financial", label: "Financial", icon: TrendingUp },
+    { to: "/costed-boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true, requires: "view.boq" },
+    { to: "/price-intelligence", label: "Price Intelligence", icon: BarChart3, requires: "view.priceIntel" },
+    { to: "/price-lists/upload", label: "Price List Upload", icon: Upload, requires: "upload.prices" },
+    { to: "/calloffs", label: "Call-offs", icon: ShoppingCart, requires: "view.calloffs" },
+    { to: "/variations", label: "Variations", icon: GitBranch, badge: "NEW", requires: "view.variations" },
+    { to: "/invoices", label: "Invoice Recon", icon: Receipt, badge: "BETA", requires: "view.invoices" },
+    { to: "/financial", label: "Financial", icon: TrendingUp, requires: "view.financials" },
   ]},
   { label: "Execution", persona: "site", items: [
-    { to: "/planner", label: "Planner", icon: Calendar, mobile: true },
-    { to: "/readiness", label: "Material Readiness", icon: Package },
-    { to: "/daily-report", label: "Daily Site Report", icon: ClipboardList, mobile: true },
+    { to: "/planner", label: "Planner", icon: Calendar, mobile: true, requires: "view.planner" },
+    { to: "/readiness", label: "Material Readiness", icon: Package, requires: "view.planner" },
+    { to: "/daily-report", label: "Daily Site Report", icon: ClipboardList, mobile: true, requires: "view.dailyReport" },
   ]},
   { label: "Admin", items: [
-    { to: "/team", label: "Team & Roles", icon: Users2 },
-    { to: "/settings/labour", label: "Labour Rates", icon: Settings },
-    { to: "/integrations", label: "Integrations", icon: Plug },
+    { to: "/team", label: "Team & Roles", icon: Users2, requires: "view.team" },
+    { to: "/settings/labour", label: "Labour Rates", icon: Settings, requires: "view.settings.labour" },
+    { to: "/integrations", label: "Integrations", icon: Plug, requires: "view.integrations" },
   ]},
 ];
 
-const mobileItems = navGroups.flatMap((g) => g.items).filter((i) => i.mobile).slice(0, 5);
 
 function PersonaToggle() {
   const { persona, setPersona } = useProject();
@@ -115,11 +117,18 @@ function NavLinkItem({ item, onClick }: { item: NavItem; onClick?: () => void })
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { persona } = useProject();
+  const tier = useCurrentTier();
+  const visibleGroups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((i) => !i.requires || can(tier, i.requires)),
+    }))
+    .filter((g) => g.items.length > 0);
   return (
     <>
       <PersonaToggle />
       <div className="flex-1 overflow-y-auto py-1">
-        {navGroups.map((group) => {
+        {visibleGroups.map((group) => {
           const emphasised = group.persona === persona;
           const dimmed = group.persona && group.persona !== persona;
           return (
@@ -148,18 +157,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </div>
       <div className="border-t border-white/10 p-3">
-        <div className="flex items-center gap-2.5 rounded-md px-2 py-1.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-500)] to-[var(--teal-500)] text-[11px] font-bold text-white">
-            NA
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[12px] font-semibold text-white">Nick Andrei</p>
-            <p className="truncate text-[10.5px] text-white/50">Site Manager · Pro</p>
-          </div>
-          <button className="rounded p-1 text-white/40 hover:bg-white/5 hover:text-white/80" aria-label="Settings">
-            <Settings className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <CurrentUserSwitcher />
       </div>
     </>
   );
@@ -384,8 +382,31 @@ function LayoutInner() {
       </div>
 
       {/* Mobile bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--ink-200)] bg-[var(--card)] lg:hidden">
-        {mobileItems.map((item) => {
+      <MobileTabBar />
+
+      <WelcomeModal open={welcomeOpen} onOpenChange={setWelcomeOpen} />
+      <CompareTray />
+      <Toaster position="top-right" />
+    </div>
+  );
+}
+
+function MobileTabBar() {
+  const tier = useCurrentTier();
+  const items = navGroups
+    .flatMap((g) => g.items)
+    .filter((i) => i.mobile && (!i.requires || can(tier, i.requires)))
+    .slice(0, 5);
+  if (items.length === 0) return null;
+  const cols =
+    items.length === 1 ? "grid-cols-1"
+    : items.length === 2 ? "grid-cols-2"
+    : items.length === 3 ? "grid-cols-3"
+    : items.length === 4 ? "grid-cols-4"
+    : "grid-cols-5";
+  return (
+    <nav className={cn("fixed inset-x-0 bottom-0 z-30 grid border-t border-[var(--ink-200)] bg-[var(--card)] lg:hidden", cols)}>
+      {items.map((item) => {
           const Icon = item.icon;
           return (
             <Link
@@ -400,13 +421,8 @@ function LayoutInner() {
               <span className="truncate">{item.label.split(" ")[0]}</span>
             </Link>
           );
-        })}
-      </nav>
-
-      <WelcomeModal open={welcomeOpen} onOpenChange={setWelcomeOpen} />
-      <CompareTray />
-      <Toaster position="top-right" />
-    </div>
+      })}
+    </nav>
   );
 }
 
