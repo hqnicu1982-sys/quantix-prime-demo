@@ -627,8 +627,10 @@ function SingleView({
                   {projectPlan && (
                     <>
                       <span className="font-mono-num">{projectPlan.totalBoardsBought} boards</span>
-                      <span aria-hidden="true">·</span>
-                      <span className="font-mono-num">£{projectPlan.totalCost.toFixed(0)}</span>
+                      {canSeePricing && <>
+                        <span aria-hidden="true">·</span>
+                        <span className="font-mono-num">£{projectPlan.totalCost.toFixed(0)}</span>
+                      </>}
                     </>
                   )}
                   <ChevronDown className={"h-4 w-4 transition-transform " + (planOpen ? "rotate-180" : "")} />
@@ -683,9 +685,11 @@ function SingleView({
                       <Stat label="Boards bought" value={`${projectPlan.totalBoardsBought}`} />
                       <Stat label="Wall area covered" value={`${projectPlan.totalWallAreaM2.toFixed(1)} m²`} />
                       <Stat label="Net waste" value={`${projectPlan.netWastePct}%`} tone={projectPlan.netWastePct <= 10 ? "good" : projectPlan.netWastePct <= 20 ? "warn" : "bad"} />
-                      <div className="my-1 border-t border-[var(--ink-200)]" />
-                      <Stat label="Board cost" value={`£${projectPlan.totalCost.toFixed(0)}`} strong />
-                      <Stat label="Of which scrap" value={`£${projectPlan.scrapCost.toFixed(0)}`} tone="bad" />
+                      {canSeePricing && <>
+                        <div className="my-1 border-t border-[var(--ink-200)]" />
+                        <Stat label="Board cost" value={`£${projectPlan.totalCost.toFixed(0)}`} strong />
+                        <Stat label="Of which scrap" value={`£${projectPlan.scrapCost.toFixed(0)}`} tone="bad" />
+                      </>}
                     </div>
                   </div>
                 </div>
