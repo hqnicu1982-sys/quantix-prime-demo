@@ -3,6 +3,7 @@ import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, CheckCircle2, AlertTriangle, Layers } from "lucide-react";
 import { fitzroviaSystems, fmtMoney } from "@/lib/mockData";
+import { useCan } from "@/lib/permissions";
 
 export const Route = createFileRoute("/projects/$projectId/specification")({ component: SpecificationPage });
 
@@ -23,6 +24,7 @@ const requirements = [
 ];
 
 function SpecificationPage() {
+  const canSeeMoney = useCan("view.financials.lite");
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -132,7 +134,10 @@ function SpecificationPage() {
                   <Layers className="mt-0.5 h-4 w-4 text-[var(--accent-500)]" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[12.5px] font-semibold">{s.name}</p>
-                    <p className="text-[11px] text-[var(--ink-500)]">{s.area} · {fmtMoney(s.value, { compact: true })}</p>
+                    <p className="text-[11px] text-[var(--ink-500)]">
+                      {s.area}
+                      {canSeeMoney && <> · {fmtMoney(s.value, { compact: true })}</>}
+                    </p>
                   </div>
                 </div>
               ))}

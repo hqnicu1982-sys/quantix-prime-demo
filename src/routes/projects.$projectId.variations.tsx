@@ -5,10 +5,18 @@ import { NewVariationDialog } from "@/components/variations/NewVariationDialog";
 import { VariationsTable } from "@/components/variations/VariationsTable";
 import { CostBreakdownPanel } from "@/components/variations/CostBreakdownPanel";
 import { useProject } from "@/lib/ProjectContext";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
 export const Route = createFileRoute("/projects/$projectId/variations")({
-  component: ProjectVariations,
+  component: GuardedProjectVariations,
 });
+
+function GuardedProjectVariations() {
+  const allowed = useCan("view.variations");
+  if (!allowed) return <NoAccess cap="view.variations" title="Variations restricted" />;
+  return <ProjectVariations />;
+}
 
 const fmtMoney = (n: number) =>
   `${n < 0 ? "-" : ""}£${Math.abs(n).toLocaleString("en-GB", { maximumFractionDigits: 0 })}`;

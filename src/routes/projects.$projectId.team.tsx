@@ -19,8 +19,15 @@ import { AssignToProjectDialog } from "@/components/team/AssignToProjectDialog";
 import { PermissionMatrix } from "@/components/team/PermissionMatrix";
 import { toast } from "sonner";
 import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/projects/$projectId/team")({ component: TeamPage });
+export const Route = createFileRoute("/projects/$projectId/team")({ component: GuardedTeamPage });
+
+function GuardedTeamPage() {
+  const allowed = useCan("view.team");
+  if (!allowed) return <NoAccess cap="view.team" title="Team restricted" />;
+  return <TeamPage />;
+}
 
 const tierTone = {
   Admin: "bg-purple-500/10 text-purple-600",

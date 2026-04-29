@@ -3,8 +3,16 @@ import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { Plus, ExternalLink, Truck } from "lucide-react";
 import { Gated } from "@/components/auth/Gated";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/projects/$projectId/calloffs")({ component: CallOffsPage });
+export const Route = createFileRoute("/projects/$projectId/calloffs")({ component: GuardedCallOffsPage });
+
+function GuardedCallOffsPage() {
+  const allowed = useCan("view.calloffs");
+  if (!allowed) return <NoAccess cap="view.calloffs" title="Call-offs restricted" />;
+  return <CallOffsPage />;
+}
 
 const callOffs = [
   { id: "CO-247", supplier: "Minster", items: "Gyproc WallBoard 15mm × 220, Rockwool RW3 × 48", value: 4820, eta: "24 Apr", status: "approved" as const },

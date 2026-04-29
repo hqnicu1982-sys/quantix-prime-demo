@@ -5,11 +5,19 @@ import { Button } from "@/components/ui/button";
 import { integrations } from "@/lib/mockData";
 import { Plug, RefreshCw, Settings as SettingsIcon, Check, Info } from "lucide-react";
 import { toast } from "sonner";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
 export const Route = createFileRoute("/integrations")({
   head: () => ({ meta: [{ title: "Integrations — Quantix Prime" }] }),
-  component: Integrations,
+  component: GuardedIntegrations,
 });
+
+function GuardedIntegrations() {
+  const allowed = useCan("view.integrations");
+  if (!allowed) return <NoAccess cap="view.integrations" title="Integrations restricted" />;
+  return <Integrations />;
+}
 
 function Integrations() {
   const cats = ["Accounting", "Programme", "Main contractor", "Collaboration"];
