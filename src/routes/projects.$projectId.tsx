@@ -16,6 +16,7 @@ import { NoAccess } from "@/components/auth/NoAccess";
 import { exportProjectPack } from "@/lib/exportProjectPack";
 import { useProjectData } from "@/lib/projectData";
 import { useCustomProjects, deleteCustomProject } from "@/lib/customProjects";
+import { pushRecentProject } from "@/lib/recentProjects";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -96,6 +97,10 @@ function ProjectLayout() {
     if (project && current.id !== project.id) setCurrent(project.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
+
+  useEffect(() => {
+    if (project) pushRecentProject(project.id);
+  }, [project]);
 
   if (!project) {
     throw notFound();
