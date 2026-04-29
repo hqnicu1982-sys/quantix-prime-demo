@@ -170,7 +170,15 @@ function isGated(src, clickIndex) {
       if (depth === 0) {
         // Examine what precedes this opener, stripping insignificant whitespace.
         const tail = before.slice(Math.max(0, i - 200), i).replace(/\s+$/g, "");
-        if (/(?:^|[^.\w])(?:can[A-Z]\w*|useCan\([^)]+\))\s*(?:&&|\?)\s*\(?\s*$/.test(tail)) {
+        // Recognise short-circuit gating where the opener is preceded by
+        // either:
+        //   (a) `canX && / canX ?` directly, or
+        //   (b) a chain like `canX && cond1 && cond2 && (` — the tail ends
+        //       with `&&` (or `?`) and some earlier token in the chain is a
+        //       capability check (`canX` / `useCan(...)`).
+        const endsWithGuard = /(?:&&|\?)\s*\(?\s*$/.test(tail);
+        const hasCapInChain = /(?:^|[^.\w])(?:can[A-Z]\w*|useCan\([^)]+\))\b/.test(tail);
+        if (endsWithGuard && hasCapInChain) {
           return true;
         }
         // Keep walking outward — an outer scope might still gate this one
