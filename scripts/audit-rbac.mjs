@@ -173,8 +173,10 @@ function isGated(src, clickIndex) {
         if (/(?:^|[^.\w])(?:can[A-Z]\w*|useCan\([^)]+\))\s*(?:&&|\?)\s*\(?\s*$/.test(tail)) {
           return true;
         }
-        // Don't return false yet — keep walking outward; an outer scope might
-        // still gate this one (e.g. `{canX && (<div>{handler}</div>)}`).
+        // Keep walking outward — an outer scope might still gate this one
+        // (e.g. `{canX && (<div>{handler}</div>)}`). Don't change depth: we
+        // are now `outside` this scope, so subsequent matching closers
+        // belong to a higher scope and `depth++` is correct.
       } else {
         depth--;
       }
