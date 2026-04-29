@@ -29,7 +29,12 @@ export function getCurrentUser(): TeamMember {
 }
 
 export function useCurrentUser(): TeamMember {
-  const [user, setUser] = useState<TeamMember>(() => getCurrentUser());
+  // Always start with the SSR-safe default so the first client render matches
+  // server output. After hydration, sync with localStorage. This avoids
+  // hydration mismatches when a different user is persisted in localStorage.
+  const [user, setUser] = useState<TeamMember>(
+    () => team.find((t) => t.id === DEFAULT_ID)!,
+  );
   useEffect(() => {
     const refresh = () => setUser(getCurrentUser());
     refresh();
