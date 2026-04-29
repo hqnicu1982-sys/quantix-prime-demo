@@ -2,21 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { FileText, Download, CheckCircle2, AlertTriangle, Layers, Paperclip } from "lucide-react";
+import { FileText, Download, CheckCircle2, AlertTriangle, Layers, Paperclip, Upload, Trash2 } from "lucide-react";
 import { fitzroviaSystems, fmtMoney } from "@/lib/mockData";
 import { useCan } from "@/lib/permissions";
 import { SystemDetailsDialog } from "@/components/specification/SystemDetailsDialog";
 import { useAllSystemDetails } from "@/lib/systemDetails";
+import { UploadSpecDocDialog } from "@/components/specification/UploadSpecDocDialog";
+import { useProjectDocs, removeProjectDoc, formatBytes, tagTone } from "@/lib/projectDocuments";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/projects/$projectId/specification")({ component: SpecificationPage });
-
-const docs = [
-  { name: "Architectural drawings — Rev 4.1.pdf", size: "12.4 MB", date: "18 Apr 2026", tag: "Architect", tone: "info" as const },
-  { name: "NBS Specification — Drylining.docx", size: "842 KB", date: "12 Apr 2026", tag: "Spec", tone: "info" as const },
-  { name: "Acoustic performance schedule.xlsx", size: "186 KB", date: "08 Apr 2026", tag: "Performance", tone: "neutral" as const },
-  { name: "Fire strategy report v3.pdf", size: "3.1 MB", date: "02 Apr 2026", tag: "Fire", tone: "danger" as const },
-  { name: "Sample BG system extracts.pdf", size: "5.8 MB", date: "28 Mar 2026", tag: "Reference", tone: "neutral" as const },
-];
 
 const requirements = [
   { area: "Bedrooms (L4–L6, 248 rooms)", spec: "GypWall CLASSIC C-48/70 · 60 min fire · 43 Rw dB", status: "approved" as const },
@@ -29,12 +24,15 @@ const requirements = [
 function SpecificationPage() {
   const { projectId } = Route.useParams();
   const canSeeMoney = useCan("view.financials.lite");
+  const canEdit = useCan("edit.specification");
   const allDetails = useAllSystemDetails(projectId);
+  const docs = useProjectDocs(projectId);
   const [selected, setSelected] = useState<typeof fitzroviaSystems[number] | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Spec documents" value="14" delta="5 added this month" tone="info" />
+        <Kpi label="Spec documents" value={`${docs.length}`} delta={`${docs.filter(d => !d.seed).length} uploaded by team`} tone="info" />
         <Kpi label="Systems specified" value={`${fitzroviaSystems.length}`} delta="2 awaiting BG approval" tone="warning" />
         <Kpi label="Spec coverage" value="92%" delta="8% pending shaft details" tone="success" />
         <Kpi label="Open RFIs" value="3" delta="1 with architect 4d" tone="warning" />
@@ -46,28 +44,76 @@ function SpecificationPage() {
             <CardHead
               title="Specification documents"
               subtitle="Drawings, NBS specs, performance schedules"
-              right={<Button size="sm" variant="outline"><Download className="mr-1.5 h-3.5 w-3.5" /> Export pack</Button>}
+              right={
+                <div className="flex gap-2">
+                  {canEdit && (
+                    <Button size="sm" onClick={() => setUploadOpen(true)}>
+                      <Upload className="mr-1.5 h-3.5 w-3.5" /> Upload
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline"><Download className="mr-1.5 h-3.5 w-3.5" /> Export pack</Button>
+                </div>
+              }
             />
             <div className="divide-y divide-[var(--ink-200)]">
-              {docs.map((d) => (
-                <div key={d.name} className="flex items-center gap-3 px-5 py-3 hover:bg-[var(--ink-50)]">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--ink-50)]">
-                    <FileText className="h-4 w-4 text-[var(--ink-500)]" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold">{d.name}</p>
-                    <p className="text-[11px] text-[var(--ink-500)]">{d.size} · uploaded {d.date}</p>
-                  </div>
-                  <span className={`rounded px-2 py-0.5 text-[10.5px] font-semibold ${
-                    d.tone === "danger" ? "bg-[var(--red-500)]/10 text-[var(--red-500)]"
-                      : d.tone === "info" ? "bg-[var(--accent-500)]/10 text-[var(--accent-500)]"
-                      : "bg-[var(--ink-50)] text-[var(--ink-500)]"
-                  }`}>{d.tag}</span>
-                  <button className="rounded p-1.5 text-[var(--ink-500)] hover:bg-[var(--ink-50)]" aria-label="Download">
-                    <Download className="h-3.5 w-3.5" />
-                  </button>
+              {docs.length === 0 && (
+                <div className="flex flex-col items-center justify-center gap-2 px-5 py-10 text-center">
+                  <FileText className="h-6 w-6 text-[var(--ink-500)]" />
+                  <p className="text-[13px] font-semibold">No documents yet</p>
+                  <p className="text-[11.5px] text-[var(--ink-500)]">
+                    {canEdit ? "Upload drawings, specs and reports to share with the team." : "No specification documents have been uploaded yet."}
+                  </p>
                 </div>
-              ))}
+              )}
+              {docs.map((d) => {
+                const tone = tagTone(d.tag);
+                const toneClass =
+                  tone === "danger"  ? "bg-[var(--red-500)]/10 text-[var(--red-500)]"
+                  : tone === "info"  ? "bg-[var(--accent-500)]/10 text-[var(--accent-500)]"
+                  : tone === "success" ? "bg-[var(--green-600)]/10 text-[var(--green-600)]"
+                  : tone === "warning" ? "bg-[var(--amber-500)]/10 text-[var(--amber-500)]"
+                  : "bg-[var(--ink-50)] text-[var(--ink-500)]";
+                const date = new Date(d.uploadedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+                return (
+                  <div key={d.id} className="flex items-center gap-3 px-5 py-3 hover:bg-[var(--ink-50)]">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--ink-50)]">
+                      <FileText className="h-4 w-4 text-[var(--ink-500)]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold">{d.fileName}</p>
+                      <p className="text-[11px] text-[var(--ink-500)]">
+                        {formatBytes(d.fileSize)} · uploaded {date} · {d.uploadedBy}
+                      </p>
+                    </div>
+                    <span className={`rounded px-2 py-0.5 text-[10.5px] font-semibold ${toneClass}`}>{d.tag}</span>
+                    {d.dataUrl ? (
+                      <a
+                        href={d.dataUrl}
+                        download={d.fileName}
+                        className="rounded p-1.5 text-[var(--ink-500)] hover:bg-[var(--ink-50)]"
+                        aria-label="Download"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </a>
+                    ) : (
+                      <span className="rounded px-1.5 py-0.5 text-[10px] text-[var(--ink-500)]" title="Sample document — re-upload to enable download">sample</span>
+                    )}
+                    {canEdit && !d.seed && (
+                      <button
+                        onClick={() => {
+                          if (!confirm(`Delete "${d.fileName}"?`)) return;
+                          removeProjectDoc(projectId, d.id);
+                          toast.success("Document removed");
+                        }}
+                        className="rounded p-1.5 text-[var(--red-500)] hover:bg-[var(--red-500)]/10"
+                        aria-label="Delete"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </Card>
 
@@ -176,6 +222,7 @@ function SpecificationPage() {
           canSeeMoney={canSeeMoney}
         />
       )}
+      <UploadSpecDocDialog projectId={projectId} open={uploadOpen} onOpenChange={setUploadOpen} />
     </div>
   );
 }
