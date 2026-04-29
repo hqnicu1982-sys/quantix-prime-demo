@@ -181,12 +181,14 @@ function PriceWorkRatesCard({ projectId }: { projectId: string }) {
                   {r.boqLineId ?? "—"}
                 </td>
                 <td className="px-4 py-2.5 text-right">
-                  {canEditPw && <Button
-                    variant="ghost" size="sm"
-                    onClick={() => { removePriceWorkRate(projectId, r.id); toast("PW rate removed"); }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5 text-[var(--ink-500)]" />
-                  </Button>}
+                  {canEditPw && (
+                    <Button
+                      variant="ghost" size="sm"
+                      onClick={() => { removePriceWorkRate(projectId, r.id); toast("PW rate removed"); }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-[var(--ink-500)]" />
+                    </Button>
+                  )}
                 </td>
               </tr>
             ))}
