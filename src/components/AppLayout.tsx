@@ -83,6 +83,45 @@ function PersonaToggle() {
   );
 }
 
+// Build the dynamic list of project links rendered inside the "Projects"
+// sidebar group. Pro/Admin users get up to 4 most-recently-visited projects
+// (with the current project pinned first). Site Users / Operatives get the
+// projects they're explicitly assigned to. Empty list = no extra links.
+function useDynamicProjectNavItems(): NavItem[] {
+  const { all, current } = useProject();
+  const me = useCurrentUser();
+  const portfolioWide = useCan("view.financials.lite");
+  const allAssignments = useAssignments();
+  const recents = useRecentProjects();
+
+  const projectsById = new Map(all.map((p) => [p.id, p]));
+
+  let ids: string[];
+  if (portfolioWide) {
+    const ordered = [current.id, ...recents.filter((id) => id !== current.id)];
+    ids = ordered.filter((id) => projectsById.has(id)).slice(0, 4);
+  } else {
+    const assignedIds = new Set(
+      allAssignments.filter((a) => a.memberId === me.id).map((a) => a.projectId),
+    );
+    const ordered = [
+      ...(assignedIds.has(current.id) ? [current.id] : []),
+      ...Array.from(assignedIds).filter((id) => id !== current.id),
+    ];
+    ids = ordered.filter((id) => projectsById.has(id));
+  }
+
+  return ids.map((id) => {
+    const p = projectsById.get(id)!;
+    return {
+      to: "/projects/$projectId",
+      label: p.name,
+      icon: HardHat,
+      params: { projectId: p.id } as Record<string, string>,
+    };
+  });
+}
+
 function NavLinkItem({ item, onClick }: { item: NavItem; onClick?: () => void }) {
   const location = useLocation();
   // resolve dynamic segments for active comparison
