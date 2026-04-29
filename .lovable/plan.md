@@ -1,120 +1,95 @@
-## Audit RBAC — matrice rol × suprafață
+# Plan — Detalii & documente per "Specified system"
 
-Confirmat prin inspecția codului. Legenda: ✅ corect · ⚠️ scurgere de remediat.
+## Context
+Pe `/projects/$projectId/specification`, panoul **Specified systems** (dreapta) listează doar nume + arie + valoare. Userii vor să poată atașa detalii/documente per system (technical datasheet, BG SpecSure cert, drawing extract, fire test report, photos de pe șantier etc.).
 
-### Dashboard general `/`
-| Rol | Status |
-|---|---|
-| Admin / Pro Control | ✅ vede tot (KPI + margin trend) |
-| Pro | ✅ vede KPI lite, fără margin trend |
-| Site User / Operative | ✅ redirect la `MyScopeCard` (focused dashboard) |
+## Ce construim
 
-### Pagina `/financial`
-✅ Toate rolurile sub Pro Control văd `<NoAccess>`.
+### 1. Storage layer — `src/lib/systemDetails.ts` (nou)
+Pattern identic cu `bespokeSystems.ts` / `projectData.ts` (localStorage scoped per proiect, custom event + hook).
 
-### Layout proiect `/projects/$projectId`
-| Element | Status |
-|---|---|
-| Subtitle "£12.5m contract" | ⚠️ vizibil tuturor (Operative inclusiv) |
-| Tab "Costed BoQ" | ⚠️ vizibil tuturor |
-| Tab "Invoices" | ⚠️ vizibil tuturor |
-| Tab "Variations" | ⚠️ vizibil tuturor |
-| Tab "Reports" | ⚠️ vizibil tuturor |
-| Tab "Specification" | ⚠️ conține `fmtMoney(s.value)` per system |
+```ts
+type SystemAttachment = {
+  id: string;
+  fileName: string;
+  fileSize: number;        // bytes
+  mimeType: string;
+  dataUrl: string;         // base64 (mock — same approach as restul appului)
+  category: "datasheet" | "certificate" | "drawing" | "test-report" | "photo" | "other";
+  uploadedBy: string;      // currentUser.name
+  uploadedAt: number;
+  notes?: string;
+};
 
-### Sub-rute proiect (acces direct via URL)
-| Rută | Cap necesar | Status |
-|---|---|---|
-| `/projects/$id/costed-boq` | `view.boq` | ⚠️ fără page guard |
-| `/projects/$id/invoices` | `view.invoices` | ⚠️ fără page guard (doar butoane gated) |
-| `/projects/$id/variations` | `view.variations` | ⚠️ fără page guard |
-| `/projects/$id/reports` | `view.financials.lite` | ⚠️ fără page guard |
-| `/projects/$id/specification` | `view.boq` | ⚠️ valori comerciale expuse |
-| `/projects/$id/calloffs` | `view.calloffs` | ⚠️ fără page guard (Operative nu are cap) |
-| `/projects/$id/team` | `view.team` | ⚠️ fără page guard (Operative nu are cap) |
-| `/projects/$id/labour` | `view.dailyReport` | ✅ toți au cap |
-| `/projects/$id/planner` | `view.planner` | ✅ toți au cap |
-
-### Rute globale
-| Rută | Cap necesar | Status |
-|---|---|---|
-| `/calloffs` | `view.calloffs` | ⚠️ Operative ar vedea |
-| `/variations` | `view.variations` | ⚠️ Site User + Operative ar vedea |
-| `/costed-boq` | `view.boq` | ⚠️ Site User + Operative ar vedea |
-| `/price-intelligence` | `view.priceIntel` | ⚠️ Site User + Operative ar vedea |
-| `/catalog` | `view.priceIntel` (de adăugat) | ⚠️ fără gating |
-| `/integrations` | `view.integrations` | ⚠️ Pro/Site/Operative ar vedea |
-| `/team` | `view.team` | ⚠️ Operative ar vedea |
-| `/readiness` | `view.boq` | ⚠️ fără gating |
-| `/calculator` | `view.boq` | ⚠️ fără gating |
-| `/planner` | `view.planner` | ✅ |
-| `/daily-report` | `view.dailyReport` | ✅ |
-
-### `ApprovalInboxCard`
-⚠️ Apare în Overview-ul proiectului pentru toate rolurile. Operative / Site User nu au capability de aprobat — card-ul ar trebui ascuns dacă nu există nicio acțiune actionabilă (`approve.labour` / `edit.variations` / `sign.invoices` / `approve.calloffs`).
-
----
-
-## Remediere
-
-### 1. Page-level `<NoAccess>` guards (10 rute)
-Pattern uniform deja folosit în `financial.tsx` / `invoices.tsx`:
-```tsx
-function GuardedX() {
-  const allowed = useCan("view.X");
-  if (!allowed) return <NoAccess cap="view.X" title="..." />;
-  return <X />;
-}
-export const Route = createFileRoute(...)({ component: GuardedX });
+type SystemDetails = {
+  systemKey: string;       // ex. "GypWall CLASSIC (C-48/70)" (numele din fitzroviaSystems)
+  description?: string;    // câmp text liber adăugat de user (override pe descrierea din library)
+  installerNotes?: string; // note operaționale pentru șantier
+  attachments: SystemAttachment[];
+};
 ```
 
-Aplicat pe:
-- `projects.$projectId.costed-boq.tsx` → `view.boq`
-- `projects.$projectId.invoices.tsx` → `view.invoices`
-- `projects.$projectId.variations.tsx` → `view.variations`
-- `projects.$projectId.reports.tsx` → `view.financials.lite`
-- `projects.$projectId.specification.tsx` → `view.boq`
-- `projects.$projectId.calloffs.tsx` → `view.calloffs`
-- `projects.$projectId.team.tsx` → `view.team`
-- `calloffs.tsx`, `variations.tsx`, `costed-boq.tsx`, `price-intelligence.tsx`, `catalog.tsx`, `integrations.tsx`, `team.tsx`, `readiness.tsx`, `calculator.tsx` → cap-ul corespunzător
+Funcții exportate: `useSystemDetails(projectId, systemKey)`, `saveSystemDetails(...)`, `addAttachment(...)`, `removeAttachment(...)`, `updateNotes(...)`.
 
-### 2. Filtrare TAB-uri în `projects.$projectId.tsx`
-Adaug `requires?: Capability` pe `TABS[]` și filtrez cu `useCan` înainte de render. Tab-urile dispar pentru rolurile fără capability — Site User vede doar Overview / Specification (dacă rămâne) / Planner / Labour.
+Cheie storage: `qp-system-details-{projectId}`, payload = `Record<systemKey, SystemDetails>`.
 
-### 3. Ascundere valoare contract în subtitle
-Construiesc `subtitle` condițional: dacă `useCan("view.financials.lite")` este false, omit `fmtMoney(project.contractValue)` din header.
+**Limită fișier**: 5 MB / fișier, max 20 fișiere / system (validare în UI cu toast). Tipuri acceptate: PDF, PNG, JPG, DWG (afișat ca generic), DOCX, XLSX.
 
-### 4. Ascundere valori în `specification.tsx`
-Wrap `{fmtMoney(s.value)}` în `useCan("view.financials.lite")`.
+### 2. UI — card "Specified systems" devine clickabil
+Modificări în `src/routes/projects.$projectId.specification.tsx`:
 
-### 5. `ApprovalInboxCard` — ascundere pentru roluri fără acțiuni
-Card-ul nu se randează dacă utilizatorul nu are nicio capability din: `approve.labour`, `edit.variations`, `sign.invoices`, `approve.calloffs`.
+- Fiecare item din lista `fitzroviaSystems` devine `<button>` care deschide un dialog.
+- Lângă nume afișăm un mic badge cu numărul de atașamente (`📎 3`) dacă există.
+- Adăugăm un ribbon discret colorat (verde dacă are >0 atașamente, gri dacă nu) — feedback vizual rapid pentru "ce e documentat".
 
-### 6. Extindere audit script
-`scripts/audit-rbac.mjs` capătă o nouă verificare: orice fișier `src/routes/*.tsx` care expune un cap "non-universal" (deja definit într-o listă) trebuie să aibă fie `<NoAccess` fie un wrapper `Guarded*` în component. Listă derivată din mapping rută→cap definit în plan. Audit-ul eșuează la build dacă o rută nouă uită guard-ul.
+### 3. Dialog nou — `src/components/specification/SystemDetailsDialog.tsx`
+Conținut:
 
-### 7. Teste unit pentru guards
-Extind `Gated.test.tsx` (sau adaug `route-guards.test.tsx`) cu un test parametrizat: pentru fiecare rută gated × fiecare rol, randează componenta și verifică prezența / absența `<NoAccess>`. ~70 cazuri noi, sub 2s.
+**Header**: numele sistemului + arie + (dacă `canSeeMoney`) valoare.
 
----
+**Tab 1 — Overview**:
+- Descriere tehnică (textarea editabilă, salvare cu debounce / buton Save).
+- Notes pentru șantier (textarea separată).
+- Read-only pentru roluri fără `edit.specification` (vezi mai jos permission).
 
-## Fișiere modificate
-- `src/routes/projects.$projectId.tsx` (subtitle + TAB filtering)
-- `src/routes/projects.$projectId.specification.tsx` (page guard + ascundere `s.value`)
-- `src/routes/projects.$projectId.costed-boq.tsx` (page guard)
-- `src/routes/projects.$projectId.invoices.tsx` (page guard la nivel de rută)
-- `src/routes/projects.$projectId.variations.tsx` (page guard)
-- `src/routes/projects.$projectId.reports.tsx` (page guard)
-- `src/routes/projects.$projectId.calloffs.tsx` (page guard)
-- `src/routes/projects.$projectId.team.tsx` (page guard)
-- `src/routes/calloffs.tsx`, `variations.tsx`, `costed-boq.tsx`, `price-intelligence.tsx`, `catalog.tsx`, `integrations.tsx`, `team.tsx`, `readiness.tsx`, `calculator.tsx` (page guards)
-- `src/components/dashboard/ApprovalInboxCard.tsx` (early return dacă nicio acțiune)
-- `scripts/audit-rbac.mjs` (verificare route guards)
-- `src/lib/route-guards.test.tsx` (teste noi)
+**Tab 2 — Documents** (`attachments`):
+- Drop-zone + buton "Upload files" (`<input type="file" multiple>`).
+- Fiecare upload primește un select de categorie (Datasheet / Certificate / Drawing / Test report / Photo / Other) + câmp opțional de notes.
+- Lista existentă: icon per mime-type (FileText / Image / etc. din lucide), filename, size, categorie (badge colorat), uploader + data, butoane Download (link `<a download>` din dataUrl) și Delete (cu confirmare).
+- Group-by category cu separatoare.
 
-## Rezultat după remediere
-- **Operative**: vede doar Dashboard focused, Planner, Daily Report, PW Rates, Profile. Niciun URL direct nu expune date comerciale.
-- **Site User**: idem + Call-offs (read-only) + Team (read-only). Nu vede BoQ, Invoices, Variations, Financial, Price Intel.
-- **Pro**: vede tot ce e read-only comercial (BoQ, Variations, Call-offs, Invoices) + scrie Call-offs + edit Planner. Nu vede Financial dashboard, nu aprobă, nu editează BoQ.
-- **Pro Control**: tot, fără `manage.users` și `edit.team`.
-- **Admin**: tot.
+**Tab 3 — Build-up** (read-only):
+Dacă numele sistemului face match în `LIBRARY` (systemLibrary.ts), arătăm `buildUp` table + `perf` (fire/Rw/maxHeight). Dacă nu, afișăm "No library match — use Description tab to document the build-up".
+
+### 4. Permissions
+- **Read** (deschide dialog, vede atașamente): toți userii care văd deja pagina (Site User & Operative incluși — e operațional, util pe șantier).
+- **Upload / Edit notes / Delete**: gated cu `useCan("edit.specification")`. Dacă nu există capability-ul, îl adăugăm în `permissions.ts` mapat pe `Admin`, `Pro Control`, `Pro`. Site User și Operative văd doar read-only (download permis, upload/delete ascuns).
+
+### 5. Update audit & teste
+- `scripts/audit-rbac.mjs`: nimic de schimbat (ruta rămâne deschisă, gating e intern).
+- `src/lib/permissions.test.ts`: adaug case pentru `edit.specification`.
+- Test nou pentru `systemDetails.ts` (save/load/add/remove attachment, limita 5MB respinge).
+
+## Detalii tehnice
+
+**De ce localStorage + base64**: aliniat cu pattern-ul existent (bespokeSystems, projectData, customProjects, invoiceRegistry — toate folosesc localStorage). Nu e backend real în acest demo. Limita 5MB e suficientă pentru PDF-uri de datasheet uzuale; documentăm explicit limita în UI.
+
+**Cheie de identificare system**: folosim `name` din `fitzroviaSystems` ca `systemKey`. Stabil cât timp numele nu se schimbă; suficient pentru mock.
+
+**Mime-type → icon**: helper mic în dialog (`pdf` → FileText roșu, `image/*` → Image, default → File).
+
+**Hartă atașament → badge**: pe card afișăm doar count total. În dialog vedem detaliile.
+
+## Fișiere atinse
+- `src/lib/systemDetails.ts` (nou)
+- `src/lib/systemDetails.test.ts` (nou)
+- `src/components/specification/SystemDetailsDialog.tsx` (nou)
+- `src/routes/projects.$projectId.specification.tsx` (modificat — card devine interactiv)
+- `src/lib/permissions.ts` (adaug `edit.specification` capability)
+- `src/lib/permissions.test.ts` (test nou)
+
+## Out of scope (pot fi follow-up)
+- Sync cu un backend real (ar înlocui localStorage cu Lovable Cloud storage + DB).
+- Versionare documente (rev 1, rev 2…).
+- Comments / @mentions pe atașamente.
+- Aplicarea aceluiași pattern la alte locuri unde apare lista de sisteme (Catalog detail, Calculator). Putem extinde dacă e nevoie după ce confirmăm UX-ul aici.

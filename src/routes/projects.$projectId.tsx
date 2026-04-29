@@ -71,6 +71,7 @@ function ProjectLayout() {
     "edit.variations": useCan("edit.variations"),
     "view.integrations": useCan("view.integrations"),
     "view.settings.labour": useCan("view.settings.labour"),
+    "edit.specification": useCan("edit.specification"),
   };
   const visibleTabs = TABS.filter((t) => !t.requires || capChecks[t.requires]);
 
