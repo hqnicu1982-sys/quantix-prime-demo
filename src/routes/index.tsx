@@ -23,7 +23,9 @@ export const Route = createFileRoute("/")({
 function Dashboard() {
   const [range, setRange] = useState<"30d" | "8w" | "life">("8w");
   const me = useCurrentUser();
-  const canSeeFinancials = useCan("view.financials") || useCan("view.financials.lite");
+  const canViewFinancials = useCan("view.financials");
+  const canViewFinancialsLite = useCan("view.financials.lite");
+  const canSeeFinancials = canViewFinancials || canViewFinancialsLite;
   const isOperative = me.tier === "Operative" || me.tier === "Site User";
 
   // Operative / Site User get a focused dashboard: their scope + nothing else.
@@ -88,7 +90,7 @@ function Dashboard() {
             </div>
           </Card>
 
-          {useCan("view.financials") && (
+          {canViewFinancials && (
           <Card>
             <CardHead
               title="Margin trend"
