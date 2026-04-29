@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,8 @@ import { useProjectCrews, usePriceWorkRates } from "@/lib/labour";
 import { useProjectTasks } from "@/lib/planner";
 import { addLabourLog, computeHours } from "@/lib/laborLog";
 import { toast } from "sonner";
+import { useCurrentUser } from "@/lib/currentUser";
+import { useCan } from "@/lib/permissions";
 
 type Props = { projectId: string; date: string };
 
@@ -29,9 +31,15 @@ export function LogLabourDialog({ projectId, date }: Props) {
   const crews = useProjectCrews(projectId);
   const tasks = useProjectTasks(projectId);
   const pwRates = usePriceWorkRates(projectId);
+  const me = useCurrentUser();
+  const canLogOthers = useCan("log.labour.others");
+  const visibleCrews = canLogOthers ? crews : crews.filter((c) => c.assignment.memberId === me.id);
   const [open, setOpen] = useState(false);
   const [payMode, setPayMode] = useState<"hourly" | "pw">("hourly");
   const [memberId, setMemberId] = useState<string>("");
+  useEffect(() => {
+    if (!canLogOthers) setMemberId(me.id);
+  }, [canLogOthers, me.id, open]);
   const [taskId, setTaskId] = useState<string>("none");
   const [inTime, setInTime] = useState("07:00");
   const [outTime, setOutTime] = useState("16:30");
@@ -138,13 +146,15 @@ export function LogLabourDialog({ projectId, date }: Props) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2">
-            <Label className="text-[11px]">Crew member</Label>
-            <Select value={memberId} onValueChange={setMemberId}>
+            <Label className="text-[11px]">
+              Crew member {!canLogOthers && <span className="text-[var(--ink-500)]">(you only)</span>}
+            </Label>
+            <Select value={memberId} onValueChange={setMemberId} disabled={!canLogOthers}>
               <SelectTrigger>
                 <SelectValue placeholder="Select crew" />
               </SelectTrigger>
               <SelectContent>
-                {crews.map((c) => (
+                {visibleCrews.map((c) => (
                   <SelectItem key={c.assignment.memberId} value={c.assignment.memberId}>
                     {c.member?.name ?? "?"} · {c.crewName} · £{c.rate.toFixed(2)}/h
                   </SelectItem>
