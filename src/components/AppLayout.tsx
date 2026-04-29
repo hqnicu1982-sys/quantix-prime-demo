@@ -14,8 +14,11 @@ import { ProjectProvider, useProject } from "@/lib/ProjectContext";
 import { cn } from "@/lib/utils";
 import { CompareTray } from "@/components/CompareTray";
 import { CurrentUserSwitcher } from "@/components/auth/CurrentUserSwitcher";
-import { useCurrentTier } from "@/lib/currentUser";
+import { useCurrentTier, useCurrentUser } from "@/lib/currentUser";
 import { can, type Capability } from "@/lib/permissions";
+import { useCan } from "@/lib/permissions";
+import { useAssignments } from "@/lib/labour";
+import { useRecentProjects } from "@/lib/recentProjects";
 
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean; params?: Record<string, string>; requires?: Capability };
 type NavGroup = { label: string; persona?: "site" | "commercial"; items: NavItem[] };
@@ -30,7 +33,6 @@ const navGroups: NavGroup[] = [
   ]},
   { label: "Projects", items: [
     { to: "/projects", label: "All Projects", icon: FolderKanban, mobile: true },
-    { to: "/projects/$projectId", label: "Hotel Fitzrovia", icon: HardHat, params: { projectId: "fitzrovia" } as Record<string, string> },
   ]},
   { label: "Commercial", persona: "commercial", items: [
     { to: "/costed-boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true, requires: "view.boq" },
@@ -118,11 +120,17 @@ function NavLinkItem({ item, onClick }: { item: NavItem; onClick?: () => void })
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { persona } = useProject();
   const tier = useCurrentTier();
+  const projectItems = useDynamicProjectNavItems();
   const visibleGroups = navGroups
     .map((group) => ({
       ...group,
       items: group.items.filter((i) => !i.requires || can(tier, i.requires)),
     }))
+    .map((group) =>
+      group.label === "Projects"
+        ? { ...group, items: [...group.items, ...projectItems] }
+        : group,
+    )
     .filter((g) => g.items.length > 0);
   return (
     <>
