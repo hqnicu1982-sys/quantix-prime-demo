@@ -276,7 +276,7 @@ function Catalog() {
                       <SpecChip icon={<Layers  className="h-3 w-3" />} v={`${m.thick} mm`}                  k="Thick"  tier={tT} />
                     </div>
 
-                    {(() => {
+                    {canSeePricing && (() => {
                       const c = costFor(m.code);
                       if (!c) {
                         return (
