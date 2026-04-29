@@ -176,8 +176,10 @@ function isGated(src, clickIndex) {
         //   (b) a chain like `canX && cond1 && cond2 && (` — the tail ends
         //       with `&&` (or `?`) and some earlier token in the chain is a
         //       capability check (`canX` / `useCan(...)`).
-        const endsWithGuard = /(?:&&|\?)\s*\(?\s*$/.test(tail);
-        const hasCapInChain = /(?:^|[^.\w])(?:can[A-Z]\w*|useCan\([^)]+\))\b/.test(tail);
+        // Use a wider window so chains like `canX && cond && cond && (` match.
+        const wideTail = before.slice(Math.max(0, i - 600), i).replace(/\s+$/g, "");
+        const endsWithGuard = /(?:&&|\?)\s*\(?\s*$/.test(wideTail);
+        const hasCapInChain = /(?:^|[^.\w])(?:can[A-Z]\w*|useCan\([^)]+\))\b/.test(wideTail);
         if (endsWithGuard && hasCapInChain) {
           return true;
         }
