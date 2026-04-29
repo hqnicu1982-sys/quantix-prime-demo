@@ -117,6 +117,7 @@ function TeamPage() {
 
 function PriceWorkRatesCard({ projectId }: { projectId: string }) {
   const rates = usePriceWorkRates(projectId);
+  const canEditPw = useCan("edit.pwRates");
   const [code, setCode] = useState("");
   const [scope, setScope] = useState("");
   const [unit, setUnit] = useState<PriceWorkUnit>("m2");
@@ -146,7 +147,7 @@ function PriceWorkRatesCard({ projectId }: { projectId: string }) {
     <Card>
       <CardHead
         title="Price Work rates"
-        subtitle={`${rates.length} defined · ${linked} linked to BoQ · per-project negotiated rates used by Daily Report`}
+        subtitle={`${rates.length} defined · ${linked} linked to BoQ${canEditPw ? "" : " · read-only for your role"}`}
       />
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
@@ -180,16 +181,16 @@ function PriceWorkRatesCard({ projectId }: { projectId: string }) {
                   {r.boqLineId ?? "—"}
                 </td>
                 <td className="px-4 py-2.5 text-right">
-                  <Button
+                  {canEditPw && <Button
                     variant="ghost" size="sm"
                     onClick={() => { removePriceWorkRate(projectId, r.id); toast("PW rate removed"); }}
                   >
                     <Trash2 className="h-3.5 w-3.5 text-[var(--ink-500)]" />
-                  </Button>
+                  </Button>}
                 </td>
               </tr>
             ))}
-            <tr className="bg-[var(--ink-50)]/40">
+            {canEditPw && <tr className="bg-[var(--ink-50)]/40">
               <td className="px-4 py-2"><Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="PW-CODE" className="h-8 font-mono-num" /></td>
               <td className="px-4 py-2"><Input value={scope} onChange={(e) => setScope(e.target.value)} placeholder="Scope description" className="h-8" /></td>
               <td className="px-4 py-2">
@@ -210,7 +211,7 @@ function PriceWorkRatesCard({ projectId }: { projectId: string }) {
                   <Plus className="h-3.5 w-3.5" />
                 </Button>
               </td>
-            </tr>
+            </tr>}
           </tbody>
         </table>
       </div>
