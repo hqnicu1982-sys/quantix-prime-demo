@@ -382,8 +382,26 @@ function LayoutInner() {
       </div>
 
       {/* Mobile bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--ink-200)] bg-[var(--card)] lg:hidden">
-        {mobileItems.map((item) => {
+      <MobileTabBar />
+
+      <WelcomeModal open={welcomeOpen} onOpenChange={setWelcomeOpen} />
+      <CompareTray />
+      <Toaster position="top-right" />
+    </div>
+  );
+}
+
+function MobileTabBar() {
+  const tier = useCurrentTier();
+  const items = navGroups
+    .flatMap((g) => g.items)
+    .filter((i) => i.mobile && (!i.requires || can(tier, i.requires)))
+    .slice(0, 5);
+  if (items.length === 0) return null;
+  const cols = `grid-cols-${items.length}`;
+  return (
+    <nav className={cn("fixed inset-x-0 bottom-0 z-30 grid border-t border-[var(--ink-200)] bg-[var(--card)] lg:hidden", cols)}>
+      {items.map((item) => {
           const Icon = item.icon;
           return (
             <Link
@@ -398,13 +416,8 @@ function LayoutInner() {
               <span className="truncate">{item.label.split(" ")[0]}</span>
             </Link>
           );
-        })}
-      </nav>
-
-      <WelcomeModal open={welcomeOpen} onOpenChange={setWelcomeOpen} />
-      <CompareTray />
-      <Toaster position="top-right" />
-    </div>
+      })}
+    </nav>
   );
 }
 
