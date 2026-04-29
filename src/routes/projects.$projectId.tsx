@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useLocation, notFound, useNavigate } from "@tanstack/react-router";
 import { Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { Share2, Plus } from "lucide-react";
+import { Share2, Plus, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useProject } from "@/lib/ProjectContext";
@@ -13,6 +13,8 @@ import type { Capability } from "@/lib/permissions";
 import { useCurrentUser } from "@/lib/currentUser";
 import { useAssignments } from "@/lib/labour";
 import { NoAccess } from "@/components/auth/NoAccess";
+import { exportProjectPack } from "@/lib/exportProjectPack";
+import { useProjectData } from "@/lib/projectData";
 
 export const Route = createFileRoute("/projects/$projectId")({ component: ProjectLayout });
 
@@ -38,6 +40,7 @@ function ProjectLayout() {
   const navigate = useNavigate();
   const project = all.find((p) => p.id === projectId);
   const canSeeMoney = useCan("view.financials.lite");
+  const projectData = useProjectData(projectId);
   // Site User / Operative may only access projects they're assigned to.
   const me = useCurrentUser();
   const portfolioWide = useCan("view.financials.lite"); // Pro+ see all projects
@@ -98,6 +101,19 @@ function ProjectLayout() {
     ? `${subtitleBase} · ${fmtMoney(project.contractValue, { compact: true })} contract`
     : subtitleBase;
 
+  const handleExportPack = () => {
+    try {
+      exportProjectPack(project, projectData);
+      toast.success("Project pack exported", {
+        description: `${project.name} · PDF downloaded`,
+      });
+    } catch (e) {
+      toast.error("Export failed", {
+        description: String((e as Error).message ?? e),
+      });
+    }
+  };
+
   return (
     <Section
       title={project.name}
@@ -113,6 +129,9 @@ function ProjectLayout() {
             }}
           >
             <Share2 className="mr-1.5 h-3.5 w-3.5" /> Share
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportPack}>
+            <FileDown className="mr-1.5 h-3.5 w-3.5" /> Export pack
           </Button>
           <Gated cap="create.calloffs">
             <Button size="sm" onClick={() => toast.success("New call-off", { description: `Draft created for ${project.name}` })}>
