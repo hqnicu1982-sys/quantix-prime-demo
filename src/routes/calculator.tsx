@@ -763,7 +763,7 @@ function SingleView({
           </div>
 
           {/* COST ESTIMATE — bridges Calculator with Costed BoQ pricing */}
-          <div className="border-b border-[var(--ink-200)]/60 bg-gradient-to-br from-[var(--accent-500)]/[0.04] to-transparent px-5 py-4">
+          {canSeePricing && <div className="border-b border-[var(--ink-200)]/60 bg-gradient-to-br from-[var(--accent-500)]/[0.04] to-transparent px-5 py-4">
             <div className="flex items-center justify-between">
               <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Cost estimate</p>
               <span className="font-mono-num text-[10px] text-[var(--ink-500)]">
@@ -795,7 +795,7 @@ function SingleView({
                 {cost.totalLines - cost.pricedLines} line{cost.totalLines - cost.pricedLines === 1 ? "" : "s"} not in catalogue — material total is a lower bound.
               </p>
             )}
-          </div>
+          </div>}
 
           <div className="border-b border-[var(--ink-200)]/60 px-5 py-4">
             <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">System build-up</p>
@@ -818,25 +818,25 @@ function SingleView({
                   <span className="font-mono-num shrink-0 text-right font-semibold text-[var(--ink-900)]">
                     {fmtQty(l.qty)} <span className="font-normal text-[var(--ink-500)]">{l.unit}</span>
                   </span>
-                  <span
+                  {canSeePricing && <span
                     className={"font-mono-num shrink-0 w-[58px] text-right font-semibold " + (l.lineCost == null ? "text-[var(--ink-500)]" : "text-[var(--accent-500)]")}
                     title={l.lineCost == null ? "No price in catalogue" : `${l.supplier?.toUpperCase()} @ £${l.unitPrice?.toFixed(2)}/${l.unit}`}
                   >
                     {l.lineCost == null ? "—" : fmtMoneyShort(l.lineCost)}
-                  </span>
+                  </span>}
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="space-y-2 border-t border-[var(--ink-200)]/60 bg-[var(--ink-50)]/40 p-4">
+          {canSeePricing && <div className="space-y-2 border-t border-[var(--ink-200)]/60 bg-[var(--ink-50)]/40 p-4">
             <Button className="w-full gap-2" size="lg" disabled={invalid} onClick={() => toast.success("BoQ exported", { description: "CSV ready" })}>
               <Download className="h-4 w-4" /> Export BoQ
             </Button>
             <Button className="w-full" variant="outline" disabled={invalid} onClick={() => { toast.success("Added to project BoQ"); navigate({ to: "/costed-boq" }); }}>
               Add to Costed BoQ
             </Button>
-          </div>
+          </div>}
         </div>
       </aside>
 
