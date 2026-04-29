@@ -241,7 +241,6 @@ function Calculator() {
             area={area} wasteFactor={wasteFactor}
             onPromote={promoteToCalculator}
             combined={COMBINED}
-            canSeePricing={canSeePricing}
           />
         ) : (
           /* ===================== SINGLE-SYSTEM MODE ===================== */
