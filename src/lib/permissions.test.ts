@@ -189,6 +189,13 @@ describe("RBAC capability matrix", () => {
           "Pro Control": true,
           "Site User": false,
         },
+        "Specification · Upload docs / edit notes": {
+          "Admin": true,
+          "Operative": false,
+          "Pro": true,
+          "Pro Control": true,
+          "Site User": false,
+        },
         "Team · Edit PW rates": {
           "Admin": true,
           "Operative": false,
