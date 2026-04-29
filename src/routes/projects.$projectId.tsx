@@ -8,22 +8,24 @@ import { useProject } from "@/lib/ProjectContext";
 import { useEffect } from "react";
 import { fmtMoney } from "@/lib/mockData";
 import { Gated } from "@/components/auth/Gated";
+import { useCan } from "@/lib/permissions";
+import type { Capability } from "@/lib/permissions";
 
 export const Route = createFileRoute("/projects/$projectId")({ component: ProjectLayout });
 
 type SubTab = "" | "specification" | "costed-boq" | "planner" | "calloffs" | "invoices" | "variations" | "labour" | "reports" | "team";
 
-const TABS: { key: SubTab; label: string }[] = [
+const TABS: { key: SubTab; label: string; requires?: Capability }[] = [
   { key: "", label: "Overview" },
   { key: "specification", label: "Specification" },
-  { key: "costed-boq", label: "Costed BoQ" },
-  { key: "planner", label: "Planner" },
-  { key: "calloffs", label: "Call-offs" },
-  { key: "invoices", label: "Invoices" },
-  { key: "variations", label: "Variations" },
-  { key: "labour", label: "Labour" },
-  { key: "reports", label: "Reports" },
-  { key: "team", label: "Team" },
+  { key: "costed-boq", label: "Costed BoQ", requires: "view.boq" },
+  { key: "planner", label: "Planner", requires: "view.planner" },
+  { key: "calloffs", label: "Call-offs", requires: "view.calloffs" },
+  { key: "invoices", label: "Invoices", requires: "view.invoices" },
+  { key: "variations", label: "Variations", requires: "view.variations" },
+  { key: "labour", label: "Labour", requires: "view.dailyReport" },
+  { key: "reports", label: "Reports", requires: "view.financials.lite" },
+  { key: "team", label: "Team", requires: "view.team" },
 ];
 
 function ProjectLayout() {
@@ -32,6 +34,37 @@ function ProjectLayout() {
   const { all, current, setCurrent } = useProject();
   const navigate = useNavigate();
   const project = all.find((p) => p.id === projectId);
+  const canSeeMoney = useCan("view.financials.lite");
+  // Tab gating — call hooks at top level (one per possible cap), then assemble list.
+  const capChecks: Record<Capability, boolean> = {
+    "view.financials": useCan("view.financials"),
+    "view.financials.lite": useCan("view.financials.lite"),
+    "view.boq": useCan("view.boq"),
+    "edit.boq": useCan("edit.boq"),
+    "upload.prices": useCan("upload.prices"),
+    "view.priceIntel": useCan("view.priceIntel"),
+    "view.calloffs": useCan("view.calloffs"),
+    "create.calloffs": useCan("create.calloffs"),
+    "approve.calloffs": useCan("approve.calloffs"),
+    "view.invoices": useCan("view.invoices"),
+    "sign.invoices": useCan("sign.invoices"),
+    "view.planner": useCan("view.planner"),
+    "edit.planner": useCan("edit.planner"),
+    "view.dailyReport": useCan("view.dailyReport"),
+    "log.labour": useCan("log.labour"),
+    "log.labour.others": useCan("log.labour.others"),
+    "approve.labour": useCan("approve.labour"),
+    "view.team": useCan("view.team"),
+    "edit.team": useCan("edit.team"),
+    "view.pwRates": useCan("view.pwRates"),
+    "edit.pwRates": useCan("edit.pwRates"),
+    "manage.users": useCan("manage.users"),
+    "view.variations": useCan("view.variations"),
+    "edit.variations": useCan("edit.variations"),
+    "view.integrations": useCan("view.integrations"),
+    "view.settings.labour": useCan("view.settings.labour"),
+  };
+  const visibleTabs = TABS.filter((t) => !t.requires || capChecks[t.requires]);
 
   useEffect(() => {
     if (project && current.id !== project.id) setCurrent(project.id);
@@ -42,7 +75,10 @@ function ProjectLayout() {
     throw notFound();
   }
 
-  const subtitle = `${project.mainContractor} · ${project.subtitle} · ${project.startDate} → ${project.endDate} · ${fmtMoney(project.contractValue, { compact: true })} contract`;
+  const subtitleBase = `${project.mainContractor} · ${project.subtitle} · ${project.startDate} → ${project.endDate}`;
+  const subtitle = canSeeMoney
+    ? `${subtitleBase} · ${fmtMoney(project.contractValue, { compact: true })} contract`
+    : subtitleBase;
 
   return (
     <Section
@@ -70,7 +106,7 @@ function ProjectLayout() {
     >
       <div className="border-b border-[var(--ink-200)]">
         <nav className="flex gap-6 overflow-x-auto text-[13px] font-medium">
-          {TABS.map((t) => {
+          {visibleTabs.map((t) => {
             const path = t.key ? `/projects/${projectId}/${t.key}` : `/projects/${projectId}`;
             const active = t.key === ""
               ? location.pathname === path
