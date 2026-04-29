@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState, useMemo } from "react";
 import { Section, Card, CardHead } from "@/components/Primitives";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { dailyReport, team, currentUser } from "@/lib/mockData";
+import { dailyReport, team } from "@/lib/mockData";
 import { Download, Send, Cloud, Clock, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { ProjectBanner } from "@/components/ProjectBanner";
@@ -10,6 +11,8 @@ import { useProject } from "@/lib/ProjectContext";
 import { useLabourLogsForDate, deleteLabourLog, approveLabourLog, rejectLabourLog, computeEntryCost } from "@/lib/laborLog";
 import { useProjectCrews, usePriceWorkRates } from "@/lib/labour";
 import { LogLabourDialog } from "@/components/daily-report/LogLabourDialog";
+import { useCurrentUser } from "@/lib/currentUser";
+import { useCan } from "@/lib/permissions";
 
 export const Route = createFileRoute("/daily-report")({
   head: () => ({ meta: [{ title: "Daily Site Report — Quantix Prime" }] }),
@@ -18,12 +21,25 @@ export const Route = createFileRoute("/daily-report")({
 
 function DailyReport() {
   const { current } = useProject();
+  const me = useCurrentUser();
   const today = new Date().toISOString().slice(0, 10);
-  const logs = useLabourLogsForDate(current.id, today);
+  const allLogs = useLabourLogsForDate(current.id, today);
   const crews = useProjectCrews(current.id);
   const pwRates = usePriceWorkRates(current.id);
-  const canApprove = currentUser.tier === "Admin" || currentUser.tier === "Pro Control";
-  const canDelete = canApprove;
+  const canApprove = useCan("approve.labour");
+  const canDelete = useCan("log.labour.others"); // same gate as editing others
+  const canSeeAll = useCan("log.labour.others");
+
+  // Scope toggle — Operatives default to "mine" since they can't act on others.
+  const [scope, setScope] = useState<"mine" | "all">(canSeeAll ? "all" : "mine");
+  const myCrewMemberIds = useMemo(() => {
+    const myCrew = crews.find((c) => c.assignment.memberId === me.id);
+    if (!myCrew) return new Set([me.id]);
+    return new Set(crews.filter((c) => c.crewName === myCrew.crewName).map((c) => c.assignment.memberId));
+  }, [crews, me.id]);
+  const isMine = (memberId: string) => myCrewMemberIds.has(memberId);
+  const logs = scope === "mine" ? allLogs.filter((l) => isMine(l.memberId)) : allLogs;
+
   const approvedLogs = logs.filter((l) => (l.status ?? "submitted") === "approved");
   const pendingLogs = logs.filter((l) => (l.status ?? "submitted") === "submitted");
   const totalHours = approvedLogs.reduce((s, l) => s + l.hours, 0);
@@ -61,7 +77,23 @@ function DailyReport() {
         <CardHead
           title="Labour"
           subtitle={`${approvedLogs.length} approved · ${totalHours.toFixed(1)}h · £${totalCost.toFixed(0)}${pwCount ? ` · ${pwCount} PW` : ""}${pendingLogs.length ? ` · ${pendingLogs.length} pending (${pendingHours.toFixed(1)}h)` : ""}`}
-          right={<LogLabourDialog projectId={current.id} date={today} />}
+          right={
+            <div className="flex items-center gap-2">
+              {canSeeAll && (
+                <div className="inline-flex overflow-hidden rounded-lg border border-[var(--ink-200)] text-[11px] font-semibold">
+                  <button
+                    onClick={() => setScope("mine")}
+                    className={`px-2.5 py-1 ${scope === "mine" ? "bg-[var(--ink-900)] text-white" : "text-[var(--ink-700)] hover:bg-[var(--ink-50)]"}`}
+                  >My scope</button>
+                  <button
+                    onClick={() => setScope("all")}
+                    className={`px-2.5 py-1 ${scope === "all" ? "bg-[var(--ink-900)] text-white" : "text-[var(--ink-700)] hover:bg-[var(--ink-50)]"}`}
+                  >All</button>
+                </div>
+              )}
+              <LogLabourDialog projectId={current.id} date={today} />
+            </div>
+          }
         />
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
@@ -91,10 +123,15 @@ function DailyReport() {
                   const cost = computeEntryCost(l);
                   const status = l.status ?? "submitted";
                   const pw = l.payMode === "pw" ? pwRates.find((r) => r.id === l.pwRateId) : undefined;
+                  const mine = isMine(l.memberId);
+                  const isMe = l.memberId === me.id;
                   return (
-                    <tr key={l.id}>
+                    <tr key={l.id} className={`${mine ? "bg-[var(--accent-500)]/[0.04] border-l-2 border-[var(--accent-500)]" : scope === "all" && canSeeAll ? "" : "opacity-70"}`}>
                       <td className="px-4 py-2.5 font-medium">
                         {member?.name ?? l.memberId}
+                        {isMe && (
+                          <span className="ml-1.5 rounded-full bg-[var(--accent-500)]/15 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-[var(--accent-500)]">You</span>
+                        )}
                         {crew?.crewName && (
                           <span className="ml-1.5 text-[11.5px] font-normal text-[var(--ink-500)]">· {crew.crewName}</span>
                         )}
@@ -128,12 +165,12 @@ function DailyReport() {
                           <div className="flex gap-1">
                             <button
                               className="rounded border border-[var(--green-600)]/30 bg-[var(--green-600)]/10 p-1 text-[var(--green-600)] hover:bg-[var(--green-600)]/20"
-                              onClick={() => { approveLabourLog(l.id, currentUser.id); toast.success("Hours approved", { description: `${l.hours}h · ${member?.name ?? l.memberId}` }); }}
+                              onClick={() => { approveLabourLog(l.id, me.id); toast.success("Hours approved", { description: `${l.hours}h · ${member?.name ?? l.memberId}` }); }}
                               aria-label="Approve"
                             ><Check className="h-3 w-3" /></button>
                             <button
                               className="rounded border border-[var(--red-500)]/30 bg-[var(--red-500)]/10 p-1 text-[var(--red-500)] hover:bg-[var(--red-500)]/20"
-                              onClick={() => { rejectLabourLog(l.id, currentUser.id); toast.error("Hours rejected"); }}
+                              onClick={() => { rejectLabourLog(l.id, me.id); toast.error("Hours rejected"); }}
                               aria-label="Reject"
                             ><X className="h-3 w-3" /></button>
                           </div>

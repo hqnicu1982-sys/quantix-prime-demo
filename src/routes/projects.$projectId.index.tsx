@@ -4,11 +4,15 @@ import { fitzrovia, fitzroviaSystems, fitzroviaHealth, fitzroviaActivity, fmtMon
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectData } from "@/lib/projectData";
 import { useProjectTasks } from "@/lib/planner";
-import { useAssignments } from "@/lib/labour";
-import { CheckCircle2, Circle, ArrowRight } from "lucide-react";
+import { useAssignments, usePriceWorkRates } from "@/lib/labour";
+import { useLabourLogs } from "@/lib/laborLog";
+import { CheckCircle2, Circle, ArrowRight, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useCurrentUser } from "@/lib/currentUser";
 import { useCan } from "@/lib/permissions";
 import { MyScopeCard } from "@/components/dashboard/MyScopeCard";
+import { ApprovalInboxCard } from "@/components/dashboard/ApprovalInboxCard";
+import { LiveLabourCostCard } from "@/components/financial/LiveLabourCostCard";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
 
@@ -48,6 +52,7 @@ function Overview() {
           </div>
         )}
         {isOnProject && <MyScopeCard projectId={projectId} />}
+        <ApprovalInboxCard />
         <ProjectSetupChecklist projectId={projectId} />
       </div>
     );
@@ -76,6 +81,10 @@ function Overview() {
       )}
 
       {isOnProject && <MyScopeCard projectId={projectId} />}
+
+      <ApprovalInboxCard />
+
+      {(canSeeFinancials || canSeeFinancialsLite) && <LiveLabourCostCard projectId={projectId} />}
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
@@ -191,8 +200,9 @@ type SetupStep = {
   title: string;
   hint: string;
   done: boolean;
+  autoDone: boolean;
   detail?: string;
-  to: "/projects/$projectId/specification" | "/projects/$projectId/costed-boq" | "/projects/$projectId/planner" | "/projects/$projectId/team" | "/projects/$projectId/calloffs";
+  to: "/projects/$projectId/specification" | "/projects/$projectId/costed-boq" | "/projects/$projectId/planner" | "/projects/$projectId/team" | "/projects/$projectId/calloffs" | "/daily-report";
   cta: string;
 };
 
@@ -200,13 +210,30 @@ function ProjectSetupChecklist({ projectId }: { projectId: string }) {
   const data = useProjectData(projectId);
   const tasks = useProjectTasks(projectId);
   const assignments = useAssignments(projectId);
+  const pwRates = usePriceWorkRates(projectId);
+  const labourLogs = useLabourLogs(projectId);
 
-  const steps: SetupStep[] = [
+  // Manual overrides — lets the user tick steps that can't be auto-detected (e.g. spec uploaded outside app)
+  const overridesKey = `qp-setup-overrides:${projectId}`;
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(overridesKey);
+      setOverrides(raw ? JSON.parse(raw) : {});
+    } catch { setOverrides({}); }
+  }, [overridesKey]);
+  const toggleOverride = (key: string, currentlyDone: boolean) => {
+    const next = { ...overrides, [key]: !currentlyDone };
+    setOverrides(next);
+    try { localStorage.setItem(overridesKey, JSON.stringify(next)); } catch {}
+  };
+
+  const auto: Omit<SetupStep, "done">[] = [
     {
       key: "spec",
       title: "Upload specification",
       hint: "Drawings, NBS spec, performance schedules",
-      done: data.systems.length > 0, // proxy: at least one system means scope is captured
+      autoDone: data.systems.length > 0,
       detail: data.systems.length > 0 ? `${data.systems.length} system${data.systems.length === 1 ? "" : "s"} captured` : undefined,
       to: "/projects/$projectId/specification",
       cta: "Open Specification",
@@ -215,7 +242,7 @@ function ProjectSetupChecklist({ projectId }: { projectId: string }) {
       key: "boq",
       title: "Build a Costed BoQ",
       hint: "Add systems from the calculator and price them",
-      done: data.boqLines.length > 0,
+      autoDone: data.boqLines.length > 0,
       detail: data.boqLines.length > 0 ? `${data.boqLines.length} line${data.boqLines.length === 1 ? "" : "s"} on the BoQ` : undefined,
       to: "/projects/$projectId/costed-boq",
       cta: "Open Costed BoQ",
@@ -224,7 +251,7 @@ function ProjectSetupChecklist({ projectId }: { projectId: string }) {
       key: "planner",
       title: "Create a Planner programme",
       hint: "Sequence tasks, set durations and dependencies",
-      done: tasks.length > 0,
+      autoDone: tasks.length > 0,
       detail: tasks.length > 0 ? `${tasks.length} task${tasks.length === 1 ? "" : "s"} scheduled` : undefined,
       to: "/projects/$projectId/planner",
       cta: "Open Planner",
@@ -233,8 +260,17 @@ function ProjectSetupChecklist({ projectId }: { projectId: string }) {
       key: "team",
       title: "Assign your team & labour rates",
       hint: "Invite members, pick crews, set day-rates",
-      done: assignments.length > 0,
+      autoDone: assignments.length > 0,
       detail: assignments.length > 0 ? `${assignments.length} member${assignments.length === 1 ? "" : "s"} on project` : undefined,
+      to: "/projects/$projectId/team",
+      cta: "Open Team",
+    },
+    {
+      key: "pw",
+      title: "Set Price Work rates (optional)",
+      hint: "Negotiated £/m², £/lm or lump-sum rates per scope",
+      autoDone: pwRates.length > 0,
+      detail: pwRates.length > 0 ? `${pwRates.length} PW rate${pwRates.length === 1 ? "" : "s"} defined` : undefined,
       to: "/projects/$projectId/team",
       cta: "Open Team",
     },
@@ -242,12 +278,26 @@ function ProjectSetupChecklist({ projectId }: { projectId: string }) {
       key: "calloffs",
       title: "Issue first call-off",
       hint: "Convert priced lines into supplier orders",
-      done: data.callOffs.length > 0,
+      autoDone: data.callOffs.length > 0,
       detail: data.callOffs.length > 0 ? `${data.callOffs.length} call-off${data.callOffs.length === 1 ? "" : "s"} raised` : undefined,
       to: "/projects/$projectId/calloffs",
       cta: "Open Call-offs",
     },
+    {
+      key: "firstReport",
+      title: "Log first daily report",
+      hint: "Capture hours, PW and progress on site",
+      autoDone: labourLogs.length > 0,
+      detail: labourLogs.length > 0 ? `${labourLogs.length} entr${labourLogs.length === 1 ? "y" : "ies"} logged` : undefined,
+      to: "/daily-report",
+      cta: "Open Daily Report",
+    },
   ];
+
+  const steps: SetupStep[] = auto.map((s) => ({
+    ...s,
+    done: s.autoDone || overrides[s.key] === true,
+  }));
 
   const doneCount = steps.filter((s) => s.done).length;
   const pct = Math.round((doneCount / steps.length) * 100);
@@ -258,7 +308,7 @@ function ProjectSetupChecklist({ projectId }: { projectId: string }) {
     <Card>
       <CardHead
         title="Project setup"
-        subtitle={allDone ? "All set up — project is ready to run" : "Complete each step to get this project running"}
+        subtitle={allDone ? "All set up — project is ready to run" : `Complete each step to get this project running · ${steps.length - doneCount} left`}
         right={
           <div className="flex items-center gap-3">
             <div className="text-right">
@@ -281,9 +331,16 @@ function ProjectSetupChecklist({ projectId }: { projectId: string }) {
           </div>
         }
       />
+      {allDone && (
+        <div className="flex items-center gap-2 border-b border-[var(--ink-200)] bg-[var(--green-600)]/[0.06] px-5 py-2.5">
+          <Sparkles className="h-4 w-4 text-[var(--green-600)]" />
+          <p className="text-[12px] font-semibold text-[var(--green-600)]">Project is fully set up — financial dashboards now reflect live data.</p>
+        </div>
+      )}
       <ul className="divide-y divide-[var(--ink-200)]">
         {steps.map((s, i) => {
           const isNext = !s.done && s === nextStep;
+          const manuallyDone = !s.autoDone && s.done;
           return (
             <li
               key={s.key}
@@ -291,13 +348,19 @@ function ProjectSetupChecklist({ projectId }: { projectId: string }) {
                 isNext ? "bg-[var(--accent-500)]/[0.04]" : "hover:bg-[var(--ink-50)]"
               }`}
             >
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center">
+              <button
+                type="button"
+                onClick={() => toggleOverride(s.key, s.done)}
+                disabled={s.autoDone}
+                title={s.autoDone ? "Auto-detected from project data" : s.done ? "Click to mark as not done" : "Click to mark as done manually"}
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded ${s.autoDone ? "cursor-default" : "cursor-pointer hover:bg-[var(--ink-100)]"}`}
+              >
                 {s.done ? (
                   <CheckCircle2 className="h-5 w-5 text-[var(--green-600)]" />
                 ) : (
                   <Circle className={`h-5 w-5 ${isNext ? "text-[var(--accent-500)]" : "text-[var(--ink-200)]"}`} />
                 )}
-              </div>
+              </button>
               <span className="font-mono-num w-5 text-[11px] font-semibold text-[var(--ink-500)]">{String(i + 1).padStart(2, "0")}</span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -312,12 +375,15 @@ function ProjectSetupChecklist({ projectId }: { projectId: string }) {
                   {s.done && s.detail && (
                     <span className="text-[11px] font-medium text-[var(--green-600)]">· {s.detail}</span>
                   )}
+                  {manuallyDone && (
+                    <span className="rounded-full bg-[var(--ink-100)] px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Manual</span>
+                  )}
                 </div>
                 <p className="mt-0.5 text-[11.5px] text-[var(--ink-500)]">{s.hint}</p>
               </div>
               <Link
                 to={s.to}
-                params={{ projectId }}
+                {...(s.to.includes("$projectId") ? { params: { projectId } } : {})}
                 className={`inline-flex shrink-0 items-center gap-1 rounded-lg px-3 py-1.5 text-[11.5px] font-semibold transition-colors ${
                   isNext
                     ? "bg-[var(--accent-500)] text-white hover:opacity-90"

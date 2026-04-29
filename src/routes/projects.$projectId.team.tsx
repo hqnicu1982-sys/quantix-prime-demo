@@ -18,6 +18,7 @@ import { InviteMemberDialog } from "@/components/team/InviteMemberDialog";
 import { AssignToProjectDialog } from "@/components/team/AssignToProjectDialog";
 import { PermissionMatrix } from "@/components/team/PermissionMatrix";
 import { toast } from "sonner";
+import { useCan } from "@/lib/permissions";
 
 export const Route = createFileRoute("/projects/$projectId/team")({ component: TeamPage });
 
@@ -33,6 +34,8 @@ function TeamPage() {
   const { projectId } = Route.useParams();
   const crews = useProjectCrews(projectId);
   const invites = useInvites().filter((i) => i.projectId === projectId && i.status === "pending");
+  const canEditTeam = useCan("edit.team");
+  const canEditPw = useCan("edit.pwRates");
   const onProject = crews.map((c) => c.member).filter(Boolean) as typeof team;
   const opCount = crews.filter((c) => c.member?.tier === "Operative").length;
   const lead = crews.find((c) => c.member?.tier === "Pro" || c.member?.tier === "Pro Control");
@@ -57,8 +60,8 @@ function TeamPage() {
           subtitle="Members assigned to this project"
           right={
             <div className="flex gap-2">
-              <AssignToProjectDialog projectId={projectId} />
-              <InviteMemberDialog defaultProjectId={projectId} />
+              {canEditTeam && <AssignToProjectDialog projectId={projectId} />}
+              {canEditTeam && <InviteMemberDialog defaultProjectId={projectId} />}
               <Button size="sm" variant="outline" asChild><Link to="/team">Full directory <ExternalLink className="ml-1.5 h-3.5 w-3.5" /></Link></Button>
             </div>
           }
@@ -78,9 +81,11 @@ function TeamPage() {
               </div>
               <span className="rounded bg-[var(--ink-50)] px-2 py-0.5 font-mono-num text-[11px] font-semibold text-[var(--ink-700)]">£{c.rate.toFixed(2)}/h</span>
               <span className={`rounded px-2 py-0.5 text-[10.5px] font-semibold ${tierTone[m.tier]}`}>{m.tier}</span>
-              <Button variant="ghost" size="sm" onClick={() => { removeAssignment(c.assignment.id); toast("Removed from project"); }}>
-                <Trash2 className="h-3.5 w-3.5 text-[var(--ink-500)]" />
-              </Button>
+              {canEditTeam && (
+                <Button variant="ghost" size="sm" onClick={() => { removeAssignment(c.assignment.id); toast("Removed from project"); }}>
+                  <Trash2 className="h-3.5 w-3.5 text-[var(--ink-500)]" />
+                </Button>
+              )}
             </div>
             );
           })}
@@ -112,6 +117,7 @@ function TeamPage() {
 
 function PriceWorkRatesCard({ projectId }: { projectId: string }) {
   const rates = usePriceWorkRates(projectId);
+  const canEditPw = useCan("edit.pwRates");
   const [code, setCode] = useState("");
   const [scope, setScope] = useState("");
   const [unit, setUnit] = useState<PriceWorkUnit>("m2");
@@ -141,7 +147,7 @@ function PriceWorkRatesCard({ projectId }: { projectId: string }) {
     <Card>
       <CardHead
         title="Price Work rates"
-        subtitle={`${rates.length} defined · ${linked} linked to BoQ · per-project negotiated rates used by Daily Report`}
+        subtitle={`${rates.length} defined · ${linked} linked to BoQ${canEditPw ? "" : " · read-only for your role"}`}
       />
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
@@ -175,16 +181,16 @@ function PriceWorkRatesCard({ projectId }: { projectId: string }) {
                   {r.boqLineId ?? "—"}
                 </td>
                 <td className="px-4 py-2.5 text-right">
-                  <Button
+                  {canEditPw && <Button
                     variant="ghost" size="sm"
                     onClick={() => { removePriceWorkRate(projectId, r.id); toast("PW rate removed"); }}
                   >
                     <Trash2 className="h-3.5 w-3.5 text-[var(--ink-500)]" />
-                  </Button>
+                  </Button>}
                 </td>
               </tr>
             ))}
-            <tr className="bg-[var(--ink-50)]/40">
+            {canEditPw && <tr className="bg-[var(--ink-50)]/40">
               <td className="px-4 py-2"><Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="PW-CODE" className="h-8 font-mono-num" /></td>
               <td className="px-4 py-2"><Input value={scope} onChange={(e) => setScope(e.target.value)} placeholder="Scope description" className="h-8" /></td>
               <td className="px-4 py-2">
@@ -205,7 +211,7 @@ function PriceWorkRatesCard({ projectId }: { projectId: string }) {
                   <Plus className="h-3.5 w-3.5" />
                 </Button>
               </td>
-            </tr>
+            </tr>}
           </tbody>
         </table>
       </div>
