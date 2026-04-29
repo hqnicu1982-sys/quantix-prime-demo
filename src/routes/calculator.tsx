@@ -84,6 +84,7 @@ function seedBuildUpFromLibrary(code: string): BespokeBuildUp {
 
 function Calculator() {
   const navigate = useNavigate();
+  const canSeePricing = useCan("view.financials.lite");
   const [mode, setMode] = useState<Mode>("code");
   const [length, setLength] = useState("50");
   const [height, setHeight] = useState("4");
