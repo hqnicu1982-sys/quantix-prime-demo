@@ -2,8 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, ClipboardList } from "lucide-react";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/projects/$projectId/reports")({ component: ReportsPage });
+export const Route = createFileRoute("/projects/$projectId/reports")({ component: GuardedReportsPage });
+
+function GuardedReportsPage() {
+  const allowed = useCan("view.financials.lite");
+  if (!allowed) return <NoAccess cap="view.financials.lite" title="Reports restricted" />;
+  return <ReportsPage />;
+}
 
 const reports = [
   { id: "DR-118", title: "Daily site report — 20 Apr", who: "Nick Andrei", when: "today 17:42", type: "Daily", crew: 22, hrs: 176 },
