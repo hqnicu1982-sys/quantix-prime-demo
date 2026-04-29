@@ -6,6 +6,9 @@ import { useProjectData } from "@/lib/projectData";
 import { useProjectTasks } from "@/lib/planner";
 import { useAssignments } from "@/lib/labour";
 import { CheckCircle2, Circle, ArrowRight } from "lucide-react";
+import { useCurrentUser } from "@/lib/currentUser";
+import { useCan } from "@/lib/permissions";
+import { MyScopeCard } from "@/components/dashboard/MyScopeCard";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
 
@@ -13,6 +16,12 @@ function Overview() {
   const { projectId } = Route.useParams();
   const { all } = useProject();
   const project = all.find((p) => p.id === projectId);
+  const me = useCurrentUser();
+  const canSeeFinancials = useCan("view.financials");
+  const canSeeFinancialsLite = useCan("view.financials.lite");
+  const myAssignments = useAssignments(projectId);
+  const isOnProject = myAssignments.some((a) => a.memberId === me.id);
+  const isOperative = me.tier === "Operative" || me.tier === "Site User";
 
   // Fitzrovia uses curated mock data; other projects show generic project KPIs derived from the project record.
   if (projectId !== "fitzrovia") {
@@ -20,12 +29,25 @@ function Overview() {
     const spent = project.contractValue * (project.progress / 100) * 0.85;
     return (
       <div className="space-y-5">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Kpi label="Contract" value={fmtMoney(project.contractValue, { compact: true })} />
-          <Kpi label="Spent" value={fmtMoney(spent, { compact: true })} delta={`${project.progress}% complete`} />
-          <Kpi label="Forecast margin" value={`${project.margin.toFixed(1)}%`} tone={project.margin >= 18 ? "success" : project.margin >= 12 ? "warning" : "danger"} />
-          <Kpi label="Progress" value={`${project.progress}%`} />
-        </div>
+        {canSeeFinancials ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Kpi label="Contract" value={fmtMoney(project.contractValue, { compact: true })} />
+            <Kpi label="Spent" value={fmtMoney(spent, { compact: true })} delta={`${project.progress}% complete`} />
+            <Kpi label="Forecast margin" value={`${project.margin.toFixed(1)}%`} tone={project.margin >= 18 ? "success" : project.margin >= 12 ? "warning" : "danger"} />
+            <Kpi label="Progress" value={`${project.progress}%`} />
+          </div>
+        ) : canSeeFinancialsLite ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            <Kpi label="Spent vs budget" value={`${Math.round((spent / project.contractValue) * 100)}%`} delta={`${fmtMoney(spent, { compact: true })} of ${fmtMoney(project.contractValue, { compact: true })}`} />
+            <Kpi label="Progress" value={`${project.progress}%`} />
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            <Kpi label="Progress" value={`${project.progress}%`} />
+            <Kpi label="Health" value={project.health} />
+          </div>
+        )}
+        {isOnProject && <MyScopeCard projectId={projectId} />}
         <ProjectSetupChecklist projectId={projectId} />
       </div>
     );
@@ -33,15 +55,31 @@ function Overview() {
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Contract" value={fmtMoney(fitzrovia.contractValue, { compact: true })} />
-        <Kpi label="Spent" value={fmtMoney(fitzrovia.spent, { compact: true })} delta={`${fitzrovia.spentPct}% of budget`} tone="warning" />
-        <Kpi label="Forecast margin" value={`${fitzrovia.forecastMargin}%`} delta={`${fmtMoney(fitzrovia.forecastProfit, { compact: true })} projected profit`} tone="success" />
-        <Kpi label="Progress" value={`${fitzrovia.progress}%`} delta={`${fitzrovia.programmeAhead} days ahead of programme`} tone="success" trend="up" />
-      </div>
+      {canSeeFinancials ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Kpi label="Contract" value={fmtMoney(fitzrovia.contractValue, { compact: true })} />
+          <Kpi label="Spent" value={fmtMoney(fitzrovia.spent, { compact: true })} delta={`${fitzrovia.spentPct}% of budget`} tone="warning" />
+          <Kpi label="Forecast margin" value={`${fitzrovia.forecastMargin}%`} delta={`${fmtMoney(fitzrovia.forecastProfit, { compact: true })} projected profit`} tone="success" />
+          <Kpi label="Progress" value={`${fitzrovia.progress}%`} delta={`${fitzrovia.programmeAhead} days ahead of programme`} tone="success" trend="up" />
+        </div>
+      ) : canSeeFinancialsLite ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Kpi label="Spent vs budget" value={`${fitzrovia.spentPct}%`} delta={`${fmtMoney(fitzrovia.spent, { compact: true })} of ${fmtMoney(fitzrovia.contractValue, { compact: true })}`} tone="warning" />
+          <Kpi label="Progress" value={`${fitzrovia.progress}%`} delta={`${fitzrovia.programmeAhead} days ahead`} tone="success" trend="up" />
+          <Kpi label="Programme variance" value={`+${fitzrovia.programmeAhead}d`} tone="success" />
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          <Kpi label="Progress" value={`${fitzrovia.progress}%`} delta={`${fitzrovia.programmeAhead} days ahead`} tone="success" trend="up" />
+          <Kpi label="Programme variance" value={`+${fitzrovia.programmeAhead}d`} tone="success" />
+        </div>
+      )}
+
+      {isOnProject && <MyScopeCard projectId={projectId} />}
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
+          {canSeeFinancials && (
           <Card>
             <CardHead title="Three-way cost comparison" subtitle="Estimated → Priced → Actual" />
             <div className="space-y-4 p-5 text-[13px]">
@@ -70,6 +108,7 @@ function Overview() {
               </div>
             </div>
           </Card>
+          )}
 
           <Card>
             <CardHead title="Systems on this project" />
@@ -83,7 +122,7 @@ function Overview() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-semibold">{s.name}</p>
-                    <p className="text-[11.5px] text-[var(--ink-500)]">{s.area} · {fmtMoney(s.value)}</p>
+                    <p className="text-[11.5px] text-[var(--ink-500)]">{s.area}{canSeeFinancialsLite ? ` · ${fmtMoney(s.value)}` : ""}</p>
                   </div>
                   <div className="text-right">
                     <p className={`font-mono-num text-[14px] font-semibold ${s.readiness >= 95 ? "text-[var(--green-600)]" : "text-[var(--amber-500)]"}`}>{s.readiness}%</p>
