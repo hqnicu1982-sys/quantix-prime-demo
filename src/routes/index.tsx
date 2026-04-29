@@ -11,6 +11,9 @@ import { Cloud, Download, FilePlus, ArrowRight, Clock, CheckCircle2, Truck } fro
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useCurrentUser } from "@/lib/currentUser";
+import { useCan } from "@/lib/permissions";
+import { MyScopeCard } from "@/components/dashboard/MyScopeCard";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "Dashboard — Quantix Prime" }] }),
@@ -19,6 +22,29 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const [range, setRange] = useState<"30d" | "8w" | "life">("8w");
+  const me = useCurrentUser();
+  const canSeeFinancials = useCan("view.financials") || useCan("view.financials.lite");
+  const isOperative = me.tier === "Operative" || me.tier === "Site User";
+
+  // Operative / Site User get a focused dashboard: their scope + nothing else.
+  if (isOperative) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <p className="text-[12px] font-medium uppercase tracking-wider text-[var(--ink-500)]">
+            Hello {me.name.split(" ")[0]}
+          </p>
+          <h1 className="font-display mt-2 text-[32px] font-semibold leading-tight tracking-tight text-[var(--ink-900)]">
+            Here's what's on your plate today.
+          </h1>
+          <p className="mt-2 max-w-2xl text-[14px] text-[var(--ink-700)]">
+            Your active tasks, available Price Work rates, and today's logged hours — all in one place.
+          </p>
+        </div>
+        <MyScopeCard projectId="fitzrovia" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -41,11 +67,13 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-        {dashboardKpis.map((k) => (
-          <Kpi key={k.label} label={k.label} value={k.value} delta={k.delta} tone={k.tone} trend={k.trend} />
-        ))}
-      </div>
+      {canSeeFinancials && (
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          {dashboardKpis.map((k) => (
+            <Kpi key={k.label} label={k.label} value={k.value} delta={k.delta} tone={k.tone} trend={k.trend} />
+          ))}
+        </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
@@ -60,6 +88,7 @@ function Dashboard() {
             </div>
           </Card>
 
+          {useCan("view.financials") && (
           <Card>
             <CardHead
               title="Margin trend"
@@ -89,6 +118,7 @@ function Dashboard() {
               </ResponsiveContainer>
             </div>
           </Card>
+          )}
         </div>
 
         <div className="space-y-5">
