@@ -156,31 +156,28 @@ function isGated(src, clickIndex) {
   // 2. Whole-file early-return guard: NoAccess fallback ⇒ entire route gated.
   if (/<NoAccess\b/.test(src) && /useCan\(/.test(src)) return true;
 
-  // 3. Walk backwards from the click site looking for the nearest enclosing
-  //    JSX expression `{` and check whether its head contains a `canXxx &&`
-  //    or `canXxx ?` short-circuit that ends just before the button JSX.
-  //    We track `{`/`}` depth, ignoring those inside strings/regex roughly.
+  // 3. Walk backwards from the click site looking at every enclosing scope
+  //    (parenthesised group or JSX expression `{`). At each level, check
+  //    whether what immediately precedes the opener is a `canXxx &&` /
+  //    `canXxx ?` short-circuit (or `useCan("cap") &&`/`?`).
+  //    This handles nested ternaries like
+  //      `{a ? <X/> : b ? <Y/> : canX ? (<button .../>) : <Z/>}`.
   let depth = 0;
-  for (let i = before.length - 1; i >= Math.max(0, before.length - 4000); i--) {
+  for (let i = before.length - 1; i >= Math.max(0, before.length - 8000); i--) {
     const ch = before[i];
-    if (ch === "}") depth++;
-    else if (ch === "{") {
+    if (ch === ")" || ch === "}") depth++;
+    else if (ch === "(" || ch === "{") {
       if (depth === 0) {
-        // Found the enclosing `{`. Look at what immediately follows it.
-        const head = before.slice(i + 1).trimStart();
-        // Patterns:
-        //   canX && <Button ...
-        //   canX && (<Button ...) / (<>...</>)
-        //   canX ? <...> : <...>
-        //   useCan("cap") && ...
-        // Match `canX && ...` or `useCan("cap") && ...` at the head of the
-        // JSX expression — additional `&& expr` chains before the JSX tag are
-        // allowed (e.g. `{canEditPlanner && condA && condB && (<Button .../>)}`).
-        if (/^(?:can[A-Z]\w*|useCan\([^)]+\))\b\s*&&/.test(head)) return true;
-        if (/^(?:can[A-Z]\w*|useCan\([^)]+\))\b\s*\?/.test(head)) return true;
-        return false;
+        // Examine what precedes this opener, stripping insignificant whitespace.
+        const tail = before.slice(Math.max(0, i - 200), i).replace(/\s+$/g, "");
+        if (/(?:^|[^.\w])(?:can[A-Z]\w*|useCan\([^)]+\))\s*(?:&&|\?)\s*\(?\s*$/.test(tail)) {
+          return true;
+        }
+        // Don't return false yet — keep walking outward; an outer scope might
+        // still gate this one (e.g. `{canX && (<div>{handler}</div>)}`).
+      } else {
+        depth--;
       }
-      depth--;
     }
   }
 
