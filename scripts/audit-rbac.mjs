@@ -173,8 +173,11 @@ function isGated(src, clickIndex) {
         //   canX && (<Button ...) / (<>...</>)
         //   canX ? <...> : <...>
         //   useCan("cap") && ...
-        if (/^(?:can[A-Z]\w*|useCan\([^)]+\))\s*&&\s*[(<]/.test(head)) return true;
-        if (/^(?:can[A-Z]\w*|useCan\([^)]+\))\s*\?\s*[(<]/.test(head)) return true;
+        // Match `canX && ...` or `useCan("cap") && ...` at the head of the
+        // JSX expression — additional `&& expr` chains before the JSX tag are
+        // allowed (e.g. `{canEditPlanner && condA && condB && (<Button .../>)}`).
+        if (/^(?:can[A-Z]\w*|useCan\([^)]+\))\b\s*&&/.test(head)) return true;
+        if (/^(?:can[A-Z]\w*|useCan\([^)]+\))\b\s*\?/.test(head)) return true;
         return false;
       }
       depth--;
