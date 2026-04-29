@@ -9,8 +9,16 @@ import { ProjectBanner } from "@/components/ProjectBanner";
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectData } from "@/lib/projectData";
 import { Gated } from "@/components/auth/Gated";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/calloffs")({ component: CallOffs });
+export const Route = createFileRoute("/calloffs")({ component: GuardedCallOffs });
+
+function GuardedCallOffs() {
+  const allowed = useCan("view.calloffs");
+  if (!allowed) return <NoAccess cap="view.calloffs" title="Call-offs restricted" />;
+  return <CallOffs />;
+}
 
 const stateBadge = {
   approved: { tone: "success" as const, label: "Approved" },
