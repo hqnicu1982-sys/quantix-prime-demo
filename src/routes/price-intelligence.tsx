@@ -10,8 +10,15 @@ import { useProject } from "@/lib/ProjectContext";
 import { useProjectData, selectSupplier } from "@/lib/projectData";
 import { ProjectBanner } from "@/components/ProjectBanner";
 import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/price-intelligence")({ component: PriceIntel });
+export const Route = createFileRoute("/price-intelligence")({ component: GuardedPriceIntel });
+
+function GuardedPriceIntel() {
+  const allowed = useCan("view.priceIntel");
+  if (!allowed) return <NoAccess cap="view.priceIntel" title="Price Intelligence restricted" />;
+  return <PriceIntel />;
+}
 
 function PriceIntel() {
   const navigate = useNavigate();
