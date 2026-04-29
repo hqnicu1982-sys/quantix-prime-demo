@@ -11,8 +11,15 @@ import { PermissionMatrix } from "@/components/team/PermissionMatrix";
 import { useInvites, useMemberRates, getMemberRate, removeInvite } from "@/lib/labour";
 import { useCan } from "@/lib/permissions";
 import { Gated } from "@/components/auth/Gated";
+import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/team")({ component: Team });
+export const Route = createFileRoute("/team")({ component: GuardedTeam });
+
+function GuardedTeam() {
+  const allowed = useCan("view.team");
+  if (!allowed) return <NoAccess cap="view.team" title="Team restricted" />;
+  return <Team />;
+}
 
 const tierTone = {
   Admin: "warning" as const,
