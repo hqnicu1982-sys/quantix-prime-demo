@@ -12,6 +12,7 @@ import { useProjectData } from "@/lib/projectData";
 import { exportProjectPack } from "@/lib/exportProjectPack";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
+import { Gated } from "@/components/auth/Gated";
 
 export const Route = createFileRoute("/invoices")({
   head: () => ({ meta: [{ title: "Invoice Reconciliation — Quantix Prime" }] }),
@@ -27,6 +28,7 @@ function GuardedInvoices() {
 function Invoices() {
   const { current } = useProject();
   const projectData = useProjectData(current.id);
+  const canSign = useCan("sign.invoices");
   const handleExportPack = () => {
     try {
       exportProjectPack(current, projectData);
@@ -49,8 +51,12 @@ function Invoices() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleExportPack}><FileDown className="mr-1.5 h-3.5 w-3.5" />Export project pack</Button>
-          <Button variant="outline" size="sm" onClick={() => toast("Upload invoice", { description: "Drop a PDF/XLSX — we'll match it to a PO automatically" })}><Upload className="mr-1.5 h-3.5 w-3.5" />Upload invoice</Button>
-          <Button size="sm" onClick={() => toast.success("New reconciliation started", { description: "Select supplier and invoice to begin matching" })}><Plus className="mr-1.5 h-3.5 w-3.5" />New reconciliation</Button>
+          <Gated cap="sign.invoices">
+            <Button variant="outline" size="sm" onClick={() => toast("Upload invoice", { description: "Drop a PDF/XLSX — we'll match it to a PO automatically" })}><Upload className="mr-1.5 h-3.5 w-3.5" />Upload invoice</Button>
+          </Gated>
+          <Gated cap="sign.invoices">
+            <Button size="sm" onClick={() => toast.success("New reconciliation started", { description: "Select supplier and invoice to begin matching" })}><Plus className="mr-1.5 h-3.5 w-3.5" />New reconciliation</Button>
+          </Gated>
         </div>
       </div>
 
@@ -64,7 +70,7 @@ function Invoices() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {invoices.map((inv) => <InvoiceCard key={inv.id} inv={inv} />)}
+        {invoices.map((inv) => <InvoiceCard key={inv.id} inv={inv} canSign={canSign} />)}
       </div>
 
       <Card>
@@ -92,7 +98,7 @@ function Invoices() {
   );
 }
 
-function InvoiceCard({ inv }: { inv: Invoice }) {
+function InvoiceCard({ inv, canSign }: { inv: Invoice; canSign: boolean }) {
   const headerStyle = inv.state === "matched"
     ? { bg: "bg-[var(--green-600)]/10", text: "text-[var(--green-600)]", border: "border-[var(--green-600)]/30", Icon: CheckCircle2, label: "Matched" }
     : inv.state === "needs-review"
@@ -133,12 +139,15 @@ function InvoiceCard({ inv }: { inv: Invoice }) {
           </div>
         )}
         {inv.state === "matched" && <StatusBadge tone="success">Ready to pay</StatusBadge>}
-        {inv.state === "needs-review" && (
+        {inv.state === "needs-review" && canSign && (
           <div className="flex flex-wrap gap-1.5">
             <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => toast.success(`Invoice ${inv.id} accepted`, { description: `£${inv.invoiced.toLocaleString()} approved for payment` })}>Accept</Button>
             <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => toast.error(`Invoice ${inv.id} disputed`, { description: `Notifying ${inv.supplier} of variance` })}>Dispute</Button>
             <Button size="sm" className="h-7 text-[11px]" onClick={() => toast.success("Credit request sent", { description: `Asking ${inv.supplier} for £${inv.variance.toLocaleString()} credit note` })}>Request credit</Button>
           </div>
+        )}
+        {inv.state === "needs-review" && !canSign && (
+          <p className="text-[11px] italic text-[var(--ink-500)]">Awaiting QS / Admin to action this invoice.</p>
         )}
       </div>
     </Card>

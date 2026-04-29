@@ -19,6 +19,7 @@ import {
 } from "@/lib/variations";
 import { VariationStatusBadge } from "./VariationStatusBadge";
 import { toast } from "sonner";
+import { useCan } from "@/lib/permissions";
 
 const fmtMoney = (n: number) =>
   `${n < 0 ? "-" : ""}£${Math.abs(n).toLocaleString("en-GB", { maximumFractionDigits: 2 })}`;
@@ -49,6 +50,7 @@ export function VariationDetailDialog({
   if (!variation) return null;
 
   const v = variation;
+  const canEdit = useCan("edit.variations");
 
   const handleSubmit = () => {
     setStatus(projectId, v.id, "submitted");
@@ -190,13 +192,13 @@ export function VariationDetailDialog({
           </div>
 
           <DialogFooter className="flex-wrap gap-2">
-            {v.status === "draft" && (
+            {v.status === "draft" && canEdit && (
               <>
                 <Button variant="outline" onClick={handleDelete}>Delete</Button>
                 <Button onClick={handleSubmit}>Submit to client</Button>
               </>
             )}
-            {v.status === "submitted" && (
+            {v.status === "submitted" && canEdit && (
               <>
                 <Button variant="outline" onClick={() => setRejectOpen(true)}>Reject</Button>
                 <Button onClick={() => { setApprovedValue(String(v.costImpact)); setApproveOpen(true); }}>
@@ -204,8 +206,11 @@ export function VariationDetailDialog({
                 </Button>
               </>
             )}
-            {(v.status === "approved" || v.status === "rejected") && (
+            {(v.status === "approved" || v.status === "rejected") && canEdit && (
               <Button variant="outline" onClick={handleReopen}>Reopen to draft</Button>
+            )}
+            {!canEdit && (
+              <span className="text-[11px] text-[var(--ink-500)]">Read-only — you don't have permission to action variations.</span>
             )}
             <Button variant="ghost" onClick={() => onOpenChange(false)}>Close</Button>
           </DialogFooter>
