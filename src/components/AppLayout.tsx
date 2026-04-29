@@ -57,6 +57,7 @@ const navGroups: NavGroup[] = [
 
 
 function PersonaToggle() {
+  // (kept above SidebarContent — see below for the dynamic project items hook)
   const { persona, setPersona } = useProject();
   return (
     <div className="mx-3 mb-2 mt-1 grid grid-cols-2 rounded-md border border-white/10 bg-white/5 p-0.5 text-[11px] font-medium">
@@ -180,7 +181,6 @@ function Breadcrumb() {
     "/catalog": "System Catalog",
     "/calculator": "Calculator",
     "/projects": "All Projects",
-    "/projects/fitzrovia": "Hotel Fitzrovia",
     "/costed-boq": "Costed BoQ",
     "/price-intelligence": "Price Intelligence",
     "/price-lists/upload": "Price List Upload",
