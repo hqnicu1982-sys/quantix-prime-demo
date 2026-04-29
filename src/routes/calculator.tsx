@@ -502,7 +502,7 @@ function SingleView({
                     <th className="px-3 py-2 text-left font-semibold">Board size</th>
                     <th className="px-3 py-2 text-right font-semibold">Pieces / column</th>
                     <th className="px-3 py-2 text-right font-semibold">{reuseOffcuts ? "Net waste (after reuse)" : "Off-cut waste"}</th>
-                    <th className="px-3 py-2 text-right font-semibold">Scrap cost (this wall)</th>
+                    {canSeePricing && <th className="px-3 py-2 text-right font-semibold">Scrap cost (this wall)</th>}
                     <th className="px-3 py-2 text-right font-semibold sr-only">Action</th>
                   </tr>
                 </thead>
@@ -565,7 +565,7 @@ function SingleView({
                             {w}%
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-right">
+                        {canSeePricing && <td className="px-3 py-2 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <span
                               className="font-mono-num text-[12.5px] font-semibold"
@@ -579,7 +579,7 @@ function SingleView({
                               </span>
                             )}
                           </div>
-                        </td>
+                        </td>}
                         <td className="px-3 py-2 text-right">
                           {isSelected ? (
                             <span className="text-[11px] font-semibold text-[var(--accent-500)]">In use</span>
