@@ -5,8 +5,16 @@ import { Button } from "@/components/ui/button";
 import { priceListUploads, ambiguousMatches, livePreview } from "@/lib/mockData";
 import { CloudUpload, ArrowRight, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/price-lists/upload")({ component: Upload });
+export const Route = createFileRoute("/price-lists/upload")({ component: GuardedUpload });
+
+function GuardedUpload() {
+  const allowed = useCan("upload.prices");
+  if (!allowed) return <NoAccess cap="upload.prices" title="Price list upload restricted" />;
+  return <Upload />;
+}
 
 function Upload() {
   return (

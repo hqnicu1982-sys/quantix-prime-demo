@@ -10,11 +10,19 @@ import { ProjectBanner } from "@/components/ProjectBanner";
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectData } from "@/lib/projectData";
 import { exportProjectPack } from "@/lib/exportProjectPack";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
 export const Route = createFileRoute("/invoices")({
   head: () => ({ meta: [{ title: "Invoice Reconciliation — Quantix Prime" }] }),
-  component: Invoices,
+  component: GuardedInvoices,
 });
+
+function GuardedInvoices() {
+  const allowed = useCan("view.invoices");
+  if (!allowed) return <NoAccess cap="view.invoices" title="Invoices restricted" />;
+  return <Invoices />;
+}
 
 function Invoices() {
   const { current } = useProject();
