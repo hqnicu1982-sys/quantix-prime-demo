@@ -149,27 +149,38 @@ function isGated(src, clickIndex) {
   const after = src.slice(clickIndex);
 
   // 1. Inside a <Gated cap=...>...</Gated> element opened before, closed after.
-  const gatedOpens = [...before.matchAll(/<Gated\s+cap=/g)];
-  const gatedCloses = [...before.matchAll(/<\/Gated>/g)];
-  const openCount = gatedOpens.length - gatedCloses.length;
-  if (openCount > 0 && /<\/Gated>/.test(after)) return true;
+  const gatedOpens = (before.match(/<Gated\s+cap=/g) || []).length;
+  const gatedCloses = (before.match(/<\/Gated>/g) || []).length;
+  if (gatedOpens > gatedCloses && /<\/Gated>/.test(after)) return true;
 
-  // 2. Inside a `{canXxx && (` or `canXxx ? (` block — find nearest unmatched `(` on the boolean.
-  // Look at the last 800 chars before the button for a guard pattern.
-  const window = before.slice(-1200);
-  if (/\b(can[A-Z]\w*)\s*&&\s*\(?\s*$/m.test(window)) return true;
-  if (/\b(can[A-Z]\w*)\s*\?\s*\(?\s*$/m.test(window)) return true;
-  // Generic: any `useCan("...") && (` opened before
-  if (/useCan\([^)]+\)\s*&&\s*\(/.test(window)) {
-    // Check that we are inside that scope — a reasonable proxy: a `(` after the && is unmatched
-    return true;
-  }
-
-  // 3. Whole-file early-return guard: a function that returns <NoAccess /> when
-  // the user lacks the required cap effectively gates everything in that file.
+  // 2. Whole-file early-return guard: NoAccess fallback ⇒ entire route gated.
   if (/<NoAccess\b/.test(src) && /useCan\(/.test(src)) return true;
 
-  // 4. Wrapped at the variable declaration level (rare): handler defined only when canX.
+  // 3. Walk backwards from the click site looking for the nearest enclosing
+  //    JSX expression `{` and check whether its head contains a `canXxx &&`
+  //    or `canXxx ?` short-circuit that ends just before the button JSX.
+  //    We track `{`/`}` depth, ignoring those inside strings/regex roughly.
+  let depth = 0;
+  for (let i = before.length - 1; i >= Math.max(0, before.length - 4000); i--) {
+    const ch = before[i];
+    if (ch === "}") depth++;
+    else if (ch === "{") {
+      if (depth === 0) {
+        // Found the enclosing `{`. Look at what immediately follows it.
+        const head = before.slice(i + 1).trimStart();
+        // Patterns:
+        //   canX && <Button ...
+        //   canX && (<Button ...) / (<>...</>)
+        //   canX ? <...> : <...>
+        //   useCan("cap") && ...
+        if (/^(?:can[A-Z]\w*|useCan\([^)]+\))\s*&&\s*[(<]/.test(head)) return true;
+        if (/^(?:can[A-Z]\w*|useCan\([^)]+\))\s*\?\s*[(<]/.test(head)) return true;
+        return false;
+      }
+      depth--;
+    }
+  }
+
   return false;
 }
 
