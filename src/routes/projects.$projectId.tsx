@@ -10,6 +10,9 @@ import { fmtMoney } from "@/lib/mockData";
 import { Gated } from "@/components/auth/Gated";
 import { useCan } from "@/lib/permissions";
 import type { Capability } from "@/lib/permissions";
+import { useCurrentUser } from "@/lib/currentUser";
+import { useAssignments } from "@/lib/labour";
+import { NoAccess } from "@/components/auth/NoAccess";
 
 export const Route = createFileRoute("/projects/$projectId")({ component: ProjectLayout });
 
@@ -35,6 +38,11 @@ function ProjectLayout() {
   const navigate = useNavigate();
   const project = all.find((p) => p.id === projectId);
   const canSeeMoney = useCan("view.financials.lite");
+  // Site User / Operative may only access projects they're assigned to.
+  const me = useCurrentUser();
+  const portfolioWide = useCan("view.financials.lite"); // Pro+ see all projects
+  const myAssignments = useAssignments(projectId);
+  const isAssigned = myAssignments.some((a) => a.memberId === me.id);
   // Tab gating — call hooks at top level (one per possible cap), then assemble list.
   const capChecks: Record<Capability, boolean> = {
     "view.financials": useCan("view.financials"),
@@ -73,6 +81,15 @@ function ProjectLayout() {
 
   if (!project) {
     throw notFound();
+  }
+
+  if (!portfolioWide && !isAssigned) {
+    return (
+      <NoAccess
+        cap="view.financials.lite"
+        title="Project not assigned"
+      />
+    );
   }
 
   const subtitleBase = `${project.mainContractor} · ${project.subtitle} · ${project.startDate} → ${project.endDate}`;
