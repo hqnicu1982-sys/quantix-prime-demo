@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { projects, type Project, type Persona } from "./mockData";
 import { useCustomProjects } from "./customProjects";
 
@@ -13,17 +13,21 @@ type Ctx = {
 const ProjectContext = createContext<Ctx | null>(null);
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
-  const [currentId, setCurrentId] = useState<string>(projects[0].id);
-  const [persona, setPersonaState] = useState<Persona>("site");
-  const custom = useCustomProjects();
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  // Lazy initializers read localStorage synchronously on the client so the
+  // FIRST client render already matches persisted state. The server render
+  // uses the defaults; we suppress hydration mismatches at the layout shell
+  // (AppLayout defers rendering until mounted), so this is safe and removes
+  // the one-frame "wrong persona highlighted" flash.
+  const [currentId, setCurrentId] = useState<string>(() => {
+    if (typeof window === "undefined") return projects[0].id;
+    return localStorage.getItem("qp-current-project") ?? projects[0].id;
+  });
+  const [persona, setPersonaState] = useState<Persona>(() => {
+    if (typeof window === "undefined") return "site";
     const stored = localStorage.getItem("qp-persona");
-    if (stored === "site" || stored === "commercial") setPersonaState(stored);
-    const storedProject = localStorage.getItem("qp-current-project");
-    if (storedProject) setCurrentId(storedProject);
-  }, []);
+    return stored === "site" || stored === "commercial" ? stored : "site";
+  });
+  const custom = useCustomProjects();
 
   const setPersona = (p: Persona) => {
     setPersonaState(p);
