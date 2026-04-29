@@ -263,8 +263,6 @@ const ROUTE_GUARDS = {
   "src/routes/catalog.tsx": "view.priceIntel",
   "src/routes/integrations.tsx": "view.integrations",
   "src/routes/team.tsx": "view.team",
-  "src/routes/readiness.tsx": "view.boq",
-  "src/routes/calculator.tsx": "view.boq",
   "src/routes/settings.labour.tsx": "view.settings.labour",
   "src/routes/price-lists.upload.tsx": "upload.prices",
   "src/routes/projects.$projectId.costed-boq.tsx": "view.boq",
