@@ -28,6 +28,7 @@ import {
   type PlannerTask,
   type TaskStatus,
 } from "@/lib/planner";
+import { useCan } from "@/lib/permissions";
 import { useProjectCrews } from "@/lib/labour";
 import { getActualHoursForTask, getActualCostForTask } from "@/lib/laborLog";
 import { AlertTriangle, CheckCircle2, Trash2, Link as LinkIcon } from "lucide-react";
