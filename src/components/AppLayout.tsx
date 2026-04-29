@@ -398,7 +398,12 @@ function MobileTabBar() {
     .filter((i) => i.mobile && (!i.requires || can(tier, i.requires)))
     .slice(0, 5);
   if (items.length === 0) return null;
-  const cols = `grid-cols-${items.length}`;
+  const cols =
+    items.length === 1 ? "grid-cols-1"
+    : items.length === 2 ? "grid-cols-2"
+    : items.length === 3 ? "grid-cols-3"
+    : items.length === 4 ? "grid-cols-4"
+    : "grid-cols-5";
   return (
     <nav className={cn("fixed inset-x-0 bottom-0 z-30 grid border-t border-[var(--ink-200)] bg-[var(--card)] lg:hidden", cols)}>
       {items.map((item) => {
