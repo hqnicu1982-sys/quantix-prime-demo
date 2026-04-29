@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
 import { setCurrentUserId } from "@/lib/currentUser";
 import { team } from "@/lib/mockData";
 import type { Tier } from "@/lib/currentUser";
@@ -94,11 +93,7 @@ describe("Route guards — every sensitive route × every role", () => {
       const shouldAllow = EXPECTED_ALLOWED[cap].includes(tier);
       it(`${tier} ${shouldAllow ? "can access" : "is blocked from"} ${route} (cap: ${cap})`, () => {
         setCurrentUserId(userByTier[tier]);
-        render(
-          <MemoryRouter>
-            <GuardedProbe cap={cap} />
-          </MemoryRouter>,
-        );
+        render(<GuardedProbe cap={cap} />);
         if (shouldAllow) {
           expect(screen.getByTestId("protected-content")).toBeInTheDocument();
         } else {
