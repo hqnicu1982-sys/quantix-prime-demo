@@ -14,8 +14,11 @@ import { ProjectProvider, useProject } from "@/lib/ProjectContext";
 import { cn } from "@/lib/utils";
 import { CompareTray } from "@/components/CompareTray";
 import { CurrentUserSwitcher } from "@/components/auth/CurrentUserSwitcher";
-import { useCurrentTier } from "@/lib/currentUser";
+import { useCurrentTier, useCurrentUser } from "@/lib/currentUser";
 import { can, type Capability } from "@/lib/permissions";
+import { useCan } from "@/lib/permissions";
+import { useAssignments } from "@/lib/labour";
+import { useRecentProjects } from "@/lib/recentProjects";
 
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean; params?: Record<string, string>; requires?: Capability };
 type NavGroup = { label: string; persona?: "site" | "commercial"; items: NavItem[] };
@@ -30,7 +33,6 @@ const navGroups: NavGroup[] = [
   ]},
   { label: "Projects", items: [
     { to: "/projects", label: "All Projects", icon: FolderKanban, mobile: true },
-    { to: "/projects/$projectId", label: "Hotel Fitzrovia", icon: HardHat, params: { projectId: "fitzrovia" } as Record<string, string> },
   ]},
   { label: "Commercial", persona: "commercial", items: [
     { to: "/costed-boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true, requires: "view.boq" },
@@ -55,6 +57,7 @@ const navGroups: NavGroup[] = [
 
 
 function PersonaToggle() {
+  // (kept above SidebarContent — see below for the dynamic project items hook)
   const { persona, setPersona } = useProject();
   return (
     <div className="mx-3 mb-2 mt-1 grid grid-cols-2 rounded-md border border-white/10 bg-white/5 p-0.5 text-[11px] font-medium">
@@ -78,6 +81,45 @@ function PersonaToggle() {
       </button>
     </div>
   );
+}
+
+// Build the dynamic list of project links rendered inside the "Projects"
+// sidebar group. Pro/Admin users get up to 4 most-recently-visited projects
+// (with the current project pinned first). Site Users / Operatives get the
+// projects they're explicitly assigned to. Empty list = no extra links.
+function useDynamicProjectNavItems(): NavItem[] {
+  const { all, current } = useProject();
+  const me = useCurrentUser();
+  const portfolioWide = useCan("view.financials.lite");
+  const allAssignments = useAssignments();
+  const recents = useRecentProjects();
+
+  const projectsById = new Map(all.map((p) => [p.id, p]));
+
+  let ids: string[];
+  if (portfolioWide) {
+    const ordered = [current.id, ...recents.filter((id) => id !== current.id)];
+    ids = ordered.filter((id) => projectsById.has(id)).slice(0, 4);
+  } else {
+    const assignedIds = new Set(
+      allAssignments.filter((a) => a.memberId === me.id).map((a) => a.projectId),
+    );
+    const ordered = [
+      ...(assignedIds.has(current.id) ? [current.id] : []),
+      ...Array.from(assignedIds).filter((id) => id !== current.id),
+    ];
+    ids = ordered.filter((id) => projectsById.has(id));
+  }
+
+  return ids.map((id) => {
+    const p = projectsById.get(id)!;
+    return {
+      to: "/projects/$projectId",
+      label: p.name,
+      icon: HardHat,
+      params: { projectId: p.id } as Record<string, string>,
+    };
+  });
 }
 
 function NavLinkItem({ item, onClick }: { item: NavItem; onClick?: () => void }) {
@@ -118,11 +160,17 @@ function NavLinkItem({ item, onClick }: { item: NavItem; onClick?: () => void })
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { persona } = useProject();
   const tier = useCurrentTier();
+  const projectItems = useDynamicProjectNavItems();
   const visibleGroups = navGroups
     .map((group) => ({
       ...group,
       items: group.items.filter((i) => !i.requires || can(tier, i.requires)),
     }))
+    .map((group) =>
+      group.label === "Projects"
+        ? { ...group, items: [...group.items, ...projectItems] }
+        : group,
+    )
     .filter((g) => g.items.length > 0);
   return (
     <>
@@ -172,7 +220,6 @@ function Breadcrumb() {
     "/catalog": "System Catalog",
     "/calculator": "Calculator",
     "/projects": "All Projects",
-    "/projects/fitzrovia": "Hotel Fitzrovia",
     "/costed-boq": "Costed BoQ",
     "/price-intelligence": "Price Intelligence",
     "/price-lists/upload": "Price List Upload",
