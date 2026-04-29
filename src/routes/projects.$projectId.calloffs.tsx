@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { Plus, ExternalLink, Truck } from "lucide-react";
+import { Gated } from "@/components/auth/Gated";
 
 export const Route = createFileRoute("/projects/$projectId/calloffs")({ component: CallOffsPage });
 
@@ -36,7 +37,9 @@ function CallOffsPage() {
           subtitle="Material orders against project BoQ"
           right={
             <div className="flex gap-2">
-              <Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off</Button>
+              <Gated cap="create.calloffs">
+                <Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off</Button>
+              </Gated>
               <Button size="sm" variant="outline" asChild><Link to="/calloffs">Full inbox <ExternalLink className="ml-1.5 h-3.5 w-3.5" /></Link></Button>
             </div>
           }

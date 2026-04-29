@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, AlertTriangle, CheckCircle2, CircleDollarSign } from "lucide-react";
 import { useInvoices, useInvoiceTotals, markInvoicePaid } from "@/lib/invoiceRegistry";
 import { toast } from "sonner";
+import { useCan } from "@/lib/permissions";
 
 export const Route = createFileRoute("/projects/$projectId/invoices")({ component: InvoicesPage });
 
@@ -19,6 +20,7 @@ function InvoicesPage() {
   const { projectId } = Route.useParams();
   const registry = useInvoices(projectId);
   const totals = useInvoiceTotals(projectId);
+  const canSign = useCan("sign.invoices");
   const today = new Date().toISOString().slice(0, 10);
   const sortedRegistry = [...registry].sort((a, b) => {
     const aOverdue = a.status === "outstanding" && a.due < today;
@@ -93,7 +95,7 @@ function InvoicesPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {inv.status !== "paid" && (
+                      {inv.status !== "paid" && canSign && (
                         <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => { markInvoicePaid(inv.id); toast.success(`${inv.reference} marked paid`); }}>
                           Mark paid
                         </Button>

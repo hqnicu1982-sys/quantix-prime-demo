@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { ProjectBanner } from "@/components/ProjectBanner";
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectData } from "@/lib/projectData";
+import { Gated } from "@/components/auth/Gated";
 
 export const Route = createFileRoute("/calloffs")({ component: CallOffs });
 
@@ -30,7 +31,11 @@ function CallOffs() {
     <Section
       title="Call-offs"
       subtitle="7-state workflow · full audit trail · Site manager requests, QS approves, PO fires on green light."
-      right={<Button size="sm" onClick={() => toast.success("New call-off draft", { description: "Pick a BoQ item to call off against" })}><Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off</Button>}
+      right={
+        <Gated cap="create.calloffs">
+          <Button size="sm" onClick={() => toast.success("New call-off draft", { description: "Pick a BoQ item to call off against" })}><Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off</Button>
+        </Gated>
+      }
     >
       <ProjectBanner scope="Call-offs" />
       {supplierPicks.length > 0 && (
