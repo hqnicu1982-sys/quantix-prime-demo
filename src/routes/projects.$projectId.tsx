@@ -210,6 +210,7 @@ function ProjectLayout() {
                       invoices: "/projects/$projectId/invoices",
                       variations: "/projects/$projectId/variations",
                       labour: "/projects/$projectId/labour",
+                      payments: "/projects/$projectId/payments",
                       reports: "/projects/$projectId/reports",
                       team: "/projects/$projectId/team",
                     };
