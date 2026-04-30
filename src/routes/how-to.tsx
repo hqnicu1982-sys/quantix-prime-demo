@@ -1,187 +1,132 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowLeft, ArrowRight, Check, FolderKanban, FileSpreadsheet, ClipboardList,
-  GitBranch, Receipt, TrendingUp, LineChart, Sparkles, BookOpen,
+  ArrowRight, BookOpen, Check, ClipboardList, FileSpreadsheet, FolderKanban,
+  GitBranch, LineChart, Receipt, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import welcomeImg from "@/assets/howto/01-welcome.jpg";
-import projectsImg from "@/assets/howto/02-projects.jpg";
-import boqImg from "@/assets/howto/03-boq.jpg";
-import dailyImg from "@/assets/howto/04-daily-report.jpg";
-import variationsImg from "@/assets/howto/05-variations.jpg";
-import paymentsImg from "@/assets/howto/06-payments.jpg";
-import cashflowImg from "@/assets/howto/07-cashflow.jpg";
-import financialImg from "@/assets/howto/08-financial.jpg";
+import shotDashboard from "@/assets/howto/shot-dashboard.png";
+import shotProjects from "@/assets/howto/shot-projects.png";
+import shotBoq from "@/assets/howto/shot-boq.png";
+import shotDaily from "@/assets/howto/shot-daily.png";
+import shotVariations from "@/assets/howto/shot-variations.png";
+import shotPayments from "@/assets/howto/shot-payments.png";
+import shotFinancial from "@/assets/howto/shot-financial.png";
 
 export const Route = createFileRoute("/how-to")({
   head: () => ({
     meta: [
-      { title: "How to use Quantix Prime — Interactive tour" },
-      { name: "description", content: "A step-by-step interactive tour for new users: projects, BoQ, site reports, variations, payments, cashflow and financial dashboards." },
-      { property: "og:title", content: "How to use Quantix Prime — Interactive tour" },
-      { property: "og:description", content: "Step-by-step onboarding guide for Quantix Prime — UK construction intelligence platform." },
+      { title: "How it works — Quantix Prime workflow map" },
+      { name: "description", content: "Visual workflow map: Project → BoQ → Daily Reports → Variations → Payments → Cashflow. Click any node to see the screen and jump straight to it." },
+      { property: "og:title", content: "How it works — Quantix Prime workflow map" },
+      { property: "og:description", content: "Visual onboarding map for Quantix Prime — UK construction intelligence platform." },
     ],
   }),
   component: HowToPage,
 });
 
-type Step = {
-  n: number;
+type Node = {
+  id: string;
   title: string;
   blurb: string;
   body: string;
   bullets: string[];
-  cta: { label: string; to: string; params?: Record<string, string> };
+  cta: { label: string; to: string };
   image: string;
   icon: React.ComponentType<{ className?: string }>;
+  // grid position (col, row) on a 4x3 grid
+  col: number;
+  row: number;
 };
 
-const STEPS: Step[] = [
+const NODES: Node[] = [
   {
-    n: 1,
-    title: "Pick your role",
-    blurb: "Site or Commercial — the app reshapes itself.",
-    body:
-      "Use the sidebar toggle to switch between Site Manager (planner, daily reports, readiness) and Commercial Manager (BoQ, variations, financials). The navigation, dashboards and KPIs adapt automatically to what matters for each persona.",
-    bullets: [
-      "Site = planner, daily reports, material readiness",
-      "Commercial = BoQ, variations, payments, financials",
-      "Switch any time from the sidebar",
-    ],
-    cta: { label: "Open Dashboard", to: "/" },
-    image: welcomeImg,
-    icon: Sparkles,
-  },
-  {
-    n: 2,
-    title: "Open a project",
-    blurb: "Every workflow lives inside a project.",
-    body:
-      "Pick an existing project (e.g. Hotel Fitzrovia) or create your own from the Projects screen. The breadcrumb project switcher follows you everywhere — change project once and the entire app re-scopes.",
-    bullets: [
-      "Browse all projects with budgets and progress",
-      "Switch project from the top breadcrumb",
-      "Create custom projects with your own data",
-    ],
+    id: "projects", title: "Projects", blurb: "Your scope of work",
+    body: "Every workflow lives inside a project. Pick one (e.g. Hotel Fitzrovia) or create your own — the breadcrumb switcher follows you everywhere.",
+    bullets: ["Browse all projects with budgets & progress", "Switch project from the breadcrumb", "Create custom projects with your own data"],
     cta: { label: "Browse Projects", to: "/projects" },
-    image: projectsImg,
-    icon: FolderKanban,
+    image: shotProjects, icon: FolderKanban, col: 0, row: 0,
   },
   {
-    n: 3,
-    title: "Build a Costed BoQ",
-    blurb: "Turn quantities into a priced bill in minutes.",
-    body:
-      "The Costed Bill of Quantities pulls rates from your price lists and labour settings. You see materials, labour, margin and totals live as you edit — the foundation for every commercial decision downstream.",
-    bullets: [
-      "Auto-priced from catalogue + price lists",
-      "Live margin and total-cost breakdowns",
-      "Feeds variations, applications and forecasts",
-    ],
+    id: "boq", title: "Costed BoQ", blurb: "Priced bill of quantities",
+    body: "Auto-priced from your catalogue and live price lists (CCF, Minster, etc.). Live margin and total-cost breakdowns feed every commercial decision downstream.",
+    bullets: ["Auto-priced from price lists", "Live margin & total-cost", "Feeds variations, applications, forecasts"],
     cta: { label: "Open Costed BoQ", to: "/costed-boq" },
-    image: boqImg,
-    icon: FileSpreadsheet,
+    image: shotBoq, icon: FileSpreadsheet, col: 1, row: 0,
   },
   {
-    n: 4,
-    title: "Log Daily Site Reports",
-    blurb: "Capture progress, manpower and weather from site.",
-    body:
-      "Site teams record daily activity — manpower, weather, progress photos, blockers. Reports flow into the planner and feed the readiness and labour analytics, so commercial decisions are based on what actually happened on site.",
-    bullets: [
-      "Manpower, weather and photo evidence",
-      "Progress against the planner",
-      "Auto-feeds labour cost analytics",
-    ],
+    id: "daily", title: "Daily Site Report", blurb: "What actually happened",
+    body: "Site teams log manpower, weather, photos and progress. Reports flow into the planner and feed labour analytics — commercial decisions track reality.",
+    bullets: ["Manpower, weather, photo evidence", "Progress against the planner", "Auto-feeds labour cost analytics"],
     cta: { label: "Open Daily Report", to: "/daily-report" },
-    image: dailyImg,
-    icon: ClipboardList,
+    image: shotDaily, icon: ClipboardList, col: 2, row: 0,
   },
   {
-    n: 5,
-    title: "Track Variations",
-    blurb: "Capture every change order — protect your margin.",
-    body:
-      "Log variations the moment they happen on site. Status flows from Submitted → Approved. Approved variations can be pulled directly into your next interim payment application — no double entry.",
-    bullets: [
-      "VO numbering and approval status",
-      "Materials + labour + markup per VO",
-      "One-click pull into payment applications",
-    ],
+    id: "variations", title: "Variations", blurb: "Change orders, audited",
+    body: "Log VOs the moment they happen. Status flows Draft → Submitted → Approved. Approved VOs pull straight into your next interim payment application.",
+    bullets: ["VO numbering & approval status", "Materials + labour + markup per VO", "One-click pull into payment apps"],
     cta: { label: "Open Variations", to: "/variations" },
-    image: variationsImg,
-    icon: GitBranch,
+    image: shotVariations, icon: GitBranch, col: 0, row: 1,
   },
   {
-    n: 6,
-    title: "Run the Payment cycle",
-    blurb: "Applications, Notices and Certificates — the JCT/NEC way.",
-    body:
-      "Inside each project, the Payments tab walks you through the interim payment cycle: submit an Application, issue a Payment Notice or Pay Less Notice, certify the final amount, and record the payment. Deadlines and outstanding amounts are tracked automatically.",
-    bullets: [
-      "Interim Payment Applications with line items",
-      "Payment Notice & Pay Less Notice deadlines",
-      "Certificates auto-mirror into invoice register",
-    ],
+    id: "payments", title: "Payment Cycle", blurb: "Apps · Notices · Certs",
+    body: "Inside each project, the Payments tab walks the JCT/NEC interim cycle: submit Application → issue Payment Notice or Pay Less Notice → certify → record payment. Deadlines tracked automatically.",
+    bullets: ["Interim Payment Applications", "Payment Notice & Pay Less Notice deadlines", "Certificates auto-mirror to invoice register"],
     cta: { label: "See payments on a project", to: "/projects" },
-    image: paymentsImg,
-    icon: Receipt,
+    image: shotPayments, icon: Receipt, col: 1, row: 1,
   },
   {
-    n: 7,
-    title: "Read your Cashflow",
-    blurb: "Project incoming cash across 0–60 day buckets.",
-    body:
-      "The Cashflow Forecast aggregates certified amounts, submitted applications and outstanding invoices, weighted by confidence (95% certificates, 85% noticed, 70% submitted). Open it on a project or from the Financial dashboard.",
-    bullets: [
-      "0–7d, 8–14d, 15–30d, 30–60d buckets",
-      "Confidence-weighted in/out totals",
-      "Sources mixed: certificates, apps, invoices",
-    ],
+    id: "cashflow", title: "Cashflow Forecast", blurb: "Confidence-weighted in/out",
+    body: "Aggregates certified amounts, submitted applications and outstanding invoices, weighted by confidence (95% certs, 85% noticed, 70% submitted). Open it on a project or portfolio-wide.",
+    bullets: ["0–7d, 8–14d, 15–30d, 30–60d buckets", "Sources: certificates, apps, invoices", "Confidence-weighted in/out totals"],
     cta: { label: "Open Financial dashboard", to: "/financial" },
-    image: cashflowImg,
-    icon: TrendingUp,
+    image: shotFinancial, icon: LineChart, col: 2, row: 1,
   },
   {
-    n: 8,
-    title: "See the big picture",
-    blurb: "Portfolio-wide financials, pipelines and KPIs.",
-    body:
-      "The Financial dashboard rolls up every project: revenue, margin, applied vs certified, outstanding and the payment pipeline. Use it for board reviews, cash planning and to spot projects that need attention.",
-    bullets: [
-      "Portfolio KPIs across all projects",
-      "Payment pipeline (applied → certified → paid)",
-      "Cashflow forecast at portfolio level",
-    ],
-    cta: { label: "Open Financial", to: "/financial" },
-    image: financialImg,
-    icon: LineChart,
+    id: "dashboard", title: "Dashboard & Financial", blurb: "Daily focus + portfolio P&L",
+    body: "The Dashboard surfaces the 3 highest-impact actions for today. The Financial dashboard rolls up every project: revenue, margin, applied vs certified, outstanding and the payment pipeline.",
+    bullets: ["Morning briefing with prioritised actions", "Portfolio KPIs across all projects", "Payment pipeline (applied → certified → paid)"],
+    cta: { label: "Open Dashboard", to: "/" },
+    image: shotDashboard, icon: BookOpen, col: 1, row: 2,
   },
+];
+
+// edges as id pairs
+const EDGES: Array<[string, string]> = [
+  ["projects", "boq"],
+  ["boq", "daily"],
+  ["projects", "variations"],
+  ["boq", "payments"],
+  ["daily", "payments"],
+  ["variations", "payments"],
+  ["payments", "cashflow"],
+  ["cashflow", "dashboard"],
+  ["payments", "dashboard"],
 ];
 
 const STORAGE_KEY = "qp-howto-completed-v1";
 
 function HowToPage() {
   const navigate = useNavigate();
-  const [active, setActive] = useState(0);
-  const [completed, setCompleted] = useState<Set<number>>(new Set());
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [completed, setCompleted] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setCompleted(new Set(JSON.parse(raw) as number[]));
+      if (raw) setCompleted(new Set(JSON.parse(raw) as string[]));
     } catch {}
-    // mark onboarding as seen so we don't auto-redirect again
     localStorage.setItem("qp-howto-seen-v1", "1");
   }, []);
 
-  const markDone = (n: number) => {
+  const active = useMemo(() => NODES.find((n) => n.id === activeId) ?? null, [activeId]);
+
+  const markDone = (id: string) => {
     setCompleted((prev) => {
       const next = new Set(prev);
-      next.add(n);
+      next.add(id);
       if (typeof window !== "undefined") {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(next)));
       }
@@ -189,28 +134,35 @@ function HowToPage() {
     });
   };
 
-  const step = STEPS[active];
-  const Icon = step.icon;
-  const isLast = active === STEPS.length - 1;
+  // grid: 3 cols × 3 rows. Map (col,row) → SVG center coords on a 900×520 viewBox
+  const COLS = 3;
+  const ROWS = 3;
+  const VW = 900;
+  const VH = 520;
+  const padX = 110;
+  const padY = 70;
+  const stepX = (VW - padX * 2) / (COLS - 1);
+  const stepY = (VH - padY * 2) / (ROWS - 1);
+  const pos = (c: number, r: number) => ({ x: padX + c * stepX, y: padY + r * stepY });
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-8 sm:px-7 sm:py-10">
+    <div className="mx-auto max-w-7xl px-5 py-8 sm:px-7 sm:py-10">
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full border border-[var(--accent-500)]/30 bg-[var(--accent-500)]/10 px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-[var(--accent-500)]">
-            <BookOpen className="h-3 w-3" /> Onboarding tour
+            <BookOpen className="h-3 w-3" /> Workflow map
           </div>
           <h1 className="font-display text-[28px] font-semibold tracking-tight text-[var(--ink-900)]">
-            How to use Quantix Prime
+            How it all connects
           </h1>
           <p className="mt-1 text-[13.5px] text-[var(--ink-500)]">
-            Eight short steps — from picking a role to reading your portfolio cashflow.
+            Click any node to see the real screen and jump straight to it.
           </p>
         </div>
         <div className="text-right text-[12px] text-[var(--ink-500)]">
           <div className="font-semibold text-[var(--ink-900)]">
-            {completed.size} / {STEPS.length} done
+            {completed.size} / {NODES.length} explored
           </div>
           <button
             onClick={() => navigate({ to: "/" })}
@@ -221,152 +173,215 @@ function HowToPage() {
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="mb-6 h-1.5 w-full overflow-hidden rounded-full bg-[var(--ink-100)]">
-        <div
-          className="h-full rounded-full bg-[var(--accent-500)] transition-all duration-500"
-          style={{ width: `${((active + 1) / STEPS.length) * 100}%` }}
-        />
-      </div>
+      {/* Map */}
+      <div className="overflow-hidden rounded-xl border border-[var(--ink-200)] bg-[var(--card)] p-3 shadow-sm sm:p-5">
+        <svg
+          viewBox={`0 0 ${VW} ${VH}`}
+          className="h-auto w-full"
+          role="img"
+          aria-label="Quantix Prime workflow map"
+        >
+          <defs>
+            <marker
+              id="arrow"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
+            </marker>
+          </defs>
 
-      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        {/* Steps rail */}
-        <ol className="hidden flex-col gap-1 lg:flex">
-          {STEPS.map((s, i) => {
-            const done = completed.has(s.n);
-            const isActive = i === active;
-            const SI = s.icon;
+          {/* Edges */}
+          <g className="text-[var(--ink-300)]">
+            {EDGES.map(([from, to]) => {
+              const f = NODES.find((n) => n.id === from)!;
+              const t = NODES.find((n) => n.id === to)!;
+              const a = pos(f.col, f.row);
+              const b = pos(t.col, t.row);
+              return (
+                <line
+                  key={`${from}-${to}`}
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 4"
+                  markerEnd="url(#arrow)"
+                  opacity={0.7}
+                />
+              );
+            })}
+          </g>
+
+          {/* Nodes */}
+          {NODES.map((n) => {
+            const { x, y } = pos(n.col, n.row);
+            const w = 200;
+            const h = 84;
+            const isActive = activeId === n.id;
+            const isDone = completed.has(n.id);
             return (
-              <li key={s.n}>
-                <button
-                  onClick={() => setActive(i)}
+              <g
+                key={n.id}
+                transform={`translate(${x - w / 2}, ${y - h / 2})`}
+                className="cursor-pointer"
+                onClick={() => setActiveId(n.id)}
+              >
+                <rect
+                  x={0}
+                  y={0}
+                  width={w}
+                  height={h}
+                  rx={10}
                   className={cn(
-                    "group flex w-full items-center gap-3 rounded-md border px-3 py-2 text-left transition-colors",
+                    "transition-all",
                     isActive
-                      ? "border-[var(--accent-500)]/40 bg-[var(--accent-500)]/8"
-                      : "border-transparent hover:bg-[var(--ink-50)]",
+                      ? "fill-[var(--accent-500)]/15 stroke-[var(--accent-500)]"
+                      : isDone
+                        ? "fill-[var(--accent-500)]/8 stroke-[var(--accent-500)]/40"
+                        : "fill-[var(--ink-50)] stroke-[var(--ink-200)] hover:stroke-[var(--ink-700)]",
                   )}
+                  strokeWidth={isActive ? 2 : 1.25}
+                />
+                <text
+                  x={16}
+                  y={32}
+                  className="fill-[var(--ink-900)] font-semibold"
+                  style={{ fontSize: "14px" }}
                 >
-                  <span
-                    className={cn(
-                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
-                      done
-                        ? "bg-[var(--accent-500)] text-white"
-                        : isActive
-                          ? "bg-[var(--navy-950)] text-white"
-                          : "bg-[var(--ink-100)] text-[var(--ink-500)]",
-                    )}
-                  >
-                    {done ? <Check className="h-3.5 w-3.5" /> : s.n}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[12.5px] font-semibold text-[var(--ink-900)]">
-                      {s.title}
-                    </span>
-                    <span className="block truncate text-[11.5px] text-[var(--ink-500)]">
-                      {s.blurb}
-                    </span>
-                  </span>
-                  <SI className="h-4 w-4 shrink-0 text-[var(--ink-300)] group-hover:text-[var(--ink-700)]" />
-                </button>
-              </li>
+                  {n.title}
+                </text>
+                <text
+                  x={16}
+                  y={54}
+                  className="fill-[var(--ink-500)]"
+                  style={{ fontSize: "11.5px" }}
+                >
+                  {n.blurb}
+                </text>
+                <text
+                  x={16}
+                  y={72}
+                  className="fill-[var(--accent-500)] font-semibold"
+                  style={{ fontSize: "10.5px", letterSpacing: "0.04em" }}
+                >
+                  {isDone ? "✓ EXPLORED · CLICK" : "CLICK TO EXPLORE →"}
+                </text>
+              </g>
             );
           })}
-        </ol>
+        </svg>
 
-        {/* Step content */}
-        <article className="overflow-hidden rounded-lg border border-[var(--ink-200)] bg-[var(--card)] shadow-sm">
-          <div className="aspect-[16/10] w-full overflow-hidden bg-[var(--ink-50)]">
-            <img
-              src={step.image}
-              alt={`Step ${step.n}: ${step.title}`}
-              loading={active === 0 ? "eager" : "lazy"}
-              width={1024}
-              height={640}
-              className="h-full w-full object-cover"
-            />
-          </div>
+        <p className="mt-2 text-center text-[11.5px] text-[var(--ink-500)]">
+          Arrows show how data flows between modules.
+        </p>
+      </div>
 
-          <div className="p-6 sm:p-7">
-            <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[var(--accent-500)]">
-              <Icon className="h-3.5 w-3.5" />
-              Step {step.n} of {STEPS.length}
-            </div>
-            <h2 className="font-display text-[22px] font-semibold tracking-tight text-[var(--ink-900)]">
-              {step.title}
-            </h2>
-            <p className="mt-1.5 text-[14px] text-[var(--ink-500)]">{step.blurb}</p>
-            <p className="mt-4 text-[13.5px] leading-relaxed text-[var(--ink-700)]">{step.body}</p>
-
-            <ul className="mt-4 space-y-1.5">
-              {step.bullets.map((b) => (
-                <li key={b} className="flex items-start gap-2 text-[13px] text-[var(--ink-700)]">
-                  <Check className="mt-[3px] h-3.5 w-3.5 shrink-0 text-[var(--accent-500)]" />
-                  <span>{b}</span>
-                </li>
-              ))}
-            </ul>
-
-            {/* Mobile step indicator */}
-            <div className="mt-5 flex items-center gap-1 lg:hidden">
-              {STEPS.map((_, i) => (
-                <span
-                  key={i}
-                  className={cn(
-                    "h-1 flex-1 rounded-full",
-                    i <= active ? "bg-[var(--accent-500)]" : "bg-[var(--ink-100)]",
-                  )}
-                />
-              ))}
-            </div>
-
-            {/* Actions */}
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--ink-200)] pt-5">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setActive((a) => Math.max(0, a - 1))}
-                disabled={active === 0}
+      {/* Quick links grid (mobile + accessibility fallback) */}
+      <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {NODES.map((n) => {
+          const Icon = n.icon;
+          const isDone = completed.has(n.id);
+          return (
+            <button
+              key={n.id}
+              onClick={() => setActiveId(n.id)}
+              className={cn(
+                "flex items-center gap-2.5 rounded-md border px-3 py-2 text-left transition-colors",
+                activeId === n.id
+                  ? "border-[var(--accent-500)]/40 bg-[var(--accent-500)]/8"
+                  : "border-[var(--ink-200)] hover:bg-[var(--ink-50)]",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
+                  isDone
+                    ? "bg-[var(--accent-500)] text-white"
+                    : "bg-[var(--ink-100)] text-[var(--ink-700)]",
+                )}
               >
-                <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back
-              </Button>
+                {isDone ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-[12.5px] font-semibold text-[var(--ink-900)]">
+                  {n.title}
+                </span>
+                <span className="block truncate text-[11px] text-[var(--ink-500)]">
+                  {n.blurb}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <Link to={step.cta.to as "/"} params={step.cta.params as never}>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => markDone(step.n)}
-                  >
-                    {step.cta.label}
+      {/* Detail panel (modal-like, inline) */}
+      {active && (
+        <div
+          className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-6"
+          onClick={() => setActiveId(null)}
+        >
+          <div
+            className="relative max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-t-xl border border-[var(--ink-200)] bg-[var(--card)] shadow-xl sm:rounded-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setActiveId(null)}
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-colors hover:bg-black/60"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="aspect-[16/10] w-full overflow-hidden bg-[var(--ink-50)]">
+              <img
+                src={active.image}
+                alt={`Screenshot of ${active.title}`}
+                className="h-full w-full object-cover object-top"
+              />
+            </div>
+
+            <div className="max-h-[40vh] overflow-y-auto p-5 sm:p-6">
+              <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[var(--accent-500)]">
+                <active.icon className="h-3.5 w-3.5" />
+                {active.blurb}
+              </div>
+              <h2 className="font-display text-[22px] font-semibold tracking-tight text-[var(--ink-900)]">
+                {active.title}
+              </h2>
+              <p className="mt-3 text-[13.5px] leading-relaxed text-[var(--ink-700)]">
+                {active.body}
+              </p>
+              <ul className="mt-3 space-y-1.5">
+                {active.bullets.map((b) => (
+                  <li key={b} className="flex items-start gap-2 text-[13px] text-[var(--ink-700)]">
+                    <Check className="mt-[3px] h-3.5 w-3.5 shrink-0 text-[var(--accent-500)]" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-[var(--ink-200)] pt-4">
+                <Button variant="outline" size="sm" onClick={() => setActiveId(null)}>
+                  Close
+                </Button>
+                <Link to={active.cta.to as "/"}>
+                  <Button size="sm" onClick={() => markDone(active.id)}>
+                    {active.cta.label} <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                   </Button>
                 </Link>
-                {!isLast ? (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      markDone(step.n);
-                      setActive((a) => Math.min(STEPS.length - 1, a + 1));
-                    }}
-                  >
-                    Next <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      markDone(step.n);
-                      navigate({ to: "/" });
-                    }}
-                  >
-                    Finish <Check className="ml-1.5 h-3.5 w-3.5" />
-                  </Button>
-                )}
               </div>
             </div>
           </div>
-        </article>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
