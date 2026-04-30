@@ -19,6 +19,7 @@ import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { LiveLabourCostCard } from "@/components/financial/LiveLabourCostCard";
 import { CashflowForecastCard } from "@/components/payments/CashflowForecastCard";
+import { usePaymentTotals } from "@/lib/paymentCycle";
 
 export const Route = createFileRoute("/financial")({
   head: () => ({ meta: [{ title: "Financial Dashboard — Quantix Prime" }] }),
@@ -45,6 +46,7 @@ function Financial() {
   const invoiceTotals = useInvoiceTotals(current.id);
   const ourRole = current.ourRole ?? "subcontractor";
   const counterparty = current.mainContractor;
+  const paymentTotals = usePaymentTotals(current.id);
   const cyclePeriod = () => {
     const opts = ["This month", "Last month", "QTD", "YTD"] as const;
     const next = opts[(opts.indexOf(period) + 1) % opts.length];
@@ -80,6 +82,37 @@ function Financial() {
       </div>
 
       <LiveLabourCostCard projectId={current.id} />
+
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        <Kpi
+          label="Applied YTD"
+          value={fmtMoney(paymentTotals.appliedYTD, { compact: true })}
+          delta={`${paymentTotals.pendingApplicationsCount} pending notice${paymentTotals.pendingApplicationsCount === 1 ? "" : "s"}`}
+        />
+        <Kpi
+          label="Certified YTD"
+          value={fmtMoney(paymentTotals.certifiedYTD, { compact: true })}
+          delta={`Retention ${fmtMoney(paymentTotals.retentionHeldTotal, { compact: true })} held`}
+        />
+        <Kpi
+          label="Paid YTD"
+          value={fmtMoney(paymentTotals.paidYTD, { compact: true })}
+          delta={paymentTotals.certifiedYTD > 0 ? `${Math.round((paymentTotals.paidYTD / paymentTotals.certifiedYTD) * 100)}% of certified` : "—"}
+          tone="success"
+        />
+        <Kpi
+          label="Outstanding"
+          value={fmtMoney(paymentTotals.outstanding, { compact: true })}
+          delta={
+            paymentTotals.daysToNextDue == null
+              ? "no pending applications"
+              : paymentTotals.daysToNextDue < 0
+                ? `${Math.abs(paymentTotals.daysToNextDue)}d overdue notice`
+                : `next notice in ${paymentTotals.daysToNextDue}d`
+          }
+          tone={paymentTotals.outstanding > 0 ? "warning" : "neutral"}
+        />
+      </div>
 
       <CashflowForecastCard projectId={current.id} counterparty={counterparty} ourRole={ourRole} compact />
 
