@@ -233,6 +233,7 @@ function Breadcrumb() {
     "/daily-report": "Daily Site Report",
     "/team": "Team & Roles",
     "/integrations": "Integrations",
+    "/how-to": "How to use",
   };
   return (
     <nav className="hidden items-center gap-1.5 text-[12.5px] text-[var(--ink-500)] md:flex" aria-label="Breadcrumb">
@@ -334,6 +335,9 @@ function WelcomeModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
               <LineChart className="mr-2 h-4 w-4" /> Start as Commercial Manager
             </Button>
           </div>
+          <Button className="w-full" onClick={() => dismiss("/how-to")}>
+            <BookOpen className="mr-2 h-4 w-4" /> Take the 8-step tour
+          </Button>
           <button onClick={() => dismiss("/")} className="w-full text-[12.5px] text-[var(--ink-500)] hover:text-[var(--ink-900)]">
             Continue to Dashboard <Check className="ml-1 inline h-3.5 w-3.5" />
           </button>
@@ -409,6 +413,14 @@ function LayoutInner() {
               <button className="rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]" aria-label="Search">
                 <Search className="h-4 w-4" />
               </button>
+              <Link
+                to="/how-to"
+                className="rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]"
+                aria-label="How to use"
+                title="How to use Quantix Prime"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </Link>
               <button
                 onClick={toggleTheme}
                 className="rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]"
