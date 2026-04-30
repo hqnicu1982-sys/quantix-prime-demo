@@ -18,6 +18,7 @@ import { useInvoiceTotals } from "@/lib/invoiceRegistry";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { LiveLabourCostCard } from "@/components/financial/LiveLabourCostCard";
+import { CashflowForecastCard } from "@/components/payments/CashflowForecastCard";
 
 export const Route = createFileRoute("/financial")({
   head: () => ({ meta: [{ title: "Financial Dashboard — Quantix Prime" }] }),
@@ -42,6 +43,8 @@ function Financial() {
   const { current } = useProject();
   const projectData = useProjectData(current.id);
   const invoiceTotals = useInvoiceTotals(current.id);
+  const ourRole = current.ourRole ?? "subcontractor";
+  const counterparty = current.mainContractor;
   const cyclePeriod = () => {
     const opts = ["This month", "Last month", "QTD", "YTD"] as const;
     const next = opts[(opts.indexOf(period) + 1) % opts.length];
@@ -77,6 +80,8 @@ function Financial() {
       </div>
 
       <LiveLabourCostCard projectId={current.id} />
+
+      <CashflowForecastCard projectId={current.id} counterparty={counterparty} ourRole={ourRole} compact />
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">

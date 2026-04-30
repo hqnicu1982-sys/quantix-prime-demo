@@ -20,6 +20,7 @@ import { NewApplicationDialog } from "@/components/payments/NewApplicationDialog
 import {
   PaymentNoticeDialog, PayLessNoticeDialog, CertificateDialog, RecordPaymentDialog,
 } from "@/components/payments/IssueNoticeDialogs";
+import { CashflowForecastCard } from "@/components/payments/CashflowForecastCard";
 
 export const Route = createFileRoute("/projects/$projectId/payments")({ component: PaymentsPage });
 
@@ -183,6 +184,8 @@ function PaymentsPage() {
           </ul>
         )}
       </Card>
+
+      <CashflowForecastCard projectId={projectId} counterparty={counterparty} ourRole={ourRole} />
 
       <NewApplicationDialog open={newOpen} onOpenChange={setNewOpen} projectId={projectId} />
       <PaymentNoticeDialog open={!!noticeApp} onOpenChange={(v) => !v && setNoticeApp(null)} projectId={projectId} application={noticeApp} />
