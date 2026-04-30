@@ -139,6 +139,38 @@ export function deleteInvoice(id: string) {
   write(read().filter((i) => i.id !== id));
 }
 
+/** Mark every outstanding invoice that matches `reference` as paid. Used by paymentCycle to keep mirrors in sync. */
+export function markPaidByReference(reference: string, paidAt?: string): number {
+  const day = paidAt ?? new Date().toISOString().slice(0, 10);
+  let updated = 0;
+  write(read().map((i) => {
+    if (i.reference === reference && i.status !== "paid") {
+      updated += 1;
+      return { ...i, status: "paid" as const, paidAt: day };
+    }
+    return i;
+  }));
+  return updated;
+}
+
+/** Delete every invoice matching `reference`. Used when a certificate / application is deleted. */
+export function deleteByReference(reference: string): number {
+  const before = read();
+  const after = before.filter((i) => i.reference !== reference);
+  if (after.length === before.length) return 0;
+  write(after);
+  return before.length - after.length;
+}
+
+/** Wipe every invoice belonging to a project. Used when the project itself is deleted. */
+export function deleteInvoicesByProject(projectId: string): number {
+  const before = read();
+  const after = before.filter((i) => i.projectId !== projectId);
+  if (after.length === before.length) return 0;
+  write(after);
+  return before.length - after.length;
+}
+
 // ---------- React hooks ----------
 
 function useStore<T>(reader: () => T): T {
