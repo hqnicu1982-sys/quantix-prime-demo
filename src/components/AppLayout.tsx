@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Calendar, Package, ClipboardList, FileSpreadsheet, Plug, Users2,
   Menu, X, Bell, Search, Settings, HardHat, LineChart, Check, FolderKanban, Library,
   Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Hammer, Sun, Moon,
-  ChevronDown, GitBranch,
+  ChevronDown, GitBranch, BookOpen, HelpCircle,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -52,6 +52,7 @@ const navGroups: NavGroup[] = [
     { to: "/team", label: "Team & Roles", icon: Users2, requires: "view.team" },
     { to: "/settings/labour", label: "Labour Rates", icon: Settings, requires: "view.settings.labour" },
     { to: "/integrations", label: "Integrations", icon: Plug, requires: "view.integrations" },
+    { to: "/how-to", label: "How to use", icon: BookOpen, badge: "TOUR" },
   ]},
 ];
 
