@@ -30,7 +30,7 @@ import {
 
 export const Route = createFileRoute("/projects/$projectId")({ component: ProjectLayout });
 
-type SubTab = "" | "specification" | "costed-boq" | "planner" | "calloffs" | "invoices" | "variations" | "labour" | "reports" | "team";
+type SubTab = "" | "specification" | "costed-boq" | "planner" | "calloffs" | "invoices" | "variations" | "labour" | "payments" | "reports" | "team";
 
 const TABS: { key: SubTab; label: string; requires?: Capability }[] = [
   { key: "", label: "Overview" },
@@ -41,6 +41,7 @@ const TABS: { key: SubTab; label: string; requires?: Capability }[] = [
   { key: "invoices", label: "Invoices", requires: "view.invoices" },
   { key: "variations", label: "Variations", requires: "view.variations" },
   { key: "labour", label: "Labour", requires: "view.dailyReport" },
+  { key: "payments", label: "Payments", requires: "view.payments" },
   { key: "reports", label: "Reports", requires: "view.financials.lite" },
   { key: "team", label: "Team", requires: "view.team" },
 ];
@@ -90,6 +91,10 @@ function ProjectLayout() {
     "view.integrations": useCan("view.integrations"),
     "view.settings.labour": useCan("view.settings.labour"),
     "edit.specification": useCan("edit.specification"),
+    "view.payments": useCan("view.payments"),
+    "create.payment.application": useCan("create.payment.application"),
+    "issue.payment.notice": useCan("issue.payment.notice"),
+    "record.payment": useCan("record.payment"),
   };
   const visibleTabs = TABS.filter((t) => !t.requires || capChecks[t.requires]);
 
