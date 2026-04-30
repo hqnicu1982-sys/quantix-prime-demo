@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { FileText, Download, ClipboardList } from "lucide-react";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
+import { useProject } from "@/lib/ProjectContext";
+import { CashflowForecastCard } from "@/components/payments/CashflowForecastCard";
+import { PaymentCycleKpiStrip } from "@/components/payments/PaymentCycleKpiStrip";
 
 export const Route = createFileRoute("/projects/$projectId/reports")({ component: GuardedReportsPage });
 
@@ -29,6 +32,11 @@ const tone = {
 } as const;
 
 function ReportsPage() {
+  const { projectId } = Route.useParams();
+  const { current } = useProject();
+  const canSeePayments = useCan("view.payments");
+  const ourRole = current.ourRole ?? "subcontractor";
+  const counterparty = current.mainContractor;
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -37,6 +45,13 @@ function ReportsPage() {
         <Kpi label="Open variations" value="2" delta="£18.6k value" tone="warning" />
         <Kpi label="QA snag rate" value="1.8%" delta="below 3% target" tone="success" />
       </div>
+
+      {canSeePayments && (
+        <>
+          <PaymentCycleKpiStrip projectId={projectId} />
+          <CashflowForecastCard projectId={projectId} counterparty={counterparty} ourRole={ourRole} />
+        </>
+      )}
 
       <Card>
         <CardHead
