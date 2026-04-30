@@ -56,6 +56,13 @@ export type Project = {
   startDate: string;
   endDate: string;
   hasFullData: boolean;
+  /**
+   * Our role on this project. Drives the Payments tab UI:
+   *  - "subcontractor": we submit Applications, receive Notices/Certs
+   *  - "main_contractor": we receive Applications, issue Notices/Certs
+   * Defaults to "subcontractor" when undefined.
+   */
+  ourRole?: "subcontractor" | "main_contractor";
 };
 
 export const projects: Project[] = [
