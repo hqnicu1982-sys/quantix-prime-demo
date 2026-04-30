@@ -66,7 +66,7 @@ export type Project = {
 };
 
 export const projects: Project[] = [
-  { id: "fitzrovia", name: "Hotel Fitzrovia", subtitle: "Drylining · W1T 4JQ · Lvl 4–6", mainContractor: "Kier Construction", contractValue: 2100000, margin: 23.8, progress: 67, health: "healthy", startDate: "04/02/2026", endDate: "19/12/2026", hasFullData: true },
+  { id: "fitzrovia", name: "Hotel Fitzrovia", subtitle: "Drylining · W1T 4JQ · Lvl 4–6", mainContractor: "Kier Construction", contractValue: 2100000, margin: 23.8, progress: 67, health: "healthy", startDate: "04/02/2026", endDate: "19/12/2026", hasFullData: true, ourRole: "subcontractor" },
   { id: "trafalgar", name: "Trafalgar Wharf — Blocks A & B", subtitle: "Fit-out · E16 · 148 units", mainContractor: "Wates Group", contractValue: 1840000, margin: 11.2, progress: 42, health: "risk", startDate: "12/11/2025", endDate: "30/10/2026", hasFullData: false },
   { id: "bermondsey", name: "Bermondsey Lofts", subtitle: "Specialty partitions · SE1 · 9 lofts", mainContractor: "ISG plc", contractValue: 680000, margin: 14.8, progress: 88, health: "watch", startDate: "08/09/2025", endDate: "30/05/2026", hasFullData: false },
   { id: "greenwich", name: "Greenwich Peninsula Phase 3", subtitle: "Drylining shell · SE10 · 212 units", mainContractor: "Multiplex Construction", contractValue: 1950000, margin: 26.4, progress: 31, health: "healthy", startDate: "06/01/2026", endDate: "15/01/2027", hasFullData: false },
