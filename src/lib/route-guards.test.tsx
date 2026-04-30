@@ -73,6 +73,10 @@ const EXPECTED_ALLOWED: Record<Capability, Tier[]> = {
   "view.integrations":    ["Admin", "Pro Control"],
   "view.settings.labour": ["Admin", "Pro Control"],
   "edit.specification": ["Admin", "Pro Control", "Pro"],
+  "view.payments":              ["Admin", "Pro Control", "Pro", "Site User"],
+  "create.payment.application": ["Admin", "Pro Control"],
+  "issue.payment.notice":       ["Admin", "Pro Control"],
+  "record.payment":             ["Admin"],
 };
 
 function GuardedProbe({ cap }: { cap: Capability }) {
