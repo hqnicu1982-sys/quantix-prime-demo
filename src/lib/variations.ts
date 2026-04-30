@@ -150,6 +150,21 @@ export function deleteVariation(pid: string, id: string) {
   write(pid, read(pid).filter((v) => v.id !== id));
 }
 
+/** Non-reactive read of all variations for a project. Safe to call from other libs. */
+export function getProjectVariations(pid: string): ProjectVariation[] {
+  return read(pid);
+}
+
+/** Wipe variations storage for a project (used on project delete). */
+export function clearProjectVariations(pid: string) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(KEY(pid));
+    localStorage.removeItem(SEED_KEY(pid));
+    window.dispatchEvent(new CustomEvent(EVT, { detail: { projectId: pid } }));
+  } catch { /* noop */ }
+}
+
 export type VariationsSummary = {
   approvedValue: number;
   pendingValue: number;
