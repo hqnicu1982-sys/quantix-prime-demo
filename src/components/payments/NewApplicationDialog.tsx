@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, GitBranch } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import {
@@ -14,7 +14,8 @@ import {
   type PaymentLine,
   type PaymentLineCategory,
   createApplication,
-  previouslyCertifiedTotal,
+  previouslyCertifiedLive,
+  getApprovedVariationLines,
   recalcApplication,
 } from "@/lib/paymentCycle";
 import { fmtMoney } from "@/lib/mockData";
@@ -47,11 +48,21 @@ export function NewApplicationDialog({
   const today = new Date().toISOString().slice(0, 10);
   const [periodEnd, setPeriodEnd] = useState(today);
   const [retentionPct, setRetentionPct] = useState(5);
-  const [previouslyCertified, setPreviouslyCertified] = useState(() => previouslyCertifiedTotal(projectId));
+  const [previouslyCertified, setPreviouslyCertified] = useState(() => previouslyCertifiedLive(projectId));
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<DraftLine[]>([
     { category: "measured_work", description: "", gross: 0 },
   ]);
+
+  // Pull approved variations available to be added on this application
+  const [pendingVariations, setPendingVariations] = useState<ReturnType<typeof getApprovedVariationLines>>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    // Refresh live state every time the dialog opens
+    setPreviouslyCertified(previouslyCertifiedLive(projectId));
+    setPendingVariations(getApprovedVariationLines(projectId));
+  }, [open, projectId]);
 
   const totals = useMemo(
     () => recalcApplication({ lines: lines as PaymentLine[], retentionPct, previouslyCertified }),
@@ -61,7 +72,7 @@ export function NewApplicationDialog({
   const reset = () => {
     setPeriodEnd(today);
     setRetentionPct(5);
-    setPreviouslyCertified(previouslyCertifiedTotal(projectId));
+    setPreviouslyCertified(previouslyCertifiedLive(projectId));
     setNotes("");
     setLines([{ category: "measured_work", description: "", gross: 0 }]);
   };
@@ -80,6 +91,24 @@ export function NewApplicationDialog({
     });
     reset();
     onOpenChange(false);
+  };
+
+  const pullAllVariations = () => {
+    if (pendingVariations.length === 0) return;
+    // Filter out an empty initial line and append variations.
+    setLines((ls) => {
+      const trimmed = ls.filter((l) => !(l.description.trim() === "" && l.gross === 0));
+      const additions: DraftLine[] = pendingVariations.map((v) => ({
+        category: v.category,
+        description: v.description,
+        gross: v.gross,
+      }));
+      return [...trimmed, ...additions];
+    });
+    toast.success(`Pulled ${pendingVariations.length} approved variation${pendingVariations.length === 1 ? "" : "s"}`, {
+      description: `Total ${fmtMoney(pendingVariations.reduce((s, v) => s + v.gross, 0), { compact: true })} added as line items`,
+    });
+    setPendingVariations([]);
   };
 
   return (
@@ -125,14 +154,29 @@ export function NewApplicationDialog({
         <div className="mt-2">
           <div className="mb-2 flex items-center justify-between">
             <Label>Line items (cumulative gross to date)</Label>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => setLines((ls) => [...ls, { category: "measured_work", description: "", gross: 0 }])}
-            >
-              <Plus className="mr-1 h-3.5 w-3.5" /> Add line
-            </Button>
+            <div className="flex items-center gap-2">
+              {pendingVariations.length > 0 && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={pullAllVariations}
+                  className="text-[var(--accent-500)]"
+                  title={pendingVariations.map((v) => v.description).join("\n")}
+                >
+                  <GitBranch className="mr-1 h-3.5 w-3.5" />
+                  Pull {pendingVariations.length} approved variation{pendingVariations.length === 1 ? "" : "s"}
+                </Button>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setLines((ls) => [...ls, { category: "measured_work", description: "", gross: 0 }])}
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" /> Add line
+              </Button>
+            </div>
           </div>
           <div className="space-y-2">
             {lines.map((line, i) => (
