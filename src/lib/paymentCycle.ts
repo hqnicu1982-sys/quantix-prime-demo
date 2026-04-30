@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { deleteByReference, markPaidByReference } from "./invoiceRegistry";
+import { getProjectVariations } from "./variations";
 
 // ============================================================================
 // Payment Cycle — interim payment workflow per JCT/NEC contracts.
@@ -240,6 +242,11 @@ export function submitApplication(pid: string, appId: string) {
 
 export function deleteApplication(pid: string, appId: string) {
   const data = read(pid);
+  // Cascade: delete any invoice mirrors created from this app's certificate
+  const certsToRemove = data.certificates.filter((c) => c.applicationId === appId);
+  for (const c of certsToRemove) {
+    try { deleteByReference(c.certificateNumber); } catch { /* noop */ }
+  }
   write(pid, {
     ...data,
     applications: data.applications.filter((a) => a.id !== appId),
@@ -325,6 +332,11 @@ export function recordPayment(
   input: { applicationId: string; certificateId: string; paidAt: string; paymentReference?: string },
 ) {
   const data = read(pid);
+  // Cascade: mark the mirrored invoice paid (matched by certificate number)
+  const cert = data.certificates.find((c) => c.id === input.certificateId);
+  if (cert) {
+    try { markPaidByReference(cert.certificateNumber, input.paidAt); } catch { /* noop */ }
+  }
   write(pid, {
     ...data,
     certificates: data.certificates.map((c) =>
@@ -336,6 +348,49 @@ export function recordPayment(
       a.id === input.applicationId ? { ...a, status: "paid", updatedAt: Date.now() } : a,
     ),
   });
+}
+
+/** Wipe payment-cycle storage for a project (project delete cleanup). */
+export function clearPaymentCycle(pid: string) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(KEY(pid));
+    localStorage.removeItem(SEED_KEY(pid));
+    window.dispatchEvent(new CustomEvent(EVT, { detail: { projectId: pid } }));
+  } catch { /* noop */ }
+}
+
+/** Total previously certified by all certificates so far (live read). */
+export function previouslyCertifiedLive(pid: string): number {
+  return read(pid).certificates.reduce((s, c) => s + c.finalAmount, 0);
+}
+
+/**
+ * Returns suggested PaymentLine inputs derived from approved variations on this
+ * project that have not yet been included in any payment application.
+ * Inclusion is detected by `[VO-XXX]` prefix in the line description.
+ */
+export function getApprovedVariationLines(
+  pid: string,
+): Array<{ category: PaymentLineCategory; description: string; gross: number; voId: string }> {
+  const variations = getProjectVariations(pid);
+  const approved = variations.filter((v) => v.status === "approved");
+  const store = read(pid);
+  const usedIds = new Set<string>();
+  for (const app of store.applications) {
+    for (const line of app.lines) {
+      const m = line.description?.match(/\[(VO-\d+)\]/);
+      if (m) usedIds.add(m[1]);
+    }
+  }
+  return approved
+    .filter((v) => !usedIds.has(v.id))
+    .map((v) => ({
+      category: "variations" as PaymentLineCategory,
+      description: `[${v.id}] ${v.title}`,
+      gross: v.approvedValue ?? v.costImpact,
+      voId: v.id,
+    }));
 }
 
 // ---------------------------------------------------------------------------

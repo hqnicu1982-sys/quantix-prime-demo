@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -14,9 +14,11 @@ import {
   issuePayLessNotice,
   issueCertificate,
   recordPayment,
+  usePaymentCycle,
 } from "@/lib/paymentCycle";
 import { addInvoice } from "@/lib/invoiceRegistry";
 import { fmtMoney } from "@/lib/mockData";
+import { ShieldAlert } from "lucide-react";
 
 // ---------- Payment Notice ---------------------------------------------------
 
@@ -148,7 +150,22 @@ export function CertificateDialog({
   ourRole: "subcontractor" | "main_contractor";
   counterparty: string;
 }) {
-  const [amount, setAmount] = useState(application?.netThisApplication ?? 0);
+  const cycle = usePaymentCycle(projectId);
+  const notice = application?.noticeId ? cycle.notices.find((n) => n.id === application.noticeId) : null;
+  const payLess = application?.payLessNoticeId ? cycle.payLess.find((p) => p.id === application.payLessNoticeId) : null;
+  const suggested = (() => {
+    if (!application) return 0;
+    const base = notice?.certifiedAmount ?? application.netThisApplication;
+    return Math.max(0, base - (payLess?.withholdingAmount ?? 0));
+  })();
+
+  const [amount, setAmount] = useState(suggested);
+
+  // Re-suggest when the dialog re-opens or the application changes
+  useEffect(() => {
+    if (open) setAmount(suggested);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, application?.id, notice?.id, payLess?.id]);
 
   if (!application) return null;
 
@@ -179,6 +196,16 @@ export function CertificateDialog({
             Final amount due. This will create an entry in the invoice register and feed cashflow.
           </DialogDescription>
         </DialogHeader>
+        {payLess && (
+          <div className="flex items-start gap-2 rounded border border-[var(--amber-500)]/40 bg-[var(--amber-500)]/10 p-2.5 text-[12px] text-[var(--amber-500)]">
+            <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <div>
+              <p className="font-semibold">Pay Less Notice on file — {fmtMoney(payLess.withholdingAmount)} withheld</p>
+              <p className="text-[11px] opacity-90">Suggested final = {fmtMoney(notice?.certifiedAmount ?? application.netThisApplication)} − {fmtMoney(payLess.withholdingAmount)} = <strong>{fmtMoney(suggested)}</strong></p>
+              <p className="mt-0.5 text-[11px] opacity-80">Reason: {payLess.reason}</p>
+            </div>
+          </div>
+        )}
         <div className="space-y-3">
           <div>
             <Label htmlFor="final-amt">Final certified amount £</Label>
@@ -221,7 +248,9 @@ export function RecordPaymentDialog({
       paidAt,
       paymentReference: reference || undefined,
     });
-    toast.success("Payment recorded", { description: `${application.appNumber} · ${fmtMoney(certificateAmount)} marked paid` });
+    toast.success("Payment recorded", {
+      description: `${application.appNumber} · ${fmtMoney(certificateAmount)} marked paid · invoice mirror cleared`,
+    });
     setReference("");
     onOpenChange(false);
   };

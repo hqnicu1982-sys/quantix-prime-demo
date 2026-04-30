@@ -13,6 +13,7 @@ import { useCan } from "@/lib/permissions";
 import { MyScopeCard } from "@/components/dashboard/MyScopeCard";
 import { ApprovalInboxCard } from "@/components/dashboard/ApprovalInboxCard";
 import { LiveLabourCostCard } from "@/components/financial/LiveLabourCostCard";
+import { PaymentCycleKpiStrip } from "@/components/payments/PaymentCycleKpiStrip";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
 
@@ -23,6 +24,7 @@ function Overview() {
   const me = useCurrentUser();
   const canSeeFinancials = useCan("view.financials");
   const canSeeFinancialsLite = useCan("view.financials.lite");
+  const canSeePayments = useCan("view.payments");
   const myAssignments = useAssignments(projectId);
   const isOnProject = myAssignments.some((a) => a.memberId === me.id);
   const isOperative = me.tier === "Operative" || me.tier === "Site User";
@@ -53,6 +55,7 @@ function Overview() {
         )}
         {isOnProject && <MyScopeCard projectId={projectId} />}
         <ApprovalInboxCard />
+        {canSeePayments && <PaymentCycleKpiStrip projectId={projectId} />}
         <ProjectSetupChecklist projectId={projectId} />
       </div>
     );
@@ -83,6 +86,8 @@ function Overview() {
       {isOnProject && <MyScopeCard projectId={projectId} />}
 
       <ApprovalInboxCard />
+
+      {canSeePayments && <PaymentCycleKpiStrip projectId={projectId} />}
 
       {(canSeeFinancials || canSeeFinancialsLite) && <LiveLabourCostCard projectId={projectId} />}
 

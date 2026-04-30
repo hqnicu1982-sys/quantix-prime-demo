@@ -1,113 +1,76 @@
-## Ce construim
+# Connect the Interim Payment Application workflow end-to-end
 
-Un modul **Payments** per proiect care modelează ciclul JCT/NEC interim payment:
+After a dependency sweep, the Payment Application module is functional in isolation but has 9 disconnects with Variations, Invoice Registry, Financial Dashboard, Project Overview, Reports și project lifecycle. Below is the fix plan, scoped strictly to closing those gaps.
+
+## Disconnects found
 
 ```text
-[Subbie]  Application for Payment  ─┐
-                                    ├─ due-date clock starts
-[MC]      Payment Notice            │  (5 zile after due date)
-[MC]      Pay Less Notice (opt.)    │  (≥1 zi before final date for payment)
-[MC]      Certificate / Final Sum   ─┘
-[MC]      Payment recorded          → mirror în invoice registry
+                       CURRENT                              ISSUE
+Variations.approved  ─/ ─►  PaymentApplication.lines       no auto-pull
+PaymentNotice                                              ok
+PayLessNotice        ─►  cert.finalAmount (manual)         ok but no UI hint
+Certificate          ─►  invoiceRegistry.add               ok
+RecordPayment        ─/ ─►  invoiceRegistry.markPaid       MIRROR STAYS OPEN
+DeleteApplication    ─/ ─►  invoiceRegistry cleanup        ORPHAN MIRROR
+DeleteCustomProject  ─/ ─►  paymentCycle storage           ORPHAN STORAGE
+Financial dashboard  ─/ ─►  payment cycle KPIs             missing
+Project overview     ─/ ─►  payment cycle KPI row          missing
+Reports tab          ─/ ─►  cashflow forecast              missing
+NewApplicationDialog ─/ ─►  prev-certified live refresh    stale on reopen
 ```
 
-Suma se introduce **manual per application** (per categorie: Preliminaries, Measured Work, Variations, Materials on Site, Retention, Previous Certified). Sistemul calculează "this application net" automat.
+## What gets built / changed
 
-## Roluri & dual-side
+### 1. Cross-module helpers (`src/lib/paymentCycle.ts`)
+- New `recordPayment` flow now also accepts an optional `mirrorInvoiceRef` so the caller can mark the mirrored invoice paid. Add an internal `findMirrorByCertNumber(pid, certNumber)` helper (lookup în invoiceRegistry by reference).
+- `deleteApplication` extended to delete any mirrored invoice (matched by `certificateNumber`).
+- New helper `previouslyCertifiedLive(pid)` — same as today plus pending `noticed` apps optional flag — exposed for the dialog.
+- New aggregate `getApprovedVariationLines(pid)` (lives în paymentCycle, imports from variations) returns suggested `PaymentLine[]` from approved-but-not-yet-included variations.
 
-Adăugăm pe project un câmp `ourRole: "main_contractor" | "subcontractor"` (default "subcontractor"; selectat în Project Settings). UI-ul se schimbă în funcție de rol:
+### 2. Invoice Registry (`src/lib/invoiceRegistry.ts`)
+- Add `markPaidByReference(reference)` and `deleteByReference(reference)` so paymentCycle can sync without exposing IDs.
 
-- **Subcontractor side** (Pro Control + Operative pot crea draft, Admin submite): vezi Applications outgoing, Notices/Certificates primite.
-- **Main Contractor side** (Admin/Pro Control issue Notices): vezi Applications incoming de la subbies, emite Payment Notice + Pay Less Notice + Certificate.
+### 3. Variations ↔ Applications wiring (`src/components/payments/NewApplicationDialog.tsx`)
+- On open, fetch approved variations for the project and offer a "Pull approved variations" button that appends them as `category: "variations"` lines (deduped by VO id captured in description prefix `[VO-001]`).
+- `previouslyCertified` re-reads on every open via `useEffect` (currently captured in initial `useState` only).
 
-## Capabilities noi
+### 4. Record Payment closes the loop (`src/components/payments/IssueNoticeDialogs.tsx`)
+- `RecordPaymentDialog` calls `markPaidByReference(certificateNumber)` after `recordPayment` so Invoices tab and cashflow drop the mirror correctly.
+- `CertificateDialog` shows a banner when a Pay Less Notice exists, pre-filling `finalAmount = certifiedAmount − withholding`.
 
-În `src/lib/permissions.ts`:
-- `view.payments` — toți cu acces la proiect
-- `create.payment.application` — Pro Control + Admin (subbie side)
-- `issue.payment.notice` — Admin + Pro Control (MC side)
-- `record.payment` — Admin
+### 5. Payment cycle on Project Overview (`src/routes/projects.$projectId.index.tsx`)
+- Add a compact "Payment cycle" KPI strip (Applied / Certified / Outstanding / Next notice due) that links to the Payments tab. Gated by `view.payments`.
 
-Mapate în `TIER_CAPS` pentru fiecare tier existent.
+### 6. Reports tab (`src/routes/projects.$projectId.reports.tsx`)
+- Embed `<CashflowForecastCard ... />` în Reports (full version), and a small "Interim payments status" tile (counts by status + outstanding £).
 
-## Data model (localStorage, mock — pattern identic cu `invoiceRegistry.ts`)
+### 7. Financial Dashboard (`src/routes/financial.tsx`)
+- Add a fourth KPI row for Payment Applications Pipeline (Applied YTD vs Certified YTD vs Paid YTD vs Outstanding) using `usePaymentTotals(current.id)`.
 
-Fișier nou `src/lib/paymentCycle.ts`:
+### 8. Project lifecycle (`src/lib/customProjects.ts` or `src/lib/paymentCycle.ts`)
+- Export `clearPaymentCycle(pid)` and call it from `deleteCustomProject` to avoid orphan localStorage. Same für invoiceRegistry mirrors of that project.
 
-```ts
-type PaymentApplication = {
-  id, projectId, appNumber,           // "AFP-014"
-  periodEnd: ISO, submittedAt: ISO,
-  dueDate: ISO,                       // due date for payment notice (5 days)
-  finalDateForPayment: ISO,           // typically +14/21 days
-  lines: { category, gross, retentionPct }[],
-  grossTotal, retentionHeld, previouslyCertified, netThisApp,
-  status: "draft" | "submitted" | "noticed" | "certified" | "paid" | "disputed",
-  noticeId?, certificateId?
-}
-type PaymentNotice = { id, applicationId, issuedAt, certifiedAmount, breakdown[], notes }
-type PayLessNotice = { id, noticeId, issuedAt, withholdingAmount, reason }
-type PaymentCertificate = { id, applicationId, finalAmount, issuedAt, paidAt? }
-```
+### 9. Tests (`src/lib/paymentCycle.test.ts` — new)
+- Unit tests for `buildForecast` already exist? if not, smoke test for: variation pull-in produces correct line, recordPayment cascades to invoice mirror, delete cascades to mirror.
 
-Hooks: `usePaymentApplications(projectId)`, `usePaymentDueDates(projectId)` (returns ce expiră în <7 zile).
+## Files touched
 
-## Rute & UI
+**New**
+- `src/lib/paymentCycle.test.ts`
 
-**Tab nou** în `src/routes/projects.$projectId.tsx` array `TABS`:
-```ts
-{ key: "payments", label: "Payments", requires: "view.payments" }
-```
+**Edited**
+- `src/lib/paymentCycle.ts` (helpers, delete cascade, variation bridge)
+- `src/lib/invoiceRegistry.ts` (`markPaidByReference`, `deleteByReference`)
+- `src/components/payments/NewApplicationDialog.tsx` (variation pull-in + live prev-certified)
+- `src/components/payments/IssueNoticeDialogs.tsx` (record-payment cascade, pay-less hint în cert dialog)
+- `src/routes/projects.$projectId.index.tsx` (payment cycle KPI row)
+- `src/routes/projects.$projectId.reports.tsx` (cashflow forecast embed + status tile)
+- `src/routes/financial.tsx` (payment pipeline KPIs)
+- `src/lib/customProjects.ts` (cleanup hooks on delete)
 
-Fișier nou `src/routes/projects.$projectId.payments.tsx`:
-- **Header**: KPI cards — Total Applied YTD, Total Certified YTD, Outstanding, Next Due Date (cu countdown roșu/galben).
-- **Timeline view**: lista Applications, fiecare expandable cu Notice + Pay Less + Certificate dedesubt.
-- **Buton "New Application"** (subbie side) sau "Awaiting Application from..." (MC side).
-- **Status pills** + due-date warnings ("Payment Notice due in 2 days").
+## Out of scope
+- No DB / Cloud persistence (still mock localStorage as today).
+- No new permissions added (existing capabilities cover all touchpoints).
+- No redesign of existing UI surfaces — only additive cards / wiring.
 
-## Dialoguri
-
-`src/components/payments/`:
-- `NewApplicationDialog.tsx` — formular cu line items pe categorii, calc auto net amount, validation Zod (nu negative, retention 0-10%).
-- `IssuePaymentNoticeDialog.tsx` — pre-populat cu suma applied, MC editează cert amount + breakdown.
-- `PayLessNoticeDialog.tsx` — withholding + reason (required).
-- `RecordPaymentDialog.tsx` — paid date, amount, mirror în `invoiceRegistry`.
-
-## Integrări (asta răspunde la "integra totul în workflow")
-
-1. **Approval Inbox** (`ApprovalInboxCard.tsx`): adaug secțiune nouă pentru `issue.payment.notice` — "Applications awaiting your Notice (3)" + "Notices due in <3 days (1)".
-2. **Variations link**: când o variation devine `approved`, devine eligibilă să apară ca line item în următoarea Application (checkbox "Include in next AFP").
-3. **Invoice registry mirror**: când se emite un Certificate, creează automat o `RegistryInvoice` (receivable pentru subbie / payable pentru MC) cu reference = cert number. Un singur ledger de cashflow.
-4. **Financial dashboard** (`projects.$projectId.reports.tsx` + `financial.tsx`): tile nou "Certified vs Applied" și "Cashflow forecast" bazat pe `finalDateForPayment`.
-5. **Export pack** (`exportProjectPack.ts`): adaug secțiune "Payment History" cu lista applications + cert amounts.
-6. **Notifications/Toasts**: la submit Application → toast "Payment Notice due by [date]". La 24h înainte de due → highlight roșu în sidebar badge (folosind `usePaymentDueDates`).
-
-## Files to create / edit
-
-**Create:**
-- `src/lib/paymentCycle.ts`
-- `src/routes/projects.$projectId.payments.tsx`
-- `src/components/payments/NewApplicationDialog.tsx`
-- `src/components/payments/IssuePaymentNoticeDialog.tsx`
-- `src/components/payments/PayLessNoticeDialog.tsx`
-- `src/components/payments/RecordPaymentDialog.tsx`
-- `src/components/payments/PaymentTimeline.tsx`
-- `src/components/payments/StatusBadge.tsx` (sau reuse existing)
-
-**Edit:**
-- `src/lib/permissions.ts` — 4 caps noi + mapare tiers
-- `src/lib/ProjectContext.tsx` (sau `mockData.ts`) — câmp `ourRole` per project
-- `src/routes/projects.$projectId.tsx` — tab nou
-- `src/components/dashboard/ApprovalInboxCard.tsx` — secțiune nouă
-- `src/lib/invoiceRegistry.ts` — funcție `createFromCertificate(cert)`
-- `src/lib/exportProjectPack.ts` — secțiune Payment History
-- `src/lib/variations.ts` — flag `includedInApplicationId?: string`
-
-## Out of scope (pot urma în iterații separate)
-
-- Auto-calc din BoQ % complete (am ales manual entry).
-- Email notifications real (doar toasts în-app).
-- PDF generation pentru Notice/Certificate (folosim doar export pack).
-- Compliance certificates (fire/acoustic) — alt domeniu, alt modul.
-
-Aprobi planul ca să încep implementarea?
+Aprobi să implementez exact pașii de mai sus?

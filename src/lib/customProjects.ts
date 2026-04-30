@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import type { Project, Health } from "./mockData";
+import { clearPaymentCycle } from "./paymentCycle";
+import { clearProjectVariations } from "./variations";
+import { deleteInvoicesByProject } from "./invoiceRegistry";
 
 const KEY = "qp-custom-projects";
 const EVT = "qp-custom-projects-change";
@@ -67,6 +70,10 @@ export function deleteCustomProject(id: string): boolean {
   if (typeof window !== "undefined") {
     // Best-effort cleanup of any per-project extras.
     try { localStorage.removeItem(EXTRAS_KEY(id)); } catch { /* noop */ }
+    // Cascade: clear payment cycle, variations, and any invoices belonging to this project.
+    try { clearPaymentCycle(id); } catch { /* noop */ }
+    try { clearProjectVariations(id); } catch { /* noop */ }
+    try { deleteInvoicesByProject(id); } catch { /* noop */ }
   }
   return true;
 }
