@@ -17,6 +17,7 @@ import { Route as PriceIntelligenceRouteImport } from './routes/price-intelligen
 import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as IntegrationsRouteImport } from './routes/integrations'
+import { Route as HowToRouteImport } from './routes/how-to'
 import { Route as FinancialRouteImport } from './routes/financial'
 import { Route as DailyReportRouteImport } from './routes/daily-report'
 import { Route as CostedBoqRouteImport } from './routes/costed-boq'
@@ -78,6 +79,11 @@ const InvoicesRoute = InvoicesRouteImport.update({
 const IntegrationsRoute = IntegrationsRouteImport.update({
   id: '/integrations',
   path: '/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowToRoute = HowToRouteImport.update({
+  id: '/how-to',
+  path: '/how-to',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FinancialRoute = FinancialRouteImport.update({
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/costed-boq': typeof CostedBoqRoute
   '/daily-report': typeof DailyReportRoute
   '/financial': typeof FinancialRoute
+  '/how-to': typeof HowToRoute
   '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRoute
   '/planner': typeof PlannerRoute
@@ -239,6 +246,7 @@ export interface FileRoutesByTo {
   '/costed-boq': typeof CostedBoqRoute
   '/daily-report': typeof DailyReportRoute
   '/financial': typeof FinancialRoute
+  '/how-to': typeof HowToRoute
   '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRoute
   '/planner': typeof PlannerRoute
@@ -270,6 +278,7 @@ export interface FileRoutesById {
   '/costed-boq': typeof CostedBoqRoute
   '/daily-report': typeof DailyReportRoute
   '/financial': typeof FinancialRoute
+  '/how-to': typeof HowToRoute
   '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRoute
   '/planner': typeof PlannerRoute
@@ -304,6 +313,7 @@ export interface FileRouteTypes {
     | '/costed-boq'
     | '/daily-report'
     | '/financial'
+    | '/how-to'
     | '/integrations'
     | '/invoices'
     | '/planner'
@@ -336,6 +346,7 @@ export interface FileRouteTypes {
     | '/costed-boq'
     | '/daily-report'
     | '/financial'
+    | '/how-to'
     | '/integrations'
     | '/invoices'
     | '/planner'
@@ -366,6 +377,7 @@ export interface FileRouteTypes {
     | '/costed-boq'
     | '/daily-report'
     | '/financial'
+    | '/how-to'
     | '/integrations'
     | '/invoices'
     | '/planner'
@@ -399,6 +411,7 @@ export interface RootRouteChildren {
   CostedBoqRoute: typeof CostedBoqRoute
   DailyReportRoute: typeof DailyReportRoute
   FinancialRoute: typeof FinancialRoute
+  HowToRoute: typeof HowToRoute
   IntegrationsRoute: typeof IntegrationsRoute
   InvoicesRoute: typeof InvoicesRoute
   PlannerRoute: typeof PlannerRoute
@@ -467,6 +480,13 @@ declare module '@tanstack/react-router' {
       path: '/integrations'
       fullPath: '/integrations'
       preLoaderRoute: typeof IntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-to': {
+      id: '/how-to'
+      path: '/how-to'
+      fullPath: '/how-to'
+      preLoaderRoute: typeof HowToRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/financial': {
@@ -679,6 +699,7 @@ const rootRouteChildren: RootRouteChildren = {
   CostedBoqRoute: CostedBoqRoute,
   DailyReportRoute: DailyReportRoute,
   FinancialRoute: FinancialRoute,
+  HowToRoute: HowToRoute,
   IntegrationsRoute: IntegrationsRoute,
   InvoicesRoute: InvoicesRoute,
   PlannerRoute: PlannerRoute,
