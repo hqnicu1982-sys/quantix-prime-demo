@@ -7,7 +7,7 @@ import { useInvoices, type RegistryInvoice } from "@/lib/invoiceRegistry";
 import { useProjectVariations } from "@/lib/variations";
 import { useCan } from "@/lib/permissions";
 import { usePendingNotices, usePaymentCycle } from "@/lib/paymentCycle";
-import { ClipboardCheck, FileSignature, Truck, GitBranch, ArrowRight, Inbox, ShieldAlert, Banknote } from "lucide-react";
+import { ClipboardCheck, FileSignature, Truck, GitBranch, ArrowRight, Inbox, Banknote } from "lucide-react";
 
 /**
  * Approval inbox — surfaces every item the current user needs to act on,
