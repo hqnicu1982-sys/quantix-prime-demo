@@ -31,7 +31,11 @@ export type Capability =
   | "edit.variations"
   | "view.integrations"
   | "view.settings.labour"
-  | "edit.specification";   // upload/edit/delete system docs & notes
+  | "edit.specification"   // upload/edit/delete system docs & notes
+  | "view.payments"              // see Payments tab
+  | "create.payment.application" // subbie side: draft & submit AFP
+  | "issue.payment.notice"       // MC side: issue Payment Notice / Pay Less / Certificate
+  | "record.payment";            // mark certificate as paid / record receipt
 
 export const TIER_CAPS: Record<Tier, Capability[]> = {
   Admin: [
@@ -49,6 +53,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.integrations",
     "view.settings.labour",
     "edit.specification",
+    "view.payments", "create.payment.application", "issue.payment.notice", "record.payment",
   ],
   "Pro Control": [
     "view.financials", "view.financials.lite",
@@ -64,6 +69,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.integrations",
     "view.settings.labour",
     "edit.specification",
+    "view.payments", "create.payment.application", "issue.payment.notice",
   ],
   Pro: [
     "view.financials.lite",
@@ -77,6 +83,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.pwRates",
     "view.variations",
     "edit.specification",
+    "view.payments",
   ],
   "Site User": [
     "view.planner",
@@ -84,6 +91,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.team",
     "view.pwRates",
     "view.calloffs",
+    "view.payments",
   ],
   Operative: [
     "view.planner",

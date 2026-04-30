@@ -6,7 +6,8 @@ import { useLabourLogs, computeEntryCost } from "@/lib/laborLog";
 import { useInvoices, type RegistryInvoice } from "@/lib/invoiceRegistry";
 import { useProjectVariations } from "@/lib/variations";
 import { useCan } from "@/lib/permissions";
-import { ClipboardCheck, FileSignature, Truck, GitBranch, ArrowRight, Inbox } from "lucide-react";
+import { usePendingNotices, usePaymentCycle } from "@/lib/paymentCycle";
+import { ClipboardCheck, FileSignature, Truck, GitBranch, ArrowRight, Inbox, Banknote } from "lucide-react";
 
 /**
  * Approval inbox — surfaces every item the current user needs to act on,
@@ -21,13 +22,17 @@ export function ApprovalInboxCard() {
   const canApproveCalloffs = useCan("approve.calloffs");
   const canSignInvoices = useCan("sign.invoices");
   const canEditVariations = useCan("edit.variations");
+  const canIssuePaymentNotice = useCan("issue.payment.notice");
+  const canRecordPayment = useCan("record.payment");
 
   const data = useProjectData(projectId);
   const labourLogs = useLabourLogs(projectId);
   const invoices = useInvoices(projectId);
   const variations = useProjectVariations(projectId);
+  const pendingNotices = usePendingNotices(projectId, 7);
+  const paymentCycle = usePaymentCycle(projectId);
 
-  const anyCap = canApproveLabour || canApproveCalloffs || canSignInvoices || canEditVariations;
+  const anyCap = canApproveLabour || canApproveCalloffs || canSignInvoices || canEditVariations || canIssuePaymentNotice || canRecordPayment;
   if (!anyCap) return null;
 
   // Build sections for things the current user can act on
@@ -92,6 +97,45 @@ export function ApprovalInboxCard() {
       to: "/projects/$projectId/variations",
       params: { projectId },
     });
+  }
+
+  if (canIssuePaymentNotice && pendingNotices.length > 0) {
+    const overdue = pendingNotices.filter((a) => {
+      const d = new Date(a.dueDateForNotice); d.setHours(0, 0, 0, 0);
+      return d.getTime() < Date.now();
+    }).length;
+    sections.push({
+      key: "payment-notices",
+      show: true,
+      icon: <FileSignature className="h-4 w-4" />,
+      title: "Payment Notices to issue",
+      count: pendingNotices.length,
+      subtitle: overdue ? `${overdue} overdue · contract clock running` : `Soonest due ${pendingNotices[0].dueDateForNotice}`,
+      to: "/projects/$projectId/payments",
+      params: { projectId },
+    });
+  }
+
+  if (canRecordPayment) {
+    const dueCerts = paymentCycle.applications.filter(
+      (a) => a.status === "certified",
+    );
+    if (dueCerts.length > 0) {
+      const total = dueCerts.reduce((s, a) => {
+        const c = a.certificateId ? paymentCycle.certificates.find((x) => x.id === a.certificateId) : undefined;
+        return s + (c?.finalAmount ?? 0);
+      }, 0);
+      sections.push({
+        key: "payments-due",
+        show: true,
+        icon: <Banknote className="h-4 w-4" />,
+        title: "Certificates awaiting payment",
+        count: dueCerts.length,
+        subtitle: `£${(total / 1000).toFixed(0)}k due to record`,
+        to: "/projects/$projectId/payments",
+        params: { projectId },
+      });
+    }
   }
 
   const visible = sections.filter((s) => s.show);
