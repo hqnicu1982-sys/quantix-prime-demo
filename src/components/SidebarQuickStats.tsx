@@ -24,6 +24,7 @@ type UrgentTask = {
   severity: Severity;
   to: string;
   params?: Record<string, string>;
+  resolveLabel: string; // short page name where the user resolves it
 };
 
 const SEVERITY_STYLE: Record<Severity, { border: string; bg: string; iconBg: string; iconText: string }> = {
