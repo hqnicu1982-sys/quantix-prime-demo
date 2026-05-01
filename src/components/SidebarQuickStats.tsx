@@ -1,0 +1,307 @@
+import { Link } from "@tanstack/react-router";
+import {
+  ClipboardCheck, Receipt, Truck, GitBranch, Banknote, FileSignature,
+  CalendarClock, AlertTriangle, CheckCircle2, ChevronRight,
+} from "lucide-react";
+import { useProject } from "@/lib/ProjectContext";
+import { useLabourLogs, computeEntryCost } from "@/lib/laborLog";
+import { useInvoices } from "@/lib/invoiceRegistry";
+import { useProjectData } from "@/lib/projectData";
+import { useProjectVariations } from "@/lib/variations";
+import { useProjectTasks } from "@/lib/planner";
+import { usePendingNotices } from "@/lib/paymentCycle";
+import { useCurrentUser } from "@/lib/currentUser";
+import { useCan } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
+
+type Severity = "critical" | "warning" | "info";
+
+type UrgentTask = {
+  key: string;
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  meta: string;
+  severity: Severity;
+  to: string;
+  params?: Record<string, string>;
+};
+
+const SEVERITY_STYLE: Record<Severity, { border: string; bg: string; iconBg: string; iconText: string }> = {
+  critical: {
+    border: "border-[var(--red-500)]/30 hover:border-[var(--red-500)]/55",
+    bg: "bg-[var(--red-500)]/10 hover:bg-[var(--red-500)]/15",
+    iconBg: "bg-[var(--red-500)]/15",
+    iconText: "text-[var(--red-500)]",
+  },
+  warning: {
+    border: "border-amber-400/25 hover:border-amber-400/50",
+    bg: "bg-amber-400/10 hover:bg-amber-400/15",
+    iconBg: "bg-amber-400/15",
+    iconText: "text-amber-300",
+  },
+  info: {
+    border: "border-white/10 hover:border-white/25",
+    bg: "bg-white/5 hover:bg-white/10",
+    iconBg: "bg-white/10",
+    iconText: "text-white/70",
+  },
+};
+
+const SEV_RANK: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function daysUntil(iso: string): number {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const due = new Date(iso); due.setHours(0, 0, 0, 0);
+  return Math.round((due.getTime() - today.getTime()) / 86400000);
+}
+
+/**
+ * Sidebar footer: "Today's urgent tasks" — personalised by role.
+ * Each row is a single thing the current user must action today.
+ * Height auto-fits the number of urgents (sidebar grows / shrinks).
+ */
+export function SidebarQuickStats() {
+  const { current } = useProject();
+  const projectId = current.id;
+  const me = useCurrentUser();
+
+  const canApproveLabour = useCan("approve.labour");
+  const canApproveCalloffs = useCan("approve.calloffs");
+  const canSignInvoices = useCan("sign.invoices");
+  const canEditVariations = useCan("edit.variations");
+  const canIssueNotice = useCan("issue.payment.notice");
+  const canEditPlanner = useCan("edit.planner");
+  const canLogLabour = useCan("log.labour");
+  const canViewDailyReport = useCan("view.dailyReport");
+
+  const labourLogs = useLabourLogs(projectId);
+  const invoices = useInvoices(projectId);
+  const data = useProjectData(projectId);
+  const variations = useProjectVariations(projectId);
+  const tasks = useProjectTasks(projectId);
+  const pendingNotices = usePendingNotices(projectId, 7);
+
+  const today = todayISO();
+  const tasksByCrew = tasks.filter((t) => t.crewId === me.id);
+
+  const urgent: UrgentTask[] = [];
+
+  if (canApproveLabour) {
+    const pending = labourLogs.filter((l) => (l.status ?? "submitted") === "submitted");
+    if (pending.length > 0) {
+      const totalCost = pending.reduce((s, l) => s + computeEntryCost(l), 0);
+      urgent.push({
+        key: "appr-labour",
+        icon: ClipboardCheck,
+        title: `Approve ${pending.length} labour ${pending.length === 1 ? "entry" : "entries"}`,
+        meta: `£${totalCost.toFixed(0)} pending`,
+        severity: pending.length >= 3 ? "critical" : "warning",
+        to: "/daily-report",
+      });
+    }
+  }
+
+  if (canApproveCalloffs) {
+    const drafts = data.callOffs.filter((c) => c.status === "draft");
+    if (drafts.length > 0) {
+      urgent.push({
+        key: "appr-co",
+        icon: Truck,
+        title: `Approve ${drafts.length} call-off draft${drafts.length === 1 ? "" : "s"}`,
+        meta: `${drafts.reduce((s, c) => s + c.lineIds.length, 0)} lines waiting`,
+        severity: "warning",
+        to: "/projects/$projectId/calloffs",
+        params: { projectId },
+      });
+    }
+  }
+
+  if (canSignInvoices) {
+    const overdue = invoices.filter((i) => i.status === "overdue");
+    if (overdue.length > 0) {
+      urgent.push({
+        key: "inv-overdue",
+        icon: Receipt,
+        title: `${overdue.length} invoice${overdue.length === 1 ? "" : "s"} overdue`,
+        meta: `£${overdue.reduce((s, i) => s + i.amount, 0).toLocaleString("en-GB")}`,
+        severity: "critical",
+        to: "/invoices",
+      });
+    }
+    const outstanding = invoices.filter((i) => i.status === "outstanding").length;
+    if (outstanding > 0) {
+      urgent.push({
+        key: "inv-out",
+        icon: FileSignature,
+        title: `Sign ${outstanding} outstanding invoice${outstanding === 1 ? "" : "s"}`,
+        meta: "Action needed",
+        severity: "warning",
+        to: "/invoices",
+      });
+    }
+  }
+
+  if (canIssueNotice && pendingNotices.length > 0) {
+    const overdueNotices = pendingNotices.filter((a) => daysUntil(a.dueDateForNotice) <= 0).length;
+    urgent.push({
+      key: "pmt-notice",
+      icon: Banknote,
+      title: overdueNotices > 0
+        ? `${overdueNotices} payment notice${overdueNotices === 1 ? "" : "s"} overdue`
+        : `${pendingNotices.length} payment notice${pendingNotices.length === 1 ? "" : "s"} due`,
+      meta: overdueNotices > 0 ? "Statutory deadline passed" : "Within 7 days",
+      severity: overdueNotices > 0 ? "critical" : "warning",
+      to: "/projects/$projectId/payments",
+      params: { projectId },
+    });
+  }
+
+  if (canEditVariations) {
+    const drafts = variations.filter((v) => v.status === "draft").length;
+    if (drafts > 0) {
+      urgent.push({
+        key: "var-draft",
+        icon: GitBranch,
+        title: `Submit ${drafts} variation draft${drafts === 1 ? "" : "s"}`,
+        meta: "Awaiting your action",
+        severity: "info",
+        to: "/projects/$projectId/variations",
+        params: { projectId },
+      });
+    }
+  }
+
+  if (canEditPlanner || tasksByCrew.length > 0) {
+    const blocked = tasksByCrew.filter((t) => t.status === "blocked");
+    if (blocked.length > 0) {
+      urgent.push({
+        key: "task-blocked",
+        icon: AlertTriangle,
+        title: `${blocked.length} of your task${blocked.length === 1 ? "" : "s"} blocked`,
+        meta: blocked[0].title.slice(0, 32),
+        severity: "critical",
+        to: "/planner",
+      });
+    }
+    const behind = tasksByCrew.filter((t) => t.status === "behind");
+    if (behind.length > 0) {
+      urgent.push({
+        key: "task-behind",
+        icon: CalendarClock,
+        title: `${behind.length} task${behind.length === 1 ? "" : "s"} behind schedule`,
+        meta: behind[0].title.slice(0, 32),
+        severity: "warning",
+        to: "/planner",
+      });
+    }
+    const startingToday = tasksByCrew.filter(
+      (t) => t.start <= today && t.end >= today && (t.status === "starting" || t.status === "scheduled"),
+    );
+    if (startingToday.length > 0) {
+      urgent.push({
+        key: "task-today",
+        icon: CalendarClock,
+        title: `${startingToday.length} task${startingToday.length === 1 ? "" : "s"} active today`,
+        meta: startingToday[0].title.slice(0, 32),
+        severity: "info",
+        to: "/planner",
+      });
+    }
+  }
+
+  if (canLogLabour && !canApproveLabour) {
+    const myToday = labourLogs.filter((l) => l.memberId === me.id && l.date === today);
+    if (myToday.length === 0 && canViewDailyReport) {
+      urgent.push({
+        key: "log-hours",
+        icon: ClipboardCheck,
+        title: "Log your hours for today",
+        meta: "Daily report not submitted",
+        severity: "warning",
+        to: "/daily-report",
+      });
+    }
+  }
+
+  urgent.sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity]);
+  const visible = urgent.slice(0, 6);
+  const criticalCount = urgent.filter((u) => u.severity === "critical").length;
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between px-1 pb-0.5">
+        <p className="text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/50">
+          Today's urgent tasks
+        </p>
+        {urgent.length > 0 && (
+          <span
+            className={cn(
+              "rounded-full px-1.5 py-px text-[9px] font-bold tabular-nums",
+              criticalCount > 0
+                ? "bg-[var(--red-500)]/20 text-[var(--red-500)]"
+                : "bg-white/10 text-white/70",
+            )}
+          >
+            {urgent.length}
+          </span>
+        )}
+      </div>
+
+      {visible.length === 0 ? (
+        <div className="flex items-center gap-2 rounded-md border border-emerald-400/20 bg-emerald-400/5 px-2.5 py-2">
+          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+          <p className="text-[10.5px] leading-tight text-white/70">
+            All clear — nothing urgent right now.
+          </p>
+        </div>
+      ) : (
+        <ul className="space-y-1">
+          {visible.map((u) => {
+            const s = SEVERITY_STYLE[u.severity];
+            const Icon = u.icon;
+            return (
+              <li key={u.key}>
+                <Link
+                  to={u.to as "/"}
+                  params={u.params as never}
+                  className={cn(
+                    "group flex items-start gap-2 rounded-md border px-2 py-1.5 transition-colors",
+                    s.border,
+                    s.bg,
+                  )}
+                >
+                  <div className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded", s.iconBg)}>
+                    <Icon className={cn("h-3 w-3", s.iconText)} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[11px] font-semibold leading-tight text-white">
+                      {u.title}
+                    </p>
+                    <p className="truncate text-[10px] leading-tight text-white/50">
+                      {u.meta}
+                    </p>
+                  </div>
+                  <ChevronRight className="mt-1 h-3 w-3 shrink-0 text-white/30 transition-colors group-hover:text-white/70" />
+                </Link>
+              </li>
+            );
+          })}
+          {urgent.length > visible.length && (
+            <li>
+              <Link
+                to="/"
+                className="flex items-center justify-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-white/50 hover:text-white"
+              >
+                +{urgent.length - visible.length} more · open dashboard
+              </Link>
+            </li>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
