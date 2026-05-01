@@ -53,6 +53,27 @@ const SEVERITY_STYLE: Record<Severity, { border: string; bg: string; iconBg: str
 
 const SEV_RANK: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
 
+const SEV_GROUP_LABEL: Record<Severity, string> = {
+  critical: "Critical · act now",
+  warning: "Warning · this week",
+  info: "Info · for review",
+};
+
+const SEV_GROUP_TONE: Record<Severity, string> = {
+  critical: "text-[var(--red-500)]",
+  warning: "text-amber-300",
+  info: "text-white/45",
+};
+
+function dueBadge(days: number): { label: string; tone: string } | null {
+  if (!Number.isFinite(days)) return null;
+  if (days < 0) return { label: `${Math.abs(days)}d late`, tone: "bg-[var(--red-500)]/20 text-[var(--red-500)]" };
+  if (days === 0) return { label: "Today", tone: "bg-amber-400/20 text-amber-200" };
+  if (days === 1) return { label: "Tomorrow", tone: "bg-white/10 text-white/70" };
+  if (days <= 7) return { label: `${days}d`, tone: "bg-white/10 text-white/65" };
+  return null;
+}
+
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
