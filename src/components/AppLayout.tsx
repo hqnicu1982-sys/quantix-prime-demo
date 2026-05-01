@@ -13,7 +13,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { ProjectProvider, useProject } from "@/lib/ProjectContext";
 import { cn } from "@/lib/utils";
 import { CompareTray } from "@/components/CompareTray";
-import { CurrentUserSwitcher } from "@/components/auth/CurrentUserSwitcher";
+import { SidebarQuickStats } from "@/components/SidebarQuickStats";
+import { HeaderUserMenu } from "@/components/auth/HeaderUserMenu";
 import { useCurrentTier, useCurrentUser } from "@/lib/currentUser";
 import { can, type Capability } from "@/lib/permissions";
 import { useCan } from "@/lib/permissions";
@@ -207,7 +208,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </div>
       <div className="border-t border-white/10 p-3">
-        <CurrentUserSwitcher />
+        <SidebarQuickStats />
       </div>
     </>
   );
@@ -437,7 +438,7 @@ function LayoutInner() {
                 <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-500)]" />
                 Business Preview
               </span>
-              {!session && (
+              {!session ? (
                 <>
                   <Link
                     to="/login"
@@ -453,6 +454,8 @@ function LayoutInner() {
                     <UserPlus className="h-3.5 w-3.5" /> Sign up
                   </Link>
                 </>
+              ) : (
+                <HeaderUserMenu />
               )}
               <button className="rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]" aria-label="Search">
                 <Search className="h-4 w-4" />
