@@ -295,8 +295,11 @@ export function SidebarQuickStats() {
                     <p className="truncate text-[10px] leading-tight text-white/50">
                       {u.meta}
                     </p>
+                    <p className="mt-0.5 flex items-center gap-0.5 text-[9.5px] font-medium uppercase tracking-wider text-white/35 transition-colors group-hover:text-white/65">
+                      Resolve in {u.resolveLabel}
+                      <ChevronRight className="h-2.5 w-2.5" />
+                    </p>
                   </div>
-                  <ChevronRight className="mt-1 h-3 w-3 shrink-0 text-white/30 transition-colors group-hover:text-white/70" />
                 </Link>
               </li>
             );
