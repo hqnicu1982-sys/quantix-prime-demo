@@ -318,11 +318,25 @@ export function SidebarQuickStats() {
         </div>
       ) : (
         <ul className="space-y-1">
-          {visible.map((u) => {
+          {visible.map((u, idx) => {
             const s = SEVERITY_STYLE[u.severity];
             const Icon = u.icon;
+            const prevSev = idx > 0 ? visible[idx - 1].severity : null;
+            const showHeader = u.severity !== prevSev;
+            const badge = dueBadge(u.dueInDays);
             return (
               <li key={u.key}>
+                {showHeader && (
+                  <p
+                    className={cn(
+                      "px-1 pb-0.5 text-[8.5px] font-bold uppercase tracking-[0.14em]",
+                      idx > 0 && "pt-1.5",
+                      SEV_GROUP_TONE[u.severity],
+                    )}
+                  >
+                    {SEV_GROUP_LABEL[u.severity]}
+                  </p>
+                )}
                 <Link
                   to={u.to as "/"}
                   params={u.params as never}
@@ -336,9 +350,16 @@ export function SidebarQuickStats() {
                     <Icon className={cn("h-3 w-3", s.iconText)} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[11px] font-semibold leading-tight text-white">
-                      {u.title}
-                    </p>
+                    <div className="flex items-start gap-1.5">
+                      <p className="min-w-0 flex-1 truncate text-[11px] font-semibold leading-tight text-white">
+                        {u.title}
+                      </p>
+                      {badge && (
+                        <span className={cn("shrink-0 rounded px-1 py-px text-[8.5px] font-bold uppercase tracking-wider tabular-nums", badge.tone)}>
+                          {badge.label}
+                        </span>
+                      )}
+                    </div>
                     <p className="truncate text-[10px] leading-tight text-white/50">
                       {u.meta}
                     </p>
