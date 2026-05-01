@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Calendar, Package, ClipboardList, FileSpreadsheet, Plug, Users2,
   Menu, X, Bell, Search, Settings, HardHat, LineChart, Check, FolderKanban, Library,
   Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Hammer, Sun, Moon,
-  ChevronDown, GitBranch, BookOpen, HelpCircle,
+  ChevronDown, GitBranch, BookOpen, HelpCircle, LogIn, UserPlus,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -19,6 +19,7 @@ import { can, type Capability } from "@/lib/permissions";
 import { useCan } from "@/lib/permissions";
 import { useAssignments } from "@/lib/labour";
 import { useRecentProjects } from "@/lib/recentProjects";
+import { useSession, isPublicPath } from "@/lib/authSession";
 
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean; params?: Record<string, string>; requires?: Capability };
 type NavGroup = { label: string; persona?: "site" | "commercial"; items: NavItem[] };
@@ -351,15 +352,25 @@ function LayoutInner() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const session = useSession();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Route guard: any non-public route requires a session.
+  useEffect(() => {
+    if (!session && !isPublicPath(location.pathname)) {
+      navigate({ to: "/login", search: { redirect: location.pathname } });
+    }
+  }, [session, location.pathname, navigate]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!localStorage.getItem("qp-welcome-seen-v3")) setWelcomeOpen(true);
+    if (session && !localStorage.getItem("qp-welcome-seen-v3")) setWelcomeOpen(true);
     const stored = localStorage.getItem("qp-theme") as "light" | "dark" | null;
     const initial = stored ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     setTheme(initial);
     document.documentElement.classList.toggle("dark", initial === "dark");
-  }, []);
+  }, [session]);
 
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
@@ -367,6 +378,22 @@ function LayoutInner() {
     document.documentElement.classList.toggle("dark", next === "dark");
     if (typeof window !== "undefined") localStorage.setItem("qp-theme", next);
   };
+
+  // Public pages (/login, /signup) render without the app chrome.
+  if (!session && isPublicPath(location.pathname) &&
+      (location.pathname === "/login" || location.pathname === "/signup")) {
+    return <Outlet />;
+  }
+
+  // While redirecting an unauthenticated user away from a protected route,
+  // render nothing to avoid flashing the dashboard.
+  if (!session && !isPublicPath(location.pathname)) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="h-8 w-8 animate-pulse rounded-full bg-[var(--ink-200)]" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-foreground">
@@ -410,6 +437,22 @@ function LayoutInner() {
                 <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-500)]" />
                 Business Preview
               </span>
+              {!session && (
+                <>
+                  <Link
+                    to="/login"
+                    className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-[var(--ink-200)] px-2.5 py-1.5 text-[12px] font-medium text-[var(--ink-700)] hover:bg-[var(--ink-50)]"
+                  >
+                    <LogIn className="h-3.5 w-3.5" /> Sign in
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="hidden sm:inline-flex items-center gap-1.5 rounded-md bg-[var(--navy-950)] px-2.5 py-1.5 text-[12px] font-medium text-white hover:opacity-90"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" /> Sign up
+                  </Link>
+                </>
+              )}
               <button className="rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]" aria-label="Search">
                 <Search className="h-4 w-4" />
               </button>

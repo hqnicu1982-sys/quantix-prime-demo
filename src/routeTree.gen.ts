@@ -11,10 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VariationsRouteImport } from './routes/variations'
 import { Route as TeamRouteImport } from './routes/team'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ReadinessRouteImport } from './routes/readiness'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as PriceIntelligenceRouteImport } from './routes/price-intelligence'
 import { Route as PlannerRouteImport } from './routes/planner'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as IntegrationsRouteImport } from './routes/integrations'
 import { Route as HowToRouteImport } from './routes/how-to'
@@ -51,6 +53,11 @@ const TeamRoute = TeamRouteImport.update({
   path: '/team',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReadinessRoute = ReadinessRouteImport.update({
   id: '/readiness',
   path: '/readiness',
@@ -69,6 +76,11 @@ const PriceIntelligenceRoute = PriceIntelligenceRouteImport.update({
 const PlannerRoute = PlannerRouteImport.update({
   id: '/planner',
   path: '/planner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvoicesRoute = InvoicesRouteImport.update({
@@ -216,10 +228,12 @@ export interface FileRoutesByFullPath {
   '/how-to': typeof HowToRoute
   '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRoute
+  '/login': typeof LoginRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
+  '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
   '/variations': typeof VariationsRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
@@ -249,9 +263,11 @@ export interface FileRoutesByTo {
   '/how-to': typeof HowToRoute
   '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRoute
+  '/login': typeof LoginRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
   '/readiness': typeof ReadinessRoute
+  '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
   '/variations': typeof VariationsRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
@@ -281,10 +297,12 @@ export interface FileRoutesById {
   '/how-to': typeof HowToRoute
   '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRoute
+  '/login': typeof LoginRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
+  '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
   '/variations': typeof VariationsRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
@@ -316,10 +334,12 @@ export interface FileRouteTypes {
     | '/how-to'
     | '/integrations'
     | '/invoices'
+    | '/login'
     | '/planner'
     | '/price-intelligence'
     | '/projects'
     | '/readiness'
+    | '/signup'
     | '/team'
     | '/variations'
     | '/price-lists/upload'
@@ -349,9 +369,11 @@ export interface FileRouteTypes {
     | '/how-to'
     | '/integrations'
     | '/invoices'
+    | '/login'
     | '/planner'
     | '/price-intelligence'
     | '/readiness'
+    | '/signup'
     | '/team'
     | '/variations'
     | '/price-lists/upload'
@@ -380,10 +402,12 @@ export interface FileRouteTypes {
     | '/how-to'
     | '/integrations'
     | '/invoices'
+    | '/login'
     | '/planner'
     | '/price-intelligence'
     | '/projects'
     | '/readiness'
+    | '/signup'
     | '/team'
     | '/variations'
     | '/price-lists/upload'
@@ -414,10 +438,12 @@ export interface RootRouteChildren {
   HowToRoute: typeof HowToRoute
   IntegrationsRoute: typeof IntegrationsRoute
   InvoicesRoute: typeof InvoicesRoute
+  LoginRoute: typeof LoginRoute
   PlannerRoute: typeof PlannerRoute
   PriceIntelligenceRoute: typeof PriceIntelligenceRoute
   ProjectsRoute: typeof ProjectsRouteWithChildren
   ReadinessRoute: typeof ReadinessRoute
+  SignupRoute: typeof SignupRoute
   TeamRoute: typeof TeamRoute
   VariationsRoute: typeof VariationsRoute
   PriceListsUploadRoute: typeof PriceListsUploadRoute
@@ -438,6 +464,13 @@ declare module '@tanstack/react-router' {
       path: '/team'
       fullPath: '/team'
       preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/readiness': {
@@ -466,6 +499,13 @@ declare module '@tanstack/react-router' {
       path: '/planner'
       fullPath: '/planner'
       preLoaderRoute: typeof PlannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invoices': {
@@ -702,10 +742,12 @@ const rootRouteChildren: RootRouteChildren = {
   HowToRoute: HowToRoute,
   IntegrationsRoute: IntegrationsRoute,
   InvoicesRoute: InvoicesRoute,
+  LoginRoute: LoginRoute,
   PlannerRoute: PlannerRoute,
   PriceIntelligenceRoute: PriceIntelligenceRoute,
   ProjectsRoute: ProjectsRouteWithChildren,
   ReadinessRoute: ReadinessRoute,
+  SignupRoute: SignupRoute,
   TeamRoute: TeamRoute,
   VariationsRoute: VariationsRoute,
   PriceListsUploadRoute: PriceListsUploadRoute,
