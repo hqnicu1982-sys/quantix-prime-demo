@@ -441,6 +441,7 @@ function LayoutInner() {
                 <>
                   <Link
                     to="/login"
+                    search={{ redirect: undefined }}
                     className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-[var(--ink-200)] px-2.5 py-1.5 text-[12px] font-medium text-[var(--ink-700)] hover:bg-[var(--ink-50)]"
                   >
                     <LogIn className="h-3.5 w-3.5" /> Sign in
