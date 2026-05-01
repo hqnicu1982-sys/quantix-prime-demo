@@ -13,7 +13,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { ProjectProvider, useProject } from "@/lib/ProjectContext";
 import { cn } from "@/lib/utils";
 import { CompareTray } from "@/components/CompareTray";
-import { CurrentUserSwitcher } from "@/components/auth/CurrentUserSwitcher";
+import { SidebarQuickStats } from "@/components/SidebarQuickStats";
+import { HeaderUserMenu } from "@/components/auth/HeaderUserMenu";
 import { useCurrentTier, useCurrentUser } from "@/lib/currentUser";
 import { can, type Capability } from "@/lib/permissions";
 import { useCan } from "@/lib/permissions";
@@ -207,7 +208,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </div>
       <div className="border-t border-white/10 p-3">
-        <CurrentUserSwitcher />
+        <SidebarQuickStats />
       </div>
     </>
   );
