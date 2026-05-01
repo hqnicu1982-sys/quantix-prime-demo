@@ -98,6 +98,8 @@ export function SidebarQuickStats() {
     const pending = labourLogs.filter((l) => (l.status ?? "submitted") === "submitted");
     if (pending.length > 0) {
       const totalCost = pending.reduce((s, l) => s + computeEntryCost(l), 0);
+      // Oldest pending entry = most overdue
+      const oldestDays = Math.min(...pending.map((l) => daysUntil(l.date)));
       urgent.push({
         key: "appr-labour",
         resolveLabel: "Daily Report",
@@ -106,6 +108,7 @@ export function SidebarQuickStats() {
         meta: `£${totalCost.toFixed(0)} pending`,
         severity: pending.length >= 3 ? "critical" : "warning",
         to: "/daily-report",
+        dueInDays: oldestDays,
       });
     }
   }
@@ -122,6 +125,7 @@ export function SidebarQuickStats() {
         severity: "warning",
         to: "/projects/$projectId/calloffs",
         params: { projectId },
+        dueInDays: 1, // soft-due tomorrow
       });
     }
   }
@@ -129,6 +133,7 @@ export function SidebarQuickStats() {
   if (canSignInvoices) {
     const overdue = invoices.filter((i) => i.status === "overdue");
     if (overdue.length > 0) {
+      const mostOverdue = Math.min(...overdue.map((i) => daysUntil(i.due)));
       urgent.push({
         key: "inv-overdue",
         resolveLabel: "Invoices",
@@ -137,24 +142,29 @@ export function SidebarQuickStats() {
         meta: `£${overdue.reduce((s, i) => s + i.amount, 0).toLocaleString("en-GB")}`,
         severity: "critical",
         to: "/invoices",
+        dueInDays: mostOverdue,
       });
     }
-    const outstanding = invoices.filter((i) => i.status === "outstanding").length;
-    if (outstanding > 0) {
+    const outstandingList = invoices.filter((i) => i.status === "outstanding");
+    if (outstandingList.length > 0) {
+      const soonest = Math.min(...outstandingList.map((i) => daysUntil(i.due)));
       urgent.push({
         key: "inv-out",
         resolveLabel: "Invoices",
         icon: FileSignature,
-        title: `Sign ${outstanding} outstanding invoice${outstanding === 1 ? "" : "s"}`,
-        meta: "Action needed",
+        title: `Sign ${outstandingList.length} outstanding invoice${outstandingList.length === 1 ? "" : "s"}`,
+        meta: soonest <= 0 ? "Due today" : `Next due in ${soonest}d`,
         severity: "warning",
         to: "/invoices",
+        dueInDays: soonest,
       });
     }
   }
 
   if (canIssueNotice && pendingNotices.length > 0) {
-    const overdueNotices = pendingNotices.filter((a) => daysUntil(a.dueDateForNotice) <= 0).length;
+    const noticeDays = pendingNotices.map((a) => daysUntil(a.dueDateForNotice));
+    const overdueNotices = noticeDays.filter((d) => d <= 0).length;
+    const soonestNotice = Math.min(...noticeDays);
     urgent.push({
       key: "pmt-notice",
       resolveLabel: "Payments",
@@ -166,6 +176,7 @@ export function SidebarQuickStats() {
       severity: overdueNotices > 0 ? "critical" : "warning",
       to: "/projects/$projectId/payments",
       params: { projectId },
+      dueInDays: soonestNotice,
     });
   }
 
@@ -181,6 +192,7 @@ export function SidebarQuickStats() {
         severity: "info",
         to: "/projects/$projectId/variations",
         params: { projectId },
+        dueInDays: 7, // soft window
       });
     }
   }
@@ -188,6 +200,7 @@ export function SidebarQuickStats() {
   if (canEditPlanner || tasksByCrew.length > 0) {
     const blocked = tasksByCrew.filter((t) => t.status === "blocked");
     if (blocked.length > 0) {
+      const oldestStart = Math.min(...blocked.map((t) => daysUntil(t.start)));
       urgent.push({
         key: "task-blocked",
         resolveLabel: "Planner",
@@ -196,10 +209,12 @@ export function SidebarQuickStats() {
         meta: blocked[0].title.slice(0, 32),
         severity: "critical",
         to: "/planner",
+        dueInDays: oldestStart,
       });
     }
     const behind = tasksByCrew.filter((t) => t.status === "behind");
     if (behind.length > 0) {
+      const earliestEnd = Math.min(...behind.map((t) => daysUntil(t.end)));
       urgent.push({
         key: "task-behind",
         resolveLabel: "Planner",
@@ -208,6 +223,7 @@ export function SidebarQuickStats() {
         meta: behind[0].title.slice(0, 32),
         severity: "warning",
         to: "/planner",
+        dueInDays: earliestEnd,
       });
     }
     const startingToday = tasksByCrew.filter(
@@ -222,6 +238,7 @@ export function SidebarQuickStats() {
         meta: startingToday[0].title.slice(0, 32),
         severity: "info",
         to: "/planner",
+        dueInDays: 0,
       });
     }
   }
@@ -237,11 +254,17 @@ export function SidebarQuickStats() {
         meta: "Daily report not submitted",
         severity: "warning",
         to: "/daily-report",
+        dueInDays: 0,
       });
     }
   }
 
-  urgent.sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity]);
+  // Sort by severity first, then by due-date (most overdue first within group)
+  urgent.sort((a, b) => {
+    const sev = SEV_RANK[a.severity] - SEV_RANK[b.severity];
+    if (sev !== 0) return sev;
+    return a.dueInDays - b.dueInDays;
+  });
   const visible = urgent.slice(0, 6);
   const criticalCount = urgent.filter((u) => u.severity === "critical").length;
 
