@@ -25,6 +25,9 @@ type UrgentTask = {
   to: string;
   params?: Record<string, string>;
   resolveLabel: string; // short page name where the user resolves it
+  /** Lower = more urgent. Negative = already overdue (days past due).
+   *  Used as a tiebreaker within the same severity bucket. */
+  dueInDays: number;
 };
 
 const SEVERITY_STYLE: Record<Severity, { border: string; bg: string; iconBg: string; iconText: string }> = {
@@ -49,6 +52,27 @@ const SEVERITY_STYLE: Record<Severity, { border: string; bg: string; iconBg: str
 };
 
 const SEV_RANK: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
+
+const SEV_GROUP_LABEL: Record<Severity, string> = {
+  critical: "Critical · act now",
+  warning: "Warning · this week",
+  info: "Info · for review",
+};
+
+const SEV_GROUP_TONE: Record<Severity, string> = {
+  critical: "text-[var(--red-500)]",
+  warning: "text-amber-300",
+  info: "text-white/45",
+};
+
+function dueBadge(days: number): { label: string; tone: string } | null {
+  if (!Number.isFinite(days)) return null;
+  if (days < 0) return { label: `${Math.abs(days)}d late`, tone: "bg-[var(--red-500)]/20 text-[var(--red-500)]" };
+  if (days === 0) return { label: "Today", tone: "bg-amber-400/20 text-amber-200" };
+  if (days === 1) return { label: "Tomorrow", tone: "bg-white/10 text-white/70" };
+  if (days <= 7) return { label: `${days}d`, tone: "bg-white/10 text-white/65" };
+  return null;
+}
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -95,6 +119,8 @@ export function SidebarQuickStats() {
     const pending = labourLogs.filter((l) => (l.status ?? "submitted") === "submitted");
     if (pending.length > 0) {
       const totalCost = pending.reduce((s, l) => s + computeEntryCost(l), 0);
+      // Oldest pending entry = most overdue
+      const oldestDays = Math.min(...pending.map((l) => daysUntil(l.date)));
       urgent.push({
         key: "appr-labour",
         resolveLabel: "Daily Report",
@@ -103,6 +129,7 @@ export function SidebarQuickStats() {
         meta: `£${totalCost.toFixed(0)} pending`,
         severity: pending.length >= 3 ? "critical" : "warning",
         to: "/daily-report",
+        dueInDays: oldestDays,
       });
     }
   }
@@ -119,6 +146,7 @@ export function SidebarQuickStats() {
         severity: "warning",
         to: "/projects/$projectId/calloffs",
         params: { projectId },
+        dueInDays: 1, // soft-due tomorrow
       });
     }
   }
@@ -126,6 +154,7 @@ export function SidebarQuickStats() {
   if (canSignInvoices) {
     const overdue = invoices.filter((i) => i.status === "overdue");
     if (overdue.length > 0) {
+      const mostOverdue = Math.min(...overdue.map((i) => daysUntil(i.due)));
       urgent.push({
         key: "inv-overdue",
         resolveLabel: "Invoices",
@@ -134,24 +163,29 @@ export function SidebarQuickStats() {
         meta: `£${overdue.reduce((s, i) => s + i.amount, 0).toLocaleString("en-GB")}`,
         severity: "critical",
         to: "/invoices",
+        dueInDays: mostOverdue,
       });
     }
-    const outstanding = invoices.filter((i) => i.status === "outstanding").length;
-    if (outstanding > 0) {
+    const outstandingList = invoices.filter((i) => i.status === "outstanding");
+    if (outstandingList.length > 0) {
+      const soonest = Math.min(...outstandingList.map((i) => daysUntil(i.due)));
       urgent.push({
         key: "inv-out",
         resolveLabel: "Invoices",
         icon: FileSignature,
-        title: `Sign ${outstanding} outstanding invoice${outstanding === 1 ? "" : "s"}`,
-        meta: "Action needed",
+        title: `Sign ${outstandingList.length} outstanding invoice${outstandingList.length === 1 ? "" : "s"}`,
+        meta: soonest <= 0 ? "Due today" : `Next due in ${soonest}d`,
         severity: "warning",
         to: "/invoices",
+        dueInDays: soonest,
       });
     }
   }
 
   if (canIssueNotice && pendingNotices.length > 0) {
-    const overdueNotices = pendingNotices.filter((a) => daysUntil(a.dueDateForNotice) <= 0).length;
+    const noticeDays = pendingNotices.map((a) => daysUntil(a.dueDateForNotice));
+    const overdueNotices = noticeDays.filter((d) => d <= 0).length;
+    const soonestNotice = Math.min(...noticeDays);
     urgent.push({
       key: "pmt-notice",
       resolveLabel: "Payments",
@@ -163,6 +197,7 @@ export function SidebarQuickStats() {
       severity: overdueNotices > 0 ? "critical" : "warning",
       to: "/projects/$projectId/payments",
       params: { projectId },
+      dueInDays: soonestNotice,
     });
   }
 
@@ -178,6 +213,7 @@ export function SidebarQuickStats() {
         severity: "info",
         to: "/projects/$projectId/variations",
         params: { projectId },
+        dueInDays: 7, // soft window
       });
     }
   }
@@ -185,6 +221,7 @@ export function SidebarQuickStats() {
   if (canEditPlanner || tasksByCrew.length > 0) {
     const blocked = tasksByCrew.filter((t) => t.status === "blocked");
     if (blocked.length > 0) {
+      const oldestStart = Math.min(...blocked.map((t) => daysUntil(t.start)));
       urgent.push({
         key: "task-blocked",
         resolveLabel: "Planner",
@@ -193,10 +230,12 @@ export function SidebarQuickStats() {
         meta: blocked[0].title.slice(0, 32),
         severity: "critical",
         to: "/planner",
+        dueInDays: oldestStart,
       });
     }
     const behind = tasksByCrew.filter((t) => t.status === "behind");
     if (behind.length > 0) {
+      const earliestEnd = Math.min(...behind.map((t) => daysUntil(t.end)));
       urgent.push({
         key: "task-behind",
         resolveLabel: "Planner",
@@ -205,6 +244,7 @@ export function SidebarQuickStats() {
         meta: behind[0].title.slice(0, 32),
         severity: "warning",
         to: "/planner",
+        dueInDays: earliestEnd,
       });
     }
     const startingToday = tasksByCrew.filter(
@@ -219,6 +259,7 @@ export function SidebarQuickStats() {
         meta: startingToday[0].title.slice(0, 32),
         severity: "info",
         to: "/planner",
+        dueInDays: 0,
       });
     }
   }
@@ -234,11 +275,17 @@ export function SidebarQuickStats() {
         meta: "Daily report not submitted",
         severity: "warning",
         to: "/daily-report",
+        dueInDays: 0,
       });
     }
   }
 
-  urgent.sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity]);
+  // Sort by severity first, then by due-date (most overdue first within group)
+  urgent.sort((a, b) => {
+    const sev = SEV_RANK[a.severity] - SEV_RANK[b.severity];
+    if (sev !== 0) return sev;
+    return a.dueInDays - b.dueInDays;
+  });
   const visible = urgent.slice(0, 6);
   const criticalCount = urgent.filter((u) => u.severity === "critical").length;
 
@@ -271,11 +318,25 @@ export function SidebarQuickStats() {
         </div>
       ) : (
         <ul className="space-y-1">
-          {visible.map((u) => {
+          {visible.map((u, idx) => {
             const s = SEVERITY_STYLE[u.severity];
             const Icon = u.icon;
+            const prevSev = idx > 0 ? visible[idx - 1].severity : null;
+            const showHeader = u.severity !== prevSev;
+            const badge = dueBadge(u.dueInDays);
             return (
               <li key={u.key}>
+                {showHeader && (
+                  <p
+                    className={cn(
+                      "px-1 pb-0.5 text-[8.5px] font-bold uppercase tracking-[0.14em]",
+                      idx > 0 && "pt-1.5",
+                      SEV_GROUP_TONE[u.severity],
+                    )}
+                  >
+                    {SEV_GROUP_LABEL[u.severity]}
+                  </p>
+                )}
                 <Link
                   to={u.to as "/"}
                   params={u.params as never}
@@ -289,9 +350,16 @@ export function SidebarQuickStats() {
                     <Icon className={cn("h-3 w-3", s.iconText)} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[11px] font-semibold leading-tight text-white">
-                      {u.title}
-                    </p>
+                    <div className="flex items-start gap-1.5">
+                      <p className="min-w-0 flex-1 truncate text-[11px] font-semibold leading-tight text-white">
+                        {u.title}
+                      </p>
+                      {badge && (
+                        <span className={cn("shrink-0 rounded px-1 py-px text-[8.5px] font-bold uppercase tracking-wider tabular-nums", badge.tone)}>
+                          {badge.label}
+                        </span>
+                      )}
+                    </div>
                     <p className="truncate text-[10px] leading-tight text-white/50">
                       {u.meta}
                     </p>
