@@ -25,6 +25,9 @@ type UrgentTask = {
   to: string;
   params?: Record<string, string>;
   resolveLabel: string; // short page name where the user resolves it
+  /** Lower = more urgent. Negative = already overdue (days past due).
+   *  Used as a tiebreaker within the same severity bucket. */
+  dueInDays: number;
 };
 
 const SEVERITY_STYLE: Record<Severity, { border: string; bg: string; iconBg: string; iconText: string }> = {
