@@ -82,7 +82,7 @@ function SignupPage() {
 
           <p className="mt-5 text-center text-[12.5px] text-white/60">
             Already have an account?{" "}
-            <Link to="/login" className="font-semibold text-white hover:text-[var(--accent-500)]">Sign in</Link>
+            <Link to="/login" search={{ redirect: undefined }} className="font-semibold text-white hover:text-[var(--accent-500)]">Sign in</Link>
           </p>
         </div>
         <p className="mt-4 text-center text-[11.5px] text-white/40">
