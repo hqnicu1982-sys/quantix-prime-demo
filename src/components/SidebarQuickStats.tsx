@@ -97,6 +97,7 @@ export function SidebarQuickStats() {
       const totalCost = pending.reduce((s, l) => s + computeEntryCost(l), 0);
       urgent.push({
         key: "appr-labour",
+        resolveLabel: "Daily Report",
         icon: ClipboardCheck,
         title: `Approve ${pending.length} labour ${pending.length === 1 ? "entry" : "entries"}`,
         meta: `£${totalCost.toFixed(0)} pending`,
@@ -111,6 +112,7 @@ export function SidebarQuickStats() {
     if (drafts.length > 0) {
       urgent.push({
         key: "appr-co",
+        resolveLabel: "Call-offs",
         icon: Truck,
         title: `Approve ${drafts.length} call-off draft${drafts.length === 1 ? "" : "s"}`,
         meta: `${drafts.reduce((s, c) => s + c.lineIds.length, 0)} lines waiting`,
@@ -126,6 +128,7 @@ export function SidebarQuickStats() {
     if (overdue.length > 0) {
       urgent.push({
         key: "inv-overdue",
+        resolveLabel: "Invoices",
         icon: Receipt,
         title: `${overdue.length} invoice${overdue.length === 1 ? "" : "s"} overdue`,
         meta: `£${overdue.reduce((s, i) => s + i.amount, 0).toLocaleString("en-GB")}`,
@@ -137,6 +140,7 @@ export function SidebarQuickStats() {
     if (outstanding > 0) {
       urgent.push({
         key: "inv-out",
+        resolveLabel: "Invoices",
         icon: FileSignature,
         title: `Sign ${outstanding} outstanding invoice${outstanding === 1 ? "" : "s"}`,
         meta: "Action needed",
@@ -150,6 +154,7 @@ export function SidebarQuickStats() {
     const overdueNotices = pendingNotices.filter((a) => daysUntil(a.dueDateForNotice) <= 0).length;
     urgent.push({
       key: "pmt-notice",
+      resolveLabel: "Payments",
       icon: Banknote,
       title: overdueNotices > 0
         ? `${overdueNotices} payment notice${overdueNotices === 1 ? "" : "s"} overdue`
@@ -166,6 +171,7 @@ export function SidebarQuickStats() {
     if (drafts > 0) {
       urgent.push({
         key: "var-draft",
+        resolveLabel: "Variations",
         icon: GitBranch,
         title: `Submit ${drafts} variation draft${drafts === 1 ? "" : "s"}`,
         meta: "Awaiting your action",
@@ -181,6 +187,7 @@ export function SidebarQuickStats() {
     if (blocked.length > 0) {
       urgent.push({
         key: "task-blocked",
+        resolveLabel: "Planner",
         icon: AlertTriangle,
         title: `${blocked.length} of your task${blocked.length === 1 ? "" : "s"} blocked`,
         meta: blocked[0].title.slice(0, 32),
@@ -192,6 +199,7 @@ export function SidebarQuickStats() {
     if (behind.length > 0) {
       urgent.push({
         key: "task-behind",
+        resolveLabel: "Planner",
         icon: CalendarClock,
         title: `${behind.length} task${behind.length === 1 ? "" : "s"} behind schedule`,
         meta: behind[0].title.slice(0, 32),
@@ -205,6 +213,7 @@ export function SidebarQuickStats() {
     if (startingToday.length > 0) {
       urgent.push({
         key: "task-today",
+        resolveLabel: "Planner",
         icon: CalendarClock,
         title: `${startingToday.length} task${startingToday.length === 1 ? "" : "s"} active today`,
         meta: startingToday[0].title.slice(0, 32),
@@ -219,6 +228,7 @@ export function SidebarQuickStats() {
     if (myToday.length === 0 && canViewDailyReport) {
       urgent.push({
         key: "log-hours",
+        resolveLabel: "Daily Report",
         icon: ClipboardCheck,
         title: "Log your hours for today",
         meta: "Daily report not submitted",
