@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { Settings, ChevronUp, Check } from "lucide-react";
+import { Settings, ChevronUp, Check, LogOut } from "lucide-react";
 import { team } from "@/lib/mockData";
 import { useCurrentUser, setCurrentUserId, type Tier } from "@/lib/currentUser";
 import { cn } from "@/lib/utils";
+import { signOut, useSession } from "@/lib/authSession";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 
 const TIER_ORDER: Tier[] = ["Admin", "Pro Control", "Pro", "Site User", "Operative"];
 
@@ -17,6 +20,8 @@ const TIER_TONE: Record<Tier, string> = {
 export function CurrentUserSwitcher() {
   const me = useCurrentUser();
   const [open, setOpen] = useState(false);
+  const session = useSession();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!open) return;
@@ -114,6 +119,19 @@ export function CurrentUserSwitcher() {
             >
               <Settings className="h-3 w-3" /> Reset to Admin (David)
             </button>
+            {session && (
+              <button
+                className="mt-1.5 flex w-full items-center gap-1.5 text-[10.5px] text-[var(--red-500)] hover:text-red-300"
+                onClick={() => {
+                  signOut();
+                  setOpen(false);
+                  toast.success("Signed out");
+                  navigate({ to: "/login", search: { redirect: undefined } });
+                }}
+              >
+                <LogOut className="h-3 w-3" /> Sign out
+              </button>
+            )}
           </div>
         </div>
       )}
