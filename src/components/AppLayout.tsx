@@ -438,7 +438,7 @@ function LayoutInner() {
                 <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-500)]" />
                 Business Preview
               </span>
-              {!session && (
+              {!session ? (
                 <>
                   <Link
                     to="/login"
@@ -454,6 +454,8 @@ function LayoutInner() {
                     <UserPlus className="h-3.5 w-3.5" /> Sign up
                   </Link>
                 </>
+              ) : (
+                <HeaderUserMenu />
               )}
               <button className="rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]" aria-label="Search">
                 <Search className="h-4 w-4" />
