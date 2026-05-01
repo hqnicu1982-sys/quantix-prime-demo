@@ -1,76 +1,105 @@
-# Connect the Interim Payment Application workflow end-to-end
+## Goal
 
-After a dependency sweep, the Payment Application module is functional in isolation but has 9 disconnects with Variations, Invoice Registry, Financial Dashboard, Project Overview, Reports și project lifecycle. Below is the fix plan, scoped strictly to closing those gaps.
+Mută user menu (Sign out + identitate) din sidebar footer în header, ca un dropdown stil Lovable (avatar NA → nume + email + Account settings + View as + Sign out). Înlocuiește footer-ul sidebar-ului cu un **Quick Stats card** orientat pe acțiune.
 
-## Disconnects found
+---
+
+## 1. Header — User Menu Dropdown (înlocuiește butoanele Sign in/Sign up când e logat)
+
+**Component nou**: `src/components/auth/HeaderUserMenu.tsx`
+
+Dropdown declanșat de avatar circular (inițiale, gradient accent→teal, 32px), aliniat la dreapta. Conținut:
 
 ```text
-                       CURRENT                              ISSUE
-Variations.approved  ─/ ─►  PaymentApplication.lines       no auto-pull
-PaymentNotice                                              ok
-PayLessNotice        ─►  cert.finalAmount (manual)         ok but no UI hint
-Certificate          ─►  invoiceRegistry.add               ok
-RecordPayment        ─/ ─►  invoiceRegistry.markPaid       MIRROR STAYS OPEN
-DeleteApplication    ─/ ─►  invoiceRegistry cleanup        ORPHAN MIRROR
-DeleteCustomProject  ─/ ─►  paymentCycle storage           ORPHAN STORAGE
-Financial dashboard  ─/ ─►  payment cycle KPIs             missing
-Project overview     ─/ ─►  payment cycle KPI row          missing
-Reports tab          ─/ ─►  cashflow forecast              missing
-NewApplicationDialog ─/ ─►  prev-certified live refresh    stale on reopen
+┌─────────────────────────────┐
+│  Nicolae Aldea              │  ← name (semibold)
+│  na@quantix.dev             │  ← email (muted)
+├─────────────────────────────┤
+│  ⚙  Account settings        │  → /settings/labour (sau placeholder)
+├─────────────────────────────┤
+│  VIEW AS  (demo)            │  ← mic label uppercase
+│   ✓ Admin · David Park      │  ← lista grupată pe tier-e
+│     Pro · Nick Andrei       │     (refolosim logica din
+│     Site User · Sam M.      │      CurrentUserSwitcher)
+├─────────────────────────────┤
+│  →  Sign out                │  ← roșu, full width
+└─────────────────────────────┘
 ```
 
-## What gets built / changed
+- Folosește `Popover` din shadcn (există deja `src/components/ui/popover.tsx`) pentru anchoring corect lângă avatar.
+- Refolosește logica de `setCurrentUserId` + `signOut` + `team` grouping din `CurrentUserSwitcher.tsx`.
+- Toast „Signed out" + redirect la `/login` ca acum.
 
-### 1. Cross-module helpers (`src/lib/paymentCycle.ts`)
-- New `recordPayment` flow now also accepts an optional `mirrorInvoiceRef` so the caller can mark the mirrored invoice paid. Add an internal `findMirrorByCertNumber(pid, certNumber)` helper (lookup în invoiceRegistry by reference).
-- `deleteApplication` extended to delete any mirrored invoice (matched by `certificateNumber`).
-- New helper `previouslyCertifiedLive(pid)` — same as today plus pending `noticed` apps optional flag — exposed for the dialog.
-- New aggregate `getApprovedVariationLines(pid)` (lives în paymentCycle, imports from variations) returns suggested `PaymentLine[]` from approved-but-not-yet-included variations.
+**În `AppLayout.tsx` header (linia ~440)**:
+- Când `session` există → înlocuiește butoanele Sign in/Sign up cu `<HeaderUserMenu />`.
+- Când nu există session (pagini publice ca `/how-to`) → păstrăm butoanele Sign in/Sign up actuale.
+- Punct de inserție: după Bell, ultimul element din `ml-auto`.
 
-### 2. Invoice Registry (`src/lib/invoiceRegistry.ts`)
-- Add `markPaidByReference(reference)` and `deleteByReference(reference)` so paymentCycle can sync without exposing IDs.
+---
 
-### 3. Variations ↔ Applications wiring (`src/components/payments/NewApplicationDialog.tsx`)
-- On open, fetch approved variations for the project and offer a "Pull approved variations" button that appends them as `category: "variations"` lines (deduped by VO id captured in description prefix `[VO-001]`).
-- `previouslyCertified` re-reads on every open via `useEffect` (currently captured in initial `useState` only).
+## 2. Sidebar Footer — Quick Stats Card (înlocuiește `<CurrentUserSwitcher />`)
 
-### 4. Record Payment closes the loop (`src/components/payments/IssueNoticeDialogs.tsx`)
-- `RecordPaymentDialog` calls `markPaidByReference(certificateNumber)` after `recordPayment` so Invoices tab and cashflow drop the mirror correctly.
-- `CertificateDialog` shows a banner when a Pay Less Notice exists, pre-filling `finalAmount = certifiedAmount − withholding`.
+**Component nou**: `src/components/SidebarQuickStats.tsx`
 
-### 5. Payment cycle on Project Overview (`src/routes/projects.$projectId.index.tsx`)
-- Add a compact "Payment cycle" KPI strip (Applied / Certified / Outstanding / Next notice due) that links to the Payments tab. Gated by `view.payments`.
+Card compact (în zona unde era user switcher-ul, `border-t border-white/10 p-3`):
 
-### 6. Reports tab (`src/routes/projects.$projectId.reports.tsx`)
-- Embed `<CashflowForecastCard ... />` în Reports (full version), and a small "Interim payments status" tile (counts by status + outstanding £).
+```text
+┌──────────────────────────────┐
+│ HOTEL FITZROVIA       ●      │  ← project name + green dot (on-track)
+│ £2.1m · Kier                 │  ← value + contractor (muted)
+├──────────────────────────────┤
+│  3      2       5            │  ← cifre mari
+│ Approvals  Overdue  Active   │  ← labels mici uppercase
+│           Invoices  Tasks    │
+├──────────────────────────────┤
+│  →  Open approval inbox      │  ← link compact către dashboard
+└──────────────────────────────┘
+```
 
-### 7. Financial Dashboard (`src/routes/financial.tsx`)
-- Add a fourth KPI row for Payment Applications Pipeline (Applied YTD vs Certified YTD vs Paid YTD vs Outstanding) using `usePaymentTotals(current.id)`.
+**Surse de date** (toate există deja):
+- `useProject().current` → nume, contractor, valoare
+- `useLabourLogs(projectId)` filtrat `status === "submitted"` → Approvals
+- `useInvoices(projectId)` filtrat `status === "overdue"` → Overdue invoices
+- `useProjectData(projectId).callOffs` filtrat `status === "draft"` → sau task-uri din planner
 
-### 8. Project lifecycle (`src/lib/customProjects.ts` or `src/lib/paymentCycle.ts`)
-- Export `clearPaymentCycle(pid)` and call it from `deleteCustomProject` to avoid orphan localStorage. Same für invoiceRegistry mirrors of that project.
+**Comportament**:
+- Click pe oricare cifră → navigate către secțiunea relevantă (`/daily-report`, `/invoices`, `/planner`).
+- Dacă userul nu are capability pe nicio secțiune → afișează doar header-ul de project (fallback minim, nu spațiu gol).
+- Click pe numele proiectului → `/projects/$projectId`.
 
-### 9. Tests (`src/lib/paymentCycle.test.ts` — new)
-- Unit tests for `buildForecast` already exist? if not, smoke test for: variation pull-in produces correct line, recordPayment cascades to invoice mirror, delete cascades to mirror.
+---
 
-## Files touched
+## 3. Files
 
-**New**
-- `src/lib/paymentCycle.test.ts`
+**Create**:
+- `src/components/auth/HeaderUserMenu.tsx` — dropdown user (avatar + identity + view-as + sign out)
+- `src/components/SidebarQuickStats.tsx` — card stats în sidebar footer
 
-**Edited**
-- `src/lib/paymentCycle.ts` (helpers, delete cascade, variation bridge)
-- `src/lib/invoiceRegistry.ts` (`markPaidByReference`, `deleteByReference`)
-- `src/components/payments/NewApplicationDialog.tsx` (variation pull-in + live prev-certified)
-- `src/components/payments/IssueNoticeDialogs.tsx` (record-payment cascade, pay-less hint în cert dialog)
-- `src/routes/projects.$projectId.index.tsx` (payment cycle KPI row)
-- `src/routes/projects.$projectId.reports.tsx` (cashflow forecast embed + status tile)
-- `src/routes/financial.tsx` (payment pipeline KPIs)
-- `src/lib/customProjects.ts` (cleanup hooks on delete)
+**Edit**:
+- `src/components/AppLayout.tsx`:
+  - import `HeaderUserMenu`, `SidebarQuickStats`
+  - în `SidebarContent` (linia 209-211) → înlocuiește `<CurrentUserSwitcher />` cu `<SidebarQuickStats />`
+  - în header (linia 440-456) → când `session` există, render `<HeaderUserMenu />` în loc de butoanele Sign in/Sign up
+- `src/components/auth/CurrentUserSwitcher.tsx`:
+  - **Păstrăm fișierul** dar îl marcăm deprecated (nu mai e folosit). Sau îl ștergem dacă vrei curățenie — preferință: îl ștergem, fiindcă logica migrează în `HeaderUserMenu.tsx`.
 
-## Out of scope
-- No DB / Cloud persistence (still mock localStorage as today).
-- No new permissions added (existing capabilities cover all touchpoints).
-- No redesign of existing UI surfaces — only additive cards / wiring.
+**Delete** (opțional, recomandat):
+- `src/components/auth/CurrentUserSwitcher.tsx` — funcționalitate complet absorbită de `HeaderUserMenu`.
 
-Aprobi să implementez exact pașii de mai sus?
+---
+
+## 4. UX details
+
+- Avatarul din header are același gradient ca în sidebar (consistență vizuală).
+- Dropdown-ul header e pe fundal alb (header e light theme), spre deosebire de cel vechi din sidebar care era pe navy. Stiluri adaptate.
+- Quick Stats card folosește text alb pe navy (continuă paleta sidebar-ului).
+- Pe mobile (sidebar e overlay), Quick Stats apare la fel jos în sidebar-ul drawer.
+- Indicator roșu mic pe avatar dacă există approvals pending (paritate cu Bell-ul).
+
+---
+
+## 5. Out of scope
+
+- Nu schimbăm pagina `/settings/labour` — link-ul „Account settings" merge acolo ca placeholder.
+- Nu adăugăm preference-uri reale de cont (mock auth).
+- Nu schimbăm logica de route guard sau session.
