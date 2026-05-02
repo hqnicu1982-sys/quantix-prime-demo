@@ -266,7 +266,7 @@ function Catalog() {
                 />
                 <SliderRow
                   icon={<Ruler className="h-3.5 w-3.5" />}
-                  label="Max height"
+                  label="Min height required"
                   value={minH} min={0} max={9} step={0.5}
                   onChange={setMinH}
                   fmt={v => v === 0 ? "Any" : `${v.toFixed(1)}+ m`}
