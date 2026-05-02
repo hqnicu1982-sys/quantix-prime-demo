@@ -29,7 +29,6 @@ const families: Family[] = [
   { id: "plasters", name: "Plasters",           blurb: "Skim & undercoat plasters",           status: "roadmap", icon: Brush     },
 ];
 
-const allMatches = [
 // Each system declares the layered build-up so we can render a visual stack on the card.
 // `t` = relative thickness weight for the SVG stack (mm-ish, just for proportions).
 type Layer = { kind: "board" | "stud" | "insul" | "void"; label: string; t: number; c: string };
