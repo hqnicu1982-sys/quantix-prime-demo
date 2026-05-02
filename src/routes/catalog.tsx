@@ -178,14 +178,14 @@ function Catalog() {
         <header className="flex flex-wrap items-end justify-between gap-6 border-b border-[var(--ink-200)]/60 pb-7">
           <div>
             <p className="font-mono-num text-[10.5px] uppercase tracking-[0.28em] text-[var(--ink-500)]">
-              The system catalog · vol. 01
+              Spec → estimate
             </p>
             <h1 className="font-display mt-4 max-w-2xl text-[42px] font-semibold leading-[1.02] tracking-tight text-[var(--ink-900)] md:text-[54px]">
-              Pick a wall.<br/>
-              <span className="italic text-[var(--ink-500)]">See exactly what's inside it.</span>
+              Find the right wall<br/>
+              <span className="italic text-[var(--ink-500)]">in seconds.</span>
             </h1>
             <p className="mt-4 max-w-md text-[13.5px] leading-relaxed text-[var(--ink-700)]">
-              Every system shown here opens up to reveal its layers, materials per m² and how it performs against fire, acoustics and height.
+              Match fire rating, Rw and height to a tested build-up. Send straight to the calculator with materials per m² ready to price.
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => navigate({ to: "/calculator" })} className="gap-1.5">
