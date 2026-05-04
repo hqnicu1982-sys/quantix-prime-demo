@@ -477,25 +477,33 @@ function SingleView({
             Two numbers and you're priced. The board is auto-picked to minimise off-cuts.
           </p>
 
+          {chrome === "canvas" && (
+            <div className="mt-5">
+              <WallPreview lengthM={+length || 0} heightM={+height || 0} />
+            </div>
+          )}
+
           <div className="mt-6 grid gap-5 md:grid-cols-2">
             <BigNumberField label="Length" unit="m" value={length} onChange={setLength} error={errs.length} placeholder="12.5" />
             <BigNumberField label="Height" unit="m" value={height} onChange={setHeight} error={errs.height} placeholder="3.0" />
           </div>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <div>
-              <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Board size</p>
-              <select
-                value={boardSize}
-                onChange={e => setBoardSize(e.target.value)}
-                className="glass-input w-full rounded-xl px-3 py-2.5 text-[13px] font-medium"
-              >
-                <option value="auto">Auto — recommended ({recommended.label})</option>
-                {availableBoards.map(b => (
-                  <option key={b.label} value={b.label}>{b.label}</option>
-                ))}
-              </select>
-            </div>
+          <div className={"mt-5 grid gap-4 " + (chrome === "canvas" ? "" : "md:grid-cols-2")}>
+            {chrome !== "canvas" && (
+              <div>
+                <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Board size</p>
+                <select
+                  value={boardSize}
+                  onChange={e => setBoardSize(e.target.value)}
+                  className="glass-input w-full rounded-xl px-3 py-2.5 text-[13px] font-medium"
+                >
+                  <option value="auto">Auto — recommended ({recommended.label})</option>
+                  {availableBoards.map(b => (
+                    <option key={b.label} value={b.label}>{b.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <div className="mb-1.5 flex items-baseline justify-between">
                 <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Handling waste</p>
