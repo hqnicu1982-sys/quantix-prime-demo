@@ -278,7 +278,6 @@ function Calculator() {
             area={area} wasteFactor={wasteFactor}
             navigate={navigate}
             combined={CATEGORY_SYSTEMS.length ? CATEGORY_SYSTEMS : COMBINED}
-            category={category}
             projectId={current.id}
             projectName={current.name}
             canSeePricing={canSeePricing}
