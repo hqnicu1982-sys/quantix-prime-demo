@@ -1,105 +1,111 @@
-## Goal
+# Calculator redesign — Direcția B (Command bar + canvas)
 
-Mută user menu (Sign out + identitate) din sidebar footer în header, ca un dropdown stil Lovable (avatar NA → nume + email + Account settings + View as + Sign out). Înlocuiește footer-ul sidebar-ului cu un **Quick Stats card** orientat pe acțiune.
+Reorganizăm pagina ca un **canvas curat** focalizat pe perete + cantități, cu toate controalele top-level colapsate într-o **bară-comandă** discretă. Recommend și Compare devin overlay-uri (sheet/dialog), nu moduri full-page.
 
----
-
-## 1. Header — User Menu Dropdown (înlocuiește butoanele Sign in/Sign up când e logat)
-
-**Component nou**: `src/components/auth/HeaderUserMenu.tsx`
-
-Dropdown declanșat de avatar circular (inițiale, gradient accent→teal, 32px), aliniat la dreapta. Conținut:
+## Layout final
 
 ```text
-┌─────────────────────────────┐
-│  Nicolae Aldea              │  ← name (semibold)
-│  na@quantix.dev             │  ← email (muted)
-├─────────────────────────────┤
-│  ⚙  Account settings        │  → /settings/labour (sau placeholder)
-├─────────────────────────────┤
-│  VIEW AS  (demo)            │  ← mic label uppercase
-│   ✓ Admin · David Park      │  ← lista grupată pe tier-e
-│     Pro · Nick Andrei       │     (refolosim logica din
-│     Site User · Sam M.      │      CurrentUserSwitcher)
-├─────────────────────────────┤
-│  →  Sign out                │  ← roșu, full width
-└─────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ HERO mic: "From a code to a priced BoQ" + brand pill         │
+├──────────────────────────────────────────────────────────────┤
+│ ╭───────────── COMMAND BAR (sticky, glass) ──────────────╮   │
+│ │ BG ▾ │ Partitions ▾ │ WB12.5×2 · 92mm ▾ │ Auto board ▾ │   │
+│ │                              [✨ Recommend] [⇄ Compare] │   │
+│ ╰─────────────────────────────────────────────────────────╯   │
+│                                                              │
+│ ┌──────────────── CANVAS ────────────┬─── QUANTITIES ─────┐ │
+│ │ System tier banner (fire/Rw/H)     │ Live BoQ            │ │
+│ │                                    │  Boards   38.4 m²   │ │
+│ │  ┌────────────────────────────┐    │  Studs    9 lengths │ │
+│ │  │      12.5 m  ×  3.0 m      │    │  Track    4 lengths │ │
+│ │  │      = 37.5 m²             │    │  ...                │ │
+│ │  └────────────────────────────┘    │                     │ │
+│ │  Length [12.5] m   Height [3.0] m  │  Subtotal  £xxx     │ │
+│ │  Waste ──●──── 5%                  │                     │ │
+│ │                                    │ [+ Add to BoQ]      │ │
+│ │  ▸ Finish & stage options          │ [Export]            │ │
+│ │  ▸ Compare board sizes             │                     │ │
+│ └────────────────────────────────────┴─────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-- Folosește `Popover` din shadcn (există deja `src/components/ui/popover.tsx`) pentru anchoring corect lângă avatar.
-- Refolosește logica de `setCurrentUserId` + `signOut` + `team` grouping din `CurrentUserSwitcher.tsx`.
-- Toast „Signed out" + redirect la `/login` ca acum.
+## Schimbări concrete
 
-**În `AppLayout.tsx` header (linia ~440)**:
-- Când `session` există → înlocuiește butoanele Sign in/Sign up cu `<HeaderUserMenu />`.
-- Când nu există session (pagini publice ca `/how-to`) → păstrăm butoanele Sign in/Sign up actuale.
-- Punct de inserție: după Bell, ultimul element din `ml-auto`.
+### 1. Command bar nouă (înlocuiește 3 rânduri actuale)
+Componentă nouă `CalcCommandBar` care **înlocuiește**:
+- mode pills (`By code / Recommend / Compare`) — dispar ca toggle vizibil,
+- `CategoryTabs` (8 pill-uri orizontale),
+- selectorul "System code" din secțiunea 01,
+- selectorul "Board size" din secțiunea 02.
 
----
+Devin **4 chip-dropdowns** într-un singur rând sticky:
+- **Brand** (`BrandSelector` existent, restilat ca chip)
+- **Category** — popover cu cele 8 categorii (label + count)
+- **System** — popover cu lista filtrată pe categorie (search + cod + shortName + bespoke badge)
+- **Board** — popover Auto / 1200×2400 / 1200×3000 etc.
 
-## 2. Sidebar Footer — Quick Stats Card (înlocuiește `<CurrentUserSwitcher />`)
+Plus 2 butoane secundare în dreapta:
+- `✨ Recommend` → deschide **Sheet** (drawer dreapta) cu form-ul actual de match-by-requirements
+- `⇄ Compare` → deschide **Dialog** full-screen cu `CompareView` actual (sau toggle care sparge canvas-ul în 2 coloane A/B — vezi pct. 4)
 
-**Component nou**: `src/components/SidebarQuickStats.tsx`
+### 2. Hero comprimat
+- Titlul "From a code to a priced BoQ" rămâne, dar la **32px** în loc de 60px și pe un singur rând.
+- Brand chip + "BG System Calculator" eyebrow rămân.
+- Subtitle scurtat la o singură frază.
+- Câștigăm ~150px verticali ca să încapă canvas + quantities fără scroll pe 1080p.
 
-Card compact (în zona unde era user switcher-ul, `border-t border-white/10 p-3`):
+### 3. Canvas + Quantities (2 coloane)
+Înlocuim grid-ul actual `[1fr 380px]` cu **același split, dar conținut diferit**:
 
-```text
-┌──────────────────────────────┐
-│ HOTEL FITZROVIA       ●      │  ← project name + green dot (on-track)
-│ £2.1m · Kier                 │  ← value + contractor (muted)
-├──────────────────────────────┤
-│  3      2       5            │  ← cifre mari
-│ Approvals  Overdue  Active   │  ← labels mici uppercase
-│           Invoices  Tasks    │
-├──────────────────────────────┤
-│  →  Open approval inbox      │  ← link compact către dashboard
-└──────────────────────────────┘
-```
+**Stânga (canvas):**
+- Sus: tier banner existent (fire / Rw / max H chips) — neschimbat.
+- Mijloc: dreptunghi vizual proporțional cu length×height (SVG simplu, nu drag deocamdată), cu readout "L × H = m²" în interior. **Asta e singura componentă vizuală nouă** — `WallPreview`.
+- Dedesubt: cele 2 `BigNumberField` (Length, Height) — ca acum.
+- Slider waste cu label inline.
+- Recommendation chip (lightbulb) — ca acum, sub câmpuri.
+- Cele 2 `Disclosure` existente (`Finish & stage options`, `Compare board sizes`) rămân, dar **colapsate by default** și mutate la bază.
 
-**Surse de date** (toate există deja):
-- `useProject().current` → nume, contractor, valoare
-- `useLabourLogs(projectId)` filtrat `status === "submitted"` → Approvals
-- `useInvoices(projectId)` filtrat `status === "overdue"` → Overdue invoices
-- `useProjectData(projectId).callOffs` filtrat `status === "draft"` → sau task-uri din planner
+**Dreapta (quantities):**
+- Devine **sticky** (`position: sticky; top: ...`) ca să fie mereu vizibil când scroll-ezi.
+- Listă m²/lengths cu mini-bar pe fiecare item (deja există stilul).
+- Subtotal cost (dacă `canSeePricing`).
+- Acțiuni primare grupate jos: `Add to BoQ`, `Plan all walls`, `Export`.
 
-**Comportament**:
-- Click pe oricare cifră → navigate către secțiunea relevantă (`/daily-report`, `/invoices`, `/planner`).
-- Dacă userul nu are capability pe nicio secțiune → afișează doar header-ul de project (fallback minim, nu spațiu gol).
-- Click pe numele proiectului → `/projects/$projectId`.
+### 4. Compare ca **toggle pe canvas**, nu mod separat
+În loc de `mode === "compare"` care înlocuiește toată pagina:
+- Buton `⇄ Compare` în command bar activează un state `compareOn`.
+- Când e on, canvas-ul stâng se sparge în 2 sub-coloane A/B (același sistem-picker chip per coloană), iar quantities din dreapta arată **delta A vs B** pe fiecare linie.
+- Off → canvas single, neschimbat.
+- `CompareView` existent (cu tabel mare) devine opțional, accesibil ca link "Open detailed comparison" în header-ul split-ului.
 
----
+### 5. Recommend ca **Sheet**, nu fold-out
+- `Sheet` din dreapta cu form-ul actual (4 input-uri + 3 select-uri).
+- La submit: setează `activeCode`, închide sheet-ul, toast confirmare.
+- Ștergem block-ul `mode === "recommend"` din pagină.
 
-## 3. Files
+## Fișiere atinse
 
-**Create**:
-- `src/components/auth/HeaderUserMenu.tsx` — dropdown user (avatar + identity + view-as + sign out)
-- `src/components/SidebarQuickStats.tsx` — card stats în sidebar footer
+- **`src/routes/calculator.tsx`** — rescriere a `Calculator()` (header + sticky command bar + nou layout). `SingleView` se simplifică (dispar select-urile mutate în command bar, dispare secțiunea "01 Pick a system" — devine doar tier banner).
+- **NEW `src/components/calculator/CalcCommandBar.tsx`** — chip-dropdowns + butoane Recommend/Compare. Folosește `Popover` din `ui/popover`.
+- **NEW `src/components/calculator/WallPreview.tsx`** — SVG dreptunghi proporțional cu readout. ~50 linii, fără dependențe.
+- **NEW `src/components/calculator/RecommendSheet.tsx`** — extrage form-ul existent în `Sheet` (`ui/sheet`).
+- **NEW `src/components/calculator/CompareSplit.tsx`** — render side-by-side A/B canvas + delta. Reutilizează helperii din `CompareView`.
+- `CompareView` actual rămâne accesibil prin link "Open detailed comparison" — nu îl ștergem.
 
-**Edit**:
-- `src/components/AppLayout.tsx`:
-  - import `HeaderUserMenu`, `SidebarQuickStats`
-  - în `SidebarContent` (linia 209-211) → înlocuiește `<CurrentUserSwitcher />` cu `<SidebarQuickStats />`
-  - în header (linia 440-456) → când `session` există, render `<HeaderUserMenu />` în loc de butoanele Sign in/Sign up
-- `src/components/auth/CurrentUserSwitcher.tsx`:
-  - **Păstrăm fișierul** dar îl marcăm deprecated (nu mai e folosit). Sau îl ștergem dacă vrei curățenie — preferință: îl ștergem, fiindcă logica migrează în `HeaderUserMenu.tsx`.
+## Ce **nu** schimbăm
 
-**Delete** (opțional, recomandat):
-- `src/components/auth/CurrentUserSwitcher.tsx` — funcționalitate complet absorbită de `HeaderUserMenu`.
+- Logica de calcul (`scaledTotals`, `recommendBoardSmart`, `planWalls`, `estimateCost`) — zero modificări.
+- `systemLibrary.ts`, `boardSizing.ts`, `calculatorPricing.ts` — neatinse.
+- `BespokeBuildUpDialog`, `WallEditor`, `CompareTray` — neatinse.
+- Comportamentul URL-ului `?mode=compare` și sync-ul cu `compareTray` — păstrate (mapate pe noul `compareOn` toggle).
+- Categorii, brands, bespoke systems — neatinse.
 
----
+## Risc & rollback
 
-## 4. UX details
+- Fișier mare (1524 linii) — rescrierea `Calculator()` și `SingleView()` e cea mai sensibilă bucată.
+- Mitigare: extragem componentele noi pas cu pas, păstrăm `CompareView` și logica intactă.
+- Dacă ceva nu merge → revenire la layout-ul actual prin git, fișierele noi pot rămâne neutilizate.
 
-- Avatarul din header are același gradient ca în sidebar (consistență vizuală).
-- Dropdown-ul header e pe fundal alb (header e light theme), spre deosebire de cel vechi din sidebar care era pe navy. Stiluri adaptate.
-- Quick Stats card folosește text alb pe navy (continuă paleta sidebar-ului).
-- Pe mobile (sidebar e overlay), Quick Stats apare la fel jos în sidebar-ul drawer.
-- Indicator roșu mic pe avatar dacă există approvals pending (paritate cu Bell-ul).
+## Întrebare de aprobare
 
----
-
-## 5. Out of scope
-
-- Nu schimbăm pagina `/settings/labour` — link-ul „Account settings" merge acolo ca placeholder.
-- Nu adăugăm preference-uri reale de cont (mock auth).
-- Nu schimbăm logica de route guard sau session.
+Mergem cu **Compare ca toggle pe canvas (split A/B)** — sau preferi **Compare ca dialog full-screen** care deschide `CompareView` existent neschimbat? Primul e mai elegant, al doilea e zero-risc pe Compare.
