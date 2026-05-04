@@ -1259,6 +1259,81 @@ function Select({ label, options, defaultValue }: { label: string; options: stri
   );
 }
 
+// Big, airy numeric input used by the new workbench layout.
+function BigNumberField({
+  label, unit, value, onChange, error, placeholder,
+}: {
+  label: string; unit: string;
+  value: string; onChange: (v: string) => void;
+  error?: string | null; placeholder?: string;
+}) {
+  const [touched, setTouched] = React.useState(false);
+  const isEmpty = !value || value.trim() === "";
+  const tone: "none" | "info" | "error" =
+    !error ? "none" : (isEmpty || !touched) ? "info" : "error";
+  return (
+    <div>
+      <div className="mb-1.5 flex items-baseline justify-between">
+        <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
+        <span className="font-mono-num text-[10.5px] font-medium text-[var(--ink-500)]">{unit}</span>
+      </div>
+      <div className="relative">
+        <input
+          inputMode="decimal"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onBlur={() => setTouched(true)}
+          onFocus={e => e.target.select()}
+          placeholder={placeholder}
+          aria-invalid={tone === "error"}
+          className={
+            "glass-input font-mono-num w-full rounded-2xl px-5 py-4 text-[26px] font-semibold tabular-nums placeholder:text-[var(--ink-300)] transition-shadow " +
+            (tone === "error"
+              ? "border-[var(--tier-critical)] shadow-[0_0_0_3px_color-mix(in_oklab,var(--tier-critical)_14%,transparent)]"
+              : "")
+          }
+        />
+        <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[13px] font-medium text-[var(--ink-500)]">{unit}</span>
+      </div>
+      {tone === "error" && (
+        <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-[var(--tier-critical)]">
+          <AlertCircle className="h-3 w-3" /> {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Lightweight disclosure used to tuck away dense secondary blocks.
+function Disclosure({
+  open, onToggle, label, icon, children, className,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  label: React.ReactNode;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={"overflow-hidden rounded-2xl border border-[var(--ink-200)] " + (className ?? "")}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-3 bg-[var(--ink-50)]/40 px-4 py-2.5 text-left transition-colors hover:bg-[var(--ink-50)]/80"
+        aria-expanded={open}
+      >
+        <span className="inline-flex items-center gap-2 text-[11.5px] font-semibold uppercase tracking-wider text-[var(--ink-700)]">
+          {icon}
+          {label}
+        </span>
+        <ChevronDown className={"h-4 w-4 text-[var(--ink-500)] transition-transform " + (open ? "rotate-180" : "")} />
+      </button>
+      {open && <div className="border-t border-[var(--ink-200)]">{children}</div>}
+    </div>
+  );
+}
+
 function perfChipsFor(sys: SystemDef) {
   return [
     { icon: <Volume2 className="h-3 w-3" />, k: "Approx. weight",  v: `${sys.perf.weight} kg/m²` },
