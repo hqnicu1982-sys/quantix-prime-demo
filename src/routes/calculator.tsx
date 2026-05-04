@@ -94,6 +94,9 @@ function Calculator() {
   const [height, setHeight] = useState("4");
   const [waste, setWaste]   = useState(5);
 
+  // Workbench overlays
+  const [recommendOpen, setRecommendOpen] = useState(false);
+
   // Active top-level category (mirrors the System Catalog rail).
   // Drives which systems appear in the picker / recommend / compare lists.
   const [category, setCategory] = useState<SystemCategory>("walls");
@@ -170,6 +173,15 @@ function Calculator() {
   const area = +length * +height;
   const wasteFactor = 1 + waste / 100;
 
+  // Active system for the command bar (mirrors what SingleView resolves).
+  const activeSys = CATEGORY_SYSTEMS.find(s => s.code === activeCode)
+    ?? COMBINED.find(s => s.code === activeCode)
+    ?? LIBRARY[0];
+  const heightMmTop = Math.round((+height || 0) * 1000);
+  const lengthMmTop = Math.round((+length || 0) * 1000);
+  const availableBoardsTop = getAvailableBoards(activeSys.availableBoards);
+  const recommendedTop = recommendBoardSmart(heightMmTop, lengthMmTop, activeSys.availableBoards, reuseOffcuts);
+
   // Promote one side of the comparison into the single-system calculator.
   const promoteToCalculator = (code: string, label?: string) => {
     setActiveCode(code);
@@ -181,34 +193,26 @@ function Calculator() {
   return (
     <div className="glass-bg -m-6 min-h-[calc(100vh-4rem)] p-6 md:-m-8 md:p-10">
       <div className="relative space-y-8">
-        {/* Hero */}
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div className="pop-in">
-            <div className="flex items-center gap-3">
-              <p className="font-mono-num flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[var(--ink-500)]">
+        {/* Compact hero — ID + tagline on one line */}
+        <header className="pop-in flex flex-wrap items-end justify-between gap-4">
+          <div className="flex items-end gap-4">
+            <div>
+              <p className="font-mono-num flex items-center gap-2 text-[10.5px] uppercase tracking-[0.22em] text-[var(--ink-500)]">
                 <span
                   className="glow-pulse h-1.5 w-1.5 rounded-full"
                   style={{ background: brand.accent, boxShadow: `0 0 12px ${brand.accent}` }}
                 />
                 {brand.initial} System Calculator
               </p>
-              <BrandSelector />
+              <h1 className="font-display mt-1.5 text-[28px] font-semibold leading-tight tracking-tight md:text-[34px]">
+                <span className="hero-gradient-text">From a code to a</span>{" "}
+                <span className="italic text-[var(--accent-500)]">priced BoQ</span>.
+              </h1>
             </div>
-            <h1 className="font-display mt-3 text-[44px] font-semibold leading-[0.95] tracking-tight md:text-[60px]">
-              <span className="hero-gradient-text">From a code to a</span><br />
-              <span className="italic text-[var(--accent-500)]">priced BoQ</span>.
-            </h1>
-            <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-[var(--ink-700)]">
-              Load any {brand.name} system — set the area — get the full build-up: frame, board, jointing and ancillaries.
-            </p>
           </div>
-
-          {/* Mode toggle */}
-          <div className="glass-card inline-flex rounded-full p-1">
-            <ModeBtn active={mode === "code"}      onClick={() => setMode("code")}      icon={<Search className="h-3.5 w-3.5" />}      label="By code" />
-            <ModeBtn active={mode === "recommend"} onClick={() => setMode("recommend")} icon={<Sparkles className="h-3.5 w-3.5" />}    label="Recommend" />
-            <ModeBtn active={mode === "compare"}   onClick={() => setMode("compare")}   icon={<GitCompare className="h-3.5 w-3.5" />}  label="Compare" />
-          </div>
+          <p className="max-w-sm text-[12px] leading-relaxed text-[var(--ink-500)]">
+            Pick a system, size the wall, get the full build-up — frame, board, jointing and ancillaries.
+          </p>
         </header>
 
         {/* Coming-soon notice for brands without a real catalogue yet */}
@@ -230,32 +234,21 @@ function Calculator() {
           </div>
         )}
 
-        {/* Category tabs — mirrors the 8 families from the System Catalog */}
-        <CategoryTabs active={category} onChange={setCategory} />
-
-        {/* Recommend bar (fold-out) */}
-        {mode === "recommend" && (
-          <div className="glass-card rounded-2xl p-5">
-            <div className="flex items-center gap-2">
-              <Wand2 className="h-4 w-4 text-[var(--accent-500)]" />
-              <p className="text-[12px] font-semibold uppercase tracking-wider text-[var(--ink-700)]">Match by requirements</p>
-            </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-4">
-              <Field label="Min height (m)" placeholder="3.6" />
-              <Field label="Min Rw (dB)"    placeholder="50" />
-              <Field label="Min Fire (min)" placeholder="60" />
-              <Field label="Max thickness (mm)" placeholder="150" />
-              <Select label="Duty rating" options={["Any","SD1","SD2","SD3","SD4"]} />
-              <Select label="Board type"  options={["Any","WallBoard","DuraLine","SoundBloc","FireLine"]} />
-              <Select label="Stud size"   options={["Any","48","70","92","146"]} />
-              <div className="flex items-end">
-                <Button className="w-full gap-1.5" onClick={() => { setMode("code"); toast.success("Loaded best match", { description: LIBRARY[0].code }); }}>
-                  Recommend & load <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Sticky command bar — brand · category · system · board + Recommend / Compare */}
+        <CalcCommandBar
+          category={category}
+          onCategoryChange={setCategory}
+          systems={CATEGORY_SYSTEMS.length ? CATEGORY_SYSTEMS : COMBINED}
+          activeCode={activeCode}
+          onSystemChange={setActiveCode}
+          availableBoards={availableBoardsTop}
+          boardSize={boardSize}
+          onBoardChange={setBoardSize}
+          recommendedBoard={recommendedTop.label}
+          compareOn={mode === "compare"}
+          onToggleCompare={() => setMode(m => m === "compare" ? "code" : "compare")}
+          onOpenRecommend={() => setRecommendOpen(true)}
+        />
 
         {/* ===================== COMPARE MODE ===================== */}
         {mode === "compare" ? (
@@ -284,9 +277,17 @@ function Calculator() {
             projectId={current.id}
             projectName={current.name}
             canSeePricing={canSeePricing}
+            chrome="canvas"
           />
         )}
       </div>
+
+      <RecommendSheet
+        open={recommendOpen}
+        onOpenChange={setRecommendOpen}
+        systems={CATEGORY_SYSTEMS.length ? CATEGORY_SYSTEMS : COMBINED}
+        onPick={(code) => { setActiveCode(code); setMode("code"); }}
+      />
     </div>
   );
 }
