@@ -25,6 +25,9 @@ import { BespokeBuildUpDialog } from "@/components/calculator/BespokeBuildUpDial
 import { estimateCost, fmtMoneyShort } from "@/lib/calculatorPricing";
 import { LIBRARY, scaledTotals, SYSTEM_CATEGORIES, type SystemCategory, type SystemDef, type Totals } from "@/lib/systemLibrary";
 import { useCan } from "@/lib/permissions";
+import { CalcCommandBar } from "@/components/calculator/CalcCommandBar";
+import { RecommendSheet } from "@/components/calculator/RecommendSheet";
+import { WallPreview } from "@/components/calculator/WallPreview";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
 
