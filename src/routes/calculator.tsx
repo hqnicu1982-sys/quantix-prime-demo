@@ -23,7 +23,7 @@ import { addSystemToBoQ } from "@/lib/projectData";
 import { useBespokeSystems, buildUpToMaterials, type BespokeSystem, type BespokeBuildUp } from "@/lib/bespokeSystems";
 import { BespokeBuildUpDialog } from "@/components/calculator/BespokeBuildUpDialog";
 import { estimateCost, fmtMoneyShort } from "@/lib/calculatorPricing";
-import { LIBRARY, scaledTotals, type SystemDef, type Totals } from "@/lib/systemLibrary";
+import { LIBRARY, scaledTotals, SYSTEM_CATEGORIES, type SystemCategory, type SystemDef, type Totals } from "@/lib/systemLibrary";
 import { useCan } from "@/lib/permissions";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
@@ -44,6 +44,7 @@ function bespokeToSystemDef(bsp: BespokeSystem): SystemDef {
     code: bsp.id,
     shortName: `${bsp.name} (bespoke)`,
     desc: `Bespoke build-up forked from ${bsp.parentCode} (${bsp.parentShortName}). Materials only — performance ratings require BG re-certification.`,
+    category: "walls",
     buildUp: [
       { k: "Side A layers", v: String(bsp.buildUp.sideA.length) },
       { k: "Side B layers", v: String(bsp.buildUp.sideB.length) },
@@ -90,6 +91,10 @@ function Calculator() {
   const [height, setHeight] = useState("4");
   const [waste, setWaste]   = useState(5);
 
+  // Active top-level category (mirrors the System Catalog rail).
+  // Drives which systems appear in the picker / recommend / compare lists.
+  const [category, setCategory] = useState<SystemCategory>("walls");
+
   // Active manufacturer brand. Visual-only for now — actual catalogue swap
   // happens in a follow-up step. British Gypsum has the real systems; the
   // others show a "coming soon" banner over the existing data.
@@ -108,12 +113,28 @@ function Calculator() {
     [bespokes],
   );
 
+  // Systems available in the currently picked category (bespokes always
+  // appear under "walls" — they're always wall build-ups for now).
+  const CATEGORY_SYSTEMS: SystemDef[] = useMemo(
+    () => COMBINED.filter(s => s.category === category),
+    [COMBINED, category],
+  );
+
   // Compare-mode state
   const [leftCode,  setLeftCode]  = useState<string>(LIBRARY[0].code);
   const [rightCode, setRightCode] = useState<string>(LIBRARY[1].code);
 
   // Active system shown in SingleView (By code / Recommend)
   const [activeCode, setActiveCode] = useState<string>(LIBRARY[0].code);
+
+  // When the user switches category, snap the active system to the first one
+  // in that category so the panels never show a stale build-up.
+  useEffect(() => {
+    if (!CATEGORY_SYSTEMS.some(s => s.code === activeCode)) {
+      const first = CATEGORY_SYSTEMS[0];
+      if (first) setActiveCode(first.code);
+    }
+  }, [category, CATEGORY_SYSTEMS, activeCode]);
 
   // Board sizing — "auto" lets us derive the best board from height to minimise waste.
   const [boardSize, setBoardSize] = useState<string>("auto");
@@ -206,6 +227,9 @@ function Calculator() {
           </div>
         )}
 
+        {/* Category tabs — mirrors the 8 families from the System Catalog */}
+        <CategoryTabs active={category} onChange={setCategory} />
+
         {/* Recommend bar (fold-out) */}
         {mode === "recommend" && (
           <div className="glass-card rounded-2xl p-5">
@@ -240,7 +264,7 @@ function Calculator() {
             waste={waste}   setWaste={setWaste}
             area={area} wasteFactor={wasteFactor}
             onPromote={promoteToCalculator}
-            combined={COMBINED}
+            combined={CATEGORY_SYSTEMS.length ? CATEGORY_SYSTEMS : COMBINED}
           />
         ) : (
           /* ===================== SINGLE-SYSTEM MODE ===================== */
@@ -253,7 +277,7 @@ function Calculator() {
             reuseOffcuts={reuseOffcuts} setReuseOffcuts={setReuseOffcuts}
             area={area} wasteFactor={wasteFactor}
             navigate={navigate}
-            combined={COMBINED}
+            combined={CATEGORY_SYSTEMS.length ? CATEGORY_SYSTEMS : COMBINED}
             projectId={current.id}
             projectName={current.name}
             canSeePricing={canSeePricing}
@@ -1439,5 +1463,62 @@ function AddToBoqButton({
     >
       <FileSpreadsheet className="h-4 w-4" /> Add to BoQ
     </Button>
+  );
+}
+
+// =============================================================================
+// CATEGORY TABS — top-level system family picker
+// Mirrors the 8 families exposed by the System Catalog so the calculator can
+// scope its picker / recommend / compare lists to one category at a time.
+// =============================================================================
+function CategoryTabs({
+  active,
+  onChange,
+}: {
+  active: SystemCategory;
+  onChange: (id: SystemCategory) => void;
+}) {
+  const counts = useMemo(() => {
+    const map = new Map<SystemCategory, number>();
+    for (const s of LIBRARY) map.set(s.category, (map.get(s.category) ?? 0) + 1);
+    return map;
+  }, []);
+
+  return (
+    <div className="glass-card rounded-2xl p-2">
+      <div className="flex items-center gap-1 overflow-x-auto">
+        {SYSTEM_CATEGORIES.map(c => {
+          const isActive = c.id === active;
+          const n = counts.get(c.id) ?? 0;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => onChange(c.id)}
+              title={c.blurb}
+              className={
+                "group inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-[12.5px] font-semibold transition-all " +
+                (isActive
+                  ? "bg-[var(--ink-900)] text-white shadow-[0_4px_14px_-6px_var(--accent-500)]"
+                  : "text-[var(--ink-700)] hover:bg-[var(--ink-100)]")
+              }
+              aria-pressed={isActive}
+            >
+              <span>{c.label}</span>
+              <span
+                className={
+                  "font-mono-num rounded-full px-1.5 py-0.5 text-[10px] font-bold " +
+                  (isActive
+                    ? "bg-white/15 text-white"
+                    : "bg-[var(--ink-100)] text-[var(--ink-500)] group-hover:bg-[var(--card)]")
+                }
+              >
+                {n}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
