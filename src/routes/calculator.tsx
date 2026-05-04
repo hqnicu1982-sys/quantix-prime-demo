@@ -44,6 +44,7 @@ function bespokeToSystemDef(bsp: BespokeSystem): SystemDef {
     code: bsp.id,
     shortName: `${bsp.name} (bespoke)`,
     desc: `Bespoke build-up forked from ${bsp.parentCode} (${bsp.parentShortName}). Materials only — performance ratings require BG re-certification.`,
+    category: "walls",
     buildUp: [
       { k: "Side A layers", v: String(bsp.buildUp.sideA.length) },
       { k: "Side B layers", v: String(bsp.buildUp.sideB.length) },
