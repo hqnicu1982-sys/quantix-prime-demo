@@ -376,36 +376,51 @@ function SingleView({
       <main className="space-y-8">
         {/* ───── 01 · System ───── */}
         <section className="glass-card rounded-3xl p-7 md:p-8">
-          <SectionTitle n="01" label="Pick a system" />
-          <p className="mt-2 max-w-xl text-[12.5px] leading-relaxed text-[var(--ink-500)]">
-            Start by loading a tested build-up. Everything below adapts to your choice.
-          </p>
-          <div className="mt-5 flex flex-wrap items-end gap-3">
-            <div className="min-w-[280px] flex-1">
-              <p className="mb-1.5 flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
-                System code
+          {chrome === "legacy" && (
+            <>
+              <SectionTitle n="01" label="Pick a system" />
+              <p className="mt-2 max-w-xl text-[12.5px] leading-relaxed text-[var(--ink-500)]">
+                Start by loading a tested build-up. Everything below adapts to your choice.
+              </p>
+              <div className="mt-5 flex flex-wrap items-end gap-3">
+                <div className="min-w-[280px] flex-1">
+                  <p className="mb-1.5 flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+                    System code
+                    {isBespoke && (
+                      <span className="rounded-full bg-[var(--accent-500)]/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent-500)]">
+                        Bespoke
+                      </span>
+                    )}
+                  </p>
+                  <select
+                    value={activeCode}
+                    onChange={e => setActiveCode(e.target.value)}
+                    className="glass-input font-mono-num w-full rounded-2xl px-5 py-4 text-[15px] font-semibold"
+                  >
+                    {combined.map(s => (
+                      <option key={s.code} value={s.code}>
+                        {s.code.startsWith("BSP-") ? "🛠️ " : ""}{s.code}{s.code.startsWith("BSP-") ? ` — ${s.shortName}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Secondary system actions — quieter row */}
+          <div className={(chrome === "canvas" ? "" : "mt-3 ") + "flex flex-wrap items-center gap-2 text-[11.5px]"}>
+            {chrome === "canvas" && (
+              <span className="mr-1 inline-flex items-center gap-2">
+                <span className="font-mono-num text-[12px] font-semibold text-[var(--ink-900)]">{sys.code}</span>
+                <span className="text-[11.5px] text-[var(--ink-500)]">{sys.shortName}</span>
                 {isBespoke && (
                   <span className="rounded-full bg-[var(--accent-500)]/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent-500)]">
                     Bespoke
                   </span>
                 )}
-              </p>
-              <select
-                value={activeCode}
-                onChange={e => setActiveCode(e.target.value)}
-                className="glass-input font-mono-num w-full rounded-2xl px-5 py-4 text-[15px] font-semibold"
-              >
-                {combined.map(s => (
-                  <option key={s.code} value={s.code}>
-                    {s.code.startsWith("BSP-") ? "🛠️ " : ""}{s.code}{s.code.startsWith("BSP-") ? ` — ${s.shortName}` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Secondary system actions — quieter row */}
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11.5px]">
+              </span>
+            )}
             <button
               onClick={() => setBespokeOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ink-200)] px-3 py-1 text-[var(--ink-700)] transition-colors hover:border-[var(--accent-500)]/40 hover:text-[var(--ink-900)]"
