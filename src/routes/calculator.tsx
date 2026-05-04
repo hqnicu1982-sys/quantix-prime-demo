@@ -1465,3 +1465,60 @@ function AddToBoqButton({
     </Button>
   );
 }
+
+// =============================================================================
+// CATEGORY TABS — top-level system family picker
+// Mirrors the 8 families exposed by the System Catalog so the calculator can
+// scope its picker / recommend / compare lists to one category at a time.
+// =============================================================================
+function CategoryTabs({
+  active,
+  onChange,
+}: {
+  active: SystemCategory;
+  onChange: (id: SystemCategory) => void;
+}) {
+  const counts = useMemo(() => {
+    const map = new Map<SystemCategory, number>();
+    for (const s of LIBRARY) map.set(s.category, (map.get(s.category) ?? 0) + 1);
+    return map;
+  }, []);
+
+  return (
+    <div className="glass-card rounded-2xl p-2">
+      <div className="flex items-center gap-1 overflow-x-auto">
+        {SYSTEM_CATEGORIES.map(c => {
+          const isActive = c.id === active;
+          const n = counts.get(c.id) ?? 0;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => onChange(c.id)}
+              title={c.blurb}
+              className={
+                "group inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-[12.5px] font-semibold transition-all " +
+                (isActive
+                  ? "bg-[var(--ink-900)] text-white shadow-[0_4px_14px_-6px_var(--accent-500)]"
+                  : "text-[var(--ink-700)] hover:bg-[var(--ink-100)]")
+              }
+              aria-pressed={isActive}
+            >
+              <span>{c.label}</span>
+              <span
+                className={
+                  "font-mono-num rounded-full px-1.5 py-0.5 text-[10px] font-bold " +
+                  (isActive
+                    ? "bg-white/15 text-white"
+                    : "bg-[var(--ink-100)] text-[var(--ink-500)] group-hover:bg-[var(--card)]")
+                }
+              >
+                {n}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
