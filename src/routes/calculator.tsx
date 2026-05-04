@@ -23,7 +23,7 @@ import { addSystemToBoQ } from "@/lib/projectData";
 import { useBespokeSystems, buildUpToMaterials, type BespokeSystem, type BespokeBuildUp } from "@/lib/bespokeSystems";
 import { BespokeBuildUpDialog } from "@/components/calculator/BespokeBuildUpDialog";
 import { estimateCost, fmtMoneyShort } from "@/lib/calculatorPricing";
-import { LIBRARY, scaledTotals, type SystemDef, type Totals } from "@/lib/systemLibrary";
+import { LIBRARY, scaledTotals, SYSTEM_CATEGORIES, type SystemCategory, type SystemDef, type Totals } from "@/lib/systemLibrary";
 import { useCan } from "@/lib/permissions";
 
 export const Route = createFileRoute("/calculator")({ component: Calculator });
@@ -91,6 +91,10 @@ function Calculator() {
   const [height, setHeight] = useState("4");
   const [waste, setWaste]   = useState(5);
 
+  // Active top-level category (mirrors the System Catalog rail).
+  // Drives which systems appear in the picker / recommend / compare lists.
+  const [category, setCategory] = useState<SystemCategory>("walls");
+
   // Active manufacturer brand. Visual-only for now — actual catalogue swap
   // happens in a follow-up step. British Gypsum has the real systems; the
   // others show a "coming soon" banner over the existing data.
@@ -109,12 +113,28 @@ function Calculator() {
     [bespokes],
   );
 
+  // Systems available in the currently picked category (bespokes always
+  // appear under "walls" — they're always wall build-ups for now).
+  const CATEGORY_SYSTEMS: SystemDef[] = useMemo(
+    () => COMBINED.filter(s => s.category === category),
+    [COMBINED, category],
+  );
+
   // Compare-mode state
   const [leftCode,  setLeftCode]  = useState<string>(LIBRARY[0].code);
   const [rightCode, setRightCode] = useState<string>(LIBRARY[1].code);
 
   // Active system shown in SingleView (By code / Recommend)
   const [activeCode, setActiveCode] = useState<string>(LIBRARY[0].code);
+
+  // When the user switches category, snap the active system to the first one
+  // in that category so the panels never show a stale build-up.
+  useEffect(() => {
+    if (!CATEGORY_SYSTEMS.some(s => s.code === activeCode)) {
+      const first = CATEGORY_SYSTEMS[0];
+      if (first) setActiveCode(first.code);
+    }
+  }, [category, CATEGORY_SYSTEMS, activeCode]);
 
   // Board sizing — "auto" lets us derive the best board from height to minimise waste.
   const [boardSize, setBoardSize] = useState<string>("auto");
@@ -207,6 +227,9 @@ function Calculator() {
           </div>
         )}
 
+        {/* Category tabs — mirrors the 8 families from the System Catalog */}
+        <CategoryTabs active={category} onChange={setCategory} />
+
         {/* Recommend bar (fold-out) */}
         {mode === "recommend" && (
           <div className="glass-card rounded-2xl p-5">
@@ -241,7 +264,7 @@ function Calculator() {
             waste={waste}   setWaste={setWaste}
             area={area} wasteFactor={wasteFactor}
             onPromote={promoteToCalculator}
-            combined={COMBINED}
+            combined={CATEGORY_SYSTEMS.length ? CATEGORY_SYSTEMS : COMBINED}
           />
         ) : (
           /* ===================== SINGLE-SYSTEM MODE ===================== */
@@ -254,7 +277,8 @@ function Calculator() {
             reuseOffcuts={reuseOffcuts} setReuseOffcuts={setReuseOffcuts}
             area={area} wasteFactor={wasteFactor}
             navigate={navigate}
-            combined={COMBINED}
+            combined={CATEGORY_SYSTEMS.length ? CATEGORY_SYSTEMS : COMBINED}
+            category={category}
             projectId={current.id}
             projectName={current.name}
             canSeePricing={canSeePricing}
