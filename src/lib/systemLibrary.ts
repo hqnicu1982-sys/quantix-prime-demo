@@ -14,10 +14,34 @@ export type Perf = {
 
 export type Totals = Record<string, { qty: number; unit: string }>;
 
+// Top-level categories shown in the Calculator (mirrors the System Catalog).
+// Keep ids stable — they're used to filter the system picker.
+export type SystemCategory =
+  | "walls"
+  | "lining"
+  | "shaft"
+  | "ceilings"
+  | "steel"
+  | "floors"
+  | "external"
+  | "plasters";
+
+export const SYSTEM_CATEGORIES: { id: SystemCategory; label: string; blurb: string }[] = [
+  { id: "walls",    label: "Partitions",   blurb: "Internal partition walls" },
+  { id: "lining",   label: "Wall linings", blurb: "Independent & direct linings" },
+  { id: "shaft",    label: "Shaftwalls",   blurb: "Lift & service shafts" },
+  { id: "ceilings", label: "Ceilings",     blurb: "MF & horizontal shaftwalls" },
+  { id: "steel",    label: "Steel",        blurb: "Structural fire protection" },
+  { id: "floors",   label: "Floors",       blurb: "Floating & acoustic floors" },
+  { id: "external", label: "External",     blurb: "Lightweight external walls" },
+  { id: "plasters", label: "Plasters",     blurb: "Skim & undercoat plasters" },
+];
+
 export type SystemDef = {
   code: string;
   shortName: string;
   desc: string;
+  category: SystemCategory;
   buildUp: { k: string; v: string }[];
   perf: Perf;
   // Quantities are per m² of wall — multiply by area in render.
@@ -32,6 +56,7 @@ export const LIBRARY: SystemDef[] = [
     code: "GIWL-146-I-80-1L-DL15 (B)",
     shortName: "DuraLine 15 · I-Stud 146",
     desc: "One layer of Gyproc DuraLine 15mm to one side of Gypframe 146 | 80 'I' Stud framework forming an independent lining. Heights up to 7200 mm.",
+    category: "lining",
     buildUp: [
       { k: "Board type",            v: "Gyproc DuraLine" },
       { k: "Board thickness (mm)",  v: "15" },
@@ -54,6 +79,7 @@ export const LIBRARY: SystemDef[] = [
     code: "GIWL-92-C-50-2L-WB12.5",
     shortName: "WallBoard 12.5 ×2 · C-Stud 92",
     desc: "Two layers of Gyproc WallBoard 12.5 mm to one side of Gypframe 92 C-Stud — 60 min fire and 44 dB Rw. Heights up to 5400 mm.",
+    category: "walls",
     buildUp: [
       { k: "Board type",            v: "Gyproc WallBoard" },
       { k: "Board thickness (mm)",  v: "12.5 (×2)" },
@@ -76,6 +102,7 @@ export const LIBRARY: SystemDef[] = [
     code: "GIWL-146-I-80-2L-SB15",
     shortName: "SoundBloc 15 ×2 · I-Stud 146 (acoustic)",
     desc: "Two layers of Gyproc SoundBloc 15 mm on Gypframe 146 I-Stud — 90 min fire and 58 dB Rw. Heights up to 7200 mm.",
+    category: "walls",
     buildUp: [
       { k: "Board type",            v: "Gyproc SoundBloc" },
       { k: "Board thickness (mm)",  v: "15 (×2)" },
