@@ -335,14 +335,22 @@ function SingleView({
   // Bespoke build-up dialog state
   const [bespokeOpen, setBespokeOpen] = useState(false);
 
+  // Disclosure toggles for the airier workbench layout
+  const [moreGeomOpen, setMoreGeomOpen] = useState(false);
+  const [boardTableOpen, setBoardTableOpen] = useState(false);
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-      <main className="space-y-6">
-        <section className="glass-card rounded-2xl p-6">
-          <SectionTitle n="01" label="System reference" />
-          <div className="mt-4 flex flex-wrap items-end gap-3">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <main className="space-y-8">
+        {/* ───── 01 · System ───── */}
+        <section className="glass-card rounded-3xl p-7 md:p-8">
+          <SectionTitle n="01" label="Pick a system" />
+          <p className="mt-2 max-w-xl text-[12.5px] leading-relaxed text-[var(--ink-500)]">
+            Start by loading a tested build-up. Everything below adapts to your choice.
+          </p>
+          <div className="mt-5 flex flex-wrap items-end gap-3">
             <div className="min-w-[280px] flex-1">
-              <p className="mb-1 flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+              <p className="mb-1.5 flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
                 System code
                 {isBespoke && (
                   <span className="rounded-full bg-[var(--accent-500)]/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent-500)]">
@@ -353,7 +361,7 @@ function SingleView({
               <select
                 value={activeCode}
                 onChange={e => setActiveCode(e.target.value)}
-                className="glass-input font-mono-num w-full rounded-xl px-4 py-3 text-[14px] font-semibold"
+                className="glass-input font-mono-num w-full rounded-2xl px-5 py-4 text-[15px] font-semibold"
               >
                 {combined.map(s => (
                   <option key={s.code} value={s.code}>
@@ -362,33 +370,30 @@ function SingleView({
                 ))}
               </select>
             </div>
-            <Button
-              variant="outline"
-              size="lg"
-              className="gap-1.5"
+          </div>
+
+          {/* Secondary system actions — quieter row */}
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11.5px]">
+            <button
               onClick={() => setBespokeOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ink-200)] px-3 py-1 text-[var(--ink-700)] transition-colors hover:border-[var(--accent-500)]/40 hover:text-[var(--ink-900)]"
               title="Fork this system into a bespoke build-up"
             >
-              <Wand2 className="h-4 w-4" /> Customise build-up
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="gap-1.5"
+              <Wand2 className="h-3 w-3" /> Customise
+            </button>
+            <button
               onClick={() => {
                 const side = pushToTray(sys.code);
                 toast.success(`Added to Compare slot ${side}`, { description: sys.code });
               }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ink-200)] px-3 py-1 text-[var(--ink-700)] transition-colors hover:border-[var(--accent-500)]/40 hover:text-[var(--ink-900)]"
             >
-              <GitCompare className="h-4 w-4" /> Send to Compare
-            </Button>
-            <AddToBoqButton sys={sys} length={length} height={height} waste={waste} boardSize={effectiveBoard} totals={totals} />
+              <GitCompare className="h-3 w-3" /> Send to Compare
+            </button>
+            {isBespoke && (
+              <span className="ml-auto text-[var(--ink-500)]">Materials only — performance needs BG re-certification.</span>
+            )}
           </div>
-          <p className="mt-3 text-[12px] text-[var(--ink-500)]">
-            {isBespoke
-              ? "Bespoke build-up — materials only. Performance ratings need BG re-certification."
-              : "Type a code and press Load. Data comes from the live System Catalog."}
-          </p>
 
           {(() => {
             const tF = fireTier(sys.perf.fire);
@@ -397,7 +402,7 @@ function SingleView({
             const top = bestTier(tF, tR, tH);
             return (
               <div
-                className="relative mt-5 overflow-hidden rounded-xl border p-4"
+                className="relative mt-6 overflow-hidden rounded-2xl border p-5"
                 style={{
                   borderColor: `color-mix(in oklab, ${tierColorVar(top)} 35%, transparent)`,
                   background: `linear-gradient(135deg, color-mix(in oklab, ${tierColorVar(top)} 10%, transparent), color-mix(in oklab, var(--accent-500) 4%, transparent))`,
@@ -418,34 +423,44 @@ function SingleView({
           })()}
         </section>
 
-        <section className="glass-card rounded-2xl p-6">
-          <SectionTitle n="02" label="Geometry & finish" />
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <Field label="Length" unit="m" value={length} onChange={setLength} error={errs.length} hint="Required — wall length, e.g. 12.5" />
-            <Field label="Height" unit="m" value={height} onChange={setHeight} error={errs.height} hint="Required — floor to ceiling, e.g. 3.0" />
-            <Select label="Stud Centres" options={["400 mm","600 mm","Other"]} defaultValue="600 mm" />
+        {/* ───── 02 · Wall geometry ───── */}
+        <section className="glass-card rounded-3xl p-7 md:p-8">
+          <SectionTitle n="02" label="Size your wall" />
+          <p className="mt-2 max-w-xl text-[12.5px] leading-relaxed text-[var(--ink-500)]">
+            Two numbers and you're priced. The board is auto-picked to minimise off-cuts.
+          </p>
+
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            <BigNumberField label="Length" unit="m" value={length} onChange={setLength} error={errs.length} placeholder="12.5" />
+            <BigNumberField label="Height" unit="m" value={height} onChange={setHeight} error={errs.height} placeholder="3.0" />
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
             <div>
-              <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Board Size</p>
+              <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Board size</p>
               <select
                 value={boardSize}
                 onChange={e => setBoardSize(e.target.value)}
-                className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium"
+                className="glass-input w-full rounded-xl px-3 py-2.5 text-[13px] font-medium"
               >
-                <option value="auto">Auto — recommended</option>
+                <option value="auto">Auto — recommended ({recommended.label})</option>
                 {availableBoards.map(b => (
                   <option key={b.label} value={b.label}>{b.label}</option>
                 ))}
               </select>
-              <p className="mt-1 text-[11px] text-[var(--ink-500)]">
-                {availableBoards.length} size{availableBoards.length === 1 ? "" : "s"} supplied for {sys.shortName}
-              </p>
             </div>
-            <Select label="Finish" options={["Tape & Joint","Skim","Direct decorate"]} defaultValue="Tape & Joint" />
-            <Select label="Stage"  options={["Both","Frame only","Board only"]} defaultValue="Both" />
+            <div>
+              <div className="mb-1.5 flex items-baseline justify-between">
+                <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Handling waste</p>
+                <span className="font-mono-num text-[12px] font-semibold text-[var(--accent-500)]">{waste}%</span>
+              </div>
+              <input type="range" min={0} max={20} value={waste} onChange={e => setWaste(+e.target.value)} className="w-full accent-[var(--accent-500)]" />
+              <p className="mt-1 text-[10.5px] text-[var(--ink-500)]">Damage, mistakes, unrecoverable off-cuts.</p>
+            </div>
           </div>
 
           {/* Board recommendation chip — always visible, hints user when height is missing */}
-          <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--accent-500)]/25 bg-[var(--accent-500)]/5 px-4 py-3 text-[12.5px]">
+          <div className="mt-5 flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--accent-500)]/25 bg-[var(--accent-500)]/5 px-4 py-3 text-[12.5px]">
             <Lightbulb className="h-4 w-4 shrink-0 text-[var(--accent-500)]" />
             <span className="text-[var(--ink-700)]">
               {heightMm <= 0 ? (
@@ -478,9 +493,30 @@ function SingleView({
             )}
           </div>
 
-          {/* Board comparison table — shows waste for every size the manufacturer supplies */}
+          {/* More options disclosure — Stud centres / Finish / Stage */}
+          <Disclosure
+            open={moreGeomOpen}
+            onToggle={() => setMoreGeomOpen(o => !o)}
+            label="Finish & stage options"
+            className="mt-4"
+          >
+            <div className="grid gap-4 p-4 md:grid-cols-3">
+              <Select label="Stud centres" options={["400 mm","600 mm","Other"]} defaultValue="600 mm" />
+              <Select label="Finish"       options={["Tape & Joint","Skim","Direct decorate"]} defaultValue="Tape & Joint" />
+              <Select label="Stage"        options={["Both","Frame only","Board only"]} defaultValue="Both" />
+            </div>
+          </Disclosure>
+
+          {/* Board comparison table — collapsed by default for a calmer page */}
           {heightMm > 0 && availableBoards.length > 1 && (
-            <div className="mt-3 overflow-hidden rounded-xl border border-[var(--ink-200)]">
+            <Disclosure
+              open={boardTableOpen}
+              onToggle={() => setBoardTableOpen(o => !o)}
+              label={`Compare ${availableBoards.length} board sizes`}
+              icon={<Layers className="h-3.5 w-3.5 text-[var(--accent-500)]" />}
+              className="mt-3"
+            >
+            <div className="overflow-hidden">
               <div className="flex items-center justify-between border-b border-[var(--ink-200)] bg-[var(--ink-100)]/50 px-3 py-2">
                 <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
                   Available boards for {sys.shortName}
@@ -601,6 +637,7 @@ function SingleView({
                 </tbody>
               </table>
             </div>
+            </Disclosure>
           )}
 
           {/* ───── Plan all walls (multi-wall + cutting strategy + cost) ───── */}
@@ -697,16 +734,7 @@ function SingleView({
             </div>
           )}
 
-          <div className="mt-5">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">Handling waste %</p>
-              <span className="font-mono-num rounded-md bg-[var(--accent-500)]/10 px-2 py-0.5 text-[12px] font-semibold text-[var(--accent-500)]">{waste}%</span>
-            </div>
-            <input type="range" min={0} max={20} value={waste} onChange={e => setWaste(+e.target.value)} className="w-full accent-[var(--accent-500)]" />
-            <p className="mt-1 text-[11px] text-[var(--ink-500)]">Adds on top of cut waste — covers damage, mistakes and offcuts that can't be reused.</p>
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className="mt-7 flex flex-wrap gap-2">
             <Button
               size="lg"
               className="flex-1 min-w-[200px] gap-2"
@@ -722,13 +750,14 @@ function SingleView({
             >
               <Sparkles className="h-4 w-4" /> Calculate BoQ
             </Button>
+            <AddToBoqButton sys={sys} length={length} height={height} waste={waste} boardSize={effectiveBoard} totals={totals} />
             <Button size="lg" variant="outline" onClick={() => { setLength("50"); setHeight("4"); setWaste(5); toast("Reset to defaults"); }}>
               <RotateCcw className="h-4 w-4" />
             </Button>
           </div>
         </section>
 
-        <div className="glass-card flex items-start gap-3 rounded-2xl p-4 text-[12.5px] text-[var(--ink-900)]">
+        <div className="glass-card flex items-start gap-3 rounded-2xl p-4 text-[12px] text-[var(--ink-700)]">
           <Shield className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-500)]" />
           <p><strong>SpecSure®</strong> applies when genuine BG components and details are followed.</p>
         </div>
@@ -1226,6 +1255,81 @@ function Select({ label, options, defaultValue }: { label: string; options: stri
       <select defaultValue={defaultValue} className="glass-input w-full rounded-xl px-3 py-2 text-[13px] font-medium">
         {options.map(o => <option key={o}>{o}</option>)}
       </select>
+    </div>
+  );
+}
+
+// Big, airy numeric input used by the new workbench layout.
+function BigNumberField({
+  label, unit, value, onChange, error, placeholder,
+}: {
+  label: string; unit: string;
+  value: string; onChange: (v: string) => void;
+  error?: string | null; placeholder?: string;
+}) {
+  const [touched, setTouched] = React.useState(false);
+  const isEmpty = !value || value.trim() === "";
+  const tone: "none" | "info" | "error" =
+    !error ? "none" : (isEmpty || !touched) ? "info" : "error";
+  return (
+    <div>
+      <div className="mb-1.5 flex items-baseline justify-between">
+        <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
+        <span className="font-mono-num text-[10.5px] font-medium text-[var(--ink-500)]">{unit}</span>
+      </div>
+      <div className="relative">
+        <input
+          inputMode="decimal"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onBlur={() => setTouched(true)}
+          onFocus={e => e.target.select()}
+          placeholder={placeholder}
+          aria-invalid={tone === "error"}
+          className={
+            "glass-input font-mono-num w-full rounded-2xl px-5 py-4 text-[26px] font-semibold tabular-nums placeholder:text-[var(--ink-300)] transition-shadow " +
+            (tone === "error"
+              ? "border-[var(--tier-critical)] shadow-[0_0_0_3px_color-mix(in_oklab,var(--tier-critical)_14%,transparent)]"
+              : "")
+          }
+        />
+        <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[13px] font-medium text-[var(--ink-500)]">{unit}</span>
+      </div>
+      {tone === "error" && (
+        <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-[var(--tier-critical)]">
+          <AlertCircle className="h-3 w-3" /> {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Lightweight disclosure used to tuck away dense secondary blocks.
+function Disclosure({
+  open, onToggle, label, icon, children, className,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  label: React.ReactNode;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={"overflow-hidden rounded-2xl border border-[var(--ink-200)] " + (className ?? "")}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-3 bg-[var(--ink-50)]/40 px-4 py-2.5 text-left transition-colors hover:bg-[var(--ink-50)]/80"
+        aria-expanded={open}
+      >
+        <span className="inline-flex items-center gap-2 text-[11.5px] font-semibold uppercase tracking-wider text-[var(--ink-700)]">
+          {icon}
+          {label}
+        </span>
+        <ChevronDown className={"h-4 w-4 text-[var(--ink-500)] transition-transform " + (open ? "rotate-180" : "")} />
+      </button>
+      {open && <div className="border-t border-[var(--ink-200)]">{children}</div>}
     </div>
   );
 }
