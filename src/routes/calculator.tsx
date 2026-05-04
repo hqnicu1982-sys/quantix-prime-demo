@@ -302,6 +302,7 @@ function SingleView({
   reuseOffcuts, setReuseOffcuts,
   area, wasteFactor, navigate,
   combined, projectId, projectName, canSeePricing,
+  chrome = "legacy",
 }: {
   activeCode: string; setActiveCode: (v: string) => void;
   length: string; setLength: (v: string) => void;
@@ -315,6 +316,9 @@ function SingleView({
   projectId: string;
   projectName: string;
   canSeePricing: boolean;
+  /** "canvas" hides the picker section + board <select> (those moved to the
+   *  command bar) and surfaces a wall preview. "legacy" keeps the old layout. */
+  chrome?: "legacy" | "canvas";
 }) {
   const sys = combined.find(s => s.code === activeCode) ?? LIBRARY[0];
   const isBespoke = activeCode.startsWith("BSP-");
