@@ -322,19 +322,29 @@ function SingleView({
 }) {
   const sys = combined.find(s => s.code === activeCode) ?? LIBRARY[0];
   const isBespoke = activeCode.startsWith("BSP-");
-  // Horizontal surfaces (ceilings/floors) use Length × Width semantics and a
-  // top-down preview. Everything else stays as Length × Height (elevation).
+  // Geometry semantics adapt to the system category:
+  //  - walls / lining / shaft / external / plasters → Length × Height (elevation)
+  //  - ceilings / floors                            → Length × Width  (plan view)
+  //  - steel (encasement)                           → Length × Profile perimeter
   const isHorizontal = sys.category === "ceilings" || sys.category === "floors";
-  const surfaceLabel = isHorizontal
-    ? sys.category === "floors" ? "floor" : "ceiling"
-    : "wall";
-  const vDimLabel = isHorizontal ? "Width" : "Height";
-  const sectionTitle = isHorizontal
-    ? `Size your ${surfaceLabel}`
-    : "Size your wall";
-  const sectionBlurb = isHorizontal
-    ? `Two numbers and you're priced — length × width gives the ${surfaceLabel} area.`
-    : "Two numbers and you're priced. The board is auto-picked to minimise off-cuts.";
+  const isSteel = sys.category === "steel";
+  const surfaceLabel = isSteel
+    ? "encasement"
+    : isHorizontal
+      ? sys.category === "floors" ? "floor" : "ceiling"
+      : "wall";
+  const vDimLabel = isSteel ? "Profile perimeter" : isHorizontal ? "Width" : "Height";
+  const lengthLabel = isSteel ? "Member length" : "Length";
+  const sectionTitle = isSteel
+    ? "Size the steel member"
+    : isHorizontal
+      ? `Size your ${surfaceLabel}`
+      : "Size your wall";
+  const sectionBlurb = isSteel
+    ? "Length of the beam/column × the developed perimeter of the profile (3-sided beam, 4-sided column) gives the encased area."
+    : isHorizontal
+      ? `Two numbers and you're priced — length × width gives the ${surfaceLabel} area.`
+      : "Two numbers and you're priced. The board is auto-picked to minimise off-cuts.";
   const errs = validateGeometry(length, height, waste);
   const invalid = hasErrors(errs);
   const totals = scaledTotals(sys, area, wasteFactor);
@@ -495,14 +505,14 @@ function SingleView({
               <WallPreview
                 lengthM={+length || 0}
                 heightM={+height || 0}
-                kind={isHorizontal ? "ceiling" : "wall"}
+                kind={isSteel ? "steel" : isHorizontal ? "ceiling" : "wall"}
               />
             </div>
           )}
 
           <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <BigNumberField label="Length" unit="m" value={length} onChange={setLength} error={errs.length} placeholder="12.5" />
-            <BigNumberField label={vDimLabel} unit="m" value={height} onChange={setHeight} error={errs.height} placeholder={isHorizontal ? "4.0" : "3.0"} />
+            <BigNumberField label={lengthLabel} unit="m" value={length} onChange={setLength} error={errs.length} placeholder={isSteel ? "6.0" : "12.5"} />
+            <BigNumberField label={vDimLabel} unit="m" value={height} onChange={setHeight} error={errs.height} placeholder={isSteel ? "1.4" : isHorizontal ? "4.0" : "3.0"} />
           </div>
 
           <div className={"mt-5 grid gap-4 " + (chrome === "canvas" ? "" : "md:grid-cols-2")}>

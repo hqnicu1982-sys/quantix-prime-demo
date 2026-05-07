@@ -17,8 +17,9 @@ export function WallPreview({
   heightM: number;
   className?: string;
   /** "wall" → vertical = Height (elevation view).
-   *  "ceiling" → vertical = Width (top-down plan view). */
-  kind?: "wall" | "ceiling";
+   *  "ceiling" → vertical = Width (top-down plan view).
+   *  "steel" → vertical = profile perimeter (encasement). */
+  kind?: "wall" | "ceiling" | "steel";
 }) {
   const valid = lengthM > 0 && heightM > 0;
   // Canvas slot: 16:5 ratio, generous horizontal padding so tall walls breathe.
@@ -48,7 +49,9 @@ export function WallPreview({
   const placeholder =
     kind === "ceiling"
       ? "Enter length & width to preview the ceiling"
-      : "Enter length & height to preview the wall";
+      : kind === "steel"
+        ? "Enter member length & profile perimeter"
+        : "Enter length & height to preview the wall";
 
   return (
     <div
@@ -137,7 +140,7 @@ export function WallPreview({
               fill="var(--ink-500)"
               opacity="0.8"
             >
-              {kind === "ceiling" ? "plan view" : "elevation"}
+              {kind === "ceiling" ? "plan view" : kind === "steel" ? "encasement" : "elevation"}
             </text>
             {/* centre area readout */}
             <text
