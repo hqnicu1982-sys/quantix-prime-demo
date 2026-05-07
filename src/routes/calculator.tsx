@@ -322,6 +322,19 @@ function SingleView({
 }) {
   const sys = combined.find(s => s.code === activeCode) ?? LIBRARY[0];
   const isBespoke = activeCode.startsWith("BSP-");
+  // Horizontal surfaces (ceilings/floors) use Length × Width semantics and a
+  // top-down preview. Everything else stays as Length × Height (elevation).
+  const isHorizontal = sys.category === "ceilings" || sys.category === "floors";
+  const surfaceLabel = isHorizontal
+    ? sys.category === "floors" ? "floor" : "ceiling"
+    : "wall";
+  const vDimLabel = isHorizontal ? "Width" : "Height";
+  const sectionTitle = isHorizontal
+    ? `Size your ${surfaceLabel}`
+    : "Size your wall";
+  const sectionBlurb = isHorizontal
+    ? `Two numbers and you're priced — length × width gives the ${surfaceLabel} area.`
+    : "Two numbers and you're priced. The board is auto-picked to minimise off-cuts.";
   const errs = validateGeometry(length, height, waste);
   const invalid = hasErrors(errs);
   const totals = scaledTotals(sys, area, wasteFactor);
@@ -472,20 +485,24 @@ function SingleView({
 
         {/* ───── 02 · Wall geometry ───── */}
         <section className="glass-card rounded-3xl p-7 md:p-8">
-          <SectionTitle n="02" label="Size your wall" />
+          <SectionTitle n="02" label={sectionTitle} />
           <p className="mt-2 max-w-xl text-[12.5px] leading-relaxed text-[var(--ink-500)]">
-            Two numbers and you're priced. The board is auto-picked to minimise off-cuts.
+            {sectionBlurb}
           </p>
 
           {chrome === "canvas" && (
             <div className="mt-5">
-              <WallPreview lengthM={+length || 0} heightM={+height || 0} />
+              <WallPreview
+                lengthM={+length || 0}
+                heightM={+height || 0}
+                kind={isHorizontal ? "ceiling" : "wall"}
+              />
             </div>
           )}
 
           <div className="mt-6 grid gap-5 md:grid-cols-2">
             <BigNumberField label="Length" unit="m" value={length} onChange={setLength} error={errs.length} placeholder="12.5" />
-            <BigNumberField label="Height" unit="m" value={height} onChange={setHeight} error={errs.height} placeholder="3.0" />
+            <BigNumberField label={vDimLabel} unit="m" value={height} onChange={setHeight} error={errs.height} placeholder={isHorizontal ? "4.0" : "3.0"} />
           </div>
 
           <div className={"mt-5 grid gap-4 " + (chrome === "canvas" ? "" : "md:grid-cols-2")}>
