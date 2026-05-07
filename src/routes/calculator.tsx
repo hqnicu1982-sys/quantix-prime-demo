@@ -856,7 +856,9 @@ function SingleView({
           </div>
 
           <div className="border-b border-[var(--ink-200)]/60 px-5 py-5">
-            <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">Wall area</p>
+            <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+              {isHorizontal ? `${surfaceLabel.charAt(0).toUpperCase()}${surfaceLabel.slice(1)} area` : "Wall area"}
+            </p>
             <p className={"font-display mt-1 text-[44px] font-bold leading-none tracking-tight " + (invalid ? "text-[var(--ink-500)]" : "impact-number")}>
               {invalid ? "—" : area.toLocaleString()}<span className="ml-1 text-[16px] font-medium text-[var(--ink-500)]">m²</span>
             </p>
