@@ -11,10 +11,14 @@ export function WallPreview({
   lengthM,
   heightM,
   className,
+  kind = "wall",
 }: {
   lengthM: number;
   heightM: number;
   className?: string;
+  /** "wall" → vertical = Height (elevation view).
+   *  "ceiling" → vertical = Width (top-down plan view). */
+  kind?: "wall" | "ceiling";
 }) {
   const valid = lengthM > 0 && heightM > 0;
   // Canvas slot: 16:5 ratio, generous horizontal padding so tall walls breathe.
@@ -41,6 +45,10 @@ export function WallPreview({
   const x = (W - rectW) / 2;
   const y = (H - rectH) / 2;
   const area = lengthM * heightM;
+  const placeholder =
+    kind === "ceiling"
+      ? "Enter length & width to preview the ceiling"
+      : "Enter length & height to preview the wall";
 
   return (
     <div
@@ -120,6 +128,17 @@ export function WallPreview({
             >
               {heightM.toFixed(2)} m
             </text>
+            {/* axis label badge (top-left) */}
+            <text
+              x={x + 6}
+              y={y + 14}
+              fontSize="9"
+              fontFamily="ui-monospace, SFMono-Regular, monospace"
+              fill="var(--ink-500)"
+              opacity="0.8"
+            >
+              {kind === "ceiling" ? "plan view" : "elevation"}
+            </text>
             {/* centre area readout */}
             <text
               x={W / 2}
@@ -141,7 +160,7 @@ export function WallPreview({
             fontSize="12"
             fill="var(--ink-500)"
           >
-            Enter length &amp; height to preview the wall
+            {placeholder}
           </text>
         )}
       </svg>
