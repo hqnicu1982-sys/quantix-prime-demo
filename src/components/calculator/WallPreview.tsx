@@ -45,7 +45,6 @@ export function WallPreview({
   const x = (W - rectW) / 2;
   const y = (H - rectH) / 2;
   const area = lengthM * heightM;
-  const vLabel = kind === "ceiling" ? "Width" : "Height";
   const placeholder =
     kind === "ceiling"
       ? "Enter length & width to preview the ceiling"
