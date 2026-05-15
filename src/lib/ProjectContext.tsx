@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { projects, type Project, type Persona } from "./mockData";
-import { useCustomProjects } from "./customProjects";
+import { useCustomProjects, useProjectOverrides, useHiddenProjectIds } from "./customProjects";
 
 type Ctx = {
   current: Project;
@@ -28,6 +28,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     return stored === "site" || stored === "commercial" ? stored : "site";
   });
   const custom = useCustomProjects();
+  const overrides = useProjectOverrides();
+  const hidden = useHiddenProjectIds();
 
   const setPersona = (p: Persona) => {
     setPersonaState(p);
@@ -39,8 +41,11 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") localStorage.setItem("qp-current-project", id);
   };
 
-  const all = [...custom, ...projects];
-  const current = all.find((p) => p.id === currentId) ?? projects[0];
+  const merged = [...custom, ...projects]
+    .filter((p) => !hidden.includes(p.id))
+    .map((p) => (overrides[p.id] ? { ...p, ...overrides[p.id] } : p));
+  const all = merged;
+  const current = all.find((p) => p.id === currentId) ?? all[0] ?? projects[0];
   return (
     <ProjectContext.Provider value={{ current, setCurrent, all, persona, setPersona }}>
       {children}
