@@ -247,6 +247,7 @@ function ProjectLayout() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <EditProjectDialog project={project} open={editOpen} onOpenChange={setEditOpen} />
     </Section>
   );
 }
