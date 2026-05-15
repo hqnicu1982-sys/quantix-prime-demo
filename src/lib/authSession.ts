@@ -113,6 +113,15 @@ export function useSession(): Session | null {
   return s;
 }
 
+// Returns true once we've read auth state from storage on the client.
+// Use this to gate redirects so we don't bounce signed-in users to /login
+// during the first render where useState still holds the SSR-safe `null`.
+export function useSessionReady(): boolean {
+  const [ready, setReady] = useState(false);
+  useEffect(() => { setReady(true); }, []);
+  return ready;
+}
+
 export const PUBLIC_PATHS = ["/login", "/signup", "/how-to"];
 
 export function isPublicPath(pathname: string): boolean {
