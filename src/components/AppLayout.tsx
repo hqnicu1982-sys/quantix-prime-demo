@@ -20,7 +20,7 @@ import { can, type Capability } from "@/lib/permissions";
 import { useCan } from "@/lib/permissions";
 import { useAssignments } from "@/lib/labour";
 import { useRecentProjects } from "@/lib/recentProjects";
-import { useSession, isPublicPath } from "@/lib/authSession";
+import { useSession, useSessionReady, isPublicPath } from "@/lib/authSession";
 
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean; params?: Record<string, string>; requires?: Capability };
 type NavGroup = { label: string; persona?: "site" | "commercial"; items: NavItem[] };
@@ -354,15 +354,17 @@ function LayoutInner() {
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const session = useSession();
+  const authReady = useSessionReady();
   const location = useLocation();
   const navigate = useNavigate();
 
   // Route guard: any non-public route requires a session.
   useEffect(() => {
+    if (!authReady) return;
     if (!session && !isPublicPath(location.pathname)) {
       navigate({ to: "/login", search: { redirect: location.pathname } });
     }
-  }, [session, location.pathname, navigate]);
+  }, [authReady, session, location.pathname, navigate]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -388,7 +390,7 @@ function LayoutInner() {
 
   // While redirecting an unauthenticated user away from a protected route,
   // render nothing to avoid flashing the dashboard.
-  if (!session && !isPublicPath(location.pathname)) {
+  if (!authReady || (!session && !isPublicPath(location.pathname))) {
     return (
       <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
         <div className="h-8 w-8 animate-pulse rounded-full bg-[var(--ink-200)]" />
