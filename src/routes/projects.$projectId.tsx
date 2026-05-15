@@ -15,7 +15,7 @@ import { useAssignments } from "@/lib/labour";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { exportProjectPack } from "@/lib/exportProjectPack";
 import { useProjectData } from "@/lib/projectData";
-import { removeProject } from "@/lib/customProjects";
+import { removeProject, isCustomProject } from "@/lib/customProjects";
 import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { pushRecentProject } from "@/lib/recentProjects";
 import {
@@ -57,6 +57,7 @@ function ProjectLayout() {
   const projectData = useProjectData(projectId);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
   // Site User / Operative may only access projects they're assigned to.
   const me = useCurrentUser();
   const portfolioWide = useCan("view.financials.lite"); // Pro+ see all projects
@@ -140,9 +141,13 @@ function ProjectLayout() {
 
   const handleConfirmDelete = () => {
     const name = project.name;
+    const wasCustom = isCustomProject(projectId);
     removeProject(projectId);
     setConfirmDeleteOpen(false);
-    toast.success("Project deleted", { description: `${name} has been removed.` });
+    setConfirmText("");
+    toast.success(wasCustom ? "Project deleted" : "Project hidden", {
+      description: `${name} ${wasCustom ? "has been removed" : "is no longer in your list"}.`,
+    });
     navigate({ to: "/projects" });
   };
 
@@ -231,18 +236,47 @@ function ProjectLayout() {
       <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this project?</AlertDialogTitle>
-            <AlertDialogDescription>
-              <strong>{project.name}</strong> will be permanently removed from your custom projects. This cannot be undone.
+            <AlertDialogTitle>
+              {isCustomProject(projectId) ? "Delete this project?" : "Hide this project?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-[13px] text-[var(--ink-700)]">
+                {isCustomProject(projectId) ? (
+                  <p>
+                    You're about to <strong className="text-[var(--red-500)]">permanently delete</strong>{" "}
+                    <strong>"{project.name}"</strong>. This will remove the project and all of its
+                    payment cycles, variations, and invoices. This action cannot be undone.
+                  </p>
+                ) : (
+                  <p>
+                    <strong>"{project.name}"</strong> is a built-in demo project, so it can't be
+                    deleted — but you can <strong>hide it</strong> from your project list. You can
+                    restore the demo data later by clearing your browser storage.
+                  </p>
+                )}
+                <div>
+                  <label className="block text-[12px] font-medium text-[var(--ink-900)]">
+                    Type <code className="rounded bg-[var(--ink-100)] px-1 font-mono text-[11px]">{project.name}</code> to confirm
+                  </label>
+                  <input
+                    autoFocus
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    className="mt-1.5 w-full rounded border border-[var(--ink-200)] bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-[var(--accent-500)]"
+                    placeholder={project.name}
+                  />
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setConfirmText("")}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
+              disabled={confirmText.trim() !== project.name}
               className="bg-[var(--red-500)] text-white hover:bg-[var(--red-500)]/90"
             >
-              Delete project
+              {isCustomProject(projectId) ? "Delete project" : "Hide project"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
