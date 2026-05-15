@@ -141,9 +141,13 @@ function ProjectLayout() {
 
   const handleConfirmDelete = () => {
     const name = project.name;
+    const wasCustom = isCustomProject(projectId);
     removeProject(projectId);
     setConfirmDeleteOpen(false);
-    toast.success("Project deleted", { description: `${name} has been removed.` });
+    setConfirmText("");
+    toast.success(wasCustom ? "Project deleted" : "Project hidden", {
+      description: `${name} ${wasCustom ? "has been removed" : "is no longer in your list"}.`,
+    });
     navigate({ to: "/projects" });
   };
 
