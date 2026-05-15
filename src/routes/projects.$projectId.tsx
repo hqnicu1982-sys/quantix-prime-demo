@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useLocation, notFound, useNavigate } from "@tanstack/react-router";
 import { Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { Share2, Plus, FileDown, Trash2 } from "lucide-react";
+import { Share2, Plus, FileDown, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useProject } from "@/lib/ProjectContext";
@@ -15,7 +15,8 @@ import { useAssignments } from "@/lib/labour";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { exportProjectPack } from "@/lib/exportProjectPack";
 import { useProjectData } from "@/lib/projectData";
-import { useCustomProjects, deleteCustomProject } from "@/lib/customProjects";
+import { removeProject } from "@/lib/customProjects";
+import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { pushRecentProject } from "@/lib/recentProjects";
 import {
   AlertDialog,
@@ -54,9 +55,8 @@ function ProjectLayout() {
   const project = all.find((p) => p.id === projectId);
   const canSeeMoney = useCan("view.financials.lite");
   const projectData = useProjectData(projectId);
-  const customProjects = useCustomProjects();
-  const isCustom = customProjects.some((p) => p.id === projectId);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   // Site User / Operative may only access projects they're assigned to.
   const me = useCurrentUser();
   const portfolioWide = useCan("view.financials.lite"); // Pro+ see all projects
@@ -140,14 +140,10 @@ function ProjectLayout() {
 
   const handleConfirmDelete = () => {
     const name = project.name;
-    const ok = deleteCustomProject(projectId);
+    removeProject(projectId);
     setConfirmDeleteOpen(false);
-    if (ok) {
-      toast.success("Project deleted", { description: `${name} has been removed.` });
-      navigate({ to: "/projects" });
-    } else {
-      toast.error("Delete failed", { description: "Project not found." });
-    }
+    toast.success("Project deleted", { description: `${name} has been removed.` });
+    navigate({ to: "/projects" });
   };
 
   return (
@@ -169,16 +165,17 @@ function ProjectLayout() {
           <Button variant="outline" size="sm" onClick={handleExportPack}>
             <FileDown className="mr-1.5 h-3.5 w-3.5" /> Export pack
           </Button>
-          {isCustom && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setConfirmDeleteOpen(true)}
-              className="text-[var(--red-500)] hover:text-[var(--red-500)]"
-            >
-              <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setConfirmDeleteOpen(true)}
+            className="text-[var(--red-500)] hover:text-[var(--red-500)]"
+          >
+            <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
+          </Button>
           <Gated cap="create.calloffs">
             <Button size="sm" onClick={() => toast.success("New call-off", { description: `Draft created for ${project.name}` })}>
               <Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off
