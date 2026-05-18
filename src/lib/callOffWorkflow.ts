@@ -132,5 +132,5 @@ export const deliveries: Delivery[] = [
   { ref: "DEL-9921", callOff: "CO-247", supplier: "Minster", eta: "24 Apr · AM",  status: "scheduled",  qty: "1,850 m² boards" },
   { ref: "DEL-9920", callOff: "CO-245", supplier: "CCF",     eta: "21 Apr · PM",  status: "partial",    qty: "820 / 1,200 m studs", grnBy: "PW · partial GRN" },
   { ref: "DEL-9919", callOff: "CO-243", supplier: "CCF",     eta: "26 Apr",       status: "in-transit", qty: "420 m² MF kit" },
-  { ts: "", ref: "DEL-9918", callOff: "CO-241", supplier: "Minster", eta: "19 Apr", status: "received", qty: "180 boards", grnBy: "PW · 19 Apr 11:20" } as unknown as Delivery,
+  { ref: "DEL-9918", callOff: "CO-241", supplier: "Minster", eta: "19 Apr",       status: "received",   qty: "180 boards",          grnBy: "PW · 19 Apr 11:20" },
 ];
