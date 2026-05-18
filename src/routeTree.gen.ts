@@ -32,6 +32,7 @@ import { Route as CalloffsIndexRouteImport } from './routes/calloffs.index'
 import { Route as SettingsLabourRouteImport } from './routes/settings.labour'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects.$projectId'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
+import { Route as CalloffsPipelineRouteImport } from './routes/calloffs.pipeline'
 import { Route as CalloffsNewRouteImport } from './routes/calloffs.new'
 import { Route as CalloffsDeliveriesRouteImport } from './routes/calloffs.deliveries'
 import { Route as CalloffsApprovalsRouteImport } from './routes/calloffs.approvals'
@@ -162,6 +163,11 @@ const PriceListsUploadRoute = PriceListsUploadRouteImport.update({
   path: '/price-lists/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CalloffsPipelineRoute = CalloffsPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => CalloffsRoute,
+} as any)
 const CalloffsNewRoute = CalloffsNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
   '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
+  '/calloffs/pipeline': typeof CalloffsPipelineRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
@@ -300,6 +307,7 @@ export interface FileRoutesByTo {
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
   '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
+  '/calloffs/pipeline': typeof CalloffsPipelineRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/settings/labour': typeof SettingsLabourRoute
   '/calloffs': typeof CalloffsIndexRoute
@@ -339,6 +347,7 @@ export interface FileRoutesById {
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
   '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
+  '/calloffs/pipeline': typeof CalloffsPipelineRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
@@ -380,6 +389,7 @@ export interface FileRouteTypes {
     | '/calloffs/approvals'
     | '/calloffs/deliveries'
     | '/calloffs/new'
+    | '/calloffs/pipeline'
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
@@ -417,6 +427,7 @@ export interface FileRouteTypes {
     | '/calloffs/approvals'
     | '/calloffs/deliveries'
     | '/calloffs/new'
+    | '/calloffs/pipeline'
     | '/price-lists/upload'
     | '/settings/labour'
     | '/calloffs'
@@ -455,6 +466,7 @@ export interface FileRouteTypes {
     | '/calloffs/approvals'
     | '/calloffs/deliveries'
     | '/calloffs/new'
+    | '/calloffs/pipeline'
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
@@ -659,6 +671,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PriceListsUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/calloffs/pipeline': {
+      id: '/calloffs/pipeline'
+      path: '/pipeline'
+      fullPath: '/calloffs/pipeline'
+      preLoaderRoute: typeof CalloffsPipelineRouteImport
+      parentRoute: typeof CalloffsRoute
+    }
     '/calloffs/new': {
       id: '/calloffs/new'
       path: '/new'
@@ -764,6 +783,7 @@ interface CalloffsRouteChildren {
   CalloffsApprovalsRoute: typeof CalloffsApprovalsRoute
   CalloffsDeliveriesRoute: typeof CalloffsDeliveriesRoute
   CalloffsNewRoute: typeof CalloffsNewRoute
+  CalloffsPipelineRoute: typeof CalloffsPipelineRoute
   CalloffsIndexRoute: typeof CalloffsIndexRoute
 }
 
@@ -771,6 +791,7 @@ const CalloffsRouteChildren: CalloffsRouteChildren = {
   CalloffsApprovalsRoute: CalloffsApprovalsRoute,
   CalloffsDeliveriesRoute: CalloffsDeliveriesRoute,
   CalloffsNewRoute: CalloffsNewRoute,
+  CalloffsPipelineRoute: CalloffsPipelineRoute,
   CalloffsIndexRoute: CalloffsIndexRoute,
 }
 
