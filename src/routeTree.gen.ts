@@ -32,6 +32,8 @@ import { Route as CalloffsIndexRouteImport } from './routes/calloffs.index'
 import { Route as SettingsLabourRouteImport } from './routes/settings.labour'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects.$projectId'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
+import { Route as CalloffsNewRouteImport } from './routes/calloffs.new'
+import { Route as CalloffsApprovalsRouteImport } from './routes/calloffs.approvals'
 import { Route as ProjectsProjectIdIndexRouteImport } from './routes/projects.$projectId.index'
 import { Route as ProjectsProjectIdVariationsRouteImport } from './routes/projects.$projectId.variations'
 import { Route as ProjectsProjectIdTeamRouteImport } from './routes/projects.$projectId.team'
@@ -159,6 +161,16 @@ const PriceListsUploadRoute = PriceListsUploadRouteImport.update({
   path: '/price-lists/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CalloffsNewRoute = CalloffsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => CalloffsRoute,
+} as any)
+const CalloffsApprovalsRoute = CalloffsApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
+  getParentRoute: () => CalloffsRoute,
+} as any)
 const ProjectsProjectIdIndexRoute = ProjectsProjectIdIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -242,6 +254,8 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
   '/variations': typeof VariationsRoute
+  '/calloffs/approvals': typeof CalloffsApprovalsRoute
+  '/calloffs/new': typeof CalloffsNewRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
@@ -276,6 +290,8 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
   '/variations': typeof VariationsRoute
+  '/calloffs/approvals': typeof CalloffsApprovalsRoute
+  '/calloffs/new': typeof CalloffsNewRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/settings/labour': typeof SettingsLabourRoute
   '/calloffs': typeof CalloffsIndexRoute
@@ -312,6 +328,8 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
   '/variations': typeof VariationsRoute
+  '/calloffs/approvals': typeof CalloffsApprovalsRoute
+  '/calloffs/new': typeof CalloffsNewRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
@@ -350,6 +368,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/team'
     | '/variations'
+    | '/calloffs/approvals'
+    | '/calloffs/new'
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
@@ -384,6 +404,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/team'
     | '/variations'
+    | '/calloffs/approvals'
+    | '/calloffs/new'
     | '/price-lists/upload'
     | '/settings/labour'
     | '/calloffs'
@@ -419,6 +441,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/team'
     | '/variations'
+    | '/calloffs/approvals'
+    | '/calloffs/new'
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
@@ -623,6 +647,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PriceListsUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/calloffs/new': {
+      id: '/calloffs/new'
+      path: '/new'
+      fullPath: '/calloffs/new'
+      preLoaderRoute: typeof CalloffsNewRouteImport
+      parentRoute: typeof CalloffsRoute
+    }
+    '/calloffs/approvals': {
+      id: '/calloffs/approvals'
+      path: '/approvals'
+      fullPath: '/calloffs/approvals'
+      preLoaderRoute: typeof CalloffsApprovalsRouteImport
+      parentRoute: typeof CalloffsRoute
+    }
     '/projects/$projectId/': {
       id: '/projects/$projectId/'
       path: '/'
@@ -704,10 +742,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface CalloffsRouteChildren {
+  CalloffsApprovalsRoute: typeof CalloffsApprovalsRoute
+  CalloffsNewRoute: typeof CalloffsNewRoute
   CalloffsIndexRoute: typeof CalloffsIndexRoute
 }
 
 const CalloffsRouteChildren: CalloffsRouteChildren = {
+  CalloffsApprovalsRoute: CalloffsApprovalsRoute,
+  CalloffsNewRoute: CalloffsNewRoute,
   CalloffsIndexRoute: CalloffsIndexRoute,
 }
 
@@ -785,3 +827,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
