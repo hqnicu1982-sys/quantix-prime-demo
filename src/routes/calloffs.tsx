@@ -16,7 +16,7 @@ function GuardedLayout() {
   return <CallOffsLayout />;
 }
 
-const tabs = [
+const tabs: { to: string; label: string; icon: typeof Inbox; exact?: boolean }[] = [
   { to: "/calloffs",             label: "Inbox",       icon: Inbox,      exact: true },
   { to: "/calloffs/new",         label: "New",         icon: FilePlus2 },
   { to: "/calloffs/approvals",   label: "Approvals",   icon: ListChecks },
