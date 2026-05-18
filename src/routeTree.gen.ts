@@ -33,6 +33,7 @@ import { Route as SettingsLabourRouteImport } from './routes/settings.labour'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects.$projectId'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
 import { Route as CalloffsNewRouteImport } from './routes/calloffs.new'
+import { Route as CalloffsDeliveriesRouteImport } from './routes/calloffs.deliveries'
 import { Route as CalloffsApprovalsRouteImport } from './routes/calloffs.approvals'
 import { Route as ProjectsProjectIdIndexRouteImport } from './routes/projects.$projectId.index'
 import { Route as ProjectsProjectIdVariationsRouteImport } from './routes/projects.$projectId.variations'
@@ -166,6 +167,11 @@ const CalloffsNewRoute = CalloffsNewRouteImport.update({
   path: '/new',
   getParentRoute: () => CalloffsRoute,
 } as any)
+const CalloffsDeliveriesRoute = CalloffsDeliveriesRouteImport.update({
+  id: '/deliveries',
+  path: '/deliveries',
+  getParentRoute: () => CalloffsRoute,
+} as any)
 const CalloffsApprovalsRoute = CalloffsApprovalsRouteImport.update({
   id: '/approvals',
   path: '/approvals',
@@ -255,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/team': typeof TeamRoute
   '/variations': typeof VariationsRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
+  '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
@@ -291,6 +298,7 @@ export interface FileRoutesByTo {
   '/team': typeof TeamRoute
   '/variations': typeof VariationsRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
+  '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/settings/labour': typeof SettingsLabourRoute
@@ -329,6 +337,7 @@ export interface FileRoutesById {
   '/team': typeof TeamRoute
   '/variations': typeof VariationsRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
+  '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
@@ -369,6 +378,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/variations'
     | '/calloffs/approvals'
+    | '/calloffs/deliveries'
     | '/calloffs/new'
     | '/price-lists/upload'
     | '/projects/$projectId'
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/variations'
     | '/calloffs/approvals'
+    | '/calloffs/deliveries'
     | '/calloffs/new'
     | '/price-lists/upload'
     | '/settings/labour'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/variations'
     | '/calloffs/approvals'
+    | '/calloffs/deliveries'
     | '/calloffs/new'
     | '/price-lists/upload'
     | '/projects/$projectId'
@@ -654,6 +666,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalloffsNewRouteImport
       parentRoute: typeof CalloffsRoute
     }
+    '/calloffs/deliveries': {
+      id: '/calloffs/deliveries'
+      path: '/deliveries'
+      fullPath: '/calloffs/deliveries'
+      preLoaderRoute: typeof CalloffsDeliveriesRouteImport
+      parentRoute: typeof CalloffsRoute
+    }
     '/calloffs/approvals': {
       id: '/calloffs/approvals'
       path: '/approvals'
@@ -743,12 +762,14 @@ declare module '@tanstack/react-router' {
 
 interface CalloffsRouteChildren {
   CalloffsApprovalsRoute: typeof CalloffsApprovalsRoute
+  CalloffsDeliveriesRoute: typeof CalloffsDeliveriesRoute
   CalloffsNewRoute: typeof CalloffsNewRoute
   CalloffsIndexRoute: typeof CalloffsIndexRoute
 }
 
 const CalloffsRouteChildren: CalloffsRouteChildren = {
   CalloffsApprovalsRoute: CalloffsApprovalsRoute,
+  CalloffsDeliveriesRoute: CalloffsDeliveriesRoute,
   CalloffsNewRoute: CalloffsNewRoute,
   CalloffsIndexRoute: CalloffsIndexRoute,
 }
