@@ -23,7 +23,7 @@ const tabs: { to: string; label: string; icon: typeof Inbox; exact?: boolean }[]
   { to: "/calloffs/deliveries",  label: "Deliveries",  icon: Truck },
   { to: "/calloffs/pipeline",    label: "By state",    icon: GitBranch },
   { to: "/calloffs/audit",       label: "Audit log",   icon: ScrollText },
-] as const;
+];
 
 function CallOffsLayout() {
   const loc = useLocation();
