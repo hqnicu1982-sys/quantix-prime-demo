@@ -28,6 +28,7 @@ import { Route as CalloffsRouteImport } from './routes/calloffs'
 import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
+import { Route as CalloffsIndexRouteImport } from './routes/calloffs.index'
 import { Route as SettingsLabourRouteImport } from './routes/settings.labour'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects.$projectId'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
@@ -138,6 +139,11 @@ const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProjectsRoute,
 } as any)
+const CalloffsIndexRoute = CalloffsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CalloffsRoute,
+} as any)
 const SettingsLabourRoute = SettingsLabourRouteImport.update({
   id: '/settings/labour',
   path: '/settings/labour',
@@ -220,7 +226,7 @@ const ProjectsProjectIdCalloffsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calculator': typeof CalculatorRoute
-  '/calloffs': typeof CalloffsRoute
+  '/calloffs': typeof CalloffsRouteWithChildren
   '/catalog': typeof CatalogRoute
   '/costed-boq': typeof CostedBoqRoute
   '/daily-report': typeof DailyReportRoute
@@ -239,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
+  '/calloffs/': typeof CalloffsIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/calloffs': typeof ProjectsProjectIdCalloffsRoute
   '/projects/$projectId/costed-boq': typeof ProjectsProjectIdCostedBoqRoute
@@ -255,7 +262,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calculator': typeof CalculatorRoute
-  '/calloffs': typeof CalloffsRoute
   '/catalog': typeof CatalogRoute
   '/costed-boq': typeof CostedBoqRoute
   '/daily-report': typeof DailyReportRoute
@@ -272,6 +278,7 @@ export interface FileRoutesByTo {
   '/variations': typeof VariationsRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/settings/labour': typeof SettingsLabourRoute
+  '/calloffs': typeof CalloffsIndexRoute
   '/projects': typeof ProjectsIndexRoute
   '/projects/$projectId/calloffs': typeof ProjectsProjectIdCalloffsRoute
   '/projects/$projectId/costed-boq': typeof ProjectsProjectIdCostedBoqRoute
@@ -289,7 +296,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/calculator': typeof CalculatorRoute
-  '/calloffs': typeof CalloffsRoute
+  '/calloffs': typeof CalloffsRouteWithChildren
   '/catalog': typeof CatalogRoute
   '/costed-boq': typeof CostedBoqRoute
   '/daily-report': typeof DailyReportRoute
@@ -308,6 +315,7 @@ export interface FileRoutesById {
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
+  '/calloffs/': typeof CalloffsIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/calloffs': typeof ProjectsProjectIdCalloffsRoute
   '/projects/$projectId/costed-boq': typeof ProjectsProjectIdCostedBoqRoute
@@ -345,6 +353,7 @@ export interface FileRouteTypes {
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
+    | '/calloffs/'
     | '/projects/'
     | '/projects/$projectId/calloffs'
     | '/projects/$projectId/costed-boq'
@@ -361,7 +370,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/calculator'
-    | '/calloffs'
     | '/catalog'
     | '/costed-boq'
     | '/daily-report'
@@ -378,6 +386,7 @@ export interface FileRouteTypes {
     | '/variations'
     | '/price-lists/upload'
     | '/settings/labour'
+    | '/calloffs'
     | '/projects'
     | '/projects/$projectId/calloffs'
     | '/projects/$projectId/costed-boq'
@@ -413,6 +422,7 @@ export interface FileRouteTypes {
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
+    | '/calloffs/'
     | '/projects/'
     | '/projects/$projectId/calloffs'
     | '/projects/$projectId/costed-boq'
@@ -430,7 +440,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalculatorRoute: typeof CalculatorRoute
-  CalloffsRoute: typeof CalloffsRoute
+  CalloffsRoute: typeof CalloffsRouteWithChildren
   CatalogRoute: typeof CatalogRoute
   CostedBoqRoute: typeof CostedBoqRoute
   DailyReportRoute: typeof DailyReportRoute
@@ -585,6 +595,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIndexRouteImport
       parentRoute: typeof ProjectsRoute
     }
+    '/calloffs/': {
+      id: '/calloffs/'
+      path: '/'
+      fullPath: '/calloffs/'
+      preLoaderRoute: typeof CalloffsIndexRouteImport
+      parentRoute: typeof CalloffsRoute
+    }
     '/settings/labour': {
       id: '/settings/labour'
       path: '/settings/labour'
@@ -686,6 +703,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CalloffsRouteChildren {
+  CalloffsIndexRoute: typeof CalloffsIndexRoute
+}
+
+const CalloffsRouteChildren: CalloffsRouteChildren = {
+  CalloffsIndexRoute: CalloffsIndexRoute,
+}
+
+const CalloffsRouteWithChildren = CalloffsRoute._addFileChildren(
+  CalloffsRouteChildren,
+)
+
 interface ProjectsProjectIdRouteChildren {
   ProjectsProjectIdCalloffsRoute: typeof ProjectsProjectIdCalloffsRoute
   ProjectsProjectIdCostedBoqRoute: typeof ProjectsProjectIdCostedBoqRoute
@@ -734,7 +763,7 @@ const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalculatorRoute: CalculatorRoute,
-  CalloffsRoute: CalloffsRoute,
+  CalloffsRoute: CalloffsRouteWithChildren,
   CatalogRoute: CatalogRoute,
   CostedBoqRoute: CostedBoqRoute,
   DailyReportRoute: DailyReportRoute,
