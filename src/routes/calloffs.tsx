@@ -47,7 +47,7 @@ function CallOffsLayout() {
           return (
             <Link
               key={t.to}
-              to={t.to}
+              to={t.to as "/"}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors",
                 active
