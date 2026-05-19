@@ -31,12 +31,13 @@ import {
 
 export const Route = createFileRoute("/projects/$projectId")({ component: ProjectLayout });
 
-type SubTab = "" | "specification" | "costed-boq" | "planner" | "calloffs" | "invoices" | "variations" | "labour" | "payments" | "reports" | "team";
+type SubTab = "" | "specification" | "costed-boq" | "allocation" | "planner" | "calloffs" | "invoices" | "variations" | "labour" | "payments" | "reports" | "team";
 
 const TABS: { key: SubTab; label: string; requires?: Capability }[] = [
   { key: "", label: "Overview" },
   { key: "specification", label: "Specification" },
   { key: "costed-boq", label: "Costed BoQ", requires: "view.boq" },
+  { key: "allocation", label: "Materials", requires: "view.boq" },
   { key: "planner", label: "Planner", requires: "view.planner" },
   { key: "calloffs", label: "Call-offs", requires: "view.calloffs" },
   { key: "invoices", label: "Invoices", requires: "view.invoices" },
@@ -207,6 +208,7 @@ function ProjectLayout() {
                     const map: Record<string, string> = {
                       specification: "/projects/$projectId/specification",
                       "costed-boq": "/projects/$projectId/costed-boq",
+                      "allocation": "/projects/$projectId/allocation",
                       planner: "/projects/$projectId/planner",
                       calloffs: "/projects/$projectId/calloffs",
                       invoices: "/projects/$projectId/invoices",

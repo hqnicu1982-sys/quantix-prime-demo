@@ -49,6 +49,7 @@ import { Route as ProjectsProjectIdLabourRouteImport } from './routes/projects.$
 import { Route as ProjectsProjectIdInvoicesRouteImport } from './routes/projects.$projectId.invoices'
 import { Route as ProjectsProjectIdCostedBoqRouteImport } from './routes/projects.$projectId.costed-boq'
 import { Route as ProjectsProjectIdCalloffsRouteImport } from './routes/projects.$projectId.calloffs'
+import { Route as ProjectsProjectIdAllocationRouteImport } from './routes/projects.$projectId.allocation'
 
 const VariationsRoute = VariationsRouteImport.update({
   id: '/variations',
@@ -258,6 +259,12 @@ const ProjectsProjectIdCalloffsRoute =
     path: '/calloffs',
     getParentRoute: () => ProjectsProjectIdRoute,
   } as any)
+const ProjectsProjectIdAllocationRoute =
+  ProjectsProjectIdAllocationRouteImport.update({
+    id: '/allocation',
+    path: '/allocation',
+    getParentRoute: () => ProjectsProjectIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -289,6 +296,7 @@ export interface FileRoutesByFullPath {
   '/settings/labour': typeof SettingsLabourRoute
   '/calloffs/': typeof CalloffsIndexRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/$projectId/allocation': typeof ProjectsProjectIdAllocationRoute
   '/projects/$projectId/calloffs': typeof ProjectsProjectIdCalloffsRoute
   '/projects/$projectId/costed-boq': typeof ProjectsProjectIdCostedBoqRoute
   '/projects/$projectId/invoices': typeof ProjectsProjectIdInvoicesRoute
@@ -328,6 +336,7 @@ export interface FileRoutesByTo {
   '/settings/labour': typeof SettingsLabourRoute
   '/calloffs': typeof CalloffsIndexRoute
   '/projects': typeof ProjectsIndexRoute
+  '/projects/$projectId/allocation': typeof ProjectsProjectIdAllocationRoute
   '/projects/$projectId/calloffs': typeof ProjectsProjectIdCalloffsRoute
   '/projects/$projectId/costed-boq': typeof ProjectsProjectIdCostedBoqRoute
   '/projects/$projectId/invoices': typeof ProjectsProjectIdInvoicesRoute
@@ -371,6 +380,7 @@ export interface FileRoutesById {
   '/settings/labour': typeof SettingsLabourRoute
   '/calloffs/': typeof CalloffsIndexRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/$projectId/allocation': typeof ProjectsProjectIdAllocationRoute
   '/projects/$projectId/calloffs': typeof ProjectsProjectIdCalloffsRoute
   '/projects/$projectId/costed-boq': typeof ProjectsProjectIdCostedBoqRoute
   '/projects/$projectId/invoices': typeof ProjectsProjectIdInvoicesRoute
@@ -415,6 +425,7 @@ export interface FileRouteTypes {
     | '/settings/labour'
     | '/calloffs/'
     | '/projects/'
+    | '/projects/$projectId/allocation'
     | '/projects/$projectId/calloffs'
     | '/projects/$projectId/costed-boq'
     | '/projects/$projectId/invoices'
@@ -454,6 +465,7 @@ export interface FileRouteTypes {
     | '/settings/labour'
     | '/calloffs'
     | '/projects'
+    | '/projects/$projectId/allocation'
     | '/projects/$projectId/calloffs'
     | '/projects/$projectId/costed-boq'
     | '/projects/$projectId/invoices'
@@ -496,6 +508,7 @@ export interface FileRouteTypes {
     | '/settings/labour'
     | '/calloffs/'
     | '/projects/'
+    | '/projects/$projectId/allocation'
     | '/projects/$projectId/calloffs'
     | '/projects/$projectId/costed-boq'
     | '/projects/$projectId/invoices'
@@ -814,6 +827,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsProjectIdCalloffsRouteImport
       parentRoute: typeof ProjectsProjectIdRoute
     }
+    '/projects/$projectId/allocation': {
+      id: '/projects/$projectId/allocation'
+      path: '/allocation'
+      fullPath: '/projects/$projectId/allocation'
+      preLoaderRoute: typeof ProjectsProjectIdAllocationRouteImport
+      parentRoute: typeof ProjectsProjectIdRoute
+    }
   }
 }
 
@@ -842,6 +862,7 @@ const CalloffsRouteWithChildren = CalloffsRoute._addFileChildren(
 )
 
 interface ProjectsProjectIdRouteChildren {
+  ProjectsProjectIdAllocationRoute: typeof ProjectsProjectIdAllocationRoute
   ProjectsProjectIdCalloffsRoute: typeof ProjectsProjectIdCalloffsRoute
   ProjectsProjectIdCostedBoqRoute: typeof ProjectsProjectIdCostedBoqRoute
   ProjectsProjectIdInvoicesRoute: typeof ProjectsProjectIdInvoicesRoute
@@ -856,6 +877,7 @@ interface ProjectsProjectIdRouteChildren {
 }
 
 const ProjectsProjectIdRouteChildren: ProjectsProjectIdRouteChildren = {
+  ProjectsProjectIdAllocationRoute: ProjectsProjectIdAllocationRoute,
   ProjectsProjectIdCalloffsRoute: ProjectsProjectIdCalloffsRoute,
   ProjectsProjectIdCostedBoqRoute: ProjectsProjectIdCostedBoqRoute,
   ProjectsProjectIdInvoicesRoute: ProjectsProjectIdInvoicesRoute,
@@ -911,12 +933,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

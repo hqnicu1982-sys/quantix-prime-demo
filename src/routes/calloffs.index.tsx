@@ -5,12 +5,16 @@ import { callOffs, fmtMoney } from "@/lib/mockData";
 import { STATE_LABEL, STATE_TONE } from "@/lib/callOffWorkflow";
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectData } from "@/lib/projectData";
+import { useBoqAllocation } from "@/lib/boqAllocation";
+import { Button } from "@/components/ui/button";
+import { Layers, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/calloffs/")({ component: Inbox });
 
 function Inbox() {
   const { current } = useProject();
   const data = useProjectData(current.id);
+  const alloc = useBoqAllocation(current.id);
   const supplierPicks = Object.entries(data.supplierChoices);
   const open = callOffs.filter((c) => c.state !== "closed").length;
   const reviewNeeded = callOffs.filter((c) => c.state === "review-needed").length;
@@ -18,6 +22,26 @@ function Inbox() {
 
   return (
     <div className="space-y-5">
+      {alloc.totals.approved > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--accent-500)]/30 bg-[var(--accent-500)]/5 px-4 py-2.5 text-[12.5px]">
+          <div className="flex items-center gap-2">
+            <Layers className="h-4 w-4 text-[var(--accent-500)]" />
+            <span className="font-semibold text-[var(--ink-900)]">BoQ budget · {current.name}</span>
+            <span className="text-[var(--ink-500)]">
+              {alloc.totals.ordered.toLocaleString()} ordered / {alloc.totals.approved.toLocaleString()} approved
+              · <strong className={alloc.totals.remaining === 0 ? "text-[var(--red-500)]" : "text-[var(--green-600)]"}>
+                {alloc.totals.remaining.toLocaleString()} remaining
+              </strong>
+            </span>
+          </div>
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/projects/$projectId/allocation" params={{ projectId: current.id }}>
+              Open Materials <ExternalLink className="ml-1.5 h-3 w-3" />
+            </Link>
+          </Button>
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Open call-offs" value={String(open)} delta={`${reviewNeeded} need QS review`} tone={reviewNeeded ? "warning" : "neutral"} />
         <Kpi label="MTD committed" value={fmtMoney(mtdValue)} delta="vs £42k forecast" tone="success" />
