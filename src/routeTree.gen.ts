@@ -28,10 +28,17 @@ import { Route as CalloffsRouteImport } from './routes/calloffs'
 import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
+import { Route as InvoicesIndexRouteImport } from './routes/invoices.index'
 import { Route as CalloffsIndexRouteImport } from './routes/calloffs.index'
 import { Route as SettingsLabourRouteImport } from './routes/settings.labour'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects.$projectId'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
+import { Route as InvoicesScheduleRouteImport } from './routes/invoices.schedule'
+import { Route as InvoicesReviewRouteImport } from './routes/invoices.review'
+import { Route as InvoicesNewRouteImport } from './routes/invoices.new'
+import { Route as InvoicesDisputesRouteImport } from './routes/invoices.disputes'
+import { Route as InvoicesAuditRouteImport } from './routes/invoices.audit'
+import { Route as InvoicesRefRouteImport } from './routes/invoices.$ref'
 import { Route as CalloffsPipelineRouteImport } from './routes/calloffs.pipeline'
 import { Route as CalloffsNewRouteImport } from './routes/calloffs.new'
 import { Route as CalloffsDeliveriesRouteImport } from './routes/calloffs.deliveries'
@@ -146,6 +153,11 @@ const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProjectsRoute,
 } as any)
+const InvoicesIndexRoute = InvoicesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => InvoicesRoute,
+} as any)
 const CalloffsIndexRoute = CalloffsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -165,6 +177,36 @@ const PriceListsUploadRoute = PriceListsUploadRouteImport.update({
   id: '/price-lists/upload',
   path: '/price-lists/upload',
   getParentRoute: () => rootRouteImport,
+} as any)
+const InvoicesScheduleRoute = InvoicesScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => InvoicesRoute,
+} as any)
+const InvoicesReviewRoute = InvoicesReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => InvoicesRoute,
+} as any)
+const InvoicesNewRoute = InvoicesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => InvoicesRoute,
+} as any)
+const InvoicesDisputesRoute = InvoicesDisputesRouteImport.update({
+  id: '/disputes',
+  path: '/disputes',
+  getParentRoute: () => InvoicesRoute,
+} as any)
+const InvoicesAuditRoute = InvoicesAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => InvoicesRoute,
+} as any)
+const InvoicesRefRoute = InvoicesRefRouteImport.update({
+  id: '/$ref',
+  path: '/$ref',
+  getParentRoute: () => InvoicesRoute,
 } as any)
 const CalloffsPipelineRoute = CalloffsPipelineRouteImport.update({
   id: '/pipeline',
@@ -276,7 +318,7 @@ export interface FileRoutesByFullPath {
   '/financial': typeof FinancialRoute
   '/how-to': typeof HowToRoute
   '/integrations': typeof IntegrationsRoute
-  '/invoices': typeof InvoicesRoute
+  '/invoices': typeof InvoicesRouteWithChildren
   '/login': typeof LoginRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
@@ -291,10 +333,17 @@ export interface FileRoutesByFullPath {
   '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
   '/calloffs/pipeline': typeof CalloffsPipelineRoute
+  '/invoices/$ref': typeof InvoicesRefRoute
+  '/invoices/audit': typeof InvoicesAuditRoute
+  '/invoices/disputes': typeof InvoicesDisputesRoute
+  '/invoices/new': typeof InvoicesNewRoute
+  '/invoices/review': typeof InvoicesReviewRoute
+  '/invoices/schedule': typeof InvoicesScheduleRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
   '/calloffs/': typeof CalloffsIndexRoute
+  '/invoices/': typeof InvoicesIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/allocation': typeof ProjectsProjectIdAllocationRoute
   '/projects/$projectId/calloffs': typeof ProjectsProjectIdCalloffsRoute
@@ -318,7 +367,6 @@ export interface FileRoutesByTo {
   '/financial': typeof FinancialRoute
   '/how-to': typeof HowToRoute
   '/integrations': typeof IntegrationsRoute
-  '/invoices': typeof InvoicesRoute
   '/login': typeof LoginRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
@@ -332,9 +380,16 @@ export interface FileRoutesByTo {
   '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
   '/calloffs/pipeline': typeof CalloffsPipelineRoute
+  '/invoices/$ref': typeof InvoicesRefRoute
+  '/invoices/audit': typeof InvoicesAuditRoute
+  '/invoices/disputes': typeof InvoicesDisputesRoute
+  '/invoices/new': typeof InvoicesNewRoute
+  '/invoices/review': typeof InvoicesReviewRoute
+  '/invoices/schedule': typeof InvoicesScheduleRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/settings/labour': typeof SettingsLabourRoute
   '/calloffs': typeof CalloffsIndexRoute
+  '/invoices': typeof InvoicesIndexRoute
   '/projects': typeof ProjectsIndexRoute
   '/projects/$projectId/allocation': typeof ProjectsProjectIdAllocationRoute
   '/projects/$projectId/calloffs': typeof ProjectsProjectIdCalloffsRoute
@@ -360,7 +415,7 @@ export interface FileRoutesById {
   '/financial': typeof FinancialRoute
   '/how-to': typeof HowToRoute
   '/integrations': typeof IntegrationsRoute
-  '/invoices': typeof InvoicesRoute
+  '/invoices': typeof InvoicesRouteWithChildren
   '/login': typeof LoginRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
@@ -375,10 +430,17 @@ export interface FileRoutesById {
   '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
   '/calloffs/pipeline': typeof CalloffsPipelineRoute
+  '/invoices/$ref': typeof InvoicesRefRoute
+  '/invoices/audit': typeof InvoicesAuditRoute
+  '/invoices/disputes': typeof InvoicesDisputesRoute
+  '/invoices/new': typeof InvoicesNewRoute
+  '/invoices/review': typeof InvoicesReviewRoute
+  '/invoices/schedule': typeof InvoicesScheduleRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
   '/calloffs/': typeof CalloffsIndexRoute
+  '/invoices/': typeof InvoicesIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/allocation': typeof ProjectsProjectIdAllocationRoute
   '/projects/$projectId/calloffs': typeof ProjectsProjectIdCalloffsRoute
@@ -420,10 +482,17 @@ export interface FileRouteTypes {
     | '/calloffs/deliveries'
     | '/calloffs/new'
     | '/calloffs/pipeline'
+    | '/invoices/$ref'
+    | '/invoices/audit'
+    | '/invoices/disputes'
+    | '/invoices/new'
+    | '/invoices/review'
+    | '/invoices/schedule'
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
     | '/calloffs/'
+    | '/invoices/'
     | '/projects/'
     | '/projects/$projectId/allocation'
     | '/projects/$projectId/calloffs'
@@ -447,7 +516,6 @@ export interface FileRouteTypes {
     | '/financial'
     | '/how-to'
     | '/integrations'
-    | '/invoices'
     | '/login'
     | '/planner'
     | '/price-intelligence'
@@ -461,9 +529,16 @@ export interface FileRouteTypes {
     | '/calloffs/deliveries'
     | '/calloffs/new'
     | '/calloffs/pipeline'
+    | '/invoices/$ref'
+    | '/invoices/audit'
+    | '/invoices/disputes'
+    | '/invoices/new'
+    | '/invoices/review'
+    | '/invoices/schedule'
     | '/price-lists/upload'
     | '/settings/labour'
     | '/calloffs'
+    | '/invoices'
     | '/projects'
     | '/projects/$projectId/allocation'
     | '/projects/$projectId/calloffs'
@@ -503,10 +578,17 @@ export interface FileRouteTypes {
     | '/calloffs/deliveries'
     | '/calloffs/new'
     | '/calloffs/pipeline'
+    | '/invoices/$ref'
+    | '/invoices/audit'
+    | '/invoices/disputes'
+    | '/invoices/new'
+    | '/invoices/review'
+    | '/invoices/schedule'
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
     | '/calloffs/'
+    | '/invoices/'
     | '/projects/'
     | '/projects/$projectId/allocation'
     | '/projects/$projectId/calloffs'
@@ -532,7 +614,7 @@ export interface RootRouteChildren {
   FinancialRoute: typeof FinancialRoute
   HowToRoute: typeof HowToRoute
   IntegrationsRoute: typeof IntegrationsRoute
-  InvoicesRoute: typeof InvoicesRoute
+  InvoicesRoute: typeof InvoicesRouteWithChildren
   LoginRoute: typeof LoginRoute
   PlannerRoute: typeof PlannerRoute
   PriceIntelligenceRoute: typeof PriceIntelligenceRoute
@@ -680,6 +762,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIndexRouteImport
       parentRoute: typeof ProjectsRoute
     }
+    '/invoices/': {
+      id: '/invoices/'
+      path: '/'
+      fullPath: '/invoices/'
+      preLoaderRoute: typeof InvoicesIndexRouteImport
+      parentRoute: typeof InvoicesRoute
+    }
     '/calloffs/': {
       id: '/calloffs/'
       path: '/'
@@ -707,6 +796,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/price-lists/upload'
       preLoaderRoute: typeof PriceListsUploadRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/invoices/schedule': {
+      id: '/invoices/schedule'
+      path: '/schedule'
+      fullPath: '/invoices/schedule'
+      preLoaderRoute: typeof InvoicesScheduleRouteImport
+      parentRoute: typeof InvoicesRoute
+    }
+    '/invoices/review': {
+      id: '/invoices/review'
+      path: '/review'
+      fullPath: '/invoices/review'
+      preLoaderRoute: typeof InvoicesReviewRouteImport
+      parentRoute: typeof InvoicesRoute
+    }
+    '/invoices/new': {
+      id: '/invoices/new'
+      path: '/new'
+      fullPath: '/invoices/new'
+      preLoaderRoute: typeof InvoicesNewRouteImport
+      parentRoute: typeof InvoicesRoute
+    }
+    '/invoices/disputes': {
+      id: '/invoices/disputes'
+      path: '/disputes'
+      fullPath: '/invoices/disputes'
+      preLoaderRoute: typeof InvoicesDisputesRouteImport
+      parentRoute: typeof InvoicesRoute
+    }
+    '/invoices/audit': {
+      id: '/invoices/audit'
+      path: '/audit'
+      fullPath: '/invoices/audit'
+      preLoaderRoute: typeof InvoicesAuditRouteImport
+      parentRoute: typeof InvoicesRoute
+    }
+    '/invoices/$ref': {
+      id: '/invoices/$ref'
+      path: '/$ref'
+      fullPath: '/invoices/$ref'
+      preLoaderRoute: typeof InvoicesRefRouteImport
+      parentRoute: typeof InvoicesRoute
     }
     '/calloffs/pipeline': {
       id: '/calloffs/pipeline'
@@ -861,6 +992,30 @@ const CalloffsRouteWithChildren = CalloffsRoute._addFileChildren(
   CalloffsRouteChildren,
 )
 
+interface InvoicesRouteChildren {
+  InvoicesRefRoute: typeof InvoicesRefRoute
+  InvoicesAuditRoute: typeof InvoicesAuditRoute
+  InvoicesDisputesRoute: typeof InvoicesDisputesRoute
+  InvoicesNewRoute: typeof InvoicesNewRoute
+  InvoicesReviewRoute: typeof InvoicesReviewRoute
+  InvoicesScheduleRoute: typeof InvoicesScheduleRoute
+  InvoicesIndexRoute: typeof InvoicesIndexRoute
+}
+
+const InvoicesRouteChildren: InvoicesRouteChildren = {
+  InvoicesRefRoute: InvoicesRefRoute,
+  InvoicesAuditRoute: InvoicesAuditRoute,
+  InvoicesDisputesRoute: InvoicesDisputesRoute,
+  InvoicesNewRoute: InvoicesNewRoute,
+  InvoicesReviewRoute: InvoicesReviewRoute,
+  InvoicesScheduleRoute: InvoicesScheduleRoute,
+  InvoicesIndexRoute: InvoicesIndexRoute,
+}
+
+const InvoicesRouteWithChildren = InvoicesRoute._addFileChildren(
+  InvoicesRouteChildren,
+)
+
 interface ProjectsProjectIdRouteChildren {
   ProjectsProjectIdAllocationRoute: typeof ProjectsProjectIdAllocationRoute
   ProjectsProjectIdCalloffsRoute: typeof ProjectsProjectIdCalloffsRoute
@@ -918,7 +1073,7 @@ const rootRouteChildren: RootRouteChildren = {
   FinancialRoute: FinancialRoute,
   HowToRoute: HowToRoute,
   IntegrationsRoute: IntegrationsRoute,
-  InvoicesRoute: InvoicesRoute,
+  InvoicesRoute: InvoicesRouteWithChildren,
   LoginRoute: LoginRoute,
   PlannerRoute: PlannerRoute,
   PriceIntelligenceRoute: PriceIntelligenceRoute,
