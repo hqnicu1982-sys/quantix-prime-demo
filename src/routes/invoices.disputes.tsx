@@ -1,0 +1,83 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Card, CardHead, Kpi } from "@/components/Primitives";
+import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/StatusBadge";
+import { disputes } from "@/lib/invoiceWorkflow";
+import { toast } from "sonner";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
+import { CheckCircle2, Mail } from "lucide-react";
+
+export const Route = createFileRoute("/invoices/disputes")({ component: Guarded });
+
+function Guarded() {
+  const allowed = useCan("view.invoices");
+  if (!allowed) return <NoAccess cap="view.invoices" title="Invoices restricted" />;
+  return <Disputes />;
+}
+
+function Disputes() {
+  const canSign = useCan("sign.invoices");
+  const open = disputes.filter((d) => d.status !== "resolved");
+  const total = open.reduce((s, d) => s + d.amount, 0);
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-3 md:grid-cols-3">
+        <Kpi label="Open disputes" value={String(open.length)} tone="danger" />
+        <Kpi label="At-risk value" value={`£${total.toLocaleString()}`} delta="awaiting supplier credit" tone="warning" />
+        <Kpi label="Resolved 30d" value="4" delta="£3,128 recovered" tone="success" />
+      </div>
+
+      <Card>
+        <CardHead title="Disputed invoices" subtitle="Track credit notes and supplier replies from one place" />
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead className="bg-[var(--ink-50)] text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+              <tr>
+                <th className="px-4 py-2.5 text-left font-semibold">Ref</th>
+                <th className="px-4 py-2.5 text-left font-semibold">Supplier</th>
+                <th className="px-4 py-2.5 text-left font-semibold">Raised</th>
+                <th className="px-4 py-2.5 text-right font-semibold">Amount</th>
+                <th className="px-4 py-2.5 text-left font-semibold">Reason</th>
+                <th className="px-4 py-2.5 text-left font-semibold">Status</th>
+                <th className="px-4 py-2.5 text-left font-semibold">Owner</th>
+                <th className="px-4 py-2.5" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--ink-200)]">
+              {disputes.map((d) => (
+                <tr key={d.ref} className="hover:bg-[var(--ink-50)]">
+                  <td className="px-4 py-3 font-mono-num font-semibold">
+                    <Link to="/invoices/$ref" params={{ ref: d.ref }} className="hover:underline">{d.ref}</Link>
+                  </td>
+                  <td className="px-4 py-3">{d.supplier}</td>
+                  <td className="px-4 py-3 text-[12px] text-[var(--ink-500)]">{d.raised}</td>
+                  <td className="px-4 py-3 text-right font-mono-num font-semibold text-[var(--red-500)]">£{d.amount.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-[12px] text-[var(--ink-700)]">{d.reason}</td>
+                  <td className="px-4 py-3">
+                    <StatusBadge tone={d.status === "resolved" ? "success" : d.status === "credit-pending" ? "warning" : "danger"} dot>
+                      {d.status === "credit-pending" ? "Credit pending" : d.status === "open" ? "Open" : "Resolved"}
+                    </StatusBadge>
+                  </td>
+                  <td className="px-4 py-3 text-[12px]">{d.owner}</td>
+                  <td className="px-4 py-3 text-right">
+                    {canSign && d.status !== "resolved" && (
+                      <div className="flex justify-end gap-1.5">
+                        <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => toast.success(`Reminder sent to ${d.supplier}`)}>
+                          <Mail className="mr-1 h-3 w-3" /> Chase
+                        </Button>
+                        <Button size="sm" className="h-7 text-[11px]" onClick={() => toast.success(`${d.ref} marked resolved`, { description: `£${d.amount.toLocaleString()} credit applied` })}>
+                          <CheckCircle2 className="mr-1 h-3 w-3" /> Resolve
+                        </Button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
