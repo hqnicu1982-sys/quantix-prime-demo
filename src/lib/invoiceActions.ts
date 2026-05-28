@@ -15,6 +15,7 @@ export type InvoiceActionKind =
   | "approve"
   | "schedule"
   | "pay"
+  | "chase"
   | "resolve-dispute";
 
 export type InvoiceAction = {
@@ -122,4 +123,17 @@ export const CREDIT_REASONS: { code: string; label: string }[] = [
   { code: "rebate", label: "Contractual rebate" },
   { code: "damaged", label: "Damaged on arrival" },
   { code: "other", label: "Other (specify)" },
+];
+
+export const CHASE_CHANNELS: { code: string; label: string }[] = [
+  { code: "email", label: "Email reminder" },
+  { code: "phone", label: "Phone call logged" },
+  { code: "portal", label: "Supplier portal message" },
+];
+
+export const RESOLVE_OUTCOMES: { code: string; label: string; stage: InvoiceStage }[] = [
+  { code: "credit-received", label: "Credit note received & applied", stage: "approved" },
+  { code: "reissued",        label: "Supplier re-issued invoice",     stage: "matched" },
+  { code: "written-off",     label: "Written off internally",         stage: "approved" },
+  { code: "withdrawn",       label: "Dispute withdrawn",              stage: "approved" },
 ];
