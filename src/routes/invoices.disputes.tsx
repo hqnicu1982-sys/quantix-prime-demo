@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
-import { disputes } from "@/lib/invoiceWorkflow";
+import { disputes, type DisputeRecord } from "@/lib/invoiceWorkflow";
+import { invoices } from "@/lib/mockData";
+import { useInvoiceActions, recordInvoiceAction } from "@/lib/invoiceActions";
 import { toast } from "sonner";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
@@ -18,7 +20,26 @@ function Guarded() {
 
 function Disputes() {
   const canSign = useCan("sign.invoices");
-  const open = disputes.filter((d) => d.status !== "resolved");
+  const actions = useInvoiceActions();
+  // Convert recorded dispute / credit actions into dispute rows.
+  const userRows: DisputeRecord[] = actions
+    .filter((a) => a.kind === "dispute" || a.kind === "request-credit")
+    .map((a) => {
+      const inv = invoices.find((i) => i.id === a.ref);
+      return {
+        ref: a.ref,
+        supplier: inv?.supplier ?? "—",
+        raised: new Date(a.ts).toLocaleDateString(),
+        amount: a.creditAmount ?? a.amount ?? inv?.variance ?? 0,
+        reason: a.reason ?? a.note ?? "—",
+        status: a.kind === "request-credit" ? "credit-pending" : "open",
+        owner: a.actor,
+      } satisfies DisputeRecord;
+    });
+  // Suppress mocked rows that the user has already actioned (avoid dupes).
+  const userRefs = new Set(userRows.map((r) => r.ref));
+  const rows: DisputeRecord[] = [...userRows, ...disputes.filter((d) => !userRefs.has(d.ref))];
+  const open = rows.filter((d) => d.status !== "resolved");
   const total = open.reduce((s, d) => s + d.amount, 0);
   return (
     <div className="space-y-5">
@@ -45,7 +66,10 @@ function Disputes() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--ink-200)]">
-              {disputes.map((d) => (
+              {rows.length === 0 && (
+                <tr><td colSpan={8} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">No disputes raised. 🎉</td></tr>
+              )}
+              {rows.map((d) => (
                 <tr key={d.ref} className="hover:bg-[var(--ink-50)]">
                   <td className="px-4 py-3 font-mono-num font-semibold">
                     <Link to="/invoices/$ref" params={{ ref: d.ref }} className="hover:underline">{d.ref}</Link>
@@ -66,7 +90,10 @@ function Disputes() {
                         <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => toast.success(`Reminder sent to ${d.supplier}`)}>
                           <Mail className="mr-1 h-3 w-3" /> Chase
                         </Button>
-                        <Button size="sm" className="h-7 text-[11px]" onClick={() => toast.success(`${d.ref} marked resolved`, { description: `£${d.amount.toLocaleString()} credit applied` })}>
+                        <Button size="sm" className="h-7 text-[11px]" onClick={() => {
+                          recordInvoiceAction({ ref: d.ref, kind: "resolve-dispute", stageAfter: "approved", amount: d.amount, note: "Credit applied" });
+                          toast.success(`${d.ref} marked resolved`, { description: `£${d.amount.toLocaleString()} credit applied` });
+                        }}>
                           <CheckCircle2 className="mr-1 h-3 w-3" /> Resolve
                         </Button>
                       </div>
