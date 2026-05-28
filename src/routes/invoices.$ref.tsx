@@ -5,8 +5,10 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { InvoiceWorkflowStrip } from "@/components/invoices/InvoiceWorkflowStrip";
 import { invoices } from "@/lib/mockData";
 import { deriveStage, STAGE_LABEL, STAGE_TONE, invoiceAuditLog, matchLines, explainVariance } from "@/lib/invoiceWorkflow";
+import { useInvoiceActions, effectiveStage, recordInvoiceAction } from "@/lib/invoiceActions";
+import { InvoiceActionButtons } from "@/components/invoices/InvoiceActionDialogs";
 import { Gated } from "@/components/auth/Gated";
-import { ArrowLeft, ShieldCheck, X, Mail, Banknote, FileText, CalendarPlus } from "lucide-react";
+import { ArrowLeft, Banknote, FileText, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -25,9 +27,32 @@ function Detail() {
   const { ref } = Route.useParams();
   const inv = invoices.find((i) => i.id === ref);
   if (!inv) throw notFound();
-  const stage = deriveStage(inv);
-  const events = invoiceAuditLog.filter((e) => e.ref === ref);
+  const baseStage = deriveStage(inv);
+  const actions = useInvoiceActions(ref);
+  const stage = effectiveStage(ref, baseStage, actions);
+  const last = actions[0];
+  const flagged = stage === "review";
   const lines = matchLines[ref] ?? [];
+  const baseEvents = invoiceAuditLog.filter((e) => e.ref === ref);
+  const actionEvents = actions.map((a) => ({
+    ts: new Date(a.ts).toLocaleString(),
+    ref: a.ref,
+    actor: a.actor,
+    action:
+      a.kind === "accept-variance" ? "Variance accepted" :
+      a.kind === "dispute" ? "Disputed" :
+      a.kind === "request-credit" ? "Credit note requested" :
+      a.kind === "approve" ? "Approved" :
+      a.kind === "schedule" ? "Scheduled" :
+      a.kind === "pay" ? "Paid" : "Updated",
+    detail: [
+      a.reason,
+      a.creditAmount ? `£${a.creditAmount.toLocaleString()} credit` :
+        a.amount ? `£${a.amount.toLocaleString()}` : null,
+      a.note,
+    ].filter(Boolean).join(" · "),
+  }));
+  const events = [...actionEvents, ...baseEvents];
 
   return (
     <div className="space-y-5">
@@ -44,7 +69,13 @@ function Detail() {
           subtitle={`${inv.poRef} · ${inv.callOffRef} · received ${inv.received}`}
         />
         <div className="p-5">
-          <InvoiceWorkflowStrip stage={stage} flagged={inv.state !== "matched"} />
+          <InvoiceWorkflowStrip stage={stage} flagged={flagged} />
+          {last && (
+            <p className="mt-3 text-[11.5px] text-[var(--ink-500)]">
+              Last action: <strong className="text-[var(--ink-900)]">{last.kind.replace("-", " ")}</strong>
+              {last.reason && <> — {last.reason}</>} · by {last.actor}
+            </p>
+          )}
         </div>
       </Card>
 
@@ -111,28 +142,24 @@ function Detail() {
           />
           <div className="flex flex-wrap gap-2 p-5">
             {stage === "review" && (
-              <Gated cap="sign.invoices">
-                <Button size="sm" onClick={() => toast.success(`${inv.id} accepted`, { description: `£${inv.invoiced.toLocaleString()} cleared for payment` })}>
-                  <ShieldCheck className="mr-1 h-3 w-3" /> Accept variance
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => toast.error(`${inv.id} disputed`, { description: `${inv.supplier} notified` })}>
-                  <X className="mr-1 h-3 w-3" /> Dispute
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => toast.success("Credit note requested")}>
-                  <Mail className="mr-1 h-3 w-3" /> Request credit
-                </Button>
-              </Gated>
+              <Gated cap="sign.invoices"><InvoiceActionButtons inv={inv} /></Gated>
             )}
             {stage === "approved" && (
               <Gated cap="sign.invoices">
-                <Button size="sm" onClick={() => toast.success("Added to PAY-2026-09")}>
+                <Button size="sm" onClick={() => {
+                  recordInvoiceAction({ ref: inv.id, kind: "schedule", stageAfter: "scheduled", paymentBatch: "PAY-2026-09", payDate: "26 Apr" });
+                  toast.success("Added to PAY-2026-09");
+                }}>
                   <CalendarPlus className="mr-1 h-3 w-3" /> Schedule payment
                 </Button>
               </Gated>
             )}
             {stage === "scheduled" && (
               <Gated cap="sign.invoices">
-                <Button size="sm" onClick={() => toast.success(`${inv.id} marked paid`)}>
+                <Button size="sm" onClick={() => {
+                  recordInvoiceAction({ ref: inv.id, kind: "pay", stageAfter: "paid" });
+                  toast.success(`${inv.id} marked paid`);
+                }}>
                   <Banknote className="mr-1 h-3 w-3" /> Mark paid
                 </Button>
               </Gated>
