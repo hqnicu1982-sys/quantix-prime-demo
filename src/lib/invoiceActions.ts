@@ -16,7 +16,8 @@ export type InvoiceActionKind =
   | "schedule"
   | "pay"
   | "chase"
-  | "resolve-dispute";
+  | "resolve-dispute"
+  | "create-batch";
 
 export type InvoiceAction = {
   id: string;
@@ -136,4 +137,18 @@ export const RESOLVE_OUTCOMES: { code: string; label: string; stage: InvoiceStag
   { code: "reissued",        label: "Supplier re-issued invoice",     stage: "matched" },
   { code: "written-off",     label: "Written off internally",         stage: "approved" },
   { code: "withdrawn",       label: "Dispute withdrawn",              stage: "approved" },
+];
+
+export const PAY_METHODS: { code: string; label: string }[] = [
+  { code: "faster",  label: "Faster Payment" },
+  { code: "bacs",    label: "BACS (3 working days)" },
+  { code: "chaps",   label: "CHAPS (same-day)" },
+  { code: "card",    label: "Company card" },
+  { code: "manual",  label: "Manual / cheque" },
+];
+
+export const PAYMENT_BATCHES: { code: string; label: string; payDate: string }[] = [
+  { code: "PAY-2026-09", label: "PAY-2026-09 · weekly run", payDate: "03 May" },
+  { code: "PAY-2026-10", label: "PAY-2026-10 · weekly run", payDate: "10 May" },
+  { code: "PAY-2026-11", label: "PAY-2026-11 · weekly run", payDate: "17 May" },
 ];
