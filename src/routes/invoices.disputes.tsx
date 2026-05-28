@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { disputes, type DisputeRecord } from "@/lib/invoiceWorkflow";
 import { invoices } from "@/lib/mockData";
-import { useInvoiceActions, recordInvoiceAction } from "@/lib/invoiceActions";
-import { toast } from "sonner";
+import { useInvoiceActions } from "@/lib/invoiceActions";
+import { ChaseDialog, ResolveDisputeDialog } from "@/components/invoices/DisputeFollowUpDialogs";
+import { useState } from "react";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { CheckCircle2, Mail } from "lucide-react";
@@ -21,6 +22,8 @@ function Guarded() {
 function Disputes() {
   const canSign = useCan("sign.invoices");
   const actions = useInvoiceActions();
+  const [dlg, setDlg] = useState<null | { kind: "chase" | "resolve"; row: DisputeRecord }>(null);
+  const resolvedRefs = new Set(actions.filter((a) => a.kind === "resolve-dispute").map((a) => a.ref));
   // Convert recorded dispute / credit actions into dispute rows.
   const userRows: DisputeRecord[] = actions
     .filter((a) => a.kind === "dispute" || a.kind === "request-credit")
@@ -32,13 +35,15 @@ function Disputes() {
         raised: new Date(a.ts).toLocaleDateString(),
         amount: a.creditAmount ?? a.amount ?? inv?.variance ?? 0,
         reason: a.reason ?? a.note ?? "—",
-        status: a.kind === "request-credit" ? "credit-pending" : "open",
+        status: resolvedRefs.has(a.ref) ? "resolved" : a.kind === "request-credit" ? "credit-pending" : "open",
         owner: a.actor,
       } satisfies DisputeRecord;
     });
   // Suppress mocked rows that the user has already actioned (avoid dupes).
   const userRefs = new Set(userRows.map((r) => r.ref));
-  const rows: DisputeRecord[] = [...userRows, ...disputes.filter((d) => !userRefs.has(d.ref))];
+  const merged: DisputeRecord[] = [...userRows, ...disputes.filter((d) => !userRefs.has(d.ref))]
+    .map((d) => (resolvedRefs.has(d.ref) ? { ...d, status: "resolved" as const } : d));
+  const rows = merged;
   const open = rows.filter((d) => d.status !== "resolved");
   const total = open.reduce((s, d) => s + d.amount, 0);
   return (
@@ -87,13 +92,10 @@ function Disputes() {
                   <td className="px-4 py-3 text-right">
                     {canSign && d.status !== "resolved" && (
                       <div className="flex justify-end gap-1.5">
-                        <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => toast.success(`Reminder sent to ${d.supplier}`)}>
+                        <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setDlg({ kind: "chase", row: d })}>
                           <Mail className="mr-1 h-3 w-3" /> Chase
                         </Button>
-                        <Button size="sm" className="h-7 text-[11px]" onClick={() => {
-                          recordInvoiceAction({ ref: d.ref, kind: "resolve-dispute", stageAfter: "approved", amount: d.amount, note: "Credit applied" });
-                          toast.success(`${d.ref} marked resolved`, { description: `£${d.amount.toLocaleString()} credit applied` });
-                        }}>
+                        <Button size="sm" className="h-7 text-[11px]" onClick={() => setDlg({ kind: "resolve", row: d })}>
                           <CheckCircle2 className="mr-1 h-3 w-3" /> Resolve
                         </Button>
                       </div>
@@ -105,6 +107,8 @@ function Disputes() {
           </table>
         </div>
       </Card>
+      {dlg?.kind === "chase" && <ChaseDialog row={dlg.row} open onOpenChange={(v) => !v && setDlg(null)} />}
+      {dlg?.kind === "resolve" && <ResolveDisputeDialog row={dlg.row} open onOpenChange={(v) => !v && setDlg(null)} />}
     </div>
   );
 }

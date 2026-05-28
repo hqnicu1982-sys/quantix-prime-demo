@@ -16,6 +16,7 @@ function Audit() {
       a.kind === "dispute" ? "Disputed" :
       a.kind === "request-credit" ? "Credit requested" :
       a.kind === "resolve-dispute" ? "Dispute resolved" :
+      a.kind === "chase" ? "Supplier chased" :
       a.kind === "schedule" ? "Scheduled" :
       a.kind === "pay" ? "Paid" : "Updated",
     detail: [a.reason, a.creditAmount ? `£${a.creditAmount.toLocaleString()}` : a.amount ? `£${a.amount.toLocaleString()}` : null, a.note].filter(Boolean).join(" · "),
