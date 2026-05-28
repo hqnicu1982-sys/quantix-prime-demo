@@ -43,6 +43,8 @@ function Detail() {
       a.kind === "dispute" ? "Disputed" :
       a.kind === "request-credit" ? "Credit note requested" :
       a.kind === "approve" ? "Approved" :
+      a.kind === "chase" ? "Supplier chased" :
+      a.kind === "resolve-dispute" ? "Dispute resolved" :
       a.kind === "schedule" ? "Scheduled" :
       a.kind === "pay" ? "Paid" : "Updated",
     detail: [
