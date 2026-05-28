@@ -1,13 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
-import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { invoices } from "@/lib/mockData";
 import { deriveStage, VARIANCE_TOLERANCE } from "@/lib/invoiceWorkflow";
-import { toast } from "sonner";
+import { useInvoiceActions, effectiveStage } from "@/lib/invoiceActions";
+import { InvoiceActionButtons } from "@/components/invoices/InvoiceActionDialogs";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
-import { ShieldCheck, X, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/invoices/review")({ component: Guarded });
 
@@ -19,7 +18,8 @@ function Guarded() {
 
 function Review() {
   const canSign = useCan("sign.invoices");
-  const queue = invoices.filter((i) => deriveStage(i) === "review");
+  const allActions = useInvoiceActions();
+  const queue = invoices.filter((i) => effectiveStage(i.id, deriveStage(i), allActions) === "review");
   const totalVariance = queue.reduce((s, i) => s + i.variance, 0);
   return (
     <div className="space-y-5">
@@ -53,17 +53,7 @@ function Review() {
                 <p className="rounded-md bg-[var(--ink-50)] px-3 py-2 text-[12px] text-[var(--ink-700)]">{inv.lineDetail}</p>
                 {inv.alert && <p className="rounded-md border border-[var(--amber-500)]/30 bg-[var(--amber-500)]/5 px-3 py-2 text-[12px] text-[var(--ink-700)]">{inv.alert}</p>}
                 {canSign ? (
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" onClick={() => toast.success(`${inv.id} accepted`, { description: `£${inv.invoiced.toLocaleString()} cleared for payment run` })}>
-                      <ShieldCheck className="mr-1 h-3 w-3" /> Accept variance
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => toast.error(`${inv.id} disputed`, { description: `${inv.supplier} notified` })}>
-                      <X className="mr-1 h-3 w-3" /> Dispute
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => toast.success(`Credit note requested`, { description: `Asking ${inv.supplier} for £${inv.variance.toLocaleString()} credit` })}>
-                      <Mail className="mr-1 h-3 w-3" /> Request credit note
-                    </Button>
-                  </div>
+                  <InvoiceActionButtons inv={inv} />
                 ) : (
                   <p className="text-[11px] italic text-[var(--ink-500)]">QS / Admin must action this invoice.</p>
                 )}
