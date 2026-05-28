@@ -2,8 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
-import { scheduledPayments } from "@/lib/invoiceWorkflow";
-import { toast } from "sonner";
+import { scheduledPayments, type ScheduledPayment } from "@/lib/invoiceWorkflow";
+import { useInvoiceActions } from "@/lib/invoiceActions";
+import { AddToBatchDialog, MarkPaidDialog, NewBatchDialog } from "@/components/invoices/PaymentScheduleDialogs";
+import { useState } from "react";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { Banknote, CalendarPlus } from "lucide-react";
@@ -18,9 +20,21 @@ function Guarded() {
 
 function Schedule() {
   const canSign = useCan("sign.invoices");
-  const ready = scheduledPayments.filter((p) => p.status === "ready");
-  const scheduled = scheduledPayments.filter((p) => p.status === "scheduled");
-  const paid = scheduledPayments.filter((p) => p.status === "paid");
+  const actions = useInvoiceActions();
+  const [dlg, setDlg] = useState<null | { kind: "add" | "pay"; row: ScheduledPayment } | { kind: "new" }>(null);
+  // Apply latest action per invoice to override status / batch / pay date.
+  const rows: ScheduledPayment[] = scheduledPayments.map((p) => {
+    const last = actions.find((a) => a.ref === p.ref);
+    if (!last) return p;
+    if (last.kind === "pay") return { ...p, status: "paid", batch: last.paymentBatch ?? p.batch, due: last.payDate ?? p.due };
+    if (last.kind === "schedule") return { ...p, status: "scheduled", batch: last.paymentBatch ?? p.batch, due: last.payDate ?? p.due };
+    return p;
+  });
+  // User-created batches surface as a small bar above the table.
+  const userBatches = actions.filter((a) => a.kind === "create-batch");
+  const ready = rows.filter((p) => p.status === "ready");
+  const scheduled = rows.filter((p) => p.status === "scheduled");
+  const paid = rows.filter((p) => p.status === "paid");
   const sumReady = ready.reduce((s, p) => s + p.amount, 0);
   const sumScheduled = scheduled.reduce((s, p) => s + p.amount, 0);
   return (
@@ -31,12 +45,26 @@ function Schedule() {
         <Kpi label="Paid MTD" value={`£${paid.reduce((s, p) => s + p.amount, 0).toLocaleString()}`} tone="success" />
       </div>
 
+      {userBatches.length > 0 && (
+        <Card>
+          <CardHead title="Open payment batches" subtitle="Newest first · drop ready invoices into any of these" />
+          <ul className="divide-y divide-[var(--ink-200)] text-[12px]">
+            {userBatches.map((b) => (
+              <li key={b.id} className="flex items-center justify-between px-5 py-2.5">
+                <span className="font-mono-num font-semibold">{b.paymentBatch}</span>
+                <span className="text-[var(--ink-500)]">pay date {b.payDate ?? "—"} · created {new Date(b.ts).toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       <Card>
         <CardHead
           title="Payment runs"
           subtitle="Approved invoices grouped into batches · move to next batch or pay now"
           right={canSign && (
-            <Button size="sm" onClick={() => toast.success("New batch created", { description: "PAY-2026-09 · drop ready invoices into it" })}>
+            <Button size="sm" onClick={() => setDlg({ kind: "new" })}>
               <CalendarPlus className="mr-1 h-3 w-3" /> New batch
             </Button>
           )}
@@ -55,7 +83,7 @@ function Schedule() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--ink-200)]">
-              {scheduledPayments.map((p) => (
+              {rows.map((p) => (
                 <tr key={p.ref} className="hover:bg-[var(--ink-50)]">
                   <td className="px-4 py-3 font-mono-num font-semibold">
                     <Link to="/invoices/$ref" params={{ ref: p.ref }} className="hover:underline">{p.ref}</Link>
@@ -71,12 +99,12 @@ function Schedule() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     {canSign && p.status === "ready" && (
-                      <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => toast.success(`${p.ref} added to PAY-2026-09`)}>
+                      <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setDlg({ kind: "add", row: p })}>
                         Add to batch
                       </Button>
                     )}
                     {canSign && p.status === "scheduled" && (
-                      <Button size="sm" className="h-7 text-[11px]" onClick={() => toast.success(`${p.ref} marked paid`, { description: `£${p.amount.toLocaleString()} faster payment` })}>
+                      <Button size="sm" className="h-7 text-[11px]" onClick={() => setDlg({ kind: "pay", row: p })}>
                         <Banknote className="mr-1 h-3 w-3" /> Mark paid
                       </Button>
                     )}
@@ -87,6 +115,9 @@ function Schedule() {
           </table>
         </div>
       </Card>
+      {dlg?.kind === "add" && <AddToBatchDialog row={dlg.row} open onOpenChange={(v) => !v && setDlg(null)} />}
+      {dlg?.kind === "pay" && <MarkPaidDialog row={dlg.row} open onOpenChange={(v) => !v && setDlg(null)} />}
+      {dlg?.kind === "new" && <NewBatchDialog open onOpenChange={(v) => !v && setDlg(null)} />}
     </div>
   );
 }
