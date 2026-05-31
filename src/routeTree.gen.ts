@@ -33,12 +33,14 @@ import { Route as CalloffsIndexRouteImport } from './routes/calloffs.index'
 import { Route as SettingsLabourRouteImport } from './routes/settings.labour'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects.$projectId'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
+import { Route as PoPoRefRouteImport } from './routes/po.$poRef'
 import { Route as InvoicesScheduleRouteImport } from './routes/invoices.schedule'
 import { Route as InvoicesReviewRouteImport } from './routes/invoices.review'
 import { Route as InvoicesNewRouteImport } from './routes/invoices.new'
 import { Route as InvoicesDisputesRouteImport } from './routes/invoices.disputes'
 import { Route as InvoicesAuditRouteImport } from './routes/invoices.audit'
 import { Route as InvoicesRefRouteImport } from './routes/invoices.$ref'
+import { Route as GrnRefRouteImport } from './routes/grn.$ref'
 import { Route as CalloffsPipelineRouteImport } from './routes/calloffs.pipeline'
 import { Route as CalloffsNewRouteImport } from './routes/calloffs.new'
 import { Route as CalloffsDeliveriesRouteImport } from './routes/calloffs.deliveries'
@@ -178,6 +180,11 @@ const PriceListsUploadRoute = PriceListsUploadRouteImport.update({
   path: '/price-lists/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PoPoRefRoute = PoPoRefRouteImport.update({
+  id: '/po/$poRef',
+  path: '/po/$poRef',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InvoicesScheduleRoute = InvoicesScheduleRouteImport.update({
   id: '/schedule',
   path: '/schedule',
@@ -207,6 +214,11 @@ const InvoicesRefRoute = InvoicesRefRouteImport.update({
   id: '/$ref',
   path: '/$ref',
   getParentRoute: () => InvoicesRoute,
+} as any)
+const GrnRefRoute = GrnRefRouteImport.update({
+  id: '/grn/$ref',
+  path: '/grn/$ref',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CalloffsPipelineRoute = CalloffsPipelineRouteImport.update({
   id: '/pipeline',
@@ -333,12 +345,14 @@ export interface FileRoutesByFullPath {
   '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
   '/calloffs/pipeline': typeof CalloffsPipelineRoute
+  '/grn/$ref': typeof GrnRefRoute
   '/invoices/$ref': typeof InvoicesRefRoute
   '/invoices/audit': typeof InvoicesAuditRoute
   '/invoices/disputes': typeof InvoicesDisputesRoute
   '/invoices/new': typeof InvoicesNewRoute
   '/invoices/review': typeof InvoicesReviewRoute
   '/invoices/schedule': typeof InvoicesScheduleRoute
+  '/po/$poRef': typeof PoPoRefRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
@@ -380,12 +394,14 @@ export interface FileRoutesByTo {
   '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
   '/calloffs/pipeline': typeof CalloffsPipelineRoute
+  '/grn/$ref': typeof GrnRefRoute
   '/invoices/$ref': typeof InvoicesRefRoute
   '/invoices/audit': typeof InvoicesAuditRoute
   '/invoices/disputes': typeof InvoicesDisputesRoute
   '/invoices/new': typeof InvoicesNewRoute
   '/invoices/review': typeof InvoicesReviewRoute
   '/invoices/schedule': typeof InvoicesScheduleRoute
+  '/po/$poRef': typeof PoPoRefRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/settings/labour': typeof SettingsLabourRoute
   '/calloffs': typeof CalloffsIndexRoute
@@ -430,12 +446,14 @@ export interface FileRoutesById {
   '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
   '/calloffs/pipeline': typeof CalloffsPipelineRoute
+  '/grn/$ref': typeof GrnRefRoute
   '/invoices/$ref': typeof InvoicesRefRoute
   '/invoices/audit': typeof InvoicesAuditRoute
   '/invoices/disputes': typeof InvoicesDisputesRoute
   '/invoices/new': typeof InvoicesNewRoute
   '/invoices/review': typeof InvoicesReviewRoute
   '/invoices/schedule': typeof InvoicesScheduleRoute
+  '/po/$poRef': typeof PoPoRefRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
@@ -482,12 +500,14 @@ export interface FileRouteTypes {
     | '/calloffs/deliveries'
     | '/calloffs/new'
     | '/calloffs/pipeline'
+    | '/grn/$ref'
     | '/invoices/$ref'
     | '/invoices/audit'
     | '/invoices/disputes'
     | '/invoices/new'
     | '/invoices/review'
     | '/invoices/schedule'
+    | '/po/$poRef'
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
@@ -529,12 +549,14 @@ export interface FileRouteTypes {
     | '/calloffs/deliveries'
     | '/calloffs/new'
     | '/calloffs/pipeline'
+    | '/grn/$ref'
     | '/invoices/$ref'
     | '/invoices/audit'
     | '/invoices/disputes'
     | '/invoices/new'
     | '/invoices/review'
     | '/invoices/schedule'
+    | '/po/$poRef'
     | '/price-lists/upload'
     | '/settings/labour'
     | '/calloffs'
@@ -578,12 +600,14 @@ export interface FileRouteTypes {
     | '/calloffs/deliveries'
     | '/calloffs/new'
     | '/calloffs/pipeline'
+    | '/grn/$ref'
     | '/invoices/$ref'
     | '/invoices/audit'
     | '/invoices/disputes'
     | '/invoices/new'
     | '/invoices/review'
     | '/invoices/schedule'
+    | '/po/$poRef'
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
@@ -623,6 +647,8 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   TeamRoute: typeof TeamRoute
   VariationsRoute: typeof VariationsRoute
+  GrnRefRoute: typeof GrnRefRoute
+  PoPoRefRoute: typeof PoPoRefRoute
   PriceListsUploadRoute: typeof PriceListsUploadRoute
   SettingsLabourRoute: typeof SettingsLabourRoute
 }
@@ -797,6 +823,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PriceListsUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/po/$poRef': {
+      id: '/po/$poRef'
+      path: '/po/$poRef'
+      fullPath: '/po/$poRef'
+      preLoaderRoute: typeof PoPoRefRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/invoices/schedule': {
       id: '/invoices/schedule'
       path: '/schedule'
@@ -838,6 +871,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/invoices/$ref'
       preLoaderRoute: typeof InvoicesRefRouteImport
       parentRoute: typeof InvoicesRoute
+    }
+    '/grn/$ref': {
+      id: '/grn/$ref'
+      path: '/grn/$ref'
+      fullPath: '/grn/$ref'
+      preLoaderRoute: typeof GrnRefRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/calloffs/pipeline': {
       id: '/calloffs/pipeline'
@@ -1082,18 +1122,11 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   TeamRoute: TeamRoute,
   VariationsRoute: VariationsRoute,
+  GrnRefRoute: GrnRefRoute,
+  PoPoRefRoute: PoPoRefRoute,
   PriceListsUploadRoute: PriceListsUploadRoute,
   SettingsLabourRoute: SettingsLabourRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

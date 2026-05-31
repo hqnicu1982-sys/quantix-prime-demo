@@ -167,8 +167,16 @@ function Detail() {
                 </Button>
               </Gated>
             )}
-            <Button size="sm" variant="ghost"><FileText className="mr-1 h-3 w-3" /> Open PO</Button>
-            <Button size="sm" variant="ghost"><FileText className="mr-1 h-3 w-3" /> Open GRN</Button>
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/po/$poRef" params={{ poRef: inv.poRef }}>
+                <FileText className="mr-1 h-3 w-3" /> Open PO
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/grn/$ref" params={{ ref: inv.id }}>
+                <FileText className="mr-1 h-3 w-3" /> Open GRN
+              </Link>
+            </Button>
           </div>
         </Card>
 
