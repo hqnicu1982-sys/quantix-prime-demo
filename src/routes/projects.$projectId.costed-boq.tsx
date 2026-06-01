@@ -5,6 +5,7 @@ import { ExternalLink, Download } from "lucide-react";
 import { costedBoqRows, costedBoqKpi, fmtMoney } from "@/lib/mockData";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
+import { BoqForecastBanner } from "@/components/financial/BoqForecastBanner";
 
 export const Route = createFileRoute("/projects/$projectId/costed-boq")({ component: GuardedBoQPage });
 
@@ -15,6 +16,7 @@ function GuardedBoQPage() {
 }
 
 function BoQPage() {
+  const { projectId } = Route.useParams();
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -23,6 +25,8 @@ function BoQPage() {
         <Kpi label="Coverage" value={`${costedBoqKpi.coverage}%`} delta={`${costedBoqKpi.notPriced} lines need pricing`} tone="warning" />
         <Kpi label="Suppliers compared" value="2" delta="CCF · Minster" />
       </div>
+
+      <BoqForecastBanner projectId={projectId} />
 
       <Card>
         <CardHead

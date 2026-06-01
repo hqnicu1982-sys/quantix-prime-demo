@@ -18,6 +18,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useCan } from "@/lib/permissions";
 import { Gated } from "@/components/auth/Gated";
 import { NoAccess } from "@/components/auth/NoAccess";
+import { BoqForecastBanner } from "@/components/financial/BoqForecastBanner";
 
 const searchSchema = z.object({
   tab:    fallback(z.enum(["all", "review", "missing", "savings"]), "all").default("all"),
@@ -174,6 +175,8 @@ function CostedBoq() {
         <Kpi label="Single supplier (CCF)" value={fmtMoney(costedBoqKpi.singleSupplier, { compact: true })} delta="+£28.2k" tone="warning" />
         <Kpi label="Items not priced" value={`${tabCounts.missing}`} delta={`${costedBoqKpi.coverage}% coverage`} tone="warning" />
       </div>
+
+      <BoqForecastBanner projectId={current.id} />
 
       {/* Custom systems added via Calculator for current project */}
       <CustomSystemsPanel projectId={current.id} projectName={current.name} systems={projectData.systems} lines={projectData.boqLines} />
