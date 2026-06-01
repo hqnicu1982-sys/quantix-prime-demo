@@ -3,7 +3,7 @@ import { Card, CardHead } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { useProfitForecast, VERDICT_META } from "@/lib/profitForecast";
 import { fmtMoney } from "@/lib/mockData";
-import { TrendingUp, TrendingDown, AlertTriangle, ArrowRight, Sparkles } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, ArrowRight, Sparkles, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -36,16 +36,27 @@ export function ProfitForecastCard({ projectId, compact = false }: Props) {
         title="Profit forecast at completion"
         subtitle="Combină Contract value · BoQ · Planner · Variations"
         right={
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider",
-              v.bg,
-              v.tone,
+          <div className="flex items-center gap-2">
+            {f.programme.programmeOnlyTasks > 0 && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-500)]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-500)]"
+                title="Estimate bazată pe orele din programul sincronizat"
+              >
+                <CalendarClock className="h-3 w-3" />
+                {f.programme.programmeOnlyTasks} from programme
+              </span>
             )}
-          >
-            <Icon className="h-3.5 w-3.5" />
-            {v.label}
-          </span>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider",
+                v.bg,
+                v.tone,
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {v.label}
+            </span>
+          </div>
         }
       />
 

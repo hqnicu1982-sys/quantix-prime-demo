@@ -62,6 +62,10 @@ export type ProfitForecast = {
     note: string;
   };
   drivers: ForecastDriver[];
+  programme: {
+    programmeOnlyPct: number;   // 0..100 — % tasks cu ore din program dar fără crew
+    programmeOnlyTasks: number; // count
+  };
 };
 
 export type ForecastAssumptions = {
@@ -135,19 +139,28 @@ export function computeProfitForecastFromInputs(input: {
   let labourPlanned = 0;
   let labourEstimated = 0;
   let scheduledTasks = 0;
+  let programmeOnlyTasks = 0;
   for (const t of input.tasks) {
     const hasPlan = !!t.plannedHours && !!t.crewId;
     if (hasPlan) scheduledTasks += 1;
     if (hasPlan && t.crewId) {
       labourPlanned += (t.plannedHours ?? 0) * effectiveRate(t.crewId, project.id);
     } else {
-      // Baseline indicative: estimate from task duration when crew/hours unknown.
+      // Baseline indicative: prefer programme-supplied workHours (from MSP/CSV/PDF)
+      // and fall back to duration × crew heuristic only when neither is known.
       const DEFAULT_CREW_SIZE = 2;
       const DEFAULT_LABOUR_RATE = 45; // £/h fallback when no crew assigned
-      const days =
-        t.start && t.end ? Math.max(1, daysBetween(t.start, t.end) + 1) : 1;
-      const estHours = days * 8 * DEFAULT_CREW_SIZE;
       const rate = t.crewId ? effectiveRate(t.crewId, project.id) : DEFAULT_LABOUR_RATE;
+      let estHours: number;
+      if (t.plannedHours && t.plannedHours > 0) {
+        // Programme-based estimate — work hours come from synced schedule.
+        estHours = t.plannedHours;
+        programmeOnlyTasks += 1;
+      } else {
+        const days =
+          t.start && t.end ? Math.max(1, daysBetween(t.start, t.end) + 1) : 1;
+        estHours = days * 8 * DEFAULT_CREW_SIZE;
+      }
       labourEstimated += estHours * rate;
     }
   }
@@ -188,14 +201,24 @@ export function computeProfitForecastFromInputs(input: {
   const boqAllocatedPct = boqTotalQty > 0 ? Math.min(100, (boqOrderedQty / boqTotalQty) * 100) : 0;
   const plannerScheduledPct =
     input.tasks.length > 0 ? (scheduledTasks / input.tasks.length) * 100 : 0;
+  const programmeOnlyPct =
+    input.tasks.length > 0 ? (programmeOnlyTasks / input.tasks.length) * 100 : 0;
   let score =
     Math.round(boqAllocatedPct * 0.45 + plannerScheduledPct * 0.45);
   if (input.msProjectLinked) score = Math.min(100, score + 10);
+  // Programme-only tasks (synced but un-crewed) carry weaker confidence than
+  // a fully scheduled task but stronger than nothing — half-credit.
+  if (programmeOnlyPct > 0) {
+    score = Math.min(100, score + Math.round(programmeOnlyPct * 0.2));
+  }
   // Floor: if we have a contract value & target margin, baseline confidence 15.
   if (project.contractValue > 0) score = Math.max(score, 15);
   let note = "Forecast preliminar — adaugă alocări BoQ și ore planner pentru precizie.";
   if (score >= 70) note = "Forecast solid — bază bună de decizie.";
   else if (score >= 40) note = "Forecast indicativ — încă lipsesc alocări sau ore planner.";
+  if (programmeOnlyPct >= 50) {
+    note = `Estimare din programul sincronizat — alocă crew-uri pe ${Math.round(programmeOnlyPct)}% din task-uri pentru lock-in.`;
+  }
   if (estimatedCostShare > 0.4) {
     note += ` ${Math.round(estimatedCostShare * 100)}% din cost este estimat din durate & BoQ budget.`;
   }
@@ -281,6 +304,10 @@ export function computeProfitForecastFromInputs(input: {
     drivers: drivers
       .sort((a, b) => Math.abs(b.deltaMoney) - Math.abs(a.deltaMoney))
       .slice(0, 4),
+    programme: {
+      programmeOnlyPct,
+      programmeOnlyTasks,
+    },
   };
 }
 

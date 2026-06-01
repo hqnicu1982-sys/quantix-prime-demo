@@ -1,73 +1,79 @@
 
-## Problema
+# Sincronizare MSProject pe tot proiectul + upload program în orice format
 
-Acum forecast-ul folosește doar `labourPlanned` din task-uri cu `crewId + plannedHours` și `boqCommitted` din alocările order/delivered. Dacă planner-ul are doar bare (start/end fără crew) și BoQ are linii fără alocări, costul apare artificial mic → forecast pozitiv fals.
+Obiectiv: când Quantix e conectat la MSProject (sau utilizatorul încarcă un fișier de planificare), întregul planner al proiectului se populează automat, iar Profit Forecast generează imediat o estimare bazată pe durata și încărcarea taskurilor — fără să fie necesară alocarea manuală a resurselor.
 
-User vrea **un forecast inițial credibil** doar din ce există deja: BoQ budget + durata task-urilor din planner.
+## 1. Modele de conexiune (3 surse, același output)
 
-## Soluție
+Toate sursele produc același `MspBundle` (`MspTaskRow[]`) — restul aplicației rămâne neschimbată.
 
-Extind `computeProfitForecastFromInputs` în `src/lib/profitForecast.ts` cu un mod "indicative" care **completează gap-urile** prin heuristici, marcate clar ca estimări:
+**A. Conector live MSProject / Project for the Web**
+- Buton "Connect MSProject" în pagina Integrations (există deja card-ul) → folosește pattern-ul `connectIntegration()` din `src/lib/integrationConnections.ts`.
+- Conectorul real (Microsoft Graph / Project API) e out-of-scope pentru sandbox — păstrăm simularea, dar adăugăm flag `isLive` pe conexiune și un buton "Sync now" care re-rulează `simulateMspBundle()` și marchează `lastSync`.
+- Când conexiunea există și e `isLive`, planner-ul afișează un banner "Synced from MSProject · last sync 12m ago · Sync now".
 
-### 1. Labour baseline din durata planner
-Pentru fiecare task fără `plannedHours` sau fără `crewId`:
-- estimez ore = `durationDays(task) × 8h × crewSizeDefault` (default 2 persoane)
-- aplic un `defaultLabourRate` (medie din `labour.ts`, ex £45/h) când nu există `crewId`
-- adun într-un nou câmp `cost.labourEstimated` separat de `labourPlanned`
+**B. Upload fișier (nou)**
+Dialog nou `UploadProgrammeDialog` accesibil din Planner (header) și din wizard-ul MSP. Acceptă:
+- `.xml` (MS Project XML export) — parser nativ cu `DOMParser`, mapează `<Task>` → `MspTaskRow`.
+- `.csv` / `.xlsx` — coloane minime: `Name`, `Start`, `Finish`, `Duration`, `Work`, `Resource`. Folosim `papaparse` pentru CSV; xlsx via `xlsx` npm package.
+- `.pdf` — extract text via `pdfjs-dist` (deja edge-compatible), apoi heuristic table parser (header row detection + column ranges). Pentru PDF-uri scanate afișăm mesaj "PDF text not readable — try XML/CSV export".
+- `.mpp` — nu se poate parsa în Worker; afișăm UI care explică și sugerează export `.xml` din MSProject (File → Save As → XML).
 
-`cost.labourPlanned` rămâne neschimbat (committed). Totalul folosit în EAC devine `labourPlanned + labourEstimated`.
+Toate parserele rulează în server function `parseProgrammeFile` (`src/lib/programmeImport.functions.ts`) care primește FormData și returnează `MspBundle`.
 
-### 2. Materials baseline = BoQ budget
-Deja folosim `Math.max(boqBudget, boqCommitted)` deci asta funcționează. Adaug câmp explicit `cost.materialsEstimated = boqBudget - boqCommitted` (porțiunea neangajată încă) pentru transparență.
+**C. Simularea existentă** rămâne ca fallback "Load sample programme" în dialog.
 
-### 3. Fallback când planner-ul e gol
-Dacă `tasks.length === 0` dar avem `contractValue + boqBudget`:
-- labour estimat = `(contractValue - boqBudget) × 0.35` (heuristică labour ≈ 35% din valoarea adăugată)
+## 2. Sync pe tot proiectul (one-click)
 
-### 4. Confidence rămâne la fel
-Score-ul scade automat când totul e estimat — asta e corect. Adaug în `note` cât din cost vine din estimate vs. committed (ex. "65% din cost este estimat — adaugă crew-uri și order-uri pentru precizie").
+Înlocuim wizardul cu mapping per-rând cu un flow simplificat:
+- Preview: numărul de taskuri, durata totală, perioada, ore totale.
+- Toggle "Replace existing planner" vs "Merge (fuzzy match)".
+- Apply → bulk create/update prin store-ul planner-ului, păstrând `crewId`/`workHours` deja alocate pe taskurile match-uite.
+- Confirmare: "47 tasks synced · Profit Forecast updated · open Financial".
 
-### 5. Drivers
-Adaug un driver nou când `labourEstimated > labourPlanned`: "Labour preponderent estimat — alocă crew-uri pentru lock-in".
+Mapping-ul fin per-rând rămâne disponibil printr-un buton "Advanced mapping" pentru utilizatorii care vor control.
 
-## UI
+## 3. Estimare profit din programul sincronizat (fără alocare)
 
-În `ProfitForecastCard.tsx`:
-- în sub-textul KPI "Forecast cost", schimb `labour {planned}` în `labour {planned+estimated}` și adaug `(X% estimat)` când relevant
-- în cost breakdown segment "Labour (Planner)" îl split în 2: "Labour committed" (full color) + "Labour estimated" (hashed/lighter)
-- același tratament pentru "Materials": committed + budget-rest
+Extindem `computeProfitForecastFromInputs` din `src/lib/profitForecast.ts` cu o sursă nouă de baseline când task-urile vin din sync:
 
-În `BoqForecastBanner.tsx`: adaug o linie mică "X% din costuri estimate" sub confidence.
+- Pentru fiecare task fără `crewId`, folosim `workHours` din MSP (mai precis decât heuristica `days × 8h × crew_size`) × `DEFAULT_LABOUR_RATE`. Dacă `workHours` lipsește, cădem pe heuristica existentă.
+- Nouă funcție `estimateLabourFromProgramme(tasks)` care întoarce `{ labourEstimated, breakdown }` pe baza orelor MSP.
+- `confidence` urcă față de baseline-ul fără sync (avem date concrete despre durată/ore), dar rămâne sub varianta cu crew-uri alocate. Adăugăm la `drivers`: "Sincronizat din MSProject — alocă crew-uri pentru lock-in".
+- `ProfitForecastCard` afișează un badge "Programme-based estimate · X tasks synced".
 
-## Fișiere
+## 4. UI changes
 
-- `src/lib/profitForecast.ts` — extind tipul `ProfitForecast.cost`, logica de calcul, drivers, note
-- `src/components/financial/ProfitForecastCard.tsx` — split segmente committed/estimated în breakdown, sub-texte
-- `src/components/financial/BoqForecastBanner.tsx` — indicator scurt "X% estimat"
+- `src/components/planner/MsProjectImportDialog.tsx` → refactor: 3 taburi (Live sync / Upload file / Sample), preview compact, "Apply to project" buton mare.
+- `src/components/planner/UploadProgrammeDropzone.tsx` (nou) — drag&drop multi-format cu icon-uri și hint pentru `.mpp`.
+- `src/routes/planner.tsx` + `projects.$projectId.planner.tsx` → banner "Synced from MSProject · last sync … · Sync now / Re-import".
+- `src/components/financial/ProfitForecastCard.tsx` → badge "From programme" + link "View programme".
+- `src/routes/integrations.tsx` → card MSProject capătă status real din `useIntegrationConnection("msproject")`.
 
-## Detalii tehnice
+## 5. Fișiere noi / modificate
 
-```ts
-// profitForecast.ts — extras
-const DEFAULT_CREW_SIZE = 2;
-const DEFAULT_LABOUR_RATE = 45;
+**Noi**
+- `src/lib/programmeImport.functions.ts` — server fn `parseProgrammeFile` (XML/CSV/XLSX/PDF → `MspBundle`).
+- `src/lib/programmeParsers/` — `xml.ts`, `csv.ts`, `xlsx.ts`, `pdf.ts`.
+- `src/components/planner/UploadProgrammeDropzone.tsx`.
+- `src/components/planner/ProgrammeSyncBanner.tsx`.
 
-// per task fără plannedHours/crewId:
-const days = Math.max(1, daysBetween(t.start, t.end) + 1);
-const estHours = days * 8 * DEFAULT_CREW_SIZE;
-const rate = t.crewId ? effectiveRate(t.crewId, projectId) : DEFAULT_LABOUR_RATE;
-labourEstimated += estHours * rate;
-```
+**Modificate**
+- `src/lib/msProjectImport.ts` — exportă `applyBundleToProject(bundle, mode: "replace"|"merge")`.
+- `src/lib/profitForecast.ts` — `estimateLabourFromProgramme`, folosește `workHours` când există.
+- `src/components/planner/MsProjectImportDialog.tsx` — tabs + flow simplificat.
+- `src/components/financial/ProfitForecastCard.tsx` — badge sursa programului.
+- `src/routes/planner.tsx`, `src/routes/projects.$projectId.planner.tsx` — banner sync.
+- `src/routes/integrations.tsx` — status live MSProject.
 
-Tipul devine:
-```ts
-cost: {
-  ...
-  labourPlanned: number;     // committed (crew + hours setate)
-  labourEstimated: number;   // baseline din durata task-urilor
-  materialsCommitted: number;
-  materialsEstimated: number;
-  estimatedCostShare: number; // 0..1 — pentru UI badge
-  ...
-}
-```
+## 6. Detalii tehnice
+
+- `pdfjs-dist` și `xlsx` se adaugă cu `bun add`. `papaparse` probabil deja în deps; verific.
+- Parser PDF heuristic: extragem text pe pagină, detectăm linia cu coloane (`Task Name`, `Start`, `Finish`, `Duration`, `Work`), apoi împărțim fiecare linie pe baza pozițiilor X ale headerelor. Acceptăm output imperfect și marcăm rândurile cu `confidence < 0.6` ca "Review needed" în preview.
+- Toate parserele întorc același shape; UI nu știe ce format a fost încărcat.
+- Server fn pentru PDF/XLSX (nu rulează în browser bundle). XML/CSV pot rula și client-side ca fallback.
+
+## Out of scope (faza următoare)
+- Sync bidirecțional Quantix → MSProject.
+- Parser real `.mpp` (necesită serviciu Java extern).
+- OAuth real Microsoft Graph (rămâne simulat în acest milestone).
