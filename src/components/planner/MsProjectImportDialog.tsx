@@ -471,3 +471,43 @@ function levelFromName(name: string): string {
   if (/lobby/i.test(name)) return "Lobby";
   return "All";
 }
+
+function DiffStat({
+  label,
+  before,
+  after,
+  format,
+}: {
+  label: string;
+  before: number;
+  after: number;
+  format: "money" | "pct" | "score";
+}) {
+  const delta = after - before;
+  const trend = Math.abs(delta) < 0.5 ? "flat" : delta > 0 ? "up" : "down";
+  const fmt = (v: number) =>
+    format === "money"
+      ? fmtMoney(v, { compact: true })
+      : format === "pct"
+        ? `${Math.round(v)}%`
+        : `${Math.round(v)}/100`;
+  const Icon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
+  const tone =
+    trend === "flat"
+      ? "text-[var(--ink-500)]"
+      : trend === "up"
+        ? "text-[var(--green-600)]"
+        : "text-[var(--red-500)]";
+  return (
+    <div className="rounded-md border border-[var(--ink-200)] bg-white p-2">
+      <p className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
+      <p className="font-mono mt-0.5 text-[13px] font-semibold tabular-nums text-[var(--ink-900)]">
+        {fmt(after)}
+      </p>
+      <p className={cn("mt-0.5 flex items-center gap-1 text-[10.5px] font-medium", tone)}>
+        <Icon className="h-3 w-3" />
+        {trend === "flat" ? "no change" : `${delta > 0 ? "+" : ""}${fmt(Math.abs(delta)).replace(/^-/, "")} vs before`}
+      </p>
+    </div>
+  );
+}
