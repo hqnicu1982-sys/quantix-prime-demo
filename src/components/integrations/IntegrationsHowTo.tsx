@@ -10,6 +10,8 @@ import {
   RefreshCw,
   ShieldCheck,
   X,
+  CalendarRange,
+  ListChecks,
 } from "lucide-react";
 
 const STORAGE_KEY = "qp-integrations-howto";
@@ -59,6 +61,18 @@ const STEPS = [
     title: "4. Verify & use",
     body:
       "Once connected the card shows a green Connected badge and last sync time. Press Sync to pull data on demand, or Disconnect from Settings to remove access.",
+  },
+  {
+    icon: CalendarRange,
+    title: "5. Trigger planner tasks",
+    body:
+      "Each sync turns programme dates and call-offs into PlannerTasks on the project's Execution Planner — automatically, no manual import. Tasks inherit dependencies, crews and BoQ links from the source system.",
+  },
+  {
+    icon: ListChecks,
+    title: "6. Manage in Execution Planner",
+    body:
+      "Open Planner → Gantt to reschedule (drag/resize), assign crews, or mark progress. Edits stay in Quantix; on the next sync we push date changes back to the source app (e.g. Asta) and flag conflicts in the Blockers panel.",
   },
 ];
 
@@ -124,7 +138,7 @@ export function IntegrationsHowTo() {
       </div>
 
       {state.open && (
-        <div className="grid gap-3 border-t border-[var(--ink-200)] px-5 py-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 border-t border-[var(--ink-200)] px-5 py-4 sm:grid-cols-2 lg:grid-cols-3">
           {STEPS.map((step) => (
             <div key={step.title} className="rounded-md border border-[var(--ink-200)] bg-card p-3">
               <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--ink-50)] text-[var(--ink-700)]">
