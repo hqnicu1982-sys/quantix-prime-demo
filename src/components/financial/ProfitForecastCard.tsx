@@ -19,13 +19,16 @@ export function ProfitForecastCard({ projectId, compact = false }: Props) {
 
   // Stacked breakdown segments (cost composition).
   const segments = [
-    { label: "Materials (BoQ)", value: f.cost.materialsCost, color: "var(--accent-500)" },
-    { label: "Labour (Planner)", value: f.cost.labourPlanned, color: "var(--navy-700, #1d3557)" },
-    { label: "Variations", value: f.cost.variationCost, color: "var(--amber-500)" },
-    { label: "Overheads", value: f.cost.overheads, color: "var(--ink-500)" },
-    { label: "Risk buffer", value: f.cost.riskBuffer, color: "var(--red-500)" },
-  ];
+    { label: "Materials committed", value: f.cost.materialsCommitted, color: "var(--accent-500)", estimated: false },
+    { label: "Materials estimated (BoQ)", value: f.cost.materialsEstimated, color: "var(--accent-500)", estimated: true },
+    { label: "Labour committed", value: f.cost.labourPlanned, color: "var(--navy-700, #1d3557)", estimated: false },
+    { label: "Labour estimated", value: f.cost.labourEstimated, color: "var(--navy-700, #1d3557)", estimated: true },
+    { label: "Variations", value: f.cost.variationCost, color: "var(--amber-500)", estimated: false },
+    { label: "Overheads", value: f.cost.overheads, color: "var(--ink-500)", estimated: false },
+    { label: "Risk buffer", value: f.cost.riskBuffer, color: "var(--red-500)", estimated: false },
+  ].filter((s) => s.value > 0);
   const segTotal = segments.reduce((s, x) => s + x.value, 0) || 1;
+  const estPct = Math.round(f.cost.estimatedCostShare * 100);
 
   return (
     <Card className={cn("overflow-hidden", v.border, "border-l-[3px]")}>
@@ -59,7 +62,7 @@ export function ProfitForecastCard({ projectId, compact = false }: Props) {
         <Kpi
           label="Forecast cost (EAC)"
           value={fmtMoney(f.cost.forecastCostAtCompletion, { compact: true })}
-          sub={`materials ${fmtMoney(f.cost.materialsCost, { compact: true })} · labour ${fmtMoney(f.cost.labourPlanned, { compact: true })}`}
+          sub={`materials ${fmtMoney(f.cost.materialsCost, { compact: true })} · labour ${fmtMoney(f.cost.labourTotal, { compact: true })}${estPct > 0 ? ` · ${estPct}% estimat` : ""}`}
         />
         <Kpi
           label="Forecast profit"
@@ -101,18 +104,38 @@ export function ProfitForecastCard({ projectId, compact = false }: Props) {
                 <div
                   key={s.label}
                   title={`${s.label}: ${fmtMoney(s.value, { compact: true })}`}
-                  style={{ width: `${(s.value / segTotal) * 100}%`, background: s.color }}
+                  style={{
+                    width: `${(s.value / segTotal) * 100}%`,
+                    background: s.estimated
+                      ? `repeating-linear-gradient(45deg, ${s.color} 0 4px, color-mix(in srgb, ${s.color} 35%, transparent) 4px 8px)`
+                      : s.color,
+                    opacity: s.estimated ? 0.85 : 1,
+                  }}
                 />
               ))}
             </div>
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[var(--ink-700)]">
               {segments.map((s) => (
                 <span key={s.label} className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-sm" style={{ background: s.color }} />
-                  {s.label} <span className="text-[var(--ink-500)]">{fmtMoney(s.value, { compact: true })}</span>
+                  <span
+                    className="h-2 w-2 rounded-sm"
+                    style={{
+                      background: s.estimated
+                        ? `repeating-linear-gradient(45deg, ${s.color} 0 2px, color-mix(in srgb, ${s.color} 35%, transparent) 2px 4px)`
+                        : s.color,
+                    }}
+                  />
+                  {s.label}
+                  {s.estimated && <span className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">est</span>}
+                  <span className="text-[var(--ink-500)]">{fmtMoney(s.value, { compact: true })}</span>
                 </span>
               ))}
             </div>
+            {estPct > 0 && (
+              <p className="mt-2 text-[11px] text-[var(--ink-500)]">
+                {estPct}% din direct cost este estimat din durate planner & BoQ budget. Alocă crew-uri și plasează call-off-uri pentru a-l converti în committed.
+              </p>
+            )}
           </div>
 
           <div className="border-t border-[var(--ink-200)] p-5">
