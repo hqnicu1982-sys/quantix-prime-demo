@@ -198,30 +198,69 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
 
         {step === "select" && (
           <div className="space-y-4 py-2">
-            <div className="rounded-md border border-dashed border-[var(--ink-200)] bg-[var(--ink-50)]/40 p-6 text-center">
-              <FileText className="mx-auto h-8 w-8 text-[var(--ink-500)]" />
-              <p className="mt-3 text-[13px] font-medium text-[var(--ink-700)]">
-                Selectează un fișier <code>.mpp</code> sau <code>.xml</code> exportat din MSProject
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xml,.csv,.tsv,.txt,.pdf,.mpp,.xlsx,.xls"
+              className="hidden"
+              onChange={onFileChange}
+            />
+
+            <div className="rounded-md border border-dashed border-[var(--accent-500)]/40 bg-[var(--accent-500)]/5 p-6 text-center">
+              <Upload className="mx-auto h-8 w-8 text-[var(--accent-500)]" />
+              <p className="mt-3 text-[13px] font-medium text-[var(--ink-900)]">
+                Încarcă programul de execuție
               </p>
               <p className="mt-1 text-[11.5px] text-[var(--ink-500)]">
-                Demo: vom simula un baseline tipic de drylining pentru acest proiect.
+                Format suportat: <code>.xml</code> (MS Project), <code>.csv</code>, <code>.pdf</code>.
+                <br />
+                <code>.mpp</code> &amp; Excel: vezi instrucțiunile de mai jos.
               </p>
-              <Button className="mt-4" onClick={browseFile} disabled={isLoading}>
+              <Button
+                className="mt-4"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <>
-                    <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Reading baseline…
+                    <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Procesez fișierul…
                   </>
                 ) : (
                   <>
-                    <FileUp className="mr-1.5 h-3.5 w-3.5" /> Browse mock .mpp
+                    <FileUp className="mr-1.5 h-3.5 w-3.5" /> Selectează fișier
                   </>
                 )}
               </Button>
             </div>
-            <p className="text-[11px] text-[var(--ink-500)]">
-              După import, ore-planificate și datele tasks-urilor mapate sunt actualizate, iar cardul „Profit
-              forecast" recalculează automat costul de labour și scorul de confidence.
-            </p>
+
+            <div className="rounded-md border border-[var(--ink-200)] bg-[var(--ink-50)]/40 p-4">
+              <div className="flex items-start gap-3">
+                <Sparkles className="mt-0.5 h-4 w-4 text-[var(--ink-500)]" />
+                <div className="flex-1">
+                  <p className="text-[12px] font-semibold text-[var(--ink-900)]">
+                    Nu ai un program la îndemână?
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-[var(--ink-500)]">
+                    Încarcă un baseline demo de drylining ca să vezi cum funcționează sincronizarea
+                    cu Profit Forecast.
+                  </p>
+                </div>
+                <Button size="sm" variant="outline" onClick={loadSample} disabled={isLoading}>
+                  <FileText className="mr-1 h-3.5 w-3.5" /> Load sample
+                </Button>
+              </div>
+            </div>
+
+            <details className="rounded-md border border-[var(--ink-200)] px-3 py-2 text-[11px] text-[var(--ink-500)]">
+              <summary className="cursor-pointer font-medium text-[var(--ink-700)]">
+                Cum export din MS Project / Asta / Primavera?
+              </summary>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                <li><strong>MS Project</strong>: File → Save As → Save as type: <code>XML Format (*.xml)</code>.</li>
+                <li><strong>Excel / Asta / Primavera</strong>: export ca CSV cu coloanele <code>Name, Start, Finish, Duration, Work, Resource</code>.</li>
+                <li><strong>PDF (Gantt)</strong>: trebuie să fie PDF cu text (nu scanat). Tabelul trebuie să conțină nume + 2 date pe rând.</li>
+              </ul>
+            </details>
           </div>
         )}
 
@@ -338,6 +377,31 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
                 value={summary.totalHours.toLocaleString()}
               />
             </div>
+
+            <div className="flex items-center justify-between rounded-md border border-[var(--ink-200)] p-3 text-[12px]">
+              <div>
+                <p className="font-semibold text-[var(--ink-900)]">Mod de aplicare</p>
+                <p className="mt-0.5 text-[11px] text-[var(--ink-500)]">
+                  {applyMode === "merge"
+                    ? "Păstrează task-urile existente; actualizează doar pe cele match-uite."
+                    : "Șterge tot planner-ul curent și recreează din program."}
+                </p>
+              </div>
+              <div className="flex rounded-md border border-[var(--ink-200)] p-0.5">
+                {(["merge", "replace"] as const).map((m) => (
+                  <Button
+                    key={m}
+                    size="sm"
+                    variant={applyMode === m ? "default" : "ghost"}
+                    className="h-7 px-3 text-[11px] capitalize"
+                    onClick={() => setApplyMode(m)}
+                  >
+                    {m === "merge" ? "Merge" : "Replace all"}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
             <p className="text-[11px] text-[var(--ink-500)]">
               Forecast curent: profit{" "}
               <span className="font-mono font-semibold">
