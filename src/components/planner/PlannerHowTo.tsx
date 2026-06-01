@@ -64,13 +64,13 @@ function buildSections(projectId: string): Section[] {
       title: "1. Adaugă taskuri manual",
       subtitle: "Cel mai rapid mod de a începe — perfect pentru proiecte mici sau ajustări rapide.",
       steps: [
-        { text: "Apasă „+ New task" din header — completează titlu, dată start/end și ore planificate." },
+        { text: 'Apasă „+ New task" din header — completează titlu, dată start/end și ore planificate.' },
         {
           text: "Asignează un crew din lista de echipe ca să blochezi costul de manoperă.",
           link: { label: "Setează ratele crew", to: "/settings/labour" },
         },
         {
-          text: "(Opțional) Leagă linii din BoQ — task-ul devine „ready" doar când materialele au call-off aprobat.",
+          text: '(Opțional) Leagă linii din BoQ — task-ul devine „ready" doar când materialele au call-off aprobat.',
           link: { label: "Vezi Costed BoQ", to: "/projects/$projectId/costed-boq", params: { projectId } },
         },
       ],
@@ -91,9 +91,9 @@ function buildSections(projectId: string): Section[] {
       title: "3. Importă un program existent",
       subtitle: "Sincronizează din MSProject sau încarcă un fișier — populezi tot plannerul într-un click.",
       steps: [
-        { text: "Apasă „Import MSP" din header pentru a deschide dialogul de import." },
+        { text: 'Apasă „Import MSP" din header pentru a deschide dialogul de import.' },
         { text: "Alege sursa: sync live, upload .xml / .csv / .pdf, sau Sample programme." },
-        { text: "Mod „Merge" păstrează crew + call-offs existente; „Replace" șterge și recreează tot." },
+        { text: 'Mod „Merge" păstrează crew + call-offs existente; „Replace" șterge și recreează tot.' },
         { text: "După apply, taskurile au plannedHours din MSP și un banner de sync apare aici sus." },
         {
           text: "Conectează MSProject live pentru sync bidirecțional permanent.",
@@ -109,7 +109,7 @@ function buildFooter(projectId: string): FooterItem[] {
     {
       icon: Users,
       title: "Alocă crew-urile",
-      body: "După import, orele apar ca „estimated". Asignează crew → labour planificat se blochează și confidence-ul crește.",
+      body: 'După import, orele apar ca „estimated". Asignează crew → labour planificat se blochează și confidence-ul crește.',
     },
     {
       icon: AlertTriangle,
