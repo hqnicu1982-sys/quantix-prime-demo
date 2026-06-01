@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileUp, FileText, ArrowRight, CheckCircle2, RefreshCw } from "lucide-react";
+import { FileUp, FileText, ArrowRight, CheckCircle2, RefreshCw, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { toast } from "sonner";
 import {
   buildInitialMapping,
@@ -50,6 +51,16 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
   const [mapping, setMapping] = useState<MspMappingRow[]>([]);
   const [defaultCrewId, setDefaultCrewId] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+  const [snapshot, setSnapshot] = useState<{
+    labourPlanned: number;
+    plannerScheduledPct: number;
+    confidence: number;
+    forecastProfit: number;
+    forecastMargin: number;
+  } | null>(null);
+  const [autoNavCountdown, setAutoNavCountdown] = useState<number | null>(null);
+  const autoNavTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const navigate = useNavigate();
 
   const tasks = useProjectTasks(projectId);
   const crews = useProjectCrews(projectId);
@@ -68,6 +79,12 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
     setMapping([]);
     setDefaultCrewId(undefined);
     setIsLoading(false);
+    setSnapshot(null);
+    setAutoNavCountdown(null);
+    if (autoNavTimer.current) {
+      clearInterval(autoNavTimer.current);
+      autoNavTimer.current = null;
+    }
   };
 
   const browseFile = () => {
@@ -84,6 +101,14 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
 
   const apply = () => {
     if (!bundle) return;
+    // Capture pre-apply snapshot so we can show before → after diffs.
+    setSnapshot({
+      labourPlanned: forecast.cost.labourPlanned,
+      plannerScheduledPct: forecast.confidence.plannerScheduledPct,
+      confidence: forecast.confidence.score,
+      forecastProfit: forecast.margin.forecastProfit,
+      forecastMargin: forecast.margin.forecastMargin,
+    });
     let created = 0;
     let updated = 0;
     for (const m of mapping) {
@@ -139,11 +164,27 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
       description: `${created} created · ${updated} updated · forecast updated`,
     });
     setStep("done");
+    // Kick off a 5s auto-navigation to Financial Dashboard.
+    setAutoNavCountdown(5);
   };
 
   const updateMappingRow = (uid: number, patch: Partial<MspMappingRow>) => {
     setMapping((m) => m.map((r) => (r.msp.uid === uid ? { ...r, ...patch } : r)));
   };
+
+  // Auto-navigation countdown for the done step.
+  useEffect(() => {
+    if (step !== "done" || autoNavCountdown === null) return;
+    if (autoNavCountdown <= 0) {
+      setOpen(false);
+      navigate({ to: "/financial" });
+      return;
+    }
+    const t = setTimeout(() => setAutoNavCountdown((n) => (n === null ? null : n - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [step, autoNavCountdown, navigate]);
+
+  const cancelAutoNav = () => setAutoNavCountdown(null);
 
   return (
     <Dialog
@@ -321,20 +362,63 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
         )}
 
         {step === "done" && (
-          <div className="space-y-3 py-4 text-center">
-            <CheckCircle2 className="mx-auto h-10 w-10 text-[var(--green-600)]" />
-            <p className="text-[14px] font-semibold">MSProject baseline aplicat</p>
-            <p className="text-[12px] text-[var(--ink-500)]">
-              {summary.created} task-uri create · {summary.updated} actualizate · {summary.totalHours.toLocaleString()} ore
-              man-hours sincronizate cu planner-ul.
-            </p>
-            <p className="text-[12px] text-[var(--ink-700)]">
-              Forecast nou: profit{" "}
-              <span className="font-mono font-semibold">
-                {fmtMoney(forecast.margin.forecastProfit, { compact: true })}
-              </span>{" "}
-              · margin {forecast.margin.forecastMargin.toFixed(1)}% · confidence {forecast.confidence.score}/100.
-            </p>
+          <div className="space-y-4 py-3">
+            <div className="text-center">
+              <CheckCircle2 className="mx-auto h-10 w-10 text-[var(--green-600)]" />
+              <p className="mt-1 text-[14px] font-semibold">MSProject baseline aplicat</p>
+              <p className="text-[12px] text-[var(--ink-500)]">
+                {summary.created} create · {summary.updated} actualizate · {summary.totalHours.toLocaleString()} ore sincronizate
+              </p>
+            </div>
+
+            <div className="rounded-md border border-[var(--ink-200)] bg-[var(--ink-50)]/40 p-3">
+              <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+                Profit Forecast recalculat
+              </p>
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                <DiffStat
+                  label="Labour planned"
+                  before={snapshot?.labourPlanned ?? 0}
+                  after={forecast.cost.labourPlanned}
+                  format="money"
+                />
+                <DiffStat
+                  label="Tasks scheduled"
+                  before={snapshot?.plannerScheduledPct ?? 0}
+                  after={forecast.confidence.plannerScheduledPct}
+                  format="pct"
+                />
+                <DiffStat
+                  label="Confidence"
+                  before={snapshot?.confidence ?? 0}
+                  after={forecast.confidence.score}
+                  format="score"
+                />
+                <DiffStat
+                  label="Forecast profit"
+                  before={snapshot?.forecastProfit ?? 0}
+                  after={forecast.margin.forecastProfit}
+                  format="money"
+                />
+              </div>
+              <p className="mt-2 text-[11px] text-[var(--ink-500)]">
+                Margin {forecast.margin.forecastMargin.toFixed(1)}% vs target {forecast.margin.targetMargin.toFixed(1)}%
+                {forecast.confidence.msProjectLinked && " · MSProject baseline activ"}
+              </p>
+            </div>
+
+            {autoNavCountdown !== null && (
+              <p className="text-center text-[11px] text-[var(--ink-500)]">
+                Deschid Financial Dashboard în {autoNavCountdown}s…
+                <button
+                  type="button"
+                  onClick={cancelAutoNav}
+                  className="ml-1 underline hover:text-[var(--ink-900)]"
+                >
+                  Anulează
+                </button>
+              </p>
+            )}
           </div>
         )}
 
@@ -348,7 +432,20 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
             </>
           )}
           {step === "done" && (
-            <Button onClick={() => setOpen(false)}>Close</Button>
+            <>
+              <Button variant="ghost" onClick={() => { cancelAutoNav(); setOpen(false); }}>
+                Stay on Planner
+              </Button>
+              <Button
+                onClick={() => {
+                  cancelAutoNav();
+                  setOpen(false);
+                  navigate({ to: "/financial" });
+                }}
+              >
+                Open Financial Dashboard <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Button>
+            </>
           )}
           {step === "select" && (
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
@@ -373,4 +470,44 @@ function levelFromName(name: string): string {
   if (m) return `L${m[1]}`;
   if (/lobby/i.test(name)) return "Lobby";
   return "All";
+}
+
+function DiffStat({
+  label,
+  before,
+  after,
+  format,
+}: {
+  label: string;
+  before: number;
+  after: number;
+  format: "money" | "pct" | "score";
+}) {
+  const delta = after - before;
+  const trend = Math.abs(delta) < 0.5 ? "flat" : delta > 0 ? "up" : "down";
+  const fmt = (v: number) =>
+    format === "money"
+      ? fmtMoney(v, { compact: true })
+      : format === "pct"
+        ? `${Math.round(v)}%`
+        : `${Math.round(v)}/100`;
+  const Icon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
+  const tone =
+    trend === "flat"
+      ? "text-[var(--ink-500)]"
+      : trend === "up"
+        ? "text-[var(--green-600)]"
+        : "text-[var(--red-500)]";
+  return (
+    <div className="rounded-md border border-[var(--ink-200)] bg-white p-2">
+      <p className="text-[10px] uppercase tracking-wider text-[var(--ink-500)]">{label}</p>
+      <p className="font-mono mt-0.5 text-[13px] font-semibold tabular-nums text-[var(--ink-900)]">
+        {fmt(after)}
+      </p>
+      <p className={cn("mt-0.5 flex items-center gap-1 text-[10.5px] font-medium", tone)}>
+        <Icon className="h-3 w-3" />
+        {trend === "flat" ? "no change" : `${delta > 0 ? "+" : ""}${fmt(Math.abs(delta)).replace(/^-/, "")} vs before`}
+      </p>
+    </div>
+  );
 }
