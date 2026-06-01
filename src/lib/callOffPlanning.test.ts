@@ -155,3 +155,56 @@ describe("isLineCovered", () => {
     expect(isLineCovered("L3", cos)).toBe(false);
   });
 });
+
+describe("configurable rules", () => {
+  it("applies a per-material lead-time override (precedence over BoQ line)", () => {
+    const lines = [
+      line({ id: "L1", material: "Board", selectedSupplier: "ACME", leadTimeDays: 3 }),
+    ];
+    const tasks = [task({ id: "T-1", start: "2026-05-10", boqLineIds: ["L1"] })];
+    const [p] = proposeCallOffs(tasks, lines, [], {}, {
+      today: TODAY,
+      perMaterialLeadDays: { Board: 10 },
+    });
+    expect(p.lines[0].leadTimeDays).toBe(10);
+    expect(p.lines[0].leadTimePresumed).toBe(false);
+    // 2026-05-10 minus 10 lead minus 2 buffer = 2026-04-28
+    expect(p.sendBy).toBe("2026-04-28");
+  });
+
+  it("filters out proposals under minBatchQty (reorder point)", () => {
+    const lines = [
+      line({ id: "L1", material: "Board", selectedSupplier: "ACME", qty: 30 }),
+      line({ id: "L2", material: "Stud", selectedSupplier: "BETA", qty: 200 }),
+    ];
+    const tasks = [
+      task({ id: "T-1", start: "2026-05-10", boqLineIds: ["L1"] }),
+      task({ id: "T-2", start: "2026-05-10", boqLineIds: ["L2"] }),
+    ];
+    const p = proposeCallOffs(tasks, lines, [], {}, { today: TODAY, minBatchQty: 100 });
+    expect(p).toHaveLength(1);
+    expect(p[0].supplier).toBe("BETA");
+  });
+
+  it("respects a custom imminent window (urgencyImminentDays)", () => {
+    const lines = [line({ id: "L1", material: "X", selectedSupplier: "S" })];
+    // sendBy = needed_on - 5 - 2 = needed_on - 7 → 2026-05-13 needs 2026-05-06 sendBy = 8d
+    const tasks = [task({ id: "T-1", start: "2026-05-13", boqLineIds: ["L1"] })];
+    const wide = proposeCallOffs(tasks, lines, [], {}, { today: TODAY, urgencyImminentDays: 10 })[0];
+    const narrow = proposeCallOffs(tasks, lines, [], {}, { today: TODAY, urgencyImminentDays: 3 })[0];
+    expect(wide.urgency).toBe("imminent");
+    expect(narrow.urgency).toBe("ok");
+  });
+
+  it("overrides default lead and buffer via assumptions", () => {
+    const lines = [line({ id: "L1", material: "X", selectedSupplier: "S" })];
+    const tasks = [task({ id: "T-1", start: "2026-05-10", boqLineIds: ["L1"] })];
+    const [p] = proposeCallOffs(tasks, lines, [], {}, {
+      today: TODAY,
+      defaultLeadDays: 10,
+      bufferDays: 5,
+    });
+    // 2026-05-10 minus 10 minus 5 = 2026-04-25
+    expect(p.sendBy).toBe("2026-04-25");
+  });
+});

@@ -22,6 +22,12 @@ export type CallOffAssumptions = {
   defaultLeadDays?: number;
   bufferDays?: number;
   coalesceWindowDays?: number;
+  /** sendBy ≤ today+N → "imminent" urgency. Default 3. */
+  urgencyImminentDays?: number;
+  /** Skip proposals with total qty under this threshold. 0 disables. */
+  minBatchQty?: number;
+  /** Per-material lead-day overrides; takes precedence over the BoQ line. */
+  perMaterialLeadDays?: Record<string, number>;
   /** Demo "today" anchor; falls back to PLANNER_TODAY. */
   today?: Date;
 };
@@ -83,6 +89,9 @@ export function proposeCallOffs(
   const defaultLead = assumptions.defaultLeadDays ?? DEFAULT_LEAD_DAYS;
   const buffer = assumptions.bufferDays ?? DEFAULT_BUFFER_DAYS;
   const window = assumptions.coalesceWindowDays ?? DEFAULT_COALESCE_WINDOW_DAYS;
+  const imminentDays = assumptions.urgencyImminentDays ?? 3;
+  const minBatchQty = assumptions.minBatchQty ?? 0;
+  const overrides = assumptions.perMaterialLeadDays ?? {};
 
   // 1) Collect raw needs from tasks → boqLines.
   const lineById = new Map(boqLines.map((l) => [l.id, l]));
@@ -126,7 +135,9 @@ export function proposeCallOffs(
     let batchStart = "";
     const flush = () => {
       if (batch.length === 0) return;
-      proposals.push(buildProposal(bucket.supplier, bucket.supplierMissing, batch, defaultLead, buffer, today));
+      proposals.push(
+        buildProposal(bucket.supplier, bucket.supplierMissing, batch, defaultLead, buffer, today, imminentDays, overrides),
+      );
       batch = [];
       batchStart = "";
     };
@@ -145,9 +156,14 @@ export function proposeCallOffs(
     flush();
   }
 
-  // 4) Sort by urgency (sendBy ascending).
-  proposals.sort((a, b) => (a.sendBy < b.sendBy ? -1 : a.sendBy > b.sendBy ? 1 : 0));
-  return proposals;
+  // 4) Apply reorder-point threshold (skip undersized batches).
+  const filtered = minBatchQty > 0
+    ? proposals.filter((p) => p.lines.reduce((s, l) => s + l.qty, 0) >= minBatchQty)
+    : proposals;
+
+  // 5) Sort by urgency (sendBy ascending).
+  filtered.sort((a, b) => (a.sendBy < b.sendBy ? -1 : a.sendBy > b.sendBy ? 1 : 0));
+  return filtered;
 }
 
 function buildProposal(
@@ -157,6 +173,8 @@ function buildProposal(
   defaultLead: number,
   buffer: number,
   today: Date,
+  imminentDays: number = 3,
+  overrides: Record<string, number> = {},
 ): CallOffProposal {
   // Roll up qty per lineId (a line referenced by 2 tasks counts once at full qty).
   const byLine = new Map<string, ProposalLine>();
@@ -164,8 +182,9 @@ function buildProposal(
   let neededOn = batch[0].needed_on;
   for (const n of batch) {
     if (n.needed_on < neededOn) neededOn = n.needed_on;
-    const leadDays = n.line.leadTimeDays ?? defaultLead;
-    const presumed = n.line.leadTimeDays == null;
+    const override = overrides[n.line.material];
+    const leadDays = override ?? n.line.leadTimeDays ?? defaultLead;
+    const presumed = override == null && n.line.leadTimeDays == null;
     if (leadDays > maxLead) maxLead = leadDays;
     const existing = byLine.get(n.line.id);
     if (existing) {
@@ -188,7 +207,7 @@ function buildProposal(
   const sendBy = addDays(neededOn, -(maxLead + buffer));
   const daysUntilSendBy = daysBetween(toISO(today), sendBy);
   const urgency: ProposalUrgency =
-    daysUntilSendBy < 0 ? "overdue" : daysUntilSendBy <= 3 ? "imminent" : "ok";
+    daysUntilSendBy < 0 ? "overdue" : daysUntilSendBy <= imminentDays ? "imminent" : "ok";
 
   return {
     key: `${supplier}|${neededOn}`,
