@@ -15,6 +15,9 @@ import { useCurrentUser } from "@/lib/currentUser";
 import { useCan } from "@/lib/permissions";
 import { useDailyReportSubmission, recordDailyReportSubmission } from "@/lib/dailyReportSubmissions";
 import { CheckCircle2 } from "lucide-react";
+import { RaiseVariationFromIssueDialog } from "@/components/daily-report/RaiseVariationFromIssueDialog";
+import { Link } from "@tanstack/react-router";
+import { ArrowUpRight } from "lucide-react";
 
 export const Route = createFileRoute("/daily-report")({
   head: () => ({ meta: [{ title: "Daily Site Report — Quantix Prime" }] }),
@@ -247,7 +250,7 @@ function DailyReport() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <ListCard title="Work done today" items={dailyReport.workDone} />
-        <ListCard title="Issues / RAMS / Dayworks" items={dailyReport.issues} tone="warning" />
+        <IssuesCard projectId={current.id} date={today} items={dailyReport.issues} />
       </div>
 
       <ListCard title="Tomorrow's plan" items={dailyReport.tomorrow} tone="info" />
@@ -282,6 +285,38 @@ function ListCard({ title, items, tone }: { title: string; items: string[]; tone
           <li key={i} className="flex gap-2.5">
             <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${dotColor}`} />
             <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+function IssuesCard({ projectId, date, items }: { projectId: string; date: string; items: string[] }) {
+  return (
+    <Card>
+      <CardHead
+        title="Issues / RAMS / Dayworks"
+        subtitle="Raise any item as a draft Variation → flows into Planner (time) + Financial (cost)"
+        right={
+          <Link
+            to="/variations"
+            className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--accent-500)] hover:underline"
+          >
+            View all VOs <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        }
+      />
+      <ul className="space-y-2.5 p-5 text-[13px] text-[var(--ink-700)]">
+        {items.map((item, i) => (
+          <li key={i} className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 gap-2.5">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--amber-500)]" />
+              <span>{item}</span>
+            </div>
+            <div className="shrink-0">
+              <RaiseVariationFromIssueDialog projectId={projectId} date={date} issue={item} />
+            </div>
           </li>
         ))}
       </ul>
