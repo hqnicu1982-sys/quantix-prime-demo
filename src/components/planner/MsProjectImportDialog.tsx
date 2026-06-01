@@ -17,20 +17,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileUp, FileText, ArrowRight, CheckCircle2, RefreshCw, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { FileUp, FileText, ArrowRight, CheckCircle2, RefreshCw, TrendingUp, TrendingDown, Minus, Upload, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
   buildInitialMapping,
+  applyBundleToProject,
   simulateMspBundle,
   summarizeMapping,
   type MspBundle,
   type MspMappingRow,
+  type ApplyMode,
 } from "@/lib/msProjectImport";
+import { parseProgrammeFile } from "@/lib/programmeParsers";
 import {
-  addTask,
-  updateTask,
   useProjectTasks,
-  type PlannerTask,
 } from "@/lib/planner";
 import { useProjectCrews } from "@/lib/labour";
 import { useProfitForecast } from "@/lib/profitForecast";
@@ -51,6 +51,8 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
   const [mapping, setMapping] = useState<MspMappingRow[]>([]);
   const [defaultCrewId, setDefaultCrewId] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+  const [applyMode, setApplyMode] = useState<ApplyMode>("merge");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [snapshot, setSnapshot] = useState<{
     labourPlanned: number;
     plannerScheduledPct: number;
@@ -79,6 +81,7 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
     setMapping([]);
     setDefaultCrewId(undefined);
     setIsLoading(false);
+    setApplyMode("merge");
     setSnapshot(null);
     setAutoNavCountdown(null);
     if (autoNavTimer.current) {
@@ -87,9 +90,8 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
     }
   };
 
-  const browseFile = () => {
+  const loadSample = () => {
     setIsLoading(true);
-    // simulate the file picker + parse delay
     setTimeout(() => {
       const b = simulateMspBundle(projectId);
       setBundle(b);
@@ -99,9 +101,27 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
     }, 600);
   };
 
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-upload same file
+    if (!file) return;
+    setIsLoading(true);
+    try {
+      const b = await parseProgrammeFile(file);
+      setBundle(b);
+      setMapping(buildInitialMapping(b.rows, tasks));
+      setStep("preview");
+      toast.success(`${b.rows.length} task-uri citite din ${b.fileName}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Nu am putut citi fișierul.";
+      toast.error("Import eșuat", { description: msg });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const apply = () => {
     if (!bundle) return;
-    // Capture pre-apply snapshot so we can show before → after diffs.
     setSnapshot({
       labourPlanned: forecast.cost.labourPlanned,
       plannerScheduledPct: forecast.confidence.plannerScheduledPct,
@@ -109,45 +129,11 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
       forecastProfit: forecast.margin.forecastProfit,
       forecastMargin: forecast.margin.forecastMargin,
     });
-    let created = 0;
-    let updated = 0;
-    for (const m of mapping) {
-      if (m.action === "skip") continue;
-      const fallbackCrew = resolvedDefaultCrewId;
-      if (m.action === "update" && m.matchedTaskId) {
-        const existing = tasks.find((t) => t.id === m.matchedTaskId);
-        updateTask(projectId, m.matchedTaskId, {
-          title: m.msp.name,
-          start: m.msp.start,
-          end: m.msp.finish,
-          plannedHours: m.msp.workHours,
-          crewId: existing?.crewId ?? fallbackCrew,
-          notes: `MSProject baseline ${bundle.baselineName} · UID ${m.msp.uid}`,
-        });
-        updated += 1;
-      } else if (m.action === "create") {
-        const newTask: Omit<PlannerTask, "id" | "createdAt" | "updatedAt"> = {
-          projectId,
-          title: m.msp.name,
-          level: levelFromName(m.msp.name),
-          crewId: fallbackCrew,
-          start: m.msp.start,
-          end: m.msp.finish,
-          progress: m.msp.pctComplete,
-          status: "scheduled",
-          boqLineIds: [],
-          calloffIds: [],
-          dependsOn: [],
-          plannedHours: m.msp.workHours,
-          notes: `Imported from MSProject · UID ${m.msp.uid} · ${m.msp.resourceNames}`,
-        };
-        addTask(projectId, newTask);
-        created += 1;
-      }
-    }
+    const result = applyBundleToProject(projectId, bundle, tasks, mapping, {
+      mode: applyMode,
+      defaultCrewId: resolvedDefaultCrewId,
+    });
 
-    // Ensure MS Project integration is marked as connected so the forecast
-    // confidence picks up the baseline bonus.
     if (!mspConn) {
       connectIntegration({
         id: "msp",
@@ -160,11 +146,13 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
     }
     syncIntegration("msp");
 
-    toast.success("MSProject import applied", {
-      description: `${created} created · ${updated} updated · forecast updated`,
+    toast.success("Programul a fost sincronizat", {
+      description:
+        applyMode === "replace"
+          ? `${result.removed} șterse · ${result.created} create · forecast actualizat`
+          : `${result.created} create · ${result.updated} actualizate · forecast actualizat`,
     });
     setStep("done");
-    // Kick off a 5s auto-navigation to Financial Dashboard.
     setAutoNavCountdown(5);
   };
 
