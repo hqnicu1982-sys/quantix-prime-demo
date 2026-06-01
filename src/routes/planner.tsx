@@ -17,6 +17,7 @@ import { TaskDetailDialog } from "@/components/planner/TaskDetailDialog";
 import { NewTaskDialog } from "@/components/planner/NewTaskDialog";
 import { BlockersPanel } from "@/components/planner/BlockersPanel";
 import { MsProjectImportDialog } from "@/components/planner/MsProjectImportDialog";
+import { MspSyncBanner } from "@/components/planner/MspSyncBanner";
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectVariations } from "@/lib/variations";
 
@@ -83,6 +84,8 @@ function Planner() {
       }
     >
       <ProjectBanner scope="Execution Planner" />
+
+      <MspSyncBanner projectId={PID} />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Total tasks" value={String(kpis.total)} delta={`${kpis.done} done`} />
