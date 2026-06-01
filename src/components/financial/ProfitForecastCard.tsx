@@ -19,13 +19,16 @@ export function ProfitForecastCard({ projectId, compact = false }: Props) {
 
   // Stacked breakdown segments (cost composition).
   const segments = [
-    { label: "Materials (BoQ)", value: f.cost.materialsCost, color: "var(--accent-500)" },
-    { label: "Labour (Planner)", value: f.cost.labourPlanned, color: "var(--navy-700, #1d3557)" },
-    { label: "Variations", value: f.cost.variationCost, color: "var(--amber-500)" },
-    { label: "Overheads", value: f.cost.overheads, color: "var(--ink-500)" },
-    { label: "Risk buffer", value: f.cost.riskBuffer, color: "var(--red-500)" },
-  ];
+    { label: "Materials committed", value: f.cost.materialsCommitted, color: "var(--accent-500)", estimated: false },
+    { label: "Materials estimated (BoQ)", value: f.cost.materialsEstimated, color: "var(--accent-500)", estimated: true },
+    { label: "Labour committed", value: f.cost.labourPlanned, color: "var(--navy-700, #1d3557)", estimated: false },
+    { label: "Labour estimated", value: f.cost.labourEstimated, color: "var(--navy-700, #1d3557)", estimated: true },
+    { label: "Variations", value: f.cost.variationCost, color: "var(--amber-500)", estimated: false },
+    { label: "Overheads", value: f.cost.overheads, color: "var(--ink-500)", estimated: false },
+    { label: "Risk buffer", value: f.cost.riskBuffer, color: "var(--red-500)", estimated: false },
+  ].filter((s) => s.value > 0);
   const segTotal = segments.reduce((s, x) => s + x.value, 0) || 1;
+  const estPct = Math.round(f.cost.estimatedCostShare * 100);
 
   return (
     <Card className={cn("overflow-hidden", v.border, "border-l-[3px]")}>
@@ -59,7 +62,7 @@ export function ProfitForecastCard({ projectId, compact = false }: Props) {
         <Kpi
           label="Forecast cost (EAC)"
           value={fmtMoney(f.cost.forecastCostAtCompletion, { compact: true })}
-          sub={`materials ${fmtMoney(f.cost.materialsCost, { compact: true })} · labour ${fmtMoney(f.cost.labourPlanned, { compact: true })}`}
+          sub={`materials ${fmtMoney(f.cost.materialsCost, { compact: true })} · labour ${fmtMoney(f.cost.labourTotal, { compact: true })}${estPct > 0 ? ` · ${estPct}% estimat` : ""}`}
         />
         <Kpi
           label="Forecast profit"
