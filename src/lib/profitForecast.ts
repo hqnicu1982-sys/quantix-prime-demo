@@ -3,7 +3,7 @@ import type { Project } from "./mockData";
 import { useProject } from "./ProjectContext";
 import { useProjectData } from "./projectData";
 import { useBoqAllocation } from "./boqAllocation";
-import { useProjectTasks, taskPlannedCost } from "./planner";
+import { useProjectTasks, taskPlannedCost, daysBetween } from "./planner";
 import { useProjectVariations } from "./variations";
 import { useLabourLogs } from "./laborLog";
 import { effectiveRate } from "./labour";
@@ -34,8 +34,13 @@ export type ProfitForecast = {
   cost: {
     boqBudget: number;        // qty × rate across all BoQ lines
     boqCommitted: number;     // ordered+delivered qty × rate
+    materialsCommitted: number; // == boqCommitted (alias for UI clarity)
+    materialsEstimated: number; // boqBudget portion not yet committed
     materialsCost: number;    // max(boqBudget, boqCommitted) — committed can exceed budget
-    labourPlanned: number;    // Σ plannedHours × rate
+    labourPlanned: number;    // Σ plannedHours × rate (committed: crew + hours set)
+    labourEstimated: number;  // Σ baseline ore din durata task-urilor neasignate
+    labourTotal: number;      // labourPlanned + labourEstimated
+    estimatedCostShare: number; // 0..1 — % din direct cost care vine din estimate
     labourActual: number;     // Σ logged hours × rate (informational)
     variationCost: number;    // approved + 0.5 × pending
     overheads: number;        // % of revenue
