@@ -169,6 +169,15 @@ export function deleteTask(pid: string, id: string) {
   write(pid, read(pid).filter((t) => t.id !== id));
 }
 
+/**
+ * Imperative read of the persisted task list for a project. Use inside
+ * event handlers / async flows where the React snapshot is stale (e.g.
+ * immediately after a bulk import or sync operation).
+ */
+export function getProjectTasks(pid: string): PlannerTask[] {
+  return read(pid);
+}
+
 // ---------------------------------------------------------------------------
 // KPIs
 // ---------------------------------------------------------------------------
