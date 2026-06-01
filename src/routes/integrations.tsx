@@ -18,6 +18,7 @@ import {
   ConnectIntegrationDialog,
   IntegrationSettingsDialog,
 } from "@/components/integrations/IntegrationDialogs";
+import { IntegrationsHowTo } from "@/components/integrations/IntegrationsHowTo";
 
 export const Route = createFileRoute("/integrations")({
   head: () => ({ meta: [{ title: "Integrations — Quantix Prime" }] }),
@@ -38,6 +39,7 @@ function Integrations() {
 
   return (
     <Section title="Integrations" subtitle="Connect Quantix Prime to the tools your business already uses">
+      <IntegrationsHowTo />
       {cats.map((cat) => {
         const items = integrations.filter((i) => i.category === cat);
         if (!items.length) return null;
