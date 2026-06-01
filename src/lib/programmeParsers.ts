@@ -201,9 +201,12 @@ const DATE_REGEX = /\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{4}-\d{2}-\d{2})\b/
 export async function parsePdf(buffer: ArrayBuffer, fileName: string): Promise<MspBundle> {
   // Lazy-load pdfjs and disable the worker — runs inline (fine for one-off parse).
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  // @ts-expect-error — disabling worker uses fake-worker mode
-  pdfjs.GlobalWorkerOptions.workerSrc = "";
-  const loadingTask = pdfjs.getDocument({ data: buffer, disableWorker: true, useWorkerFetch: false });
+  (pdfjs as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc = "";
+  const loadingTask = pdfjs.getDocument({
+    data: buffer,
+    useWorkerFetch: false,
+    isEvalSupported: false,
+  } as Parameters<typeof pdfjs.getDocument>[0]);
   const pdf = await loadingTask.promise;
 
   const allLines: string[] = [];
