@@ -208,7 +208,16 @@ function FocusRow({ action }: { action: typeof focusToday[number] }) {
         >
           <Button size="sm">{action.primary.label}<ArrowRight className="ml-1 h-3.5 w-3.5" /></Button>
         </Link>
-        {action.secondary && <Button size="sm" variant="outline" onClick={() => toast(action.secondary!.label, { description: "Action queued" })}>{action.secondary.label}</Button>}
+        {action.secondary && ("to" in action.secondary ? (
+          <Link
+            to={(action.secondary as { to: string }).to}
+            params={"projectId" in action.secondary ? { projectId: (action.secondary as { projectId: string }).projectId } : undefined}
+          >
+            <Button size="sm" variant="outline">{action.secondary.label}</Button>
+          </Link>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => toast(action.secondary!.label, { description: "Action queued" })}>{action.secondary.label}</Button>
+        ))}
       </div>
     </div>
   );
