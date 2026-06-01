@@ -11,8 +11,13 @@ export type RecCandidate = {
 
 export type ScoredRecAction = RecCandidate & {
   score: number;
+  weightScore: number;
+  urgencyScore: number;
+  impactScore: number;
   urgencyTier: "overdue" | "imminent" | "soon" | "later";
   impactTier: "high" | "medium" | "low";
+  daysUntilStart: number;
+  plannedCost: number;
   reason: string;
 };
 
@@ -108,14 +113,14 @@ function candidatesFor(args: PickArgs): RecCandidate[] {
   return out;
 }
 
-export function pickRecommendedAction(args: PickArgs): ScoredRecAction | null {
+export function scoreCandidates(args: PickArgs): ScoredRecAction[] {
   const today = args.today ?? PLANNER_TODAY;
   const daysUntilStart = daysBetween(today, args.task.start);
   const u = urgencyScore(daysUntilStart, args.task.status);
   const i = impactScore(args.plannedCost);
 
   const candidates = candidatesFor(args);
-  if (candidates.length === 0) return null;
+  if (candidates.length === 0) return [];
 
   const scored = candidates.map((c) => {
     const typeWeight = TYPE_WEIGHT[c.blockerType] ?? 10;
@@ -128,12 +133,21 @@ export function pickRecommendedAction(args: PickArgs): ScoredRecAction | null {
     return {
       ...c,
       score,
+      weightScore: typeWeight,
+      urgencyScore: u.score,
+      impactScore: i.score,
       urgencyTier: u.tier,
       impactTier: i.tier,
+      daysUntilStart,
+      plannedCost: args.plannedCost,
       reason: bits.join(" "),
     };
   });
 
   scored.sort((a, b) => b.score - a.score);
-  return scored[0];
+  return scored;
+}
+
+export function pickRecommendedAction(args: PickArgs): ScoredRecAction | null {
+  return scoreCandidates(args)[0] ?? null;
 }
