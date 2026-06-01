@@ -18,6 +18,7 @@ import { CheckCircle2 } from "lucide-react";
 import { RaiseVariationFromIssueDialog } from "@/components/daily-report/RaiseVariationFromIssueDialog";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
+import { Gated } from "@/components/auth/Gated";
 
 export const Route = createFileRoute("/daily-report")({
   head: () => ({ meta: [{ title: "Daily Site Report — Quantix Prime" }] }),
@@ -315,7 +316,9 @@ function IssuesCard({ projectId, date, items }: { projectId: string; date: strin
               <span>{item}</span>
             </div>
             <div className="shrink-0">
-              <RaiseVariationFromIssueDialog projectId={projectId} date={date} issue={item} />
+              <Gated cap="edit.variations">
+                <RaiseVariationFromIssueDialog projectId={projectId} date={date} issue={item} />
+              </Gated>
             </div>
           </li>
         ))}

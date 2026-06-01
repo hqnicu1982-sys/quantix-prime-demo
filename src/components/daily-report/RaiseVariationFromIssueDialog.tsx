@@ -26,6 +26,7 @@ import {
   RAISED_BY_OPTIONS,
   type VariationRaisedBy,
 } from "@/lib/variations";
+import { useProjectTasks, updateTask } from "@/lib/planner";
 
 type Props = {
   projectId: string;
@@ -60,6 +61,12 @@ export function RaiseVariationFromIssueDialog({ projectId, issue, date }: Props)
   const [open, setOpen] = useState(false);
   const meta = useMemo(() => classify(issue), [issue]);
   const initialQty = useMemo(() => extractHours(issue) ?? 1, [issue]);
+  const tasks = useProjectTasks(projectId);
+  // Only offer tasks that overlap this date — keeps the picker focused.
+  const candidateTasks = useMemo(
+    () => tasks.filter((t) => t.start <= date && t.end >= date && t.status !== "done"),
+    [tasks, date],
+  );
 
   const [title, setTitle] = useState(() =>
     meta.kind === "dayworks"
@@ -74,6 +81,7 @@ export function RaiseVariationFromIssueDialog({ projectId, issue, date }: Props)
   const [unit, setUnit] = useState<string>(meta.defaultUnit);
   const [rate, setRate] = useState<number>(meta.defaultRate);
   const [timeDays, setTimeDays] = useState<number>(meta.kind === "dayworks" ? 0 : 1);
+  const [linkTaskId, setLinkTaskId] = useState<string>("none");
 
   const lineTotal = Math.round(qty * rate * 100) / 100;
 
@@ -90,6 +98,9 @@ export function RaiseVariationFromIssueDialog({ projectId, issue, date }: Props)
       status: "draft",
       timeImpactDays: timeDays,
       attachments: [],
+      source: "daily-report",
+      sourceDate: date,
+      sourceTaskId: linkTaskId !== "none" ? linkTaskId : undefined,
       changes: [
         {
           id: `chg-${Date.now().toString(36)}`,
@@ -105,6 +116,11 @@ export function RaiseVariationFromIssueDialog({ projectId, issue, date }: Props)
         },
       ],
     });
+    // If linked to a planner task, mark the task as variation-gated so the
+    // BlockersPanel surfaces it automatically.
+    if (linkTaskId !== "none") {
+      updateTask(projectId, linkTaskId, { variationId: v.id });
+    }
     toast.success(`Variation ${v.id} drafted`, {
       description: `${v.title} · £${v.costImpact.toFixed(0)} · ${timeDays >= 0 ? "+" : ""}${timeDays}d`,
       action: {
@@ -179,6 +195,29 @@ export function RaiseVariationFromIssueDialog({ projectId, issue, date }: Props)
                 onChange={(e) => setTimeDays(Number(e.target.value))}
               />
             </div>
+          </div>
+          <div>
+            <Label className="text-[11px]">
+              Link to planner task <span className="text-[var(--ink-500)]">(optional)</span>
+            </Label>
+            <Select value={linkTaskId} onValueChange={setLinkTaskId}>
+              <SelectTrigger>
+                <SelectValue placeholder={candidateTasks.length ? "Pick a task" : "No active tasks on this date"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— No link —</SelectItem>
+                {candidateTasks.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.id} · {t.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {linkTaskId !== "none" && (
+              <p className="mt-1 text-[10.5px] text-[var(--ink-500)]">
+                Task will be flagged with this VO in the Planner's Blockers panel until the VO is approved.
+              </p>
+            )}
           </div>
           <div className="rounded-md border border-[var(--ink-200)] p-3">
             <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">

@@ -8,6 +8,7 @@ import { useProject } from "@/lib/ProjectContext";
 import { useEffect, useState } from "react";
 import { fmtMoney } from "@/lib/mockData";
 import { Gated } from "@/components/auth/Gated";
+import { useProjectVariations } from "@/lib/variations";
 import { useCan } from "@/lib/permissions";
 import type { Capability } from "@/lib/permissions";
 import { useCurrentUser } from "@/lib/currentUser";
@@ -99,6 +100,16 @@ function ProjectLayout() {
     "record.payment": useCan("record.payment"),
   };
   const visibleTabs = TABS.filter((t) => !t.requires || capChecks[t.requires]);
+  // Count of fresh draft VOs sourced from the Daily Report — surfaced as a
+  // badge on the Variations tab so PMs see new field-raised items at a glance.
+  const allVariations = useProjectVariations(projectId);
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const freshFieldVoCount = allVariations.filter(
+    (v) =>
+      v.status === "draft" &&
+      v.source === "daily-report" &&
+      Date.now() - v.createdAt < DAY_MS,
+  ).length;
 
   useEffect(() => {
     if (project && current.id !== project.id) setCurrent(project.id);
@@ -228,7 +239,17 @@ function ProjectLayout() {
                     : "border-transparent text-[var(--ink-500)] hover:text-[var(--ink-900)]",
                 )}
               >
-                {t.label}
+                <span className="inline-flex items-center gap-1.5">
+                  {t.label}
+                  {t.key === "variations" && freshFieldVoCount > 0 && (
+                    <span
+                      title={`${freshFieldVoCount} new draft VO${freshFieldVoCount === 1 ? "" : "s"} raised from Daily Report in the last 24h`}
+                      className="rounded-full bg-[var(--accent-500)] px-1.5 py-0.5 text-[9.5px] font-bold text-white"
+                    >
+                      {freshFieldVoCount}
+                    </span>
+                  )}
+                </span>
               </button>
             );
           })}

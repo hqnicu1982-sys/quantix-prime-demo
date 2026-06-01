@@ -41,8 +41,12 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") localStorage.setItem("qp-current-project", id);
   };
 
+  // De-dupe by id so React .map keys never collide if a custom project
+  // accidentally shares an id with a seeded one.
+  const seen = new Set<string>();
   const merged = [...custom, ...projects]
     .filter((p) => !hidden.includes(p.id))
+    .filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)))
     .map((p) => (overrides[p.id] ? { ...p, ...overrides[p.id] } : p));
   const all = merged;
   const current = all.find((p) => p.id === currentId) ?? all[0] ?? projects[0];

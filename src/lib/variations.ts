@@ -28,6 +28,8 @@ export type VariationChange = {
 
 export type VariationAttachment = { name: string };
 
+export type VariationSource = "manual" | "daily-report" | "rfi";
+
 export type ProjectVariation = {
   id: string;            // VO-001, VO-002, ...
   title: string;
@@ -44,6 +46,10 @@ export type ProjectVariation = {
   attachments: VariationAttachment[];
   createdAt: number;
   updatedAt: number;
+  // Provenance — where this VO originated. Defaults to "manual" for older rows.
+  source?: VariationSource;
+  sourceDate?: string;   // e.g. the Daily Report ISO date this was raised from
+  sourceTaskId?: string; // optional planner task this VO blocks/extends
 };
 
 const KEY = (pid: string) => `qp-project-variations-${pid}`;
