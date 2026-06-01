@@ -205,12 +205,14 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] text-[var(--ink-500)]">Default crew:</span>
-                <Select value={defaultCrewId ?? "none"} onValueChange={(v) => setDefaultCrewId(v === "none" ? undefined : v)}>
+                <Select
+                  value={defaultCrewId ?? resolvedDefaultCrewId ?? "none"}
+                  onValueChange={(v) => setDefaultCrewId(v === "none" ? undefined : v)}
+                >
                   <SelectTrigger className="h-7 w-[180px] text-[12px]">
-                    <SelectValue placeholder="Atribuie mai târziu" />
+                    <SelectValue placeholder="Pick crew" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">— Atribuie mai târziu</SelectItem>
                     {crews.map((c) => (
                       <SelectItem key={c.assignment.memberId} value={c.assignment.memberId}>
                         {c.crewName} · £{c.rate}/h
