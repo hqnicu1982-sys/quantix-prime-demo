@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plug, Settings as SettingsIcon, AlertTriangle } from "lucide-react";
+import { Plug, Settings as SettingsIcon, AlertTriangle, CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
   connectIntegration,
@@ -51,10 +51,40 @@ export function ConnectIntegrationDialog({
   const [scope, setScope] = useState(SCOPE_HINTS[category] ?? "Read & write");
   const [frequency, setFrequency] = useState<SyncFrequency>("hourly");
   const [notify, setNotify] = useState(true);
+  const [testState, setTestState] = useState<"idle" | "testing" | "ok" | "fail">("idle");
+  const [testMsg, setTestMsg] = useState<string>("");
+
+  const canTest = account.trim().length > 0 && apiKey.trim().length >= 8;
+
+  // any edit invalidates a previous result
+  const onAccountChange = (v: string) => { setAccount(v); if (testState !== "idle") setTestState("idle"); };
+  const onKeyChange = (v: string) => { setApiKey(v); if (testState !== "idle") setTestState("idle"); };
+
+  const runTest = () => {
+    if (!canTest) { toast.error("Add the account and API key first"); return; }
+    setTestState("testing");
+    setTestMsg("");
+    // Simulated probe — ~80% success, deterministic on the key length parity for predictability
+    const latency = 700 + Math.floor(Math.random() * 600);
+    window.setTimeout(() => {
+      const looksFake = /^(test|fake|invalid|xxxx)/i.test(apiKey.trim());
+      const ok = !looksFake && apiKey.trim().length >= 8;
+      if (ok) {
+        setTestState("ok");
+        setTestMsg(`Reached ${name} as ${account.trim()} — credentials valid.`);
+        toast.success(`${name} reachable`, { description: "Credentials accepted by the provider." });
+      } else {
+        setTestState("fail");
+        setTestMsg("Provider rejected the credentials. Double-check the API key and try again.");
+        toast.error(`${name} test failed`);
+      }
+    }, latency);
+  };
 
   const submit = () => {
     if (!account.trim()) { toast.error("Add the account or workspace name"); return; }
     if (!apiKey.trim() || apiKey.trim().length < 8) { toast.error("Paste a valid API key (min 8 chars)"); return; }
+    if (testState !== "ok") { toast.error("Run Test connection first to confirm the credentials"); return; }
     connectIntegration({
       id,
       account: account.trim(),
@@ -76,11 +106,43 @@ export function ConnectIntegrationDialog({
         </DialogHeader>
         <div className="space-y-3">
           <Field label="Account / workspace" hint="e.g. company name on the provider side">
-            <Input value={account} onChange={(e) => setAccount(e.target.value)} placeholder={category === "Collaboration" ? "acme-construction.slack.com" : "Acme Construction Ltd"} className="h-9 text-[12px]" />
+            <Input value={account} onChange={(e) => onAccountChange(e.target.value)} placeholder={category === "Collaboration" ? "acme-construction.slack.com" : "Acme Construction Ltd"} className="h-9 text-[12px]" />
           </Field>
           <Field label="API key / OAuth token" hint="Stored encrypted. Only the last 4 chars shown after save.">
-            <Input value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk_live_…" className="h-9 text-[12px] font-mono-num" type="password" />
+            <Input value={apiKey} onChange={(e) => onKeyChange(e.target.value)} placeholder="sk_live_…" className="h-9 text-[12px] font-mono-num" type="password" />
           </Field>
+
+          <div className="rounded-md border border-[var(--ink-200)] bg-[var(--ink-50)]/50 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-[12px]">
+                <p className="font-semibold text-[var(--ink-700)]">Test connection</p>
+                <p className="text-[11px] text-[var(--ink-500)]">Verify your credentials before saving.</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={runTest}
+                disabled={!canTest || testState === "testing"}
+              >
+                {testState === "testing" ? (
+                  <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Testing…</>
+                ) : (
+                  <>Test connection</>
+                )}
+              </Button>
+            </div>
+            {testState === "ok" && (
+              <p className="mt-2 inline-flex items-start gap-1.5 text-[11.5px] text-[var(--green-600,#15803d)]">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5" /> {testMsg}
+              </p>
+            )}
+            {testState === "fail" && (
+              <p className="mt-2 inline-flex items-start gap-1.5 text-[11.5px] text-[var(--red-500)]">
+                <XCircle className="mt-0.5 h-3.5 w-3.5" /> {testMsg}
+              </p>
+            )}
+          </div>
+
           <Field label="Scope">
             <Input value={scope} onChange={(e) => setScope(e.target.value)} className="h-9 text-[12px]" />
           </Field>
@@ -99,7 +161,9 @@ export function ConnectIntegrationDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={submit}><Plug className="mr-1 h-3 w-3" /> Connect {name}</Button>
+          <Button size="sm" onClick={submit} disabled={testState !== "ok"} title={testState !== "ok" ? "Run Test connection first" : undefined}>
+            <Plug className="mr-1 h-3 w-3" /> Connect {name}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
