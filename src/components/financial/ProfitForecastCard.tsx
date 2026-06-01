@@ -73,7 +73,7 @@ export function ProfitForecastCard({ projectId, compact = false }: Props) {
         <Kpi
           label="Forecast cost (EAC)"
           value={fmtMoney(f.cost.forecastCostAtCompletion, { compact: true })}
-          sub={`materials ${fmtMoney(f.cost.materialsCost, { compact: true })} · labour ${fmtMoney(f.cost.labourTotal, { compact: true })}${estPct > 0 ? ` · ${estPct}% estimat` : ""}`}
+          sub={`materials ${fmtMoney(f.cost.materialsCost, { compact: true })} · labour ${fmtMoney(f.cost.labourTotal, { compact: true })} · VOs ${fmtMoney(f.cost.variationCost, { compact: true })} · overheads ${fmtMoney(f.cost.overheads, { compact: true })} · risk ${fmtMoney(f.cost.riskBuffer, { compact: true })}${estPct > 0 ? ` · ${estPct}% estimat` : ""}`}
         />
         <Kpi
           label="Forecast profit"
