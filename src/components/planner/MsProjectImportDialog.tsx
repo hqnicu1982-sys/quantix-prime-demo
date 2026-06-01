@@ -362,20 +362,63 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
         )}
 
         {step === "done" && (
-          <div className="space-y-3 py-4 text-center">
-            <CheckCircle2 className="mx-auto h-10 w-10 text-[var(--green-600)]" />
-            <p className="text-[14px] font-semibold">MSProject baseline aplicat</p>
-            <p className="text-[12px] text-[var(--ink-500)]">
-              {summary.created} task-uri create · {summary.updated} actualizate · {summary.totalHours.toLocaleString()} ore
-              man-hours sincronizate cu planner-ul.
-            </p>
-            <p className="text-[12px] text-[var(--ink-700)]">
-              Forecast nou: profit{" "}
-              <span className="font-mono font-semibold">
-                {fmtMoney(forecast.margin.forecastProfit, { compact: true })}
-              </span>{" "}
-              · margin {forecast.margin.forecastMargin.toFixed(1)}% · confidence {forecast.confidence.score}/100.
-            </p>
+          <div className="space-y-4 py-3">
+            <div className="text-center">
+              <CheckCircle2 className="mx-auto h-10 w-10 text-[var(--green-600)]" />
+              <p className="mt-1 text-[14px] font-semibold">MSProject baseline aplicat</p>
+              <p className="text-[12px] text-[var(--ink-500)]">
+                {summary.created} create · {summary.updated} actualizate · {summary.totalHours.toLocaleString()} ore sincronizate
+              </p>
+            </div>
+
+            <div className="rounded-md border border-[var(--ink-200)] bg-[var(--ink-50)]/40 p-3">
+              <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+                Profit Forecast recalculat
+              </p>
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                <DiffStat
+                  label="Labour planned"
+                  before={snapshot?.labourPlanned ?? 0}
+                  after={forecast.cost.labourPlanned}
+                  format="money"
+                />
+                <DiffStat
+                  label="Tasks scheduled"
+                  before={snapshot?.plannerScheduledPct ?? 0}
+                  after={forecast.confidence.plannerScheduledPct}
+                  format="pct"
+                />
+                <DiffStat
+                  label="Confidence"
+                  before={snapshot?.confidence ?? 0}
+                  after={forecast.confidence.score}
+                  format="score"
+                />
+                <DiffStat
+                  label="Forecast profit"
+                  before={snapshot?.forecastProfit ?? 0}
+                  after={forecast.margin.forecastProfit}
+                  format="money"
+                />
+              </div>
+              <p className="mt-2 text-[11px] text-[var(--ink-500)]">
+                Margin {forecast.margin.forecastMargin.toFixed(1)}% vs target {forecast.margin.targetMargin.toFixed(1)}%
+                {forecast.confidence.msProjectLinked && " · MSProject baseline activ"}
+              </p>
+            </div>
+
+            {autoNavCountdown !== null && (
+              <p className="text-center text-[11px] text-[var(--ink-500)]">
+                Deschid Financial Dashboard în {autoNavCountdown}s…
+                <button
+                  type="button"
+                  onClick={cancelAutoNav}
+                  className="ml-1 underline hover:text-[var(--ink-900)]"
+                >
+                  Anulează
+                </button>
+              </p>
+            )}
           </div>
         )}
 
@@ -389,7 +432,20 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
             </>
           )}
           {step === "done" && (
-            <Button onClick={() => setOpen(false)}>Close</Button>
+            <>
+              <Button variant="ghost" onClick={() => { cancelAutoNav(); setOpen(false); }}>
+                Stay on Planner
+              </Button>
+              <Button
+                onClick={() => {
+                  cancelAutoNav();
+                  setOpen(false);
+                  navigate({ to: "/financial" });
+                }}
+              >
+                Open Financial Dashboard <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Button>
+            </>
           )}
           {step === "select" && (
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
