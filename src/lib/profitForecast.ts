@@ -95,7 +95,7 @@ export function computeProfitForecastFromInputs(input: {
   project: Pick<Project, "id" | "contractValue" | "margin">;
   boqLines: { id: string; qty: number; ratePerUnit?: number }[];
   allocations: { lineId: string; ordered: number; delivered: number }[];
-  tasks: { plannedHours?: number; crewId?: string; status: string }[];
+  tasks: { plannedHours?: number; crewId?: string; status: string; start?: string; end?: string }[];
   loggedHoursByCrew: Record<string, number>;
   variations: { status: string; costImpact: number; approvedValue?: number }[];
   msProjectLinked: boolean;
@@ -133,14 +133,32 @@ export function computeProfitForecastFromInputs(input: {
 
   // ---- Labour (Planner) ----
   let labourPlanned = 0;
+  let labourEstimated = 0;
   let scheduledTasks = 0;
   for (const t of input.tasks) {
     const hasPlan = !!t.plannedHours && !!t.crewId;
     if (hasPlan) scheduledTasks += 1;
     if (hasPlan && t.crewId) {
       labourPlanned += (t.plannedHours ?? 0) * effectiveRate(t.crewId, project.id);
+    } else {
+      // Baseline indicative: estimate from task duration when crew/hours unknown.
+      const DEFAULT_CREW_SIZE = 2;
+      const DEFAULT_LABOUR_RATE = 45; // £/h fallback when no crew assigned
+      const days =
+        t.start && t.end ? Math.max(1, daysBetween(t.start, t.end) + 1) : 1;
+      const estHours = days * 8 * DEFAULT_CREW_SIZE;
+      const rate = t.crewId ? effectiveRate(t.crewId, project.id) : DEFAULT_LABOUR_RATE;
+      labourEstimated += estHours * rate;
     }
   }
+  // Fallback when planner is empty but we have a contract & BoQ.
+  if (input.tasks.length === 0 && project.contractValue > 0) {
+    const valueAdded = Math.max(0, project.contractValue - boqBudget);
+    labourEstimated = valueAdded * 0.35;
+  }
+  const labourTotal = labourPlanned + labourEstimated;
+  const materialsCommitted = boqCommittedValue;
+  const materialsEstimated = Math.max(0, boqBudget - boqCommittedValue);
   const labourActual = Object.entries(input.loggedHoursByCrew).reduce(
     (s, [crewId, hrs]) => s + hrs * effectiveRate(crewId, project.id),
     0,
@@ -153,9 +171,11 @@ export function computeProfitForecastFromInputs(input: {
 
   // ---- Overheads & risk ----
   const overheads = forecastRevenue * a.overheadPct;
-  const directCost = materialsCost + labourPlanned + variationCost;
+  const directCost = materialsCost + labourTotal + variationCost;
   const riskBuffer = directCost * a.riskPct;
   const forecastCostAtCompletion = directCost + overheads + riskBuffer;
+  const estimatedDirect = materialsEstimated + labourEstimated;
+  const estimatedCostShare = directCost > 0 ? estimatedDirect / directCost : 0;
 
   // ---- Margin ----
   const forecastProfit = forecastRevenue - forecastCostAtCompletion;
@@ -176,19 +196,30 @@ export function computeProfitForecastFromInputs(input: {
   let note = "Forecast preliminar — adaugă alocări BoQ și ore planner pentru precizie.";
   if (score >= 70) note = "Forecast solid — bază bună de decizie.";
   else if (score >= 40) note = "Forecast indicativ — încă lipsesc alocări sau ore planner.";
+  if (estimatedCostShare > 0.4) {
+    note += ` ${Math.round(estimatedCostShare * 100)}% din cost este estimat din durate & BoQ budget.`;
+  }
 
   // ---- Drivers (top 3 cost contributors above/below proportional share) ----
   const drivers: ForecastDriver[] = [];
   // Labour vs budget share
   const expectedLabour = forecastRevenue * (1 - targetMargin / 100) * 0.35; // assume labour ~35% of cost
-  if (labourPlanned > 0) {
-    const delta = labourPlanned - expectedLabour;
+  if (labourTotal > 0) {
+    const delta = labourTotal - expectedLabour;
     drivers.push({
       label:
         delta >= 0
           ? `Labour planificat depășește alocarea cu ${fmtMoneyShort(Math.abs(delta))}`
           : `Labour planificat sub țintă cu ${fmtMoneyShort(Math.abs(delta))}`,
       deltaMoney: delta,
+      kind: "labour",
+    });
+  }
+  // Mostly-estimated labour warning
+  if (labourEstimated > labourPlanned && labourEstimated > 0) {
+    drivers.push({
+      label: `Labour preponderent estimat (${fmtMoneyShort(labourEstimated)}) — alocă crew-uri pentru lock-in`,
+      deltaMoney: labourEstimated * 0.1,
       kind: "labour",
     });
   }
@@ -226,8 +257,13 @@ export function computeProfitForecastFromInputs(input: {
     cost: {
       boqBudget,
       boqCommitted: boqCommittedValue,
+      materialsCommitted,
+      materialsEstimated,
       materialsCost,
       labourPlanned,
+      labourEstimated,
+      labourTotal,
+      estimatedCostShare,
       labourActual,
       variationCost,
       overheads,
