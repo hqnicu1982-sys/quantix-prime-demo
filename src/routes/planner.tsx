@@ -18,6 +18,7 @@ import { NewTaskDialog } from "@/components/planner/NewTaskDialog";
 import { BlockersPanel } from "@/components/planner/BlockersPanel";
 import { MsProjectImportDialog } from "@/components/planner/MsProjectImportDialog";
 import { MspSyncBanner } from "@/components/planner/MspSyncBanner";
+import { PlannerHowTo } from "@/components/planner/PlannerHowTo";
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectVariations } from "@/lib/variations";
 
@@ -84,6 +85,8 @@ function Planner() {
       }
     >
       <ProjectBanner scope="Execution Planner" />
+
+      <PlannerHowTo projectId={PID} />
 
       <MspSyncBanner projectId={PID} />
 
