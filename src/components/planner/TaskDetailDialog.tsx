@@ -102,7 +102,8 @@ export function TaskDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col overflow-hidden p-0">
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="font-mono-num text-[12px] text-[var(--ink-500)]">{draft.id}</span>
@@ -366,7 +367,8 @@ export function TaskDetailDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        </div>
+        <DialogFooter className="gap-2 border-t border-[var(--ink-200)] px-6 py-3">
           {canEditPlanner && (
             <Button
               variant="outline"
