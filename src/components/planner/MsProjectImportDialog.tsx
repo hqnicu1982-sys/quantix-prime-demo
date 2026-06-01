@@ -56,6 +56,10 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
   const forecast = useProfitForecast(projectId);
   const mspConn = useIntegrationConnection("msp");
 
+  // Auto-pick the first crew so imported tasks always carry a billable rate.
+  // Without a crewId the forecast can't price labour and confidence stalls.
+  const resolvedDefaultCrewId = defaultCrewId ?? crews[0]?.assignment.memberId;
+
   const summary = useMemo(() => summarizeMapping(mapping), [mapping]);
 
   const reset = () => {
@@ -84,7 +88,7 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
     let updated = 0;
     for (const m of mapping) {
       if (m.action === "skip") continue;
-      const fallbackCrew = defaultCrewId;
+      const fallbackCrew = resolvedDefaultCrewId;
       if (m.action === "update" && m.matchedTaskId) {
         const existing = tasks.find((t) => t.id === m.matchedTaskId);
         updateTask(projectId, m.matchedTaskId, {
