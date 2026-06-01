@@ -59,7 +59,10 @@ export function AutoCallOffReviewDialog({
 
   const accept = () => {
     const toAccept = proposals.filter((p) => selected[p.key]);
-    const ids = acceptProposals(projectId, toAccept, supplierEdits);
+    const edits = Object.fromEntries(
+      Object.entries(supplierEdits).map(([k, v]) => [k, { supplier: v }]),
+    );
+    const ids = acceptProposals(projectId, toAccept, edits);
     toast.success(`${ids.length} call-off draft${ids.length === 1 ? "" : "s"} created`, {
       description: "Open Call-offs to review and send.",
     });
