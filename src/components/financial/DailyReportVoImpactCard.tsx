@@ -18,7 +18,7 @@ function isLabour(c: VariationChange): boolean {
 function isFromDailyReport(v: ProjectVariation): boolean {
   // Primary: explicit source field. Fallback (for older rows): regex on reason.
   if (v.source === "daily-report") return true;
-  if (v.source && v.source !== "daily-report") return false;
+  if (v.source) return false; // any other explicit source means not from DR
   return /raised from daily (site )?report/i.test(v.reason);
 }
 
