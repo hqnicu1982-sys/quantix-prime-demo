@@ -62,6 +62,10 @@ export type ProfitForecast = {
     note: string;
   };
   drivers: ForecastDriver[];
+  programme: {
+    programmeOnlyPct: number;   // 0..100 — % tasks cu ore din program dar fără crew
+    programmeOnlyTasks: number; // count
+  };
 };
 
 export type ForecastAssumptions = {
