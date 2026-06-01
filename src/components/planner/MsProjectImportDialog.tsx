@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileUp, FileText, ArrowRight, CheckCircle2, RefreshCw } from "lucide-react";
+import { FileUp, FileText, ArrowRight, CheckCircle2, RefreshCw, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { toast } from "sonner";
 import {
   buildInitialMapping,
@@ -50,6 +51,16 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
   const [mapping, setMapping] = useState<MspMappingRow[]>([]);
   const [defaultCrewId, setDefaultCrewId] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+  const [snapshot, setSnapshot] = useState<{
+    labourPlanned: number;
+    plannerScheduledPct: number;
+    confidence: number;
+    forecastProfit: number;
+    forecastMargin: number;
+  } | null>(null);
+  const [autoNavCountdown, setAutoNavCountdown] = useState<number | null>(null);
+  const autoNavTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const navigate = useNavigate();
 
   const tasks = useProjectTasks(projectId);
   const crews = useProjectCrews(projectId);
@@ -68,6 +79,12 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
     setMapping([]);
     setDefaultCrewId(undefined);
     setIsLoading(false);
+    setSnapshot(null);
+    setAutoNavCountdown(null);
+    if (autoNavTimer.current) {
+      clearInterval(autoNavTimer.current);
+      autoNavTimer.current = null;
+    }
   };
 
   const browseFile = () => {
@@ -84,6 +101,14 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
 
   const apply = () => {
     if (!bundle) return;
+    // Capture pre-apply snapshot so we can show before → after diffs.
+    setSnapshot({
+      labourPlanned: forecast.cost.labourPlanned,
+      plannerScheduledPct: forecast.confidence.plannerScheduledPct,
+      confidence: forecast.confidence.score,
+      forecastProfit: forecast.margin.forecastProfit,
+      forecastMargin: forecast.margin.forecastMargin,
+    });
     let created = 0;
     let updated = 0;
     for (const m of mapping) {
@@ -139,11 +164,27 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
       description: `${created} created · ${updated} updated · forecast updated`,
     });
     setStep("done");
+    // Kick off a 5s auto-navigation to Financial Dashboard.
+    setAutoNavCountdown(5);
   };
 
   const updateMappingRow = (uid: number, patch: Partial<MspMappingRow>) => {
     setMapping((m) => m.map((r) => (r.msp.uid === uid ? { ...r, ...patch } : r)));
   };
+
+  // Auto-navigation countdown for the done step.
+  useEffect(() => {
+    if (step !== "done" || autoNavCountdown === null) return;
+    if (autoNavCountdown <= 0) {
+      setOpen(false);
+      navigate({ to: "/financial" });
+      return;
+    }
+    const t = setTimeout(() => setAutoNavCountdown((n) => (n === null ? null : n - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [step, autoNavCountdown, navigate]);
+
+  const cancelAutoNav = () => setAutoNavCountdown(null);
 
   return (
     <Dialog
