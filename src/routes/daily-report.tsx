@@ -13,6 +13,8 @@ import { useProjectCrews, usePriceWorkRates } from "@/lib/labour";
 import { LogLabourDialog } from "@/components/daily-report/LogLabourDialog";
 import { useCurrentUser } from "@/lib/currentUser";
 import { useCan } from "@/lib/permissions";
+import { useDailyReportSubmission, recordDailyReportSubmission } from "@/lib/dailyReportSubmissions";
+import { CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/daily-report")({
   head: () => ({ meta: [{ title: "Daily Site Report — Quantix Prime" }] }),
@@ -24,6 +26,7 @@ function DailyReport() {
   const me = useCurrentUser();
   const today = new Date().toISOString().slice(0, 10);
   const allLogs = useLabourLogsForDate(current.id, today);
+  const submission = useDailyReportSubmission(current.id, dailyReport.date);
   const crews = useProjectCrews(current.id);
   const pwRates = usePriceWorkRates(current.id);
   const canApprove = useCan("approve.labour");
@@ -54,9 +57,28 @@ function DailyReport() {
       right={
         <>
           <Button variant="outline" size="sm" onClick={() => toast("PDF preview", { description: `Daily report ${dailyReport.date} ready` })}><Download className="mr-1.5 h-3.5 w-3.5" />Preview PDF</Button>
-          {canApprove && (
-            <Button size="sm" onClick={() => toast.success("Submitted to Kier", { description: `Daily report ${dailyReport.date} sent to ${dailyReport.mainContractor}` })}><Send className="mr-1.5 h-3.5 w-3.5" />Submit to Kier</Button>
-          )}
+          {canApprove && (submission ? (
+            <StatusBadge tone="success" dot>
+              <CheckCircle2 className="mr-1 inline h-3 w-3" />
+              Submitted to {dailyReport.mainContractor} · {new Date(submission.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </StatusBadge>
+          ) : (
+            <Button size="sm" onClick={() => {
+              if (pendingLogs.length > 0) {
+                toast.warning(`${pendingLogs.length} labour ${pendingLogs.length === 1 ? "entry" : "entries"} pending approval`, { description: "Approve or reject before submitting to Kier." });
+                return;
+              }
+              recordDailyReportSubmission({
+                projectId: current.id,
+                date: dailyReport.date,
+                mainContractor: dailyReport.mainContractor,
+                note: `${approvedLogs.length} entries · ${totalHours}h · £${Math.round(totalCost).toLocaleString()}`,
+              });
+              toast.success("Submitted to Kier", { description: `Daily report ${dailyReport.date} sent to ${dailyReport.mainContractor}` });
+            }}>
+              <Send className="mr-1.5 h-3.5 w-3.5" />Submit to Kier
+            </Button>
+          ))}
         </>
       }
     >
