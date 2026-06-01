@@ -65,7 +65,9 @@ function Dashboard() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => toast.success("Brief exported", { description: "Morning briefing PDF saved to /downloads" })}><Download className="mr-1.5 h-3.5 w-3.5" />Export brief</Button>
-          <Button size="sm" onClick={() => toast.success("Site update logged", { description: "Posted to Hotel Fitzrovia activity feed" })}><FilePlus className="mr-1.5 h-3.5 w-3.5" />Log site update</Button>
+          <Link to="/daily-report">
+            <Button size="sm"><FilePlus className="mr-1.5 h-3.5 w-3.5" />Log site update</Button>
+          </Link>
         </div>
       </div>
 
@@ -83,7 +85,7 @@ function Dashboard() {
             <CardHead
               title="Focus today"
               subtitle="3 actions prioritised by margin impact"
-              right={<Link to="/" className="text-[12px] font-medium text-[var(--accent-500)] hover:underline">View all 11 →</Link>}
+              right={<Link to="/daily-report" className="text-[12px] font-medium text-[var(--accent-500)] hover:underline">View all 11 →</Link>}
             />
             <div className="divide-y divide-[var(--ink-200)]">
               {focusToday.map((a) => <FocusRow key={a.id} action={a} />)}
@@ -177,7 +179,7 @@ function Dashboard() {
                 </div>
               ))}
             </div>
-            <Link to="/" className="block border-t border-[var(--ink-200)] px-5 py-2.5 text-[12px] font-medium text-[var(--accent-500)] hover:underline">
+            <Link to="/calloffs/deliveries" className="block border-t border-[var(--ink-200)] px-5 py-2.5 text-[12px] font-medium text-[var(--accent-500)] hover:underline">
               Next 7 days (12 deliveries) →
             </Link>
           </Card>
