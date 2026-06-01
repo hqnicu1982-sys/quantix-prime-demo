@@ -22,6 +22,7 @@ import {
 import { GanttChart } from "@/components/planner/GanttChart";
 import { TaskDetailDialog } from "@/components/planner/TaskDetailDialog";
 import { NewTaskDialog } from "@/components/planner/NewTaskDialog";
+import { MsProjectImportDialog } from "@/components/planner/MsProjectImportDialog";
 import { BlockersPanel } from "@/components/planner/BlockersPanel";
 import { useProjectVariations } from "@/lib/variations";
 
@@ -156,6 +157,7 @@ function PlannerPage() {
                 ))}
               </div>
               <NewTaskDialog projectId={PID} />
+              <MsProjectImportDialog projectId={PID} />
             </div>
           }
         />
