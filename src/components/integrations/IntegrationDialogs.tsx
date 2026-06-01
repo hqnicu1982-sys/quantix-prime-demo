@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plug, Settings as SettingsIcon, AlertTriangle, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { Plug, Settings as SettingsIcon, AlertTriangle, CheckCircle2, Loader2, XCircle, HelpCircle, ExternalLink, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import {
   connectIntegration,
@@ -15,6 +15,7 @@ import {
   type IntegrationConnection,
   type SyncFrequency,
 } from "@/lib/integrationConnections";
+import { INTEGRATION_GUIDES } from "@/lib/integrationGuides";
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -53,6 +54,8 @@ export function ConnectIntegrationDialog({
   const [notify, setNotify] = useState(true);
   const [testState, setTestState] = useState<"idle" | "testing" | "ok" | "fail">("idle");
   const [testMsg, setTestMsg] = useState<string>("");
+  const [guideOpen, setGuideOpen] = useState(false);
+  const guide = INTEGRATION_GUIDES[id];
 
   const canTest = account.trim().length > 0 && apiKey.trim().length >= 8;
 
@@ -111,6 +114,38 @@ export function ConnectIntegrationDialog({
           <Field label="API key / OAuth token" hint="Stored encrypted. Only the last 4 chars shown after save.">
             <Input value={apiKey} onChange={(e) => onKeyChange(e.target.value)} placeholder="sk_live_…" className="h-9 text-[12px] font-mono-num" type="password" />
           </Field>
+
+          {guide && (
+            <div className="rounded-md border border-[var(--ink-200)] bg-card">
+              <button
+                type="button"
+                onClick={() => setGuideOpen((v) => !v)}
+                className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
+                aria-expanded={guideOpen}
+              >
+                <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--ink-700)]">
+                  <HelpCircle className="h-3.5 w-3.5 text-[var(--accent-500)]" />
+                  How to find your {name} {guide.keyName}
+                </span>
+                <ChevronDown className={`h-3.5 w-3.5 text-[var(--ink-500)] transition-transform ${guideOpen ? "rotate-180" : ""}`} />
+              </button>
+              {guideOpen && (
+                <div className="space-y-2 border-t border-[var(--ink-200)] px-3 py-3">
+                  <ol className="list-decimal space-y-1.5 pl-4 text-[11.5px] leading-relaxed text-[var(--ink-700)] marker:font-semibold marker:text-[var(--ink-500)]">
+                    {guide.steps.map((s, i) => <li key={i}>{s}</li>)}
+                  </ol>
+                  <a
+                    href={guide.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11.5px] font-medium text-[var(--accent-500)] hover:underline"
+                  >
+                    Open {guide.urlLabel} <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="rounded-md border border-[var(--ink-200)] bg-[var(--ink-50)]/50 p-3">
             <div className="flex items-center justify-between gap-3">
