@@ -3,6 +3,7 @@ import { Card, CardHead } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { useProfitForecast, VERDICT_META } from "@/lib/profitForecast";
 import { fmtMoney } from "@/lib/mockData";
+import { formatForecastCostSubtitle } from "@/lib/profitForecastSubtitle";
 import { TrendingUp, TrendingDown, AlertTriangle, ArrowRight, Sparkles, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,7 @@ export function ProfitForecastCard({ projectId, compact = false }: Props) {
   ].filter((s) => s.value > 0);
   const segTotal = segments.reduce((s, x) => s + x.value, 0) || 1;
   const estPct = Math.round(f.cost.estimatedCostShare * 100);
+  const costSubtitle = formatForecastCostSubtitle(f.cost);
 
   return (
     <Card className={cn("overflow-hidden", v.border, "border-l-[3px]")}>
@@ -73,7 +75,7 @@ export function ProfitForecastCard({ projectId, compact = false }: Props) {
         <Kpi
           label="Forecast cost (EAC)"
           value={fmtMoney(f.cost.forecastCostAtCompletion, { compact: true })}
-          sub={`materials ${fmtMoney(f.cost.materialsCost, { compact: true })} · labour ${fmtMoney(f.cost.labourTotal, { compact: true })} · VOs ${fmtMoney(f.cost.variationCost, { compact: true })} · overheads ${fmtMoney(f.cost.overheads, { compact: true })} · risk ${fmtMoney(f.cost.riskBuffer, { compact: true })}${estPct > 0 ? ` · ${estPct}% estimat` : ""}`}
+          sub={costSubtitle}
         />
         <Kpi
           label="Forecast profit"
