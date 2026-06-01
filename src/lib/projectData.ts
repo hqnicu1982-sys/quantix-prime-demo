@@ -26,6 +26,7 @@ export type ProjectBoqLine = {
   unit: string;
   ratePerUnit?: number;
   selectedSupplier?: string;
+  leadTimeDays?: number;    // supplier lead time; falls back to DEFAULT_LEAD_DAYS
 };
 
 export type ProjectCallOff = {
@@ -140,6 +141,26 @@ export function selectSupplier(projectId: string, material: string, supplier: st
     ...data,
     supplierChoices: { ...data.supplierChoices, [material]: supplier },
   });
+}
+
+/**
+ * Append a new call-off to the project. Used by the auto-propose flow
+ * after the user confirms a suggested batch in the review dialog.
+ */
+export function addCallOff(
+  projectId: string,
+  input: { supplier: string; lineIds: string[]; status?: ProjectCallOff["status"] },
+): ProjectCallOff {
+  const data = read(projectId);
+  const co: ProjectCallOff = {
+    id: uid("co"),
+    createdAt: Date.now(),
+    supplier: input.supplier,
+    lineIds: input.lineIds,
+    status: input.status ?? "draft",
+  };
+  write(projectId, { ...data, callOffs: [co, ...data.callOffs] });
+  return co;
 }
 
 export function clearProjectData(projectId: string) {
