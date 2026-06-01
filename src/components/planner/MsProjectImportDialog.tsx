@@ -148,6 +148,10 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
     }
     syncIntegration("msp");
 
+    // Snapshot the post-apply task list so bidirectional sync can detect
+    // every subsequent local edit as a "pending push" to MSProject.
+    recordBaseline(projectId, getProjectTasks(projectId));
+
     toast.success("Programul a fost sincronizat", {
       description:
         applyMode === "replace"
