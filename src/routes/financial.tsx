@@ -19,6 +19,7 @@ import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { LiveLabourCostCard } from "@/components/financial/LiveLabourCostCard";
 import { DailyReportVoImpactCard } from "@/components/financial/DailyReportVoImpactCard";
+import { ProfitForecastCard } from "@/components/financial/ProfitForecastCard";
 import { CashflowForecastCard } from "@/components/payments/CashflowForecastCard";
 import { usePaymentTotals } from "@/lib/paymentCycle";
 
@@ -81,6 +82,8 @@ function Financial() {
         <Kpi label="Gross margin" value={`${financialKpi.marginPct}%`} delta={`${fmtMoney(financialKpi.margin)} (vs ${financialKpi.marginBudgetPct}% budget)`} tone="warning" />
         <Kpi label="Cash runway" value={`${financialKpi.cashRunway} mo`} delta={`${fmtMoney(financialKpi.cashCurrent)} current`} tone="success" />
       </div>
+
+      <ProfitForecastCard projectId={current.id} />
 
       <LiveLabourCostCard projectId={current.id} />
 

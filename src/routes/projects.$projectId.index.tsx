@@ -13,6 +13,7 @@ import { useCan } from "@/lib/permissions";
 import { MyScopeCard } from "@/components/dashboard/MyScopeCard";
 import { ApprovalInboxCard } from "@/components/dashboard/ApprovalInboxCard";
 import { LiveLabourCostCard } from "@/components/financial/LiveLabourCostCard";
+import { ProfitForecastCard } from "@/components/financial/ProfitForecastCard";
 import { PaymentCycleKpiStrip } from "@/components/payments/PaymentCycleKpiStrip";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
@@ -53,6 +54,7 @@ function Overview() {
             <Kpi label="Health" value={project.health} />
           </div>
         )}
+        {canSeeFinancials && <ProfitForecastCard projectId={projectId} compact />}
         {isOnProject && <MyScopeCard projectId={projectId} />}
         <ApprovalInboxCard />
         {canSeePayments && <PaymentCycleKpiStrip projectId={projectId} />}
@@ -90,6 +92,8 @@ function Overview() {
       {canSeePayments && <PaymentCycleKpiStrip projectId={projectId} />}
 
       {(canSeeFinancials || canSeeFinancialsLite) && <LiveLabourCostCard projectId={projectId} />}
+
+      {canSeeFinancials && <ProfitForecastCard projectId={projectId} />}
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
