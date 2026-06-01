@@ -1,4 +1,12 @@
-import { addDays, isoDate, PLANNER_TODAY, type PlannerTask } from "./planner";
+import {
+  addDays,
+  addTask,
+  deleteTask,
+  isoDate,
+  PLANNER_TODAY,
+  updateTask,
+  type PlannerTask,
+} from "./planner";
 
 // ============================================================================
 // MSProject import — simulation layer.
@@ -131,4 +139,101 @@ export function summarizeMapping(mapping: MspMappingRow[]): MspApplySummary {
     },
     { created: 0, updated: 0, skipped: 0, totalHours: 0 },
   );
+}
+
+// ---------------------------------------------------------------------------
+// Apply a bundle to a project in one shot.
+// - "merge": keep existing crews/calloffs on matched tasks, fuzzy create the rest.
+// - "replace": wipe existing tasks for this project, recreate all from bundle.
+// ---------------------------------------------------------------------------
+
+function levelFromName(name: string): string {
+  const m = name.match(/L\d+/i);
+  return m ? m[0].toUpperCase() : "All";
+}
+
+export type ApplyMode = "merge" | "replace";
+
+export type ApplyResult = {
+  created: number;
+  updated: number;
+  removed: number;
+  totalHours: number;
+};
+
+export function applyBundleToProject(
+  projectId: string,
+  bundle: MspBundle,
+  existing: PlannerTask[],
+  mapping: MspMappingRow[],
+  options: { mode: ApplyMode; defaultCrewId?: string },
+): ApplyResult {
+  const { mode, defaultCrewId } = options;
+  let created = 0;
+  let updated = 0;
+  let removed = 0;
+  let totalHours = 0;
+
+  if (mode === "replace") {
+    for (const t of existing) deleteTask(projectId, t.id);
+    removed = existing.length;
+    for (const r of bundle.rows) {
+      const newTask: Omit<PlannerTask, "id" | "createdAt" | "updatedAt"> = {
+        projectId,
+        title: r.name,
+        level: levelFromName(r.name),
+        crewId: defaultCrewId,
+        start: r.start,
+        end: r.finish,
+        progress: r.pctComplete,
+        status: "scheduled",
+        boqLineIds: [],
+        calloffIds: [],
+        dependsOn: [],
+        plannedHours: r.workHours,
+        notes: `Synced from ${bundle.fileName} · UID ${r.uid}`,
+      };
+      addTask(projectId, newTask);
+      created += 1;
+      totalHours += r.workHours;
+    }
+    return { created, updated, removed, totalHours };
+  }
+
+  for (const m of mapping) {
+    if (m.action === "skip") continue;
+    if (m.action === "update" && m.matchedTaskId) {
+      const e = existing.find((t) => t.id === m.matchedTaskId);
+      updateTask(projectId, m.matchedTaskId, {
+        title: m.msp.name,
+        start: m.msp.start,
+        end: m.msp.finish,
+        plannedHours: m.msp.workHours,
+        crewId: e?.crewId ?? defaultCrewId,
+        notes: `Synced from ${bundle.fileName} · UID ${m.msp.uid}`,
+      });
+      updated += 1;
+      totalHours += m.msp.workHours;
+    } else if (m.action === "create") {
+      const newTask: Omit<PlannerTask, "id" | "createdAt" | "updatedAt"> = {
+        projectId,
+        title: m.msp.name,
+        level: levelFromName(m.msp.name),
+        crewId: defaultCrewId,
+        start: m.msp.start,
+        end: m.msp.finish,
+        progress: m.msp.pctComplete,
+        status: "scheduled",
+        boqLineIds: [],
+        calloffIds: [],
+        dependsOn: [],
+        plannedHours: m.msp.workHours,
+        notes: `Imported from ${bundle.fileName} · UID ${m.msp.uid} · ${m.msp.resourceNames}`,
+      };
+      addTask(projectId, newTask);
+      created += 1;
+      totalHours += m.msp.workHours;
+    }
+  }
+  return { created, updated, removed, totalHours };
 }
