@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/currentUser";
 import { useCan } from "@/lib/permissions";
 import { MyScopeCard } from "@/components/dashboard/MyScopeCard";
+import { SnoozeDialog } from "@/components/dashboard/SnoozeDialog";
+import { useFocusSnoozes, activeSnooze, clearSnooze, formatSnoozeRemaining } from "@/lib/focusSnooze";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "Dashboard — Quantix Prime" }] }),
@@ -190,9 +192,33 @@ function Dashboard() {
 }
 
 function FocusRow({ action }: { action: typeof focusToday[number] }) {
+  const snoozes = useFocusSnoozes();
+  const snooze = activeSnooze(String(action.id), snoozes);
+  const [snoozeOpen, setSnoozeOpen] = useState(false);
   const borderColor = action.tone === "danger" ? "border-l-[var(--red-500)]"
     : action.tone === "warning" ? "border-l-[var(--amber-500)]"
     : "border-l-[var(--accent-500)]";
+
+  if (snooze) {
+    return (
+      <div className="flex items-center justify-between gap-3 border-l-4 border-l-[var(--ink-200)] bg-[var(--ink-50)]/60 px-5 py-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <Clock className="h-3.5 w-3.5 text-[var(--ink-500)]" />
+            <p className="truncate text-[12.5px] font-medium text-[var(--ink-700)]">{action.title}</p>
+          </div>
+          <p className="mt-0.5 text-[11px] text-[var(--ink-500)]">
+            Snoozed · returns in {formatSnoozeRemaining(snooze.snoozedUntil)}
+            {snooze.newDeliveryDate && <> · delivery → <strong className="text-[var(--ink-700)]">{snooze.newDeliveryDate}</strong></>}
+          </p>
+        </div>
+        <Button size="sm" variant="ghost" onClick={() => { clearSnooze(String(action.id)); toast("Snooze cleared"); }}>
+          Un-snooze
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("border-l-4 px-5 py-4", borderColor)}>
       <div className="flex flex-wrap items-center gap-2">
@@ -215,6 +241,18 @@ function FocusRow({ action }: { action: typeof focusToday[number] }) {
           >
             <Button size="sm" variant="outline">{action.secondary.label}</Button>
           </Link>
+        ) : action.secondary.label === "Snooze" ? (
+          <>
+            <Button size="sm" variant="outline" onClick={() => setSnoozeOpen(true)}>
+              <Clock className="mr-1 h-3.5 w-3.5" />Snooze
+            </Button>
+            <SnoozeDialog
+              open={snoozeOpen}
+              onOpenChange={setSnoozeOpen}
+              focusId={String(action.id)}
+              title={action.title}
+            />
+          </>
         ) : (
           <Button size="sm" variant="outline" onClick={() => toast(action.secondary!.label, { description: "Action queued" })}>{action.secondary.label}</Button>
         ))}
