@@ -72,7 +72,7 @@ function Readiness() {
                     </Button>
                   )}
                   <Button size="sm" variant="outline" asChild>
-                    <Link to="/planner" search={{ task: r.task } as never}>
+                    <Link to="/planner">
                       <CalendarRange className="mr-1.5 h-3.5 w-3.5" /> View in planner
                     </Link>
                   </Button>
