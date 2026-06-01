@@ -5,12 +5,13 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { InvoiceWorkflowStrip } from "@/components/invoices/InvoiceWorkflowStrip";
 import { invoices } from "@/lib/mockData";
 import { deriveStage, STAGE_LABEL, STAGE_TONE, invoiceAuditLog, matchLines, explainVariance } from "@/lib/invoiceWorkflow";
-import { useInvoiceActions, effectiveStage, recordInvoiceAction } from "@/lib/invoiceActions";
+import { useInvoiceActions, effectiveStage } from "@/lib/invoiceActions";
 import { InvoiceActionButtons } from "@/components/invoices/InvoiceActionDialogs";
+import { AddToBatchDialog, MarkPaidDialog } from "@/components/invoices/PaymentScheduleDialogs";
 import { Gated } from "@/components/auth/Gated";
 import { ArrowLeft, Banknote, FileText, CalendarPlus } from "lucide-react";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export const Route = createFileRoute("/invoices/$ref")({
   component: Detail,
@@ -33,6 +34,16 @@ function Detail() {
   const last = actions[0];
   const flagged = stage === "review";
   const lines = matchLines[ref] ?? [];
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
+  const scheduledRow = {
+    ref: inv.id,
+    supplier: inv.supplier,
+    amount: inv.invoiced,
+    due: inv.received,
+    batch: actions.find((a) => a.paymentBatch && a.ref === inv.id)?.paymentBatch ?? "—",
+    status: stage === "paid" ? ("paid" as const) : stage === "scheduled" ? ("scheduled" as const) : ("ready" as const),
+  };
   const baseEvents = invoiceAuditLog.filter((e) => e.ref === ref);
   const actionEvents = actions.map((a) => ({
     ts: new Date(a.ts).toLocaleString(),
@@ -149,20 +160,14 @@ function Detail() {
             )}
             {stage === "approved" && (
               <Gated cap="sign.invoices">
-                <Button size="sm" onClick={() => {
-                  recordInvoiceAction({ ref: inv.id, kind: "schedule", stageAfter: "scheduled", paymentBatch: "PAY-2026-09", payDate: "26 Apr" });
-                  toast.success("Added to PAY-2026-09");
-                }}>
+                <Button size="sm" onClick={() => setScheduleOpen(true)}>
                   <CalendarPlus className="mr-1 h-3 w-3" /> Schedule payment
                 </Button>
               </Gated>
             )}
             {stage === "scheduled" && (
               <Gated cap="sign.invoices">
-                <Button size="sm" onClick={() => {
-                  recordInvoiceAction({ ref: inv.id, kind: "pay", stageAfter: "paid" });
-                  toast.success(`${inv.id} marked paid`);
-                }}>
+                <Button size="sm" onClick={() => setPayOpen(true)}>
                   <Banknote className="mr-1 h-3 w-3" /> Mark paid
                 </Button>
               </Gated>
@@ -196,6 +201,8 @@ function Detail() {
           </ol>
         </Card>
       </div>
+      <AddToBatchDialog row={scheduledRow} open={scheduleOpen} onOpenChange={setScheduleOpen} />
+      <MarkPaidDialog row={scheduledRow} open={payOpen} onOpenChange={setPayOpen} />
     </div>
   );
 }
