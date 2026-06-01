@@ -24,6 +24,7 @@ import { TaskDetailDialog } from "@/components/planner/TaskDetailDialog";
 import { NewTaskDialog } from "@/components/planner/NewTaskDialog";
 import { MsProjectImportDialog } from "@/components/planner/MsProjectImportDialog";
 import { MspSyncBanner } from "@/components/planner/MspSyncBanner";
+import { PlannerHowTo } from "@/components/planner/PlannerHowTo";
 import { BlockersPanel } from "@/components/planner/BlockersPanel";
 import { useProjectVariations } from "@/lib/variations";
 
@@ -94,6 +95,8 @@ function PlannerPage() {
 
   return (
     <div className="space-y-5">
+      <PlannerHowTo projectId={PID} />
+
       <MspSyncBanner projectId={PID} />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
