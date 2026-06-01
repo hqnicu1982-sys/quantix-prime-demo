@@ -1,15 +1,17 @@
 import { Card, CardHead } from "@/components/Primitives";
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowRight } from "lucide-react";
+import { AlertTriangle, ArrowRight, Sparkles, FileCheck2, PackageCheck, Users } from "lucide-react";
 import {
   computeReadiness,
   moveTask,
   parseISO,
   type PlannerTask,
+  type TaskBlocker,
 } from "@/lib/planner";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useCan } from "@/lib/permissions";
+import { useNavigate } from "@tanstack/react-router";
 
 type Props = {
   projectId: string;
@@ -27,6 +29,7 @@ export function BlockersPanel({
   onSelectTask,
 }: Props) {
   const canEditPlanner = useCan("edit.planner");
+  const navigate = useNavigate();
   const blocked = tasks
     .map((t) => ({ task: t, r: computeReadiness(t, tasks, { callOffs, approvedVariationIds }) }))
     .filter((x) => !x.r.ready && x.task.status !== "done");
@@ -69,6 +72,43 @@ export function BlockersPanel({
                   ))}
                 </ul>
                 <div className="mt-1.5 flex flex-wrap gap-2">
+                  {(() => {
+                    const rec = pickRecommendedAction({
+                      blockers: r.blockers,
+                      suggestedStart: r.suggestedStart,
+                      task,
+                      canEdit: canEditPlanner,
+                    });
+                    if (!rec) return null;
+                    const Icon = rec.icon;
+                    return (
+                      <Button
+                        size="sm"
+                        className="h-6 gap-1 text-[10.5px]"
+                        onClick={() => {
+                          if (rec.kind === "push") {
+                            const delta = Math.round(
+                              (parseISO(r.suggestedStart!).getTime() -
+                                parseISO(task.start).getTime()) /
+                                86_400_000,
+                            );
+                            moveTask(projectId, task.id, delta);
+                            toast.success(`${task.id} pushed to ${r.suggestedStart}`, {
+                              description: rec.reason,
+                            });
+                          } else if (rec.kind === "open-task") {
+                            onSelectTask?.(task.id);
+                          } else if (rec.kind === "navigate") {
+                            navigate({ to: rec.to, params: { projectId } });
+                          }
+                        }}
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        <Icon className="h-3 w-3" />
+                        {rec.label}
+                      </Button>
+                    );
+                  })()}
                   {canEditPlanner && r.suggestedStart && r.suggestedStart !== task.start && (
                     <Button
                       size="sm"
@@ -113,4 +153,54 @@ export function BlockersPanel({
       )}
     </Card>
   );
+}
+
+type RecAction =
+  | { kind: "navigate"; to: "/projects/$projectId/variations" | "/projects/$projectId/calloffs"; label: string; icon: typeof FileCheck2; reason: string }
+  | { kind: "push"; label: string; icon: typeof ArrowRight; reason: string }
+  | { kind: "open-task"; label: string; icon: typeof Users; reason: string };
+
+function pickRecommendedAction(args: {
+  blockers: TaskBlocker[];
+  suggestedStart?: string;
+  task: PlannerTask;
+  canEdit: boolean;
+}): RecAction | null {
+  const { blockers, suggestedStart, task, canEdit } = args;
+  // Priority: variation > material > predecessor (push) > labour (reassign crew)
+  if (blockers.some((b) => b.type === "variation")) {
+    return {
+      kind: "navigate",
+      to: "/projects/$projectId/variations",
+      label: "Approve variation",
+      icon: FileCheck2,
+      reason: "Variation must be approved before work can start.",
+    };
+  }
+  if (blockers.some((b) => b.type === "material")) {
+    return {
+      kind: "navigate",
+      to: "/projects/$projectId/calloffs",
+      label: "Raise call-off",
+      icon: PackageCheck,
+      reason: "Materials need a confirmed call-off.",
+    };
+  }
+  if (blockers.some((b) => b.type === "predecessor") && canEdit && suggestedStart && suggestedStart !== task.start) {
+    return {
+      kind: "push",
+      label: `Push to ${suggestedStart}`,
+      icon: ArrowRight,
+      reason: "Aligns start with the latest predecessor.",
+    };
+  }
+  if (blockers.some((b) => b.type === "labour")) {
+    return {
+      kind: "open-task",
+      label: "Reassign crew",
+      icon: Users,
+      reason: "Crew is double-booked in this window.",
+    };
+  }
+  return null;
 }
