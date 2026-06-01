@@ -18,6 +18,7 @@ import { useInvoiceTotals } from "@/lib/invoiceRegistry";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { LiveLabourCostCard } from "@/components/financial/LiveLabourCostCard";
+import { DailyReportVoImpactCard } from "@/components/financial/DailyReportVoImpactCard";
 import { CashflowForecastCard } from "@/components/payments/CashflowForecastCard";
 import { usePaymentTotals } from "@/lib/paymentCycle";
 
@@ -82,6 +83,8 @@ function Financial() {
       </div>
 
       <LiveLabourCostCard projectId={current.id} />
+
+      <DailyReportVoImpactCard projectId={current.id} />
 
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <Kpi
