@@ -3,9 +3,9 @@ import { Card, CardHead, Section } from "@/components/Primitives";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { readinessRows } from "@/lib/mockData";
-import { AlertCircle, Plus } from "lucide-react";
-import { toast } from "sonner";
+import { AlertCircle, Plus, CalendarRange } from "lucide-react";
 import { ProjectBanner } from "@/components/ProjectBanner";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/readiness")({ component: Readiness });
 
@@ -63,7 +63,20 @@ function Readiness() {
                     <span>{r.note}</span>
                   </p>
                 </div>
-                {r.action && <Button size="sm" onClick={() => toast.success(r.action!, { description: `${r.task} · ${r.crew}` })}><Plus className="mr-1.5 h-3.5 w-3.5" /> {r.action}</Button>}
+                <div className="flex shrink-0 flex-col items-stretch gap-1.5">
+                  {r.action && (
+                    <Button size="sm" asChild>
+                      <Link to="/calloffs/new">
+                        <Plus className="mr-1.5 h-3.5 w-3.5" /> {r.action}
+                      </Link>
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to="/planner" search={{ task: r.task } as never}>
+                      <CalendarRange className="mr-1.5 h-3.5 w-3.5" /> View in planner
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </Card>
           );
