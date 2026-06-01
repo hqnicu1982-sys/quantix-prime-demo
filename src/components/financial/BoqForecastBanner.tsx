@@ -81,6 +81,11 @@ export function BoqForecastBanner({ projectId }: { projectId: string }) {
             )}
             {" · "}
             {Math.round(f.confidence.boqAllocatedPct)}% BoQ allocated · confidence {f.confidence.score}/100
+            {f.cost.estimatedCostShare > 0 && (
+              <span className="ml-1 text-[var(--ink-500)]">
+                · {Math.round(f.cost.estimatedCostShare * 100)}% cost estimat
+              </span>
+            )}
           </p>
           {pulse && (
             <p
