@@ -5,8 +5,10 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { WorkflowStrip } from "@/components/calloffs/WorkflowStrip";
 import { deliveries } from "@/lib/callOffWorkflow";
 import { Gated } from "@/components/auth/Gated";
-import { toast } from "sonner";
 import { Truck, PackageCheck } from "lucide-react";
+import { useState } from "react";
+import { LogGrnDialog } from "@/components/calloffs/CallOffActionDialogs";
+import { useCallOffActions, latestCallOffAction } from "@/lib/callOffActions";
 
 export const Route = createFileRoute("/calloffs/deliveries")({ component: Deliveries });
 
@@ -24,6 +26,8 @@ const LABEL = {
 };
 
 function Deliveries() {
+  const all = useCallOffActions();
+  const [grnFor, setGrnFor] = useState<{ ref: string; qty: string } | null>(null);
   return (
     <div className="space-y-5">
       <Card>
@@ -56,34 +60,41 @@ function Deliveries() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--ink-200)]">
-              {deliveries.map((d) => (
+              {deliveries.map((d) => {
+                const logged = latestCallOffAction(d.callOff, all.filter((a) => a.kind === "log-grn"));
+                const status = logged ? (logged.grnPartial ? "partial" : "received") : d.status;
+                return (
                 <tr key={d.ref} className="hover:bg-[var(--ink-50)]">
                   <td className="px-4 py-3 font-mono-num text-[12px]">{d.ref}</td>
                   <td className="px-4 py-3 font-mono-num text-[12px]">
                     <Link to="/calloffs/$ref" params={{ ref: d.callOff }} className="hover:underline">{d.callOff}</Link>
                   </td>
                   <td className="px-4 py-3 font-semibold">{d.supplier}</td>
-                  <td className="px-4 py-3 text-[12px]">{d.qty}</td>
+                  <td className="px-4 py-3 text-[12px]">{logged?.grnQty ?? d.qty}</td>
                   <td className="px-4 py-3 text-[12px]">
                     <Truck className="mr-1 inline h-3 w-3 text-[var(--ink-500)]" />
-                    {d.grnBy ?? d.eta}
+                    {logged ? `GRN ${new Date(logged.ts).toLocaleString()}` : (d.grnBy ?? d.eta)}
                   </td>
-                  <td className="px-4 py-3"><StatusBadge tone={TONE[d.status]} dot>{LABEL[d.status]}</StatusBadge></td>
+                  <td className="px-4 py-3"><StatusBadge tone={TONE[status]} dot>{LABEL[status]}</StatusBadge></td>
                   <td className="px-4 py-3 text-right">
-                    {d.status !== "received" && (
+                    {status !== "received" && (
                       <Gated cap="create.calloffs">
-                        <Button size="sm" variant="outline" onClick={() => toast.success("GRN logged", { description: `${d.ref} marked as received` })}>
+                        <Button size="sm" variant="outline" onClick={() => setGrnFor({ ref: d.callOff, qty: d.qty })}>
                           <PackageCheck className="mr-1 h-3 w-3" /> Log GRN
                         </Button>
                       </Gated>
                     )}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
       </Card>
+      {grnFor && (
+        <LogGrnDialog ref={grnFor.ref} defaultQty={grnFor.qty} open={!!grnFor} onOpenChange={(v) => !v && setGrnFor(null)} />
+      )}
     </div>
   );
 }

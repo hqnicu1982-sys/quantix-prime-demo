@@ -8,6 +8,9 @@ import { STATE_LABEL, STATE_TONE, auditLog } from "@/lib/callOffWorkflow";
 import { Gated } from "@/components/auth/Gated";
 import { ArrowLeft, ShieldCheck, Send, PackageCheck, X, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
+import { useCallOffActions, recordCallOffAction, effectiveState, KIND_LABEL } from "@/lib/callOffActions";
+import { RejectCallOffDialog, LogGrnDialog } from "@/components/calloffs/CallOffActionDialogs";
 
 export const Route = createFileRoute("/calloffs/$ref")({
   component: Detail,
@@ -24,7 +27,20 @@ function Detail() {
   const { ref } = Route.useParams();
   const co = callOffs.find((c) => c.ref === ref);
   if (!co) throw notFound();
-  const events = auditLog.filter((e) => e.ref === ref);
+  const actions = useCallOffActions(ref);
+  const state = effectiveState(ref, co.state, actions);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [grnOpen, setGrnOpen] = useState(false);
+  const baseEvents = auditLog.filter((e) => e.ref === ref);
+  const actionEvents = actions.map((a) => ({
+    ts: new Date(a.ts).toLocaleString(),
+    ref: a.ref,
+    actor: a.actor,
+    action: KIND_LABEL[a.kind],
+    detail: [a.reason, a.grnQty, a.poRef, a.note].filter(Boolean).join(" · "),
+  }));
+  const events = [...actionEvents, ...baseEvents];
+  const last = actions[0];
 
   return (
     <div className="space-y-5">
@@ -41,7 +57,13 @@ function Detail() {
           subtitle={`${co.subtitle} · ${co.supplier} · need by ${co.needBy}`}
         />
         <div className="p-5">
-          <WorkflowStrip currentState={co.state} needsReview={co.state === "review-needed"} />
+          <WorkflowStrip currentState={state} needsReview={state === "review-needed"} />
+          {last && (
+            <p className="mt-3 text-[11.5px] text-[var(--ink-500)]">
+              Last action: <strong className="text-[var(--ink-900)]">{KIND_LABEL[last.kind]}</strong>
+              {last.reason && <> — {last.reason}</>} · by {last.actor}
+            </p>
+          )}
         </div>
       </Card>
 
@@ -49,7 +71,7 @@ function Detail() {
         <Kpi label="Value" value={fmtMoney(co.value)} delta="committed against BoQ rev 3.2" />
         <Kpi label="Quantity" value={co.qty} />
         <Kpi label="Supplier" value={co.supplier} delta="framework" tone="info" />
-        <Kpi label="Need by" value={co.needBy} tone={co.needByOverdue ? "danger" : "neutral"} />
+        <Kpi label="Status" value={STATE_LABEL[state]} tone={STATE_TONE[state] === "success" ? "success" : STATE_TONE[state] === "warning" ? "warning" : "info"} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
@@ -60,40 +82,52 @@ function Detail() {
             right={<span className="text-[10.5px] text-[var(--ink-500)]">All actions are audit-logged</span>}
           />
           <div className="flex flex-wrap gap-2 p-5">
-            {(co.state === "draft" || co.state === "submitted") && (
+            {(state === "draft" || state === "submitted") && (
               <Gated cap="create.calloffs">
-                <Button size="sm" onClick={() => toast.success("Submitted", { description: `${co.ref} sent for QS review` })}>
+                <Button size="sm" onClick={() => {
+                  recordCallOffAction({ ref: co.ref, kind: "submit", stateAfter: "submitted" });
+                  toast.success("Submitted", { description: `${co.ref} sent for QS review` });
+                }}>
                   <Send className="mr-1 h-3 w-3" /> Submit for QS
                 </Button>
               </Gated>
             )}
-            {(co.state === "submitted" || co.state === "reviewed" || co.state === "review-needed") && (
+            {(state === "submitted" || state === "reviewed" || state === "review-needed") && (
               <Gated cap="approve.calloffs">
                 <>
-                  <Button size="sm" onClick={() => toast.success("Approved", { description: `${co.ref} approved · PO queued` })}>
+                  <Button size="sm" onClick={() => {
+                    recordCallOffAction({ ref: co.ref, kind: "approve", stateAfter: "approved" });
+                    toast.success("Approved", { description: `${co.ref} approved · PO queued` });
+                  }}>
                     <ShieldCheck className="mr-1 h-3 w-3" /> Approve
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => toast.error("Rejected", { description: `${co.ref} returned to Site` })}>
+                  <Button size="sm" variant="outline" onClick={() => setRejectOpen(true)}>
                     <X className="mr-1 h-3 w-3" /> Reject
                   </Button>
                 </>
               </Gated>
             )}
-            {co.state === "approved" && (
+            {state === "approved" && (
               <Gated cap="approve.calloffs">
-                <Button size="sm" onClick={() => toast.success("PO sent", { description: `PO fired to ${co.supplier}` })}>
+                <Button size="sm" onClick={() => {
+                  const poRef = `PO-${Math.floor(100000 + Math.random() * 900000)}`;
+                  recordCallOffAction({ ref: co.ref, kind: "send-po", stateAfter: "po-sent", poRef });
+                  toast.success("PO sent", { description: `${poRef} → ${co.supplier}` });
+                }}>
                   <Send className="mr-1 h-3 w-3" /> Send PO
                 </Button>
               </Gated>
             )}
-            {(co.state === "po-sent" || co.state === "in-delivery") && (
+            {(state === "po-sent" || state === "in-delivery") && (
               <Gated cap="create.calloffs">
-                <Button size="sm" onClick={() => toast.success("GRN logged", { description: "Delivery accepted on site" })}>
+                <Button size="sm" onClick={() => setGrnOpen(true)}>
                   <PackageCheck className="mr-1 h-3 w-3" /> Log GRN
                 </Button>
               </Gated>
             )}
-            <Button size="sm" variant="ghost"><FileText className="mr-1 h-3 w-3" /> Open BoQ line</Button>
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/costed-boq"><FileText className="mr-1 h-3 w-3" /> Open BoQ line</Link>
+            </Button>
           </div>
         </Card>
 
@@ -113,6 +147,8 @@ function Detail() {
           </ol>
         </Card>
       </div>
+      <RejectCallOffDialog ref={co.ref} open={rejectOpen} onOpenChange={setRejectOpen} />
+      <LogGrnDialog ref={co.ref} defaultQty={co.qty} open={grnOpen} onOpenChange={setGrnOpen} />
     </div>
   );
 }
