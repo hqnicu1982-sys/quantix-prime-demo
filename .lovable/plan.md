@@ -1,112 +1,73 @@
-## Obiectiv
 
-Răspuns la întrebarea „va face jobul profit?" încă de la kickoff, refolosind ce există deja: `contractValue`, `estimatedBoq`, alocările BoQ, taskurile planner (cu `plannedHours` + crew rate), variațiile cu `costImpact` și (când e conectat) baseline-ul din MSProject.
+## Problema
 
-## Ce există azi (și de ce nu răspunde încă)
+Acum forecast-ul folosește doar `labourPlanned` din task-uri cu `crewId + plannedHours` și `boqCommitted` din alocările order/delivered. Dacă planner-ul are doar bare (start/end fără crew) și BoQ are linii fără alocări, costul apare artificial mic → forecast pozitiv fals.
 
-- `Project.contractValue` și `estimatedBoq` (venit vs buget cost) — `src/lib/mockData.ts`
-- `boqAllocation.ts` — buget vs „reserved/committed" pe linie BoQ
-- `planner.ts` — `plannedHours × effectiveRate(crew, project)` = cost labour planificat
-- `variations.ts` — `costImpact` și `timeImpactDays` per VO, cu status
-- `cashflowForecast.ts` — proiecție cash, dar nu margin
-- Financial Dashboard arată margin actual MTD, nu un *forecast at completion* (EAC)
+User vrea **un forecast inițial credibil** doar din ce există deja: BoQ budget + durata task-urilor din planner.
 
-Lipsește un singur loc unde toate astea se adună într-o predicție „la final" cu un semafor go/at-risk/no-go.
+## Soluție
 
-## Ce construim
+Extind `computeProfitForecastFromInputs` în `src/lib/profitForecast.ts` cu un mod "indicative" care **completează gap-urile** prin heuristici, marcate clar ca estimări:
 
-### 1. `src/lib/profitForecast.ts` (nou)
-Funcție pură `computeProfitForecast(projectId)` care returnează:
+### 1. Labour baseline din durata planner
+Pentru fiecare task fără `plannedHours` sau fără `crewId`:
+- estimez ore = `durationDays(task) × 8h × crewSizeDefault` (default 2 persoane)
+- aplic un `defaultLabourRate` (medie din `labour.ts`, ex £45/h) când nu există `crewId`
+- adun într-un nou câmp `cost.labourEstimated` separat de `labourPlanned`
 
-```text
-{
-  revenue: {
-    contractValue,
-    approvedVOs,           // sum costImpact, status=approved & priced as sell
-    pendingVOs,            // status=submitted/draft
-    forecastRevenue        // contractValue + approvedVOs (+ pendingVOs * confidence)
-  },
-  cost: {
-    boqCommitted,          // sum lines.committed
-    boqRemaining,          // budget − committed pentru linii nealocate
-    labourPlanned,         // Σ plannedHours × effectiveRate pe toate taskurile
-    labourActual,          // din laborLog (cât s-a logat deja)
-    variationCost,         // costImpact al VO-urilor (approved + weighted pending)
-    overheads,             // % din revenue (configurable, default 8%)
-    riskBuffer,            // % din cost (default 5%)
-    forecastCostAtCompletion
-  },
-  margin: {
-    targetMargin,          // current.margin (din mockData)
-    forecastMargin,        // (revenue − cost) / revenue
-    deltaVsTarget,
-    verdict: "profit" | "tight" | "loss"
-  },
-  confidence: {
-    boqAllocatedPct,       // % linii BoQ cu commitment
-    plannerScheduledPct,   // % taskuri cu crew + plannedHours
-    msProjectLinked,       // bool
-    score: 0..100          // medie ponderată
-  },
-  drivers: [               // top 3 motive pt verdict
-    { label, deltaMoney, kind: "labour"|"materials"|"vo"|"overhead" }
-  ]
-}
+`cost.labourPlanned` rămâne neschimbat (committed). Totalul folosit în EAC devine `labourPlanned + labourEstimated`.
+
+### 2. Materials baseline = BoQ budget
+Deja folosim `Math.max(boqBudget, boqCommitted)` deci asta funcționează. Adaug câmp explicit `cost.materialsEstimated = boqBudget - boqCommitted` (porțiunea neangajată încă) pentru transparență.
+
+### 3. Fallback când planner-ul e gol
+Dacă `tasks.length === 0` dar avem `contractValue + boqBudget`:
+- labour estimat = `(contractValue - boqBudget) × 0.35` (heuristică labour ≈ 35% din valoarea adăugată)
+
+### 4. Confidence rămâne la fel
+Score-ul scade automat când totul e estimat — asta e corect. Adaug în `note` cât din cost vine din estimate vs. committed (ex. "65% din cost este estimat — adaugă crew-uri și order-uri pentru precizie").
+
+### 5. Drivers
+Adaug un driver nou când `labourEstimated > labourPlanned`: "Labour preponderent estimat — alocă crew-uri pentru lock-in".
+
+## UI
+
+În `ProfitForecastCard.tsx`:
+- în sub-textul KPI "Forecast cost", schimb `labour {planned}` în `labour {planned+estimated}` și adaug `(X% estimat)` când relevant
+- în cost breakdown segment "Labour (Planner)" îl split în 2: "Labour committed" (full color) + "Labour estimated" (hashed/lighter)
+- același tratament pentru "Materials": committed + budget-rest
+
+În `BoqForecastBanner.tsx`: adaug o linie mică "X% din costuri estimate" sub confidence.
+
+## Fișiere
+
+- `src/lib/profitForecast.ts` — extind tipul `ProfitForecast.cost`, logica de calcul, drivers, note
+- `src/components/financial/ProfitForecastCard.tsx` — split segmente committed/estimated în breakdown, sub-texte
+- `src/components/financial/BoqForecastBanner.tsx` — indicator scurt "X% estimat"
+
+## Detalii tehnice
+
+```ts
+// profitForecast.ts — extras
+const DEFAULT_CREW_SIZE = 2;
+const DEFAULT_LABOUR_RATE = 45;
+
+// per task fără plannedHours/crewId:
+const days = Math.max(1, daysBetween(t.start, t.end) + 1);
+const estHours = days * 8 * DEFAULT_CREW_SIZE;
+const rate = t.crewId ? effectiveRate(t.crewId, projectId) : DEFAULT_LABOUR_RATE;
+labourEstimated += estHours * rate;
 ```
 
-Algoritm verdict:
-- `profit` dacă `forecastMargin >= targetMargin − 2pp`
-- `tight` dacă între −2pp și −5pp
-- `loss` dacă sub −5pp sau cost > revenue
-
-### 2. `ProfitForecastCard` (nou) — `src/components/financial/ProfitForecastCard.tsx`
-
-Layout:
-- **Header semafor**: verdict + forecast margin vs target (badge verde/amber/roșu)
-- **3 KPI**: Forecast revenue · Forecast cost at completion · Forecast profit (£ + %)
-- **Bară confidence**: „Forecast based on X% BoQ allocated, Y% planner scheduled" — dacă <40% afișează „⚠ Forecast preliminar"
-- **Breakdown stacked bar**: Materials (BoQ) | Labour (Planner) | Subcontracts | VOs | Overheads | Risk vs Revenue line
-- **Top drivers**: 3 rânduri cu „Labour over budget +£32k (planner depășește estimator cu 480h)" etc.
-- **CTA**: „Open BoQ" / „Open Planner" / „Review VOs"
-
-### 3. Integrări
-
-- `src/routes/financial.tsx` — adăugăm `<ProfitForecastCard projectId={current.id} />` ca prim card sub KPI-uri (înainte de `LiveLabourCostCard`). Răspunde direct la „va face profit?".
-- `src/routes/projects.$projectId.index.tsx` — același card într-o variantă compactă în Project Overview, ca primul lucru pe care îl vede PM-ul când deschide jobul.
-- `src/routes/planner.tsx` (sau project planner) — un mini-banner „Planner adds £X labour cost → forecast margin Y%" când plannedHours se modifică, ca să se vadă imediat efectul.
-- `src/routes/costed-boq.tsx` — același mini-banner când o linie e alocată/commit-uită.
-
-### 4. Legături cu MSProject
-
-Când `current.msProjectLinked` (flag deja folosit în integrations) e true:
-- creștem `confidence.score` cu +20
-- folosim baseline-ul MSProject pentru `plannedHours` per task acolo unde planner-ul intern nu are valoare
-- afișăm chip „Schedule baseline: MSProject" în card
-
-### 5. Comportament gol/incomplet
-
-- Dacă `estimatedBoq` lipsește → forecast cost = labourPlanned + overheads, marcăm „BoQ pending" cu CTA
-- Dacă planner gol → folosim `estimatedBoq` integral pentru cost și marcăm „Planner pending"
-- Nicăieri nu blocăm; întotdeauna afișăm cel mai bun forecast posibil + confidence honest
-
-## Out of scope (intenționat)
-
-- Nu schimbăm modelul de date al proiectului (refolosim câmpuri existente)
-- Nu adăugăm scenarii „what-if" (poate într-un follow-up)
-- Nu modificăm logica de variations/planner/BoQ existentă
-
-## Fișiere atinse
-
-Create:
-- `src/lib/profitForecast.ts`
-- `src/lib/profitForecast.test.ts` (cazuri: missing BoQ, missing planner, VO swing, MSProject linked)
-- `src/components/financial/ProfitForecastCard.tsx`
-
-Editate:
-- `src/routes/financial.tsx` (mount card sus)
-- `src/routes/projects.$projectId.index.tsx` (mount card compact)
-- `src/routes/projects.$projectId.planner.tsx` și `src/routes/costed-boq.tsx` (mini-banner opțional)
-
-## Rezultat
-
-Când PM-ul deschide un job nou, primul lucru pe care îl vede e un semafor „Forecast margin 21.4% vs target 23.8% — TIGHT, confidence 62%" cu top 3 drivers și butoane spre BoQ/Planner. La fiecare ajustare în BoQ sau Planner, numărul se recalculează live.
+Tipul devine:
+```ts
+cost: {
+  ...
+  labourPlanned: number;     // committed (crew + hours setate)
+  labourEstimated: number;   // baseline din durata task-urilor
+  materialsCommitted: number;
+  materialsEstimated: number;
+  estimatedCostShare: number; // 0..1 — pentru UI badge
+  ...
+}
+```
