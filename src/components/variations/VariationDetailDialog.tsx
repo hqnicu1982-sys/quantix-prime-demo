@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Calendar, User } from "lucide-react";
+import { FileText, Calendar, User, ClipboardList } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   deleteVariation,
   setStatus,
@@ -106,6 +107,27 @@ export function VariationDetailDialog({
           </DialogHeader>
 
           <div className="space-y-4 py-2">
+            {v.source === "daily-report" && (
+              <div className="flex flex-wrap items-center gap-2 rounded-md border border-[var(--accent-500)]/30 bg-[var(--accent-500)]/[0.06] px-3 py-2 text-[12px]">
+                <ClipboardList className="h-3.5 w-3.5 text-[var(--accent-500)]" />
+                <span className="text-[var(--ink-700)]">
+                  Raised from <strong>Daily Site Report</strong>
+                  {v.sourceDate ? ` — ${v.sourceDate}` : ""}
+                </span>
+                <Link
+                  to="/daily-report"
+                  className="ml-auto text-[11.5px] font-semibold text-[var(--accent-500)] hover:underline"
+                >
+                  Open Daily Report →
+                </Link>
+                {v.sourceTaskId && (
+                  <span className="w-full text-[11px] text-[var(--ink-500)]">
+                    Linked planner task: <span className="font-mono">{v.sourceTaskId}</span>
+                  </span>
+                )}
+              </div>
+            )}
+
             {v.reason && (
               <div>
                 <p className="mb-1 text-[10.5px] font-bold uppercase tracking-wider text-[var(--ink-500)]">Reason</p>
