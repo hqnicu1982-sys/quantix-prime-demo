@@ -1,5 +1,6 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, PiggyBank } from "lucide-react";
+import { ArrowRight, PiggyBank, RefreshCw, TrendingDown, TrendingUp } from "lucide-react";
 import { useProfitForecast, VERDICT_META } from "@/lib/profitForecast";
 import { fmtMoney } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
@@ -15,14 +16,56 @@ export function BoqForecastBanner({ projectId }: { projectId: string }) {
   const meta = VERDICT_META[f.margin.verdict];
   const materialsDelta = f.cost.boqCommitted - f.cost.boqBudget;
 
+  // ------------------------------------------------------------------
+  // Live recalculation indicator: pulse + delta whenever materialsCost
+  // or forecastProfit shifts (typically after a price or qty edit).
+  // ------------------------------------------------------------------
+  const prevRef = useRef<{ materials: number; profit: number } | null>(null);
+  const [pulse, setPulse] = useState<{
+    materialsDelta: number;
+    profitDelta: number;
+    at: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const prev = prevRef.current;
+    const next = { materials: f.cost.materialsCost, profit: f.margin.forecastProfit };
+    if (prev && (Math.abs(prev.materials - next.materials) > 0.5 || Math.abs(prev.profit - next.profit) > 0.5)) {
+      setPulse({
+        materialsDelta: next.materials - prev.materials,
+        profitDelta: next.profit - prev.profit,
+        at: Date.now(),
+      });
+    }
+    prevRef.current = next;
+  }, [f.cost.materialsCost, f.margin.forecastProfit]);
+
+  useEffect(() => {
+    if (!pulse) return;
+    const t = setTimeout(() => setPulse(null), 4000);
+    return () => clearTimeout(t);
+  }, [pulse]);
+
+  const ProfitTrendIcon = pulse && pulse.profitDelta < 0 ? TrendingDown : TrendingUp;
+
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-3 rounded-md border px-4 py-3",
+        "relative flex flex-wrap items-center justify-between gap-3 rounded-md border px-4 py-3 transition-shadow",
         meta.bg,
         meta.border,
+        pulse && "shadow-[0_0_0_3px_var(--accent-500)]/15",
       )}
     >
+      {pulse && (
+        <span
+          key={pulse.at}
+          className="absolute -top-2 right-3 inline-flex items-center gap-1 rounded-full bg-[var(--accent-500)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white shadow-sm animate-in fade-in slide-in-from-top-1"
+        >
+          <RefreshCw className="h-2.5 w-2.5 animate-spin" />
+          Recalculat
+        </span>
+      )}
       <div className="flex items-center gap-3">
         <PiggyBank className={cn("h-4 w-4", meta.tone)} />
         <div>
@@ -39,6 +82,23 @@ export function BoqForecastBanner({ projectId }: { projectId: string }) {
             {" · "}
             {Math.round(f.confidence.boqAllocatedPct)}% BoQ allocated · confidence {f.confidence.score}/100
           </p>
+          {pulse && (
+            <p
+              key={pulse.at}
+              className="mt-0.5 flex items-center gap-2 text-[10.5px] font-medium animate-in fade-in"
+            >
+              <span className={cn(pulse.materialsDelta >= 0 ? "text-[var(--red-500)]" : "text-[var(--green-600)]")}>
+                Materials {pulse.materialsDelta >= 0 ? "+" : "−"}
+                {fmtMoney(Math.abs(pulse.materialsDelta), { compact: true })}
+              </span>
+              <span className="text-[var(--ink-300)]">·</span>
+              <span className={cn("inline-flex items-center gap-0.5", pulse.profitDelta >= 0 ? "text-[var(--green-600)]" : "text-[var(--red-500)]")}>
+                <ProfitTrendIcon className="h-2.5 w-2.5" />
+                Profit {pulse.profitDelta >= 0 ? "+" : "−"}
+                {fmtMoney(Math.abs(pulse.profitDelta), { compact: true })}
+              </span>
+            </p>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-4">
