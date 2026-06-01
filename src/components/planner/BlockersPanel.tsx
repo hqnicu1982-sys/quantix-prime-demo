@@ -14,6 +14,12 @@ import { useCan } from "@/lib/permissions";
 import { useNavigate } from "@tanstack/react-router";
 import { scoreCandidates, type ScoredRecAction } from "@/lib/recommendedAction";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Props = {
   projectId: string;
@@ -198,6 +204,7 @@ function ScoreBreakdownPopover({ scored }: { scored: ScoredRecAction[] }) {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[360px] p-0">
+        <TooltipProvider delayDuration={150}>
         <div className="border-b border-[var(--ink-200)] px-3 py-2">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
             Recommendation scoring
@@ -210,9 +217,24 @@ function ScoreBreakdownPopover({ scored }: { scored: ScoredRecAction[] }) {
           <thead className="bg-[var(--ink-50)] text-[10px] uppercase tracking-wider text-[var(--ink-500)]">
             <tr>
               <th className="px-3 py-1.5 text-left font-semibold">Candidate</th>
-              <th className="px-2 py-1.5 text-right font-semibold">Weight</th>
-              <th className="px-2 py-1.5 text-right font-semibold">Urgency</th>
-              <th className="px-2 py-1.5 text-right font-semibold">P&amp;L</th>
+              <th className="px-2 py-1.5 text-right font-semibold">
+                <HelpHeader
+                  label="Weight"
+                  tip="Baseline severity per blocker type. Variation 50 · Material 40 · Predecessor 30 · Labour 25 · Design/Sub 20. Captures how hard a blocker is to remove — contract gates outrank rescheduling."
+                />
+              </th>
+              <th className="px-2 py-1.5 text-right font-semibold">
+                <HelpHeader
+                  label="Urgency"
+                  tip="Based on days until start: overdue 60+ (+4/day late, capped +40), imminent ≤3d 45, soon ≤14d 20, later 5. Adds +15 when the task status is already behind or blocked."
+                />
+              </th>
+              <th className="px-2 py-1.5 text-right font-semibold">
+                <HelpHeader
+                  label="P&L"
+                  tip="Driven by planned labour cost on the task. High ≥ £20k → 40 · Medium ≥ £5k → 20 · Low → 5. Larger spend at risk pushes the candidate up the list."
+                />
+              </th>
               <th className="px-3 py-1.5 text-right font-semibold">Total</th>
             </tr>
           </thead>
@@ -228,18 +250,25 @@ function ScoreBreakdownPopover({ scored }: { scored: ScoredRecAction[] }) {
                     {s.blockerType}
                   </div>
                 </td>
-                <td className="px-2 py-1.5 text-right font-mono-num">{s.weightScore}</td>
                 <td className="px-2 py-1.5 text-right font-mono-num">
-                  {s.urgencyScore}
-                  <div className="text-[9.5px] uppercase text-[var(--ink-500)]">
-                    {s.urgencyTier}
-                  </div>
+                  <ScoreCell
+                    value={s.weightScore}
+                    tip={`Blocker type "${s.blockerType}" → baseline ${s.weightScore} pts.`}
+                  />
                 </td>
                 <td className="px-2 py-1.5 text-right font-mono-num">
-                  {s.impactScore}
-                  <div className="text-[9.5px] uppercase text-[var(--ink-500)]">
-                    {s.impactTier}
-                  </div>
+                  <ScoreCell
+                    value={s.urgencyScore}
+                    sub={s.urgencyTier}
+                    tip={`${urgencyExplain(s)} → ${s.urgencyScore} pts.`}
+                  />
+                </td>
+                <td className="px-2 py-1.5 text-right font-mono-num">
+                  <ScoreCell
+                    value={s.impactScore}
+                    sub={s.impactTier}
+                    tip={`Planned labour £${Math.round(s.plannedCost).toLocaleString()} → ${s.impactTier} tier → ${s.impactScore} pts.`}
+                  />
                 </td>
                 <td className="px-3 py-1.5 text-right font-mono-num text-[var(--ink-900)]">
                   {s.score}
@@ -251,7 +280,50 @@ function ScoreBreakdownPopover({ scored }: { scored: ScoredRecAction[] }) {
         <div className="border-t border-[var(--ink-200)] px-3 py-2 text-[10.5px] text-[var(--ink-600)]">
           <span className="font-semibold text-[var(--ink-900)]">Picked:</span> {top.reason}
         </div>
+        </TooltipProvider>
       </PopoverContent>
     </Popover>
   );
+}
+
+function HelpHeader({ label, tip }: { label: string; tip: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex cursor-help items-center gap-0.5 underline decoration-dotted underline-offset-2">
+          {label}
+          <Info className="h-2.5 w-2.5" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-[260px] text-[11px] leading-snug">
+        {tip}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function ScoreCell({ value, sub, tip }: { value: number; sub?: string; tip: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex cursor-help flex-col items-end">
+          <span>{value}</span>
+          {sub && (
+            <span className="text-[9.5px] uppercase text-[var(--ink-500)]">{sub}</span>
+          )}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="left" className="max-w-[240px] text-[11px] leading-snug">
+        {tip}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function urgencyExplain(s: ScoredRecAction): string {
+  const d = s.daysUntilStart;
+  if (d < 0) return `Start was ${Math.abs(d)}d ago (overdue)`;
+  if (d <= 3) return `Starts in ${d}d (imminent)`;
+  if (d <= 14) return `Starts in ${d}d (soon)`;
+  return `Starts in ${d}d (later)`;
 }
