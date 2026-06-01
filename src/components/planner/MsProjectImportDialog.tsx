@@ -56,6 +56,10 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
   const forecast = useProfitForecast(projectId);
   const mspConn = useIntegrationConnection("msp");
 
+  // Auto-pick the first crew so imported tasks always carry a billable rate.
+  // Without a crewId the forecast can't price labour and confidence stalls.
+  const resolvedDefaultCrewId = defaultCrewId ?? crews[0]?.assignment.memberId;
+
   const summary = useMemo(() => summarizeMapping(mapping), [mapping]);
 
   const reset = () => {
@@ -84,7 +88,7 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
     let updated = 0;
     for (const m of mapping) {
       if (m.action === "skip") continue;
-      const fallbackCrew = defaultCrewId;
+      const fallbackCrew = resolvedDefaultCrewId;
       if (m.action === "update" && m.matchedTaskId) {
         const existing = tasks.find((t) => t.id === m.matchedTaskId);
         updateTask(projectId, m.matchedTaskId, {
@@ -201,12 +205,14 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] text-[var(--ink-500)]">Default crew:</span>
-                <Select value={defaultCrewId ?? "none"} onValueChange={(v) => setDefaultCrewId(v === "none" ? undefined : v)}>
+                <Select
+                  value={defaultCrewId ?? resolvedDefaultCrewId ?? "none"}
+                  onValueChange={(v) => setDefaultCrewId(v === "none" ? undefined : v)}
+                >
                   <SelectTrigger className="h-7 w-[180px] text-[12px]">
-                    <SelectValue placeholder="Atribuie mai târziu" />
+                    <SelectValue placeholder="Pick crew" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">— Atribuie mai târziu</SelectItem>
                     {crews.map((c) => (
                       <SelectItem key={c.assignment.memberId} value={c.assignment.memberId}>
                         {c.crewName} · £{c.rate}/h
