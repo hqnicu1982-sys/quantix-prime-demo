@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { useProjectTasks } from "@/lib/planner";
 import { useProjectData } from "@/lib/projectData";
 import { proposeCallOffs } from "@/lib/callOffPlanning";
+import { useCallOffSettings } from "@/lib/callOffSettings";
+import { AutoCallOffSettingsDialog } from "./AutoCallOffSettingsDialog";
 import { AutoCallOffReviewDialog } from "./AutoCallOffReviewDialog";
 
 const DISMISS_KEY = (pid: string) => `qp-auto-calloff-dismissed-${pid}`;
@@ -18,6 +20,7 @@ const DISMISS_KEY = (pid: string) => `qp-auto-calloff-dismissed-${pid}`;
 export function AutoCallOffBanner({ projectId }: { projectId: string }) {
   const tasks = useProjectTasks(projectId);
   const project = useProjectData(projectId);
+  const settings = useCallOffSettings(projectId);
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState<string>(() =>
     typeof window === "undefined" ? "" : localStorage.getItem(DISMISS_KEY(projectId)) ?? "",
@@ -30,8 +33,16 @@ export function AutoCallOffBanner({ projectId }: { projectId: string }) {
         project.boqLines,
         project.callOffs,
         project.supplierChoices,
+        {
+          defaultLeadDays: settings.defaultLeadDays,
+          bufferDays: settings.bufferDays,
+          coalesceWindowDays: settings.coalesceWindowDays,
+          urgencyImminentDays: settings.urgencyImminentDays,
+          minBatchQty: settings.minBatchQty,
+          perMaterialLeadDays: settings.perMaterialLeadDays,
+        },
       ),
-    [tasks, project.boqLines, project.callOffs, project.supplierChoices],
+    [tasks, project.boqLines, project.callOffs, project.supplierChoices, settings],
   );
 
   // Hash used to invalidate a previous "dismiss" once new needs appear.
@@ -40,8 +51,22 @@ export function AutoCallOffBanner({ projectId }: { projectId: string }) {
     [proposals],
   );
 
-  if (proposals.length === 0) return null;
-  if (dismissed === sig) return null;
+  // Still mount the gear button when there are no proposals so the user can
+  // tune rules proactively.
+  if (proposals.length === 0) {
+    return (
+      <div className="flex items-center justify-end">
+        <AutoCallOffSettingsDialog projectId={projectId} />
+      </div>
+    );
+  }
+  if (dismissed === sig) {
+    return (
+      <div className="flex items-center justify-end">
+        <AutoCallOffSettingsDialog projectId={projectId} />
+      </div>
+    );
+  }
 
   const urgent = proposals.filter((p) => p.urgency !== "ok").length;
   const tone = urgent > 0
@@ -68,6 +93,7 @@ export function AutoCallOffBanner({ projectId }: { projectId: string }) {
           </p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
+          <AutoCallOffSettingsDialog projectId={projectId} />
           <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px]" onClick={dismiss}>
             Dismiss
           </Button>
