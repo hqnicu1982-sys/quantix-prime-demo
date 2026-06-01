@@ -16,6 +16,7 @@ import { GanttChart } from "@/components/planner/GanttChart";
 import { TaskDetailDialog } from "@/components/planner/TaskDetailDialog";
 import { NewTaskDialog } from "@/components/planner/NewTaskDialog";
 import { BlockersPanel } from "@/components/planner/BlockersPanel";
+import { MsProjectImportDialog } from "@/components/planner/MsProjectImportDialog";
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectVariations } from "@/lib/variations";
 
@@ -76,6 +77,7 @@ function Planner() {
           >
             <Download className="mr-1.5 h-3.5 w-3.5" /> Export PDF
           </Button>
+          <MsProjectImportDialog projectId={PID} />
           <NewTaskDialog projectId={PID} />
         </>
       }
