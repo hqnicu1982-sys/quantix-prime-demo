@@ -9,15 +9,20 @@ import { useCan } from "@/lib/permissions";
 import { Gated } from "@/components/auth/Gated";
 import { ShieldCheck, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
+import { useCallOffActions, recordCallOffAction, effectiveState } from "@/lib/callOffActions";
+import { RejectCallOffDialog } from "@/components/calloffs/CallOffActionDialogs";
 
 export const Route = createFileRoute("/calloffs/approvals")({ component: Approvals });
 
 function Approvals() {
   const canApprove = useCan("approve.calloffs");
-  // Items sitting at the QS step (submitted, reviewed, review-needed).
-  const queue = callOffs.filter((c) =>
-    c.state === "submitted" || c.state === "reviewed" || c.state === "review-needed" || c.state === "draft",
-  );
+  const all = useCallOffActions();
+  const [rejectRef, setRejectRef] = useState<string | null>(null);
+  // Items sitting at the QS step (submitted, reviewed, review-needed) after applying recorded actions.
+  const queue = callOffs
+    .map((c) => ({ c, state: effectiveState(c.ref, c.state, all) }))
+    .filter(({ state }) => state === "submitted" || state === "reviewed" || state === "review-needed" || state === "draft");
 
   return (
     <div className="space-y-5">
@@ -38,7 +43,7 @@ function Approvals() {
       <Card>
         <CardHead title={`Awaiting QS review · ${queue.length}`} subtitle="Highest-value items shown first" />
         <div className="divide-y divide-[var(--ink-200)]">
-          {queue.map((c) => (
+          {queue.map(({ c, state }) => (
             <div key={c.ref} className="flex flex-wrap items-center gap-3 px-5 py-3 text-[12.5px]">
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">
@@ -48,21 +53,30 @@ function Approvals() {
                 <p className="text-[11px] text-[var(--ink-500)]">{c.subtitle} · {c.supplier} · need by {c.needBy}</p>
               </div>
               <span className="font-mono-num font-semibold">{fmtMoney(c.value)}</span>
-              <StatusBadge tone={STATE_TONE[c.state]} dot>{STATE_LABEL[c.state]}</StatusBadge>
+              <StatusBadge tone={STATE_TONE[state]} dot>{STATE_LABEL[state]}</StatusBadge>
               <Gated cap="approve.calloffs">
                 <div className="flex gap-1.5">
-                  <Button size="sm" variant="outline" onClick={() => toast.error("Rejected", { description: `${c.ref} returned to Site Manager` })}>
+                  <Button size="sm" variant="outline" onClick={() => setRejectRef(c.ref)}>
                     <X className="mr-1 h-3 w-3" /> Reject
                   </Button>
-                  <Button size="sm" onClick={() => toast.success("Approved", { description: `${c.ref} approved · PO queued` })}>
+                  <Button size="sm" onClick={() => {
+                    recordCallOffAction({ ref: c.ref, kind: "approve", stateAfter: "approved" });
+                    toast.success("Approved", { description: `${c.ref} approved · PO queued` });
+                  }}>
                     <ShieldCheck className="mr-1 h-3 w-3" /> Approve
                   </Button>
                 </div>
               </Gated>
             </div>
           ))}
+          {queue.length === 0 && (
+            <p className="px-5 py-6 text-center text-[12px] text-[var(--ink-500)]">Queue empty — everything has moved past QS review. 🎉</p>
+          )}
         </div>
       </Card>
+      {rejectRef && (
+        <RejectCallOffDialog ref={rejectRef} open={!!rejectRef} onOpenChange={(v) => !v && setRejectRef(null)} />
+      )}
     </div>
   );
 }
