@@ -478,8 +478,16 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
           {step === "preview" && (
             <>
               <Button variant="ghost" onClick={() => setStep("select")}>Back</Button>
-              <Button onClick={apply} disabled={summary.created + summary.updated === 0}>
-                Apply <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              <Button
+                onClick={apply}
+                disabled={
+                  applyMode === "merge" && summary.created + summary.updated === 0
+                }
+              >
+                {applyMode === "replace"
+                  ? `Replace all (${bundle?.rows.length ?? 0})`
+                  : "Apply"}{" "}
+                <ArrowRight className="ml-1 h-3.5 w-3.5" />
               </Button>
             </>
           )}
