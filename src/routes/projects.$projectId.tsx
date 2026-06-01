@@ -183,8 +183,8 @@ function ProjectLayout() {
             <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
           </Button>
           <Gated cap="create.calloffs">
-            <Button size="sm" onClick={() => toast.success("New call-off", { description: `Draft created for ${project.name}` })}>
-              <Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off
+            <Button asChild size="sm">
+              <Link to="/calloffs/new"><Plus className="mr-1.5 h-3.5 w-3.5" /> New call-off</Link>
             </Button>
           </Gated>
         </>
