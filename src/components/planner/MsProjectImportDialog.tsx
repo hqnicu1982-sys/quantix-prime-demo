@@ -39,6 +39,8 @@ import {
   syncIntegration,
   useIntegrationConnection,
 } from "@/lib/integrationConnections";
+import { recordBaseline } from "@/lib/mspBidirectionalSync";
+import { getProjectTasks } from "@/lib/planner";
 import { currentUser, fmtMoney } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
@@ -145,6 +147,10 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
       });
     }
     syncIntegration("msp");
+
+    // Snapshot the post-apply task list so bidirectional sync can detect
+    // every subsequent local edit as a "pending push" to MSProject.
+    recordBaseline(projectId, getProjectTasks(projectId));
 
     toast.success("Programul a fost sincronizat", {
       description:

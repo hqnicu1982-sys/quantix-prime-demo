@@ -21,6 +21,8 @@ export type IntegrationConnection = {
   lastSync?: string;           // ISO
   syncs: number;               // counter
   errors: number;
+  lastPush?: string;           // ISO — last outbound write back to the system
+  pushes?: number;             // outbound counter (bidirectional sync)
 };
 
 const KEY = "qp-integration-connections";
@@ -88,6 +90,22 @@ export function syncIntegration(id: string) {
   const idx = all.findIndex((c) => c.id === id);
   if (idx === -1) return;
   all[idx] = { ...all[idx], lastSync: new Date().toISOString(), syncs: all[idx].syncs + 1 };
+  write(all);
+}
+
+/**
+ * Stamp an outbound (push) operation. Used by bidirectional sync flows that
+ * write local changes back to the connected system (e.g. MSProject).
+ */
+export function recordIntegrationPush(id: string) {
+  const all = read();
+  const idx = all.findIndex((c) => c.id === id);
+  if (idx === -1) return;
+  all[idx] = {
+    ...all[idx],
+    lastPush: new Date().toISOString(),
+    pushes: (all[idx].pushes ?? 0) + 1,
+  };
   write(all);
 }
 
