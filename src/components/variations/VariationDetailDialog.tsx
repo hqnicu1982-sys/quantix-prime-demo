@@ -47,11 +47,11 @@ export function VariationDetailDialog({
   const [rejectOpen, setRejectOpen] = useState(false);
   const [approvedValue, setApprovedValue] = useState<string>("");
   const [rejectedReason, setRejectedReason] = useState<string>("");
+  const canEdit = useCan("edit.variations");
 
   if (!variation) return null;
 
   const v = variation;
-  const canEdit = useCan("edit.variations");
 
   const handleSubmit = () => {
     setStatus(projectId, v.id, "submitted");
