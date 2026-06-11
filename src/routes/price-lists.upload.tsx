@@ -4,7 +4,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { ambiguousMatches, livePreview } from "@/lib/mockData";
 import { usePriceListUploads, logPriceListUpload } from "@/lib/priceListRegistry";
-import { useCurrentUser } from "@/lib/permissions";
+import { useCurrentUser } from "@/lib/currentUser";
 import { CloudUpload, ArrowRight, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useCan } from "@/lib/permissions";
