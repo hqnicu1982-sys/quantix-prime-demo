@@ -1,6 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Card, CardHead } from "@/components/Primitives";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { WorkflowStrip } from "@/components/calloffs/WorkflowStrip";
@@ -8,12 +6,13 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
-import { Check, ChevronRight, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProject } from "@/lib/ProjectContext";
 import { useBoqAllocation, reserve } from "@/lib/boqAllocation";
 import { addCallOff } from "@/lib/projectData";
 import { recordCallOffAction } from "@/lib/callOffActions";
+import { FormWizard } from "@/components/forms/FormWizard";
 
 export const Route = createFileRoute("/calloffs/new")({ component: Guarded });
 
@@ -23,16 +22,8 @@ function Guarded() {
   return <NewCallOff />;
 }
 
-const STEPS = [
-  { id: "pick",     label: "1 · Pick BoQ line" },
-  { id: "supplier", label: "2 · Supplier & qty" },
-  { id: "delivery", label: "3 · Delivery + notes" },
-  { id: "review",   label: "4 · Submit for QS review" },
-];
-
 function NewCallOff() {
   const nav = useNavigate();
-  const [step, setStep] = useState(0);
   const { current } = useProject();
   const alloc = useBoqAllocation(current.id);
 
@@ -86,36 +77,20 @@ function NewCallOff() {
   };
 
   return (
-    <div className="space-y-5">
-      <Card>
-        <CardHead title="Where this lands in the workflow" subtitle="A new call-off starts as Draft and moves to Submitted on save" />
-        <div className="p-5">
-          <WorkflowStrip currentState="draft" compact />
-        </div>
-      </Card>
-
-      <Card>
-        <CardHead title="New call-off" subtitle="4-step wizard · all fields are validated against the BoQ" />
-
-        <ol className="flex flex-wrap gap-2 border-b border-[var(--ink-200)] px-5 py-3 text-[11.5px]">
-          {STEPS.map((s, i) => (
-            <li key={s.id} className="flex items-center gap-2">
-              <span className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-semibold",
-                i === step && "bg-[var(--accent-500)]/10 text-[var(--accent-500)] ring-1 ring-[var(--accent-500)]/40",
-                i < step && "bg-[var(--green-600)]/10 text-[var(--green-600)]",
-                i > step && "text-[var(--ink-500)]",
-              )}>
-                {i < step && <Check className="h-3 w-3" />}
-                {s.label}
-              </span>
-              {i < STEPS.length - 1 && <ChevronRight className="h-3 w-3 text-[var(--ink-500)]" />}
-            </li>
-          ))}
-        </ol>
-
-        <div className="space-y-4 p-5 text-[13px]">
-          {step === 0 && (
+    <FormWizard
+      title="New call-off"
+      subtitle="4-step wizard · all fields are validated against the BoQ"
+      workflowStrip={<WorkflowStrip currentState="draft" compact />}
+      submitLabel="Submit for QS review"
+      canSubmit={canSubmit}
+      onSubmit={handleSubmit}
+      onCancel={() => nav({ to: "/calloffs" })}
+      steps={[
+        {
+          id: "pick",
+          label: "Pick BoQ line",
+          canAdvance: () => !!selected,
+          render: () => (
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>BoQ line</Label>
@@ -148,8 +123,13 @@ function NewCallOff() {
                 <Input placeholder="e.g. Level 5 — apartment walls" />
               </div>
             </div>
-          )}
-          {step === 1 && (
+          ),
+        },
+        {
+          id: "supplier",
+          label: "Supplier & qty",
+          canAdvance: () => qty > 0 && !exceed,
+          render: () => (
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Supplier</Label>
@@ -189,8 +169,12 @@ function NewCallOff() {
                 </p>
               </div>
             </div>
-          )}
-          {step === 2 && (
+          ),
+        },
+        {
+          id: "delivery",
+          label: "Delivery + notes",
+          render: () => (
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Need by</Label>
@@ -205,8 +189,12 @@ function NewCallOff() {
                 <textarea className="min-h-[72px] w-full rounded-md border border-[var(--ink-200)] bg-background px-3 py-2 text-[13px]" placeholder="Anything QS needs to know before approving?" />
               </div>
             </div>
-          )}
-          {step === 3 && (
+          ),
+        },
+        {
+          id: "review",
+          label: "Submit for QS review",
+          render: () => (
             <div className="space-y-3">
               <div className="rounded-md border border-[var(--green-600)]/30 bg-[var(--green-600)]/5 p-4 text-[12.5px]">
                 <p className="font-semibold text-[var(--green-600)]">Ready to submit</p>
@@ -221,20 +209,9 @@ function NewCallOff() {
                 </div>
               )}
             </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between border-t border-[var(--ink-200)] px-5 py-3">
-          <Button variant="ghost" size="sm" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))}>Back</Button>
-          {step < STEPS.length - 1 ? (
-            <Button size="sm" onClick={() => setStep((s) => s + 1)}>Next</Button>
-          ) : (
-            <Button size="sm" disabled={!canSubmit} onClick={handleSubmit}>
-              Submit for QS review
-            </Button>
-          )}
-        </div>
-      </Card>
-    </div>
+          ),
+        },
+      ]}
+    />
   );
 }
