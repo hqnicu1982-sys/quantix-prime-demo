@@ -6,6 +6,7 @@ import { ArrowLeft, FileText, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGrn } from "@/lib/grnRegistry";
 import { invoices } from "@/lib/mockData";
+import { Image as ImageIcon, PenLine } from "lucide-react";
 
 const STATUS_TONE = {
   scheduled:    "neutral" as const,
@@ -73,6 +74,46 @@ function GrnDetail() {
           </div>
         )}
       </Card>
+
+      {(grn.signature || (grn.photos && grn.photos.length > 0) || grn.deliveryNoteRef || grn.driverName) && (
+        <Card>
+          <CardHead title="Sign-off & proof" subtitle="Captured on the GRN form" />
+          <div className="grid gap-4 p-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3 text-[12px]">
+                <div>
+                  <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">Delivery note</p>
+                  <p className="font-semibold">{grn.deliveryNoteRef ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">Driver</p>
+                  <p className="font-semibold">{grn.driverName ?? "—"}</p>
+                </div>
+              </div>
+              {grn.signature && (
+                <div>
+                  <p className="mb-1 flex items-center gap-1 text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+                    <PenLine className="h-3 w-3" /> Signature
+                  </p>
+                  <img src={grn.signature} alt="Signature" className="rounded-md border border-[var(--ink-200)] bg-white" />
+                </div>
+              )}
+            </div>
+            {grn.photos && grn.photos.length > 0 && (
+              <div>
+                <p className="mb-1.5 flex items-center gap-1 text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+                  <ImageIcon className="h-3 w-3" /> Photos ({grn.photos.length})
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {grn.photos.map((p, i) => (
+                    <img key={i} src={p} alt={`Photo ${i + 1}`} className="h-20 w-20 rounded-md border border-[var(--ink-200)] object-cover" />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
 
       {grn.lines && grn.lines.length > 0 && (
         <Card>

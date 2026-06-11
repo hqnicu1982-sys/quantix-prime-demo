@@ -61,6 +61,11 @@ function DailyReport() {
       right={
         <>
           <Button variant="outline" size="sm" onClick={() => toast("PDF preview", { description: `Daily report ${dailyReport.date} ready` })}><Download className="mr-1.5 h-3.5 w-3.5" />Preview PDF</Button>
+          {canApprove && !submission && (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/forms/daily-report"><Send className="mr-1.5 h-3.5 w-3.5" />Full form</Link>
+            </Button>
+          )}
           {canApprove && (submission ? (
             <StatusBadge tone="success" dot>
               <CheckCircle2 className="mr-1 inline h-3 w-3" />

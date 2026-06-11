@@ -41,6 +41,9 @@ import { Route as InvoicesDisputesRouteImport } from './routes/invoices.disputes
 import { Route as InvoicesAuditRouteImport } from './routes/invoices.audit'
 import { Route as InvoicesRefRouteImport } from './routes/invoices.$ref'
 import { Route as GrnRefRouteImport } from './routes/grn.$ref'
+import { Route as FormsVariationRouteImport } from './routes/forms.variation'
+import { Route as FormsGrnRouteImport } from './routes/forms.grn'
+import { Route as FormsDailyReportRouteImport } from './routes/forms.daily-report'
 import { Route as CalloffsPipelineRouteImport } from './routes/calloffs.pipeline'
 import { Route as CalloffsNewRouteImport } from './routes/calloffs.new'
 import { Route as CalloffsDeliveriesRouteImport } from './routes/calloffs.deliveries'
@@ -220,6 +223,21 @@ const GrnRefRoute = GrnRefRouteImport.update({
   path: '/grn/$ref',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FormsVariationRoute = FormsVariationRouteImport.update({
+  id: '/forms/variation',
+  path: '/forms/variation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FormsGrnRoute = FormsGrnRouteImport.update({
+  id: '/forms/grn',
+  path: '/forms/grn',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FormsDailyReportRoute = FormsDailyReportRouteImport.update({
+  id: '/forms/daily-report',
+  path: '/forms/daily-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CalloffsPipelineRoute = CalloffsPipelineRouteImport.update({
   id: '/pipeline',
   path: '/pipeline',
@@ -345,6 +363,9 @@ export interface FileRoutesByFullPath {
   '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
   '/calloffs/pipeline': typeof CalloffsPipelineRoute
+  '/forms/daily-report': typeof FormsDailyReportRoute
+  '/forms/grn': typeof FormsGrnRoute
+  '/forms/variation': typeof FormsVariationRoute
   '/grn/$ref': typeof GrnRefRoute
   '/invoices/$ref': typeof InvoicesRefRoute
   '/invoices/audit': typeof InvoicesAuditRoute
@@ -394,6 +415,9 @@ export interface FileRoutesByTo {
   '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
   '/calloffs/pipeline': typeof CalloffsPipelineRoute
+  '/forms/daily-report': typeof FormsDailyReportRoute
+  '/forms/grn': typeof FormsGrnRoute
+  '/forms/variation': typeof FormsVariationRoute
   '/grn/$ref': typeof GrnRefRoute
   '/invoices/$ref': typeof InvoicesRefRoute
   '/invoices/audit': typeof InvoicesAuditRoute
@@ -446,6 +470,9 @@ export interface FileRoutesById {
   '/calloffs/deliveries': typeof CalloffsDeliveriesRoute
   '/calloffs/new': typeof CalloffsNewRoute
   '/calloffs/pipeline': typeof CalloffsPipelineRoute
+  '/forms/daily-report': typeof FormsDailyReportRoute
+  '/forms/grn': typeof FormsGrnRoute
+  '/forms/variation': typeof FormsVariationRoute
   '/grn/$ref': typeof GrnRefRoute
   '/invoices/$ref': typeof InvoicesRefRoute
   '/invoices/audit': typeof InvoicesAuditRoute
@@ -500,6 +527,9 @@ export interface FileRouteTypes {
     | '/calloffs/deliveries'
     | '/calloffs/new'
     | '/calloffs/pipeline'
+    | '/forms/daily-report'
+    | '/forms/grn'
+    | '/forms/variation'
     | '/grn/$ref'
     | '/invoices/$ref'
     | '/invoices/audit'
@@ -549,6 +579,9 @@ export interface FileRouteTypes {
     | '/calloffs/deliveries'
     | '/calloffs/new'
     | '/calloffs/pipeline'
+    | '/forms/daily-report'
+    | '/forms/grn'
+    | '/forms/variation'
     | '/grn/$ref'
     | '/invoices/$ref'
     | '/invoices/audit'
@@ -600,6 +633,9 @@ export interface FileRouteTypes {
     | '/calloffs/deliveries'
     | '/calloffs/new'
     | '/calloffs/pipeline'
+    | '/forms/daily-report'
+    | '/forms/grn'
+    | '/forms/variation'
     | '/grn/$ref'
     | '/invoices/$ref'
     | '/invoices/audit'
@@ -647,6 +683,9 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   TeamRoute: typeof TeamRoute
   VariationsRoute: typeof VariationsRoute
+  FormsDailyReportRoute: typeof FormsDailyReportRoute
+  FormsGrnRoute: typeof FormsGrnRoute
+  FormsVariationRoute: typeof FormsVariationRoute
   GrnRefRoute: typeof GrnRefRoute
   PoPoRefRoute: typeof PoPoRefRoute
   PriceListsUploadRoute: typeof PriceListsUploadRoute
@@ -877,6 +916,27 @@ declare module '@tanstack/react-router' {
       path: '/grn/$ref'
       fullPath: '/grn/$ref'
       preLoaderRoute: typeof GrnRefRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forms/variation': {
+      id: '/forms/variation'
+      path: '/forms/variation'
+      fullPath: '/forms/variation'
+      preLoaderRoute: typeof FormsVariationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forms/grn': {
+      id: '/forms/grn'
+      path: '/forms/grn'
+      fullPath: '/forms/grn'
+      preLoaderRoute: typeof FormsGrnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forms/daily-report': {
+      id: '/forms/daily-report'
+      path: '/forms/daily-report'
+      fullPath: '/forms/daily-report'
+      preLoaderRoute: typeof FormsDailyReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calloffs/pipeline': {
@@ -1122,6 +1182,9 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   TeamRoute: TeamRoute,
   VariationsRoute: VariationsRoute,
+  FormsDailyReportRoute: FormsDailyReportRoute,
+  FormsGrnRoute: FormsGrnRoute,
+  FormsVariationRoute: FormsVariationRoute,
   GrnRefRoute: GrnRefRoute,
   PoPoRefRoute: PoPoRefRoute,
   PriceListsUploadRoute: PriceListsUploadRoute,

@@ -36,6 +36,11 @@ export type GrnRecord = {
   lines?: GrnLine[];        // line-level GRN detail when available
   sourceInvoiceId?: string; // seeded GRNs derived from an invoice
   createdAt: number;
+  // Full sign-off form additions (optional — legacy seeds remain valid).
+  signature?: string;       // data URL captured from SignaturePad
+  photos?: string[];        // data URLs from PhotoDropzone
+  deliveryNoteRef?: string; // supplier's delivery note reference
+  driverName?: string;
 };
 
 const KEY = "qp-grn-registry";
@@ -157,6 +162,10 @@ export type LogGrnInput = {
   signedBy: string;
   signedAt?: string;
   lines?: GrnLine[];
+  signature?: string;
+  photos?: string[];
+  deliveryNoteRef?: string;
+  driverName?: string;
 };
 
 export function logGrn(input: LogGrnInput): GrnRecord {
@@ -175,6 +184,10 @@ export function logGrn(input: LogGrnInput): GrnRecord {
     note: input.note,
     lines: input.lines,
     createdAt: Date.now(),
+    signature: input.signature,
+    photos: input.photos,
+    deliveryNoteRef: input.deliveryNoteRef,
+    driverName: input.driverName,
   };
   write([record, ...list]);
   return record;
