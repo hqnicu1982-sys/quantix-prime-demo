@@ -10,8 +10,9 @@ import { recordCallOffAction, REJECT_REASONS } from "@/lib/callOffActions";
 import { logGrn } from "@/lib/grnRegistry";
 import { useProject } from "@/lib/ProjectContext";
 import { currentUser } from "@/lib/mockData";
-import { X, PackageCheck } from "lucide-react";
+import { X, PackageCheck, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -118,6 +119,15 @@ export function LogGrnDialog({ ref, defaultQty, supplier, open, onOpenChange }: 
           <DialogDescription>Record what arrived on site. A full GRN closes the call-off; a partial GRN keeps it open for the balance.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
+          <Link
+            to="/forms/grn"
+            search={{ callOff: ref }}
+            onClick={() => onOpenChange(false)}
+            className="flex items-center justify-between gap-2 rounded-md border border-[var(--accent-500)]/30 bg-[var(--accent-500)]/5 px-3 py-2 text-[11.5px] font-semibold text-[var(--accent-500)] hover:bg-[var(--accent-500)]/10"
+          >
+            <span>Need photos, delivery note ref & signature? Open the full GRN form.</span>
+            <ExternalLink className="h-3 w-3" />
+          </Link>
           <Field label="Received quantity">
             <Input value={qty} onChange={(e) => setQty(e.target.value)} placeholder="e.g. 1,200 m² boards" className="h-9 text-[12px]" />
           </Field>
