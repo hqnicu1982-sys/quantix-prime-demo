@@ -147,9 +147,16 @@ function Detail() {
             )}
             {(state === "po-sent" || state === "in-delivery") && (
               <Gated cap="create.calloffs">
-                <Button size="sm" onClick={() => setGrnOpen(true)}>
-                  <PackageCheck className="mr-1 h-3 w-3" /> Log GRN
-                </Button>
+                <>
+                  <Button size="sm" onClick={() => setGrnOpen(true)}>
+                    <PackageCheck className="mr-1 h-3 w-3" /> Quick GRN
+                  </Button>
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/forms/grn" search={{ callOff: co.ref }}>
+                      <PackageCheck className="mr-1 h-3 w-3" /> Sign GRN (full form)
+                    </Link>
+                  </Button>
+                </>
               </Gated>
             )}
             <Button asChild size="sm" variant="ghost">
