@@ -57,9 +57,9 @@ function ReportsPage() {
   }));
   const variationRows: ReportRow[] = variations.slice(0, 5).map((v) => ({
     id: v.id,
-    title: `${v.title}${v.reference ? ` — ${v.reference}` : ""}`,
-    who: v.raisedByName ?? "—",
-    when: v.submittedAt ? formatWhen(v.submittedAt) : formatWhen(v.createdAt),
+    title: v.title,
+    who: v.raisedBy,
+    when: formatWhen(new Date(v.createdAt).toISOString()),
     type: "Variation",
   }));
 
