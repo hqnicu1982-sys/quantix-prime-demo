@@ -169,6 +169,20 @@ export function clearProjectData(projectId: string) {
   window.dispatchEvent(new CustomEvent(EVT, { detail: { projectId } }));
 }
 
+/**
+ * Update a call-off's status (e.g. draft → sent after QS approval,
+ * sent → delivered after GRN log).
+ */
+export function updateCallOffStatus(
+  projectId: string,
+  id: string,
+  status: ProjectCallOff["status"],
+) {
+  const data = read(projectId);
+  const callOffs = data.callOffs.map((c) => (c.id === id ? { ...c, status } : c));
+  write(projectId, { ...data, callOffs });
+}
+
 // ---------------------------------------------------------------------------
 // React hook
 // ---------------------------------------------------------------------------

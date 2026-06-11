@@ -4,6 +4,9 @@ import { callOffs, fmtMoney, type CallOffState } from "@/lib/mockData";
 import { CALL_OFF_STEPS, STATE_LABEL, STATE_TONE } from "@/lib/callOffWorkflow";
 import { WorkflowStrip } from "@/components/calloffs/WorkflowStrip";
 import { StatusBadge } from "@/components/StatusBadge";
+import { useProject } from "@/lib/ProjectContext";
+import { useProjectData } from "@/lib/projectData";
+import { useCallOffActions, effectiveState } from "@/lib/callOffActions";
 
 export const Route = createFileRoute("/calloffs/pipeline")({ component: Pipeline });
 
@@ -13,6 +16,26 @@ export const Route = createFileRoute("/calloffs/pipeline")({ component: Pipeline
  * QS reviewed column flagged amber.
  */
 function Pipeline() {
+  const { current } = useProject();
+  const projectData = useProjectData(current.id);
+  const actions = useCallOffActions();
+  const lineById = new Map(projectData.boqLines.map((l) => [l.id, l]));
+
+  type Item = { ref: string; item: string; value: number; state: CallOffState };
+  const mockItems: Item[] = callOffs.map((c) => ({
+    ref: c.ref, item: c.item, value: c.value, state: c.state as CallOffState,
+  }));
+  const liveItems: Item[] = projectData.callOffs.map((co) => {
+    const lines = co.lineIds.map((id) => lineById.get(id)).filter(Boolean);
+    const item = lines.map((l) => l!.material).join(", ") || `${co.lineIds.length} BoQ line(s)`;
+    const value = lines.reduce((s, l) => s + (l?.qty ?? 0) * (l?.ratePerUnit ?? 0), 0);
+    const fallback: CallOffState =
+      co.status === "draft" ? "submitted" : co.status === "sent" ? "po-sent" : "in-delivery";
+    const eff = effectiveState(co.id, fallback, actions);
+    return { ref: co.id, item, value, state: eff };
+  });
+  const allItems = [...liveItems, ...mockItems];
+
   return (
     <div className="space-y-5">
       <Card>
@@ -24,7 +47,7 @@ function Pipeline() {
 
       <div className="grid gap-3 lg:grid-cols-4 xl:grid-cols-7">
         {CALL_OFF_STEPS.map((step) => {
-          const items = callOffs.filter((c) => {
+          const items = allItems.filter((c) => {
             if (step.id === "reviewed") return c.state === "reviewed" || c.state === "review-needed" || c.state === "submitted";
             return c.state === step.id;
           });
@@ -48,8 +71,8 @@ function Pipeline() {
                     <p className="font-mono-num font-semibold">{c.ref}</p>
                     <p className="truncate text-[var(--ink-700)]">{c.item}</p>
                     <div className="mt-1 flex items-center justify-between">
-                      <span className="font-mono-num text-[10.5px] text-[var(--ink-500)]">{fmtMoney(c.value)}</span>
-                      <StatusBadge tone={STATE_TONE[c.state as CallOffState]}>{STATE_LABEL[c.state as CallOffState]}</StatusBadge>
+                      <span className="font-mono-num text-[10.5px] text-[var(--ink-500)]">{c.value ? fmtMoney(c.value) : "—"}</span>
+                      <StatusBadge tone={STATE_TONE[c.state]}>{STATE_LABEL[c.state]}</StatusBadge>
                     </div>
                   </Link>
                 ))}
