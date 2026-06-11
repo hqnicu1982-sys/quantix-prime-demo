@@ -211,10 +211,7 @@ function useStore<T>(reader: () => T): T {
 }
 
 export function useGrns(filter?: { projectId?: string; callOffRef?: string }) {
-  const key = `${filter?.projectId ?? ""}|${filter?.callOffRef ?? ""}`;
   return useStore(() => getGrns(filter));
-  // key referenced to silence unused-var lint in some configs
-  void key;
 }
 
 export function useGrn(ref: string | undefined) {
