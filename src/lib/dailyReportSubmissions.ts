@@ -56,6 +56,13 @@ export function useDailyReportSubmission(projectId: string, date: string): Daily
   return all.find((s) => s.projectId === projectId && s.date === date);
 }
 
+export function useProjectDailyReports(projectId: string): DailyReportSubmission[] {
+  const all = useSyncExternalStore(subscribe, () => snapshot(), () => snapshot());
+  return all
+    .filter((s) => s.projectId === projectId)
+    .sort((a, b) => b.ts.localeCompare(a.ts));
+}
+
 export function recordDailyReportSubmission(input: Omit<DailyReportSubmission, "id" | "ts" | "actor">) {
   const all = read();
   const dup = all.find((s) => s.projectId === input.projectId && s.date === input.date);
