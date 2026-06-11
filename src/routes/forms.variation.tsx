@@ -46,6 +46,7 @@ function VariationForm() {
   const nav = useNavigate();
   const { current } = useProject();
   const params = useSearch({ from: "/forms/variation" });
+  const supplierStats = useSupplierStats();
 
   const [title, setTitle] = useState(params.title ?? "");
   const [reason, setReason] = useState("");
@@ -193,6 +194,23 @@ function VariationForm() {
             canAdvance: () => changes.some((c) => c.description.trim().length > 0),
             render: () => (
               <div className="space-y-3">
+                {supplierStats.length > 0 && (
+                  <div className="rounded-md border border-[var(--accent-500)]/25 bg-[var(--accent-500)]/5 px-3 py-2 text-[11.5px] text-[var(--ink-700)]">
+                    <p className="mb-1 font-semibold text-[var(--accent-500)]">Live price intelligence</p>
+                    <ul className="flex flex-wrap gap-x-3 gap-y-0.5">
+                      {supplierStats.slice(0, 4).map((s) => (
+                        <li key={s.supplier} className="tabular-nums">
+                          <span className="font-semibold">{s.supplier}</span>
+                          <span className={s.variationPct >= 0 ? "ml-1 text-[var(--amber-500)]" : "ml-1 text-[var(--green-600)]"}>
+                            {s.variationPct >= 0 ? "+" : ""}{s.variationPct.toFixed(1)}%
+                          </span>
+                          <span className="ml-1 text-[var(--ink-500)]">· {s.lastUpload}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-1 text-[10.5px] text-[var(--ink-500)]">Apply the latest uplift to your rate (£) below to reflect current supplier pricing.</p>
+                  </div>
+                )}
                 <div className="rounded-md border border-[var(--ink-200)]">
                   <div className="flex items-center justify-between border-b border-[var(--ink-200)] px-3 py-2">
                     <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-500)]">

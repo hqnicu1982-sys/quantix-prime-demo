@@ -3,6 +3,8 @@ import autoTable from "jspdf-autotable";
 import type { Project } from "./mockData";
 import { fmtMoney, financialKpi, pnlSummary, invoices, invoiceKpi } from "./mockData";
 import type { ProjectData } from "./projectData";
+import { getProjectVariations } from "./variations";
+import { getGrns } from "./grnRegistry";
 
 /**
  * Builds a PDF "project pack" — a single-document summary covering project
