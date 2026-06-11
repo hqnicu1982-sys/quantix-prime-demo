@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Download } from "lucide-react";
+import { ExternalLink, Download, Calculator, Layers } from "lucide-react";
 import { costedBoqRows, costedBoqKpi, fmtMoney } from "@/lib/mockData";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { BoqForecastBanner } from "@/components/financial/BoqForecastBanner";
+import { useProjectData } from "@/lib/projectData";
+import { useBoqAllocation } from "@/lib/boqAllocation";
 
 export const Route = createFileRoute("/projects/$projectId/costed-boq")({ component: GuardedBoQPage });
 
@@ -17,8 +19,21 @@ function GuardedBoQPage() {
 
 function BoQPage() {
   const { projectId } = Route.useParams();
+  const data = useProjectData(projectId);
+  const hasLive = data.boqLines.length > 0;
+  if (hasLive) return <LiveBoQ projectId={projectId} />;
   return (
     <div className="space-y-5">
+      <div className="rounded-md border border-[var(--amber-500)]/30 bg-[var(--amber-500)]/5 p-3 text-[12.5px]">
+        <p className="flex items-center gap-2 font-semibold text-[var(--ink-900)]">
+          <Layers className="h-4 w-4 text-[var(--amber-500)]" /> Demo data shown
+        </p>
+        <p className="mt-1 text-[var(--ink-700)]">
+          No systems on this project's BoQ yet. Open the{" "}
+          <Link to="/calculator" className="font-medium text-[var(--accent-500)] hover:underline">Calculator</Link>{" "}
+          to add a system — its materials will appear here.
+        </p>
+      </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Estimated BoQ" value={fmtMoney(costedBoqKpi.estimated, { compact: true })} />
         <Kpi label="Cheapest priced" value={fmtMoney(costedBoqKpi.cheapest, { compact: true })} delta={`–${fmtMoney(costedBoqKpi.totalSaving)} vs estimate`} tone="success" />
@@ -77,6 +92,82 @@ function BoQPage() {
           </table>
         </div>
       </Card>
+    </div>
+  );
+}
+
+function LiveBoQ({ projectId }: { projectId: string }) {
+  const data = useProjectData(projectId);
+  const alloc = useBoqAllocation(projectId);
+  const lineCount = data.boqLines.length;
+  const pricedLines = data.boqLines.filter((l) => (l.ratePerUnit ?? 0) > 0).length;
+  const coverage = lineCount === 0 ? 0 : Math.round((pricedLines / lineCount) * 100);
+  const estimated = data.boqLines.reduce(
+    (s, l) => s + (l.qty * (l.ratePerUnit ?? 0)),
+    0,
+  );
+  const suppliers = new Set(
+    data.boqLines
+      .map((l) => l.selectedSupplier ?? data.supplierChoices[l.material])
+      .filter(Boolean) as string[],
+  );
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Kpi label="BoQ value" value={estimated > 0 ? fmtMoney(estimated, { compact: true }) : "—"} delta={`${lineCount} line${lineCount === 1 ? "" : "s"}`} />
+        <Kpi label="Systems on BoQ" value={String(data.systems.length)} delta={alloc.totals.approved > 0 ? `${alloc.totals.ordered.toLocaleString()} ordered / ${alloc.totals.approved.toLocaleString()} approved` : "no orders yet"} />
+        <Kpi label="Pricing coverage" value={`${coverage}%`} delta={`${pricedLines}/${lineCount} priced`} tone={coverage >= 80 ? "success" : "warning"} />
+        <Kpi label="Suppliers chosen" value={String(suppliers.size)} delta={suppliers.size > 0 ? Array.from(suppliers).slice(0, 2).join(" · ") : "none yet"} />
+      </div>
+
+      <BoqForecastBanner projectId={projectId} />
+
+      {alloc.systems.map((sys) => (
+        <Card key={sys.system.id}>
+          <CardHead
+            title={sys.system.systemName}
+            subtitle={`${sys.system.systemCode} · ${sys.system.lengthM}×${sys.system.heightM}m · ${sys.system.areaM2.toFixed(1)}m² · ${sys.pctOrdered}% ordered`}
+          />
+          <div className="overflow-x-auto">
+            <table className="w-full text-[13px]">
+              <thead className="bg-[var(--ink-50)] text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+                <tr>
+                  <th className="px-4 py-2.5 text-left font-semibold">Material</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Approved</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Ordered</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Remaining</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Rate £</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Supplier</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Line £</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--ink-200)]">
+                {sys.lines.map((la) => {
+                  const supplier = la.line.selectedSupplier ?? data.supplierChoices[la.line.material] ?? "—";
+                  const rate = la.line.ratePerUnit ?? 0;
+                  const lineTotal = rate * la.approved;
+                  return (
+                    <tr key={la.line.id} className="hover:bg-[var(--ink-50)]">
+                      <td className="px-4 py-3 font-semibold">{la.line.material}</td>
+                      <td className="px-4 py-3 text-right font-mono-num">{la.approved.toLocaleString()} {la.line.unit}</td>
+                      <td className="px-4 py-3 text-right font-mono-num text-[var(--ink-700)]">{la.ordered.toLocaleString()}</td>
+                      <td className={`px-4 py-3 text-right font-mono-num font-semibold ${la.remaining === 0 ? "text-[var(--red-500)]" : "text-[var(--green-600)]"}`}>{la.remaining.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right font-mono-num">{rate > 0 ? `£${rate.toFixed(2)}` : "—"}</td>
+                      <td className="px-4 py-3 text-[12px] text-[var(--ink-700)]">{supplier}</td>
+                      <td className="px-4 py-3 text-right font-mono-num font-semibold">{lineTotal > 0 ? `£${lineTotal.toLocaleString()}` : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ))}
+
+      <div className="flex justify-end gap-2">
+        <Button size="sm" variant="outline"><Download className="mr-1.5 h-3.5 w-3.5" /> Export</Button>
+        <Button size="sm" asChild><Link to="/calculator"><Calculator className="mr-1.5 h-3.5 w-3.5" /> Add system <ExternalLink className="ml-1.5 h-3.5 w-3.5" /></Link></Button>
+      </div>
     </div>
   );
 }
