@@ -12,17 +12,48 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { useCallOffActions, recordCallOffAction, effectiveState } from "@/lib/callOffActions";
 import { RejectCallOffDialog } from "@/components/calloffs/CallOffActionDialogs";
+import { useProject } from "@/lib/ProjectContext";
+import { useProjectData, updateCallOffStatus } from "@/lib/projectData";
 
 export const Route = createFileRoute("/calloffs/approvals")({ component: Approvals });
 
 function Approvals() {
   const canApprove = useCan("approve.calloffs");
   const all = useCallOffActions();
+  const { current } = useProject();
+  const projectData = useProjectData(current.id);
+  const lineById = new Map(projectData.boqLines.map((l) => [l.id, l]));
   const [rejectRef, setRejectRef] = useState<string | null>(null);
   // Items sitting at the QS step (submitted, reviewed, review-needed) after applying recorded actions.
-  const queue = callOffs
+  const mockQueue = callOffs
     .map((c) => ({ c, state: effectiveState(c.ref, c.state, all) }))
     .filter(({ state }) => state === "submitted" || state === "reviewed" || state === "review-needed" || state === "draft");
+
+  // Live drafts from Planner auto-propose / manual wizard — promote to QS queue.
+  const liveQueue = projectData.callOffs
+    .filter((co) => co.status === "draft")
+    .map((co) => {
+      const lines = co.lineIds.map((id) => lineById.get(id)).filter(Boolean);
+      const item = lines.map((l) => l!.material).join(", ") || `${co.lineIds.length} BoQ line(s)`;
+      const qty = lines.reduce((s, l) => s + (l?.qty ?? 0), 0);
+      const value = lines.reduce((s, l) => s + (l?.qty ?? 0) * (l?.ratePerUnit ?? 0), 0);
+      const eff = effectiveState(co.id, "submitted", all);
+      return {
+        c: {
+          ref: co.id,
+          item,
+          subtitle: `${current.name} · live draft · ${qty.toLocaleString()} units`,
+          supplier: co.supplier,
+          needBy: new Date(co.createdAt).toLocaleDateString(),
+          value,
+        },
+        state: eff,
+        live: true,
+      };
+    })
+    .filter(({ state }) => state === "submitted" || state === "reviewed" || state === "review-needed" || state === "draft");
+
+  const queue = [...liveQueue, ...mockQueue.map((q) => ({ ...q, live: false as const }))];
 
   return (
     <div className="space-y-5">
@@ -43,16 +74,17 @@ function Approvals() {
       <Card>
         <CardHead title={`Awaiting QS review · ${queue.length}`} subtitle="Highest-value items shown first" />
         <div className="divide-y divide-[var(--ink-200)]">
-          {queue.map(({ c, state }) => (
+          {queue.map(({ c, state, live }) => (
             <div key={c.ref} className="flex flex-wrap items-center gap-3 px-5 py-3 text-[12.5px]">
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">
                   <Link to="/calloffs/$ref" params={{ ref: c.ref }} className="hover:underline">{c.ref}</Link>
                   <span className="ml-2 text-[var(--ink-700)]">{c.item}</span>
+                  {live && <span className="ml-2 rounded bg-[var(--accent-500)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-500)]">LIVE</span>}
                 </p>
                 <p className="text-[11px] text-[var(--ink-500)]">{c.subtitle} · {c.supplier} · need by {c.needBy}</p>
               </div>
-              <span className="font-mono-num font-semibold">{fmtMoney(c.value)}</span>
+              <span className="font-mono-num font-semibold">{c.value ? fmtMoney(c.value) : "—"}</span>
               <StatusBadge tone={STATE_TONE[state]} dot>{STATE_LABEL[state]}</StatusBadge>
               <Gated cap="approve.calloffs">
                 <div className="flex gap-1.5">
@@ -61,6 +93,7 @@ function Approvals() {
                   </Button>
                   <Button size="sm" onClick={() => {
                     recordCallOffAction({ ref: c.ref, kind: "approve", stateAfter: "approved" });
+                    if (live) updateCallOffStatus(current.id, c.ref, "sent");
                     toast.success("Approved", { description: `${c.ref} approved · PO queued` });
                   }}>
                     <ShieldCheck className="mr-1 h-3 w-3" /> Approve
