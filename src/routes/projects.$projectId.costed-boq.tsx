@@ -176,6 +176,7 @@ function LiveBoQ({ projectId }: { projectId: string }) {
                   <th className="px-4 py-2.5 text-right font-semibold">Rate £</th>
                   <th className="px-4 py-2.5 text-left font-semibold">Supplier</th>
                   <th className="px-4 py-2.5 text-right font-semibold">Line £</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Impact £</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--ink-200)]">
@@ -184,6 +185,33 @@ function LiveBoQ({ projectId }: { projectId: string }) {
                   const rate = la.line.ratePerUnit ?? 0;
                   const lineTotal = rate * la.approved;
                   const stat = statFor(supplier);
+                  const pct = stat?.variationPct ?? 0;
+                  const impact = (lineTotal * pct) / 100;
+                  // tone: green = saving / flat, amber = mild uplift, red = significant uplift
+                  const tone =
+                    !stat || lineTotal === 0
+                      ? "muted"
+                      : pct <= 0
+                        ? "good"
+                        : pct <= 2 || Math.abs(impact) < 200
+                          ? "warn"
+                          : "bad";
+                  const toneText =
+                    tone === "good"
+                      ? "text-[var(--green-600)]"
+                      : tone === "warn"
+                        ? "text-[var(--amber-500)]"
+                        : tone === "bad"
+                          ? "text-[var(--red-500)]"
+                          : "text-[var(--ink-500)]";
+                  const toneBg =
+                    tone === "good"
+                      ? "bg-[var(--green-600)]/10"
+                      : tone === "warn"
+                        ? "bg-[var(--amber-500)]/15"
+                        : tone === "bad"
+                          ? "bg-[var(--red-500)]/10"
+                          : "";
                   return (
                     <tr key={la.line.id} className="hover:bg-[var(--ink-50)]">
                       <td className="px-4 py-3 font-semibold">{la.line.material}</td>
@@ -193,13 +221,23 @@ function LiveBoQ({ projectId }: { projectId: string }) {
                       <td className="px-4 py-3 text-right font-mono-num">{rate > 0 ? `£${rate.toFixed(2)}` : "—"}</td>
                       <td className="px-4 py-3 text-[12px] text-[var(--ink-700)]">
                         <span>{supplier}</span>
-                        {stat && stat.variationPct !== 0 && (
-                          <span className={`ml-1.5 inline-flex items-center gap-0.5 rounded px-1 text-[10.5px] font-semibold ${stat.variationPct > 0 ? "bg-[var(--red-500)]/10 text-[var(--red-500)]" : "bg-[var(--green-600)]/10 text-[var(--green-600)]"}`} title={`Since ${stat.lastUpload}`}>
-                            {stat.variationPct > 0 ? "+" : ""}{stat.variationPct.toFixed(1)}%
+                        {stat && pct !== 0 && (
+                          <span className={`ml-1.5 inline-flex items-center gap-0.5 rounded px-1 text-[10.5px] font-semibold ${toneBg} ${toneText}`} title={`Since ${stat.lastUpload}`}>
+                            {pct > 0 ? "+" : ""}{pct.toFixed(1)}%
                           </span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right font-mono-num font-semibold">{lineTotal > 0 ? `£${lineTotal.toLocaleString()}` : "—"}</td>
+                      <td className="px-4 py-3 text-right font-mono-num font-semibold">
+                        {stat && lineTotal > 0 && pct !== 0 ? (
+                          <span className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 ${toneBg} ${toneText}`} title={`${pct > 0 ? "+" : ""}${pct.toFixed(1)}% since ${stat.lastUpload}`}>
+                            {impact > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                            {impact > 0 ? "+" : "−"}£{Math.abs(impact).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </span>
+                        ) : (
+                          <span className="text-[var(--ink-500)]">—</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
