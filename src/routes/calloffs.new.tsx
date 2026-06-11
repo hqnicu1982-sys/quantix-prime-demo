@@ -12,6 +12,8 @@ import { Check, ChevronRight, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProject } from "@/lib/ProjectContext";
 import { useBoqAllocation, reserve } from "@/lib/boqAllocation";
+import { addCallOff } from "@/lib/projectData";
+import { recordCallOffAction } from "@/lib/callOffActions";
 
 export const Route = createFileRoute("/calloffs/new")({ component: Guarded });
 
@@ -52,6 +54,12 @@ function NewCallOff() {
   const [selectedLineId, setSelectedLineId] = useState<string>(firstAvailable?.id ?? "");
   const selected = lineOptions.find((o) => o.id === selectedLineId) ?? firstAvailable;
   const [qty, setQty] = useState<number>(selected?.remaining ?? 0);
+  const SUPPLIERS = [
+    "Minster",
+    "CCF",
+    "Knauf Direct",
+  ];
+  const [supplier, setSupplier] = useState<string>(SUPPLIERS[0]);
 
   const remaining = selected?.remaining ?? 0;
   const exceed = qty > remaining;
@@ -59,12 +67,22 @@ function NewCallOff() {
 
   const handleSubmit = () => {
     if (!selected) return;
-    const coId = `CO-${Math.floor(Math.random() * 900 + 100)}`;
-    reserve(current.id, coId, selected.id, qty);
-    toast.success("Call-off submitted", {
-      description: `${qty.toLocaleString()} ${selected.unit} of ${selected.material} reserved (Draft → Submitted) · ${coId}`,
+    const co = addCallOff(current.id, {
+      supplier,
+      lineIds: [selected.id],
+      status: "draft",
     });
-    nav({ to: "/calloffs" });
+    reserve(current.id, co.id, selected.id, qty);
+    recordCallOffAction({
+      ref: co.id,
+      kind: "submit",
+      stateAfter: "submitted",
+      note: `${qty.toLocaleString()} ${selected.unit} of ${selected.material}`,
+    });
+    toast.success("Call-off submitted", {
+      description: `${qty.toLocaleString()} ${selected.unit} of ${selected.material} reserved · ${co.id}`,
+    });
+    nav({ to: "/calloffs/$ref", params: { ref: co.id } });
   };
 
   return (
@@ -135,10 +153,14 @@ function NewCallOff() {
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Supplier</Label>
-                <select className="h-9 w-full rounded-md border border-[var(--ink-200)] bg-background px-3 text-[13px]">
-                  <option>Minster (framework · −2.1% vs benchmark)</option>
-                  <option>CCF (preferred · acoustic)</option>
-                  <option>Knauf Direct (project-specific)</option>
+                <select
+                  className="h-9 w-full rounded-md border border-[var(--ink-200)] bg-background px-3 text-[13px]"
+                  value={supplier}
+                  onChange={(e) => setSupplier(e.target.value)}
+                >
+                  {SUPPLIERS.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-1.5">
