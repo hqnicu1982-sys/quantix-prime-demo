@@ -169,6 +169,60 @@ export function exportProjectPack(project: Project, data: ProjectData) {
       inv.state,
     ]),
   });
+  y = (doc as any).lastAutoTable.finalY + 24;
+
+  // ---- Variations register
+  const vos = getProjectVariations(project.id);
+  if (vos.length > 0) {
+    if (y > 680) { doc.addPage(); y = margin; }
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(12);
+    doc.text(`Variations register (${vos.length})`, margin, y);
+    autoTable(doc, {
+      startY: y + 12,
+      theme: "striped",
+      styles: { fontSize: 8.5, cellPadding: 4 },
+      head: [["VO", "Title", "Raised by", "Status", "Cost £", "Days"]],
+      body: vos.map((v) => [
+        v.id,
+        v.title.length > 60 ? v.title.slice(0, 57) + "…" : v.title,
+        v.raisedBy,
+        v.status,
+        `${v.costImpact < 0 ? "-" : ""}£${Math.abs(v.costImpact).toLocaleString()}`,
+        `${v.timeImpactDays >= 0 ? "+" : ""}${v.timeImpactDays}`,
+      ]),
+    });
+    y = (doc as any).lastAutoTable.finalY + 20;
+  }
+
+  // ---- GRN evidence (signed deliveries with photos/signature)
+  const projectGrns = getGrns({ projectId: project.id });
+  if (projectGrns.length > 0) {
+    if (y > 680) { doc.addPage(); y = margin; }
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(12);
+    doc.text(`GRN evidence (${projectGrns.length})`, margin, y);
+    autoTable(doc, {
+      startY: y + 12,
+      theme: "grid",
+      styles: { fontSize: 8.5, cellPadding: 4 },
+      head: [["GRN", "Call-off", "Supplier", "Signed by", "DN ref", "Driver", "Evidence"]],
+      body: projectGrns.map((g) => [
+        g.id.slice(0, 24),
+        g.callOffRef,
+        g.supplier,
+        g.signedBy ?? "—",
+        g.deliveryNoteRef ?? "—",
+        g.driverName ?? "—",
+        [
+          g.signature ? "✓ signature" : "",
+          g.photos && g.photos.length ? `${g.photos.length} photo${g.photos.length === 1 ? "" : "s"}` : "",
+        ].filter(Boolean).join(" · ") || "—",
+      ]),
+    });
+  }
 
   // ---- Footer on every page
   const pageCount = doc.getNumberOfPages();
