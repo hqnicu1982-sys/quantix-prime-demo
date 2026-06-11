@@ -2,187 +2,149 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
-import { invoices } from "@/lib/mockData";
-import { matchLines } from "@/lib/invoiceWorkflow";
 import { ArrowLeft, FileText, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useProject } from "@/lib/ProjectContext";
-import { useProjectData } from "@/lib/projectData";
-import { useCallOffActions } from "@/lib/callOffActions";
+import { useGrn } from "@/lib/grnRegistry";
+import { invoices } from "@/lib/mockData";
+
+const STATUS_TONE = {
+  scheduled:    "neutral" as const,
+  "in-transit": "info" as const,
+  partial:      "warning" as const,
+  received:     "success" as const,
+};
+const STATUS_LABEL = {
+  scheduled:    "Scheduled",
+  "in-transit": "In transit",
+  partial:      "Partial GRN",
+  received:     "GRN signed",
+};
 
 export const Route = createFileRoute("/grn/$ref")({
   component: GrnDetail,
   notFoundComponent: () => (
     <Card><div className="p-6 text-center text-[13px]">
       <p className="font-semibold">GRN not found</p>
-      <Button asChild className="mt-3" size="sm"><Link to="/invoices">Back to invoices</Link></Button>
+      <Button asChild className="mt-3" size="sm"><Link to="/calloffs/deliveries">Back to deliveries</Link></Button>
     </div></Card>
   ),
 });
 
 function GrnDetail() {
   const { ref } = Route.useParams();
-  const { current } = useProject();
-  const projectData = useProjectData(current.id);
-  const grnActions = useCallOffActions().filter((a) => a.kind === "log-grn");
+  const grn = useGrn(ref);
+  if (!grn) throw notFound();
 
-  // Live path: ref points at a live call-off id (co-...) or its GRN id (GRN-co-...).
-  const liveCallOffId = ref.startsWith("GRN-") ? ref.slice(4) : ref;
-  const liveCo = projectData.callOffs.find((c) => c.id === liveCallOffId);
-  if (liveCo) {
-    const lineById = new Map(projectData.boqLines.map((l) => [l.id, l]));
-    const lines = liveCo.lineIds.map((id) => lineById.get(id)).filter(Boolean) as NonNullable<ReturnType<typeof lineById.get>>[];
-    const action = grnActions.find((a) => a.ref === liveCallOffId);
-    const signedAt = action ? new Date(action.ts).toLocaleDateString() : "—";
-    const signedBy = action?.actor ?? "Not yet signed";
-    return (
-      <div className="space-y-5">
-        <div className="flex items-center justify-between">
-          <Button asChild size="sm" variant="ghost">
-            <Link to="/calloffs/$ref" params={{ ref: liveCallOffId }}>
-              <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to call-off {liveCallOffId}
-            </Link>
-          </Button>
-          <StatusBadge tone={action ? (action.grnPartial ? "warning" : "success") : "neutral"} dot>
-            {action ? (action.grnPartial ? "Partial GRN" : "GRN signed") : "Awaiting delivery"}
-          </StatusBadge>
-        </div>
-        <Card>
-          <CardHead
-            title={`GRN-${liveCallOffId} · ${liveCo.supplier}`}
-            subtitle={`${current.name} · delivery against call-off ${liveCallOffId}`}
-            right={<span className="text-[10.5px] text-[var(--ink-500)]"><Truck className="inline h-3 w-3" /> proof of delivery</span>}
-          />
-          <div className="grid gap-4 p-5 md:grid-cols-3">
-            <Kpi label="Received" value={signedAt} tone={action ? "info" : "neutral"} />
-            <Kpi label="Signed by" value={signedBy} />
-            <Kpi label="Linked call-off" value={liveCallOffId} tone="info" />
-          </div>
-          {action?.note && (
-            <div className="border-t border-[var(--ink-200)] px-5 py-3 text-[12px] text-[var(--ink-500)]">
-              <span className="font-semibold text-[var(--ink-700)]">Note:</span> {action.note}
-            </div>
-          )}
-        </Card>
-        <Card>
-          <CardHead title="Goods received" subtitle="BoQ-linked materials on this delivery" />
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
-              <thead className="bg-[var(--ink-50)] text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
-                <tr>
-                  <th className="px-4 py-2.5 text-left font-semibold">Material</th>
-                  <th className="px-4 py-2.5 text-right font-semibold">Qty ordered</th>
-                  <th className="px-4 py-2.5 text-left font-semibold">Unit</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--ink-200)]">
-                {lines.length === 0 && (
-                  <tr><td colSpan={3} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">No BoQ lines linked.</td></tr>
-                )}
-                {lines.map((l) => (
-                  <tr key={l.id}>
-                    <td className="px-4 py-3 font-medium">{l.material}</td>
-                    <td className="px-4 py-3 text-right font-mono-num">{l.qty.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-[12px] text-[var(--ink-500)]">{l.unit}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      </div>
-    );
-  }
+  // Find the linked invoice if this GRN came from one (preserves the
+  // PO ↔ GRN ↔ Invoice chain on legacy detail pages).
+  const linkedInvoice = grn.sourceInvoiceId
+    ? invoices.find((i) => i.id === grn.sourceInvoiceId)
+    : invoices.find((i) => i.callOffRef === grn.callOffRef);
 
-  const inv = invoices.find((i) => i.id === ref);
-  if (!inv) throw notFound();
-  const lines = matchLines[ref] ?? [];
-  const grnId = `GRN-${ref}`;
-  const signedBy = inv.supplier === "Minster" ? "Tom B (foreman)" : "Sarah M (site QS)";
-  const signedAt = inv.received;
+  const signedAtDisplay = grn.signedAt
+    ? (grn.signedAt.includes("T") ? new Date(grn.signedAt).toLocaleString() : grn.signedAt)
+    : "—";
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <Button asChild size="sm" variant="ghost">
-          <Link to="/invoices/$ref" params={{ ref }}>
-            <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to invoice {ref}
+          <Link to="/calloffs/$ref" params={{ ref: grn.callOffRef }}>
+            <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to call-off {grn.callOffRef}
           </Link>
         </Button>
-        <StatusBadge tone={lines.some((l) => l.grnQty !== l.poQty) ? "warning" : "success"} dot>
-          {lines.some((l) => l.grnQty !== l.poQty) ? "Quantity discrepancy" : "GRN signed"}
-        </StatusBadge>
+        <StatusBadge tone={STATUS_TONE[grn.status]} dot>{STATUS_LABEL[grn.status]}</StatusBadge>
       </div>
 
       <Card>
         <CardHead
-          title={`${grnId} · ${inv.supplier}`}
-          subtitle={`Delivery against ${inv.poRef} · received ${signedAt}`}
+          title={`${grn.id} · ${grn.supplier}`}
+          subtitle={`Delivery against ${grn.callOffRef}${linkedInvoice ? ` · invoice ${linkedInvoice.id}` : ""}`}
           right={<span className="text-[10.5px] text-[var(--ink-500)]"><Truck className="inline h-3 w-3" /> proof of delivery</span>}
         />
         <div className="grid gap-4 p-5 md:grid-cols-3">
-          <Kpi label="Received" value={signedAt} tone="info" />
-          <Kpi label="Signed by" value={signedBy} />
-          <Kpi label="Linked PO" value={inv.poRef} tone="info" />
+          <Kpi label="Signed at" value={signedAtDisplay} tone={grn.signedAt ? "info" : "neutral"} />
+          <Kpi label="Signed by" value={grn.signedBy ?? "Awaiting delivery"} />
+          <Kpi label="Quantity" value={grn.qty} />
         </div>
+        {grn.note && (
+          <div className="border-t border-[var(--ink-200)] px-5 py-3 text-[12px] text-[var(--ink-500)]">
+            <span className="font-semibold text-[var(--ink-700)]">Note:</span> {grn.note}
+          </div>
+        )}
       </Card>
 
-      <Card>
-        <CardHead title="Goods received" subtitle="Per-line delivery quantities against the PO" />
-        <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
-            <thead className="bg-[var(--ink-50)] text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
-              <tr>
-                <th className="px-4 py-2.5 text-left font-semibold">Material</th>
-                <th className="px-4 py-2.5 text-right font-semibold">PO qty</th>
-                <th className="px-4 py-2.5 text-right font-semibold">GRN qty</th>
-                <th className="px-4 py-2.5 text-right font-semibold">Δ qty</th>
-                <th className="px-4 py-2.5 text-left font-semibold">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--ink-200)]">
-              {lines.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">No line detail captured.</td></tr>
-              )}
-              {lines.map((l, i) => {
-                const delta = l.grnQty - l.poQty;
-                return (
-                  <tr key={i} className={cn(delta !== 0 && "bg-[var(--amber-500)]/5")}>
-                    <td className="px-4 py-3 font-medium">{l.material}</td>
-                    <td className="px-4 py-3 text-right font-mono-num">{l.poQty.toLocaleString()} {l.unit}</td>
-                    <td className={cn("px-4 py-3 text-right font-mono-num", delta !== 0 && "font-semibold text-[var(--amber-500)]")}>{l.grnQty.toLocaleString()}</td>
-                    <td className={cn("px-4 py-3 text-right font-mono-num", delta > 0 ? "text-[var(--green-600)]" : delta < 0 ? "text-[var(--red-500)]" : "text-[var(--ink-500)]")}>
-                      {delta === 0 ? "0" : `${delta > 0 ? "+" : ""}${delta}`}
-                    </td>
-                    <td className="px-4 py-3 text-[11.5px]">
-                      {delta === 0 ? "Matches PO" : delta > 0 ? "Over-delivery flagged" : "Short delivery"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      {grn.lines && grn.lines.length > 0 && (
+        <Card>
+          <CardHead title="Goods received" subtitle="Per-line delivery quantities against the PO" />
+          <div className="overflow-x-auto">
+            <table className="w-full text-[13px]">
+              <thead className="bg-[var(--ink-50)] text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+                <tr>
+                  <th className="px-4 py-2.5 text-left font-semibold">Material</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Ordered</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Received</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Δ qty</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--ink-200)]">
+                {grn.lines.map((l, i) => {
+                  const delta = l.receivedQty - l.orderedQty;
+                  return (
+                    <tr key={i} className={cn(delta !== 0 && "bg-[var(--amber-500)]/5")}>
+                      <td className="px-4 py-3 font-medium">{l.material}</td>
+                      <td className="px-4 py-3 text-right font-mono-num">{l.orderedQty.toLocaleString()} {l.unit}</td>
+                      <td className={cn("px-4 py-3 text-right font-mono-num", delta !== 0 && "font-semibold text-[var(--amber-500)]")}>{l.receivedQty.toLocaleString()}</td>
+                      <td className={cn("px-4 py-3 text-right font-mono-num", delta > 0 ? "text-[var(--green-600)]" : delta < 0 ? "text-[var(--red-500)]" : "text-[var(--ink-500)]")}>
+                        {delta === 0 ? "0" : `${delta > 0 ? "+" : ""}${delta}`}
+                      </td>
+                      <td className="px-4 py-3 text-[11.5px]">
+                        {delta === 0 ? "Matches PO" : delta > 0 ? "Over-delivery flagged" : "Short delivery"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       <Card>
         <CardHead title="Linked documents" subtitle="Trace the commit ↔ delivery ↔ invoice chain" />
         <div className="grid gap-3 p-5 sm:grid-cols-3">
-          <Link to="/po/$poRef" params={{ poRef: inv.poRef }} className="rounded-md border border-[var(--ink-200)] p-3 hover:border-[var(--accent-500)]/40 hover:bg-[var(--ink-50)]">
-            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-[var(--ink-500)]"><FileText className="h-3 w-3" /> Purchase order</div>
-            <div className="mt-1 text-[13px] font-semibold">{inv.poRef}</div>
-            <div className="text-[11.5px] text-[var(--ink-500)]">£{inv.expected.toLocaleString()} committed</div>
-          </Link>
-          <Link to="/invoices/$ref" params={{ ref }} className="rounded-md border border-[var(--ink-200)] p-3 hover:border-[var(--accent-500)]/40 hover:bg-[var(--ink-50)]">
-            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-[var(--ink-500)]"><FileText className="h-3 w-3" /> Invoice</div>
-            <div className="mt-1 text-[13px] font-semibold">{ref}</div>
-            <div className="text-[11.5px] text-[var(--ink-500)]">£{inv.invoiced.toLocaleString()}</div>
-          </Link>
-          <div className="rounded-md border border-[var(--ink-200)] p-3">
+          {linkedInvoice ? (
+            <Link to="/po/$poRef" params={{ poRef: linkedInvoice.poRef }} className="rounded-md border border-[var(--ink-200)] p-3 hover:border-[var(--accent-500)]/40 hover:bg-[var(--ink-50)]">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-[var(--ink-500)]"><FileText className="h-3 w-3" /> Purchase order</div>
+              <div className="mt-1 text-[13px] font-semibold">{linkedInvoice.poRef}</div>
+              <div className="text-[11.5px] text-[var(--ink-500)]">£{linkedInvoice.expected.toLocaleString()} committed</div>
+            </Link>
+          ) : (
+            <div className="rounded-md border border-[var(--ink-200)] p-3">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-[var(--ink-500)]"><FileText className="h-3 w-3" /> Purchase order</div>
+              <div className="mt-1 text-[13px] font-semibold">Pending</div>
+              <div className="text-[11.5px] text-[var(--ink-500)]">PO not yet issued</div>
+            </div>
+          )}
+          {linkedInvoice ? (
+            <Link to="/invoices/$ref" params={{ ref: linkedInvoice.id }} className="rounded-md border border-[var(--ink-200)] p-3 hover:border-[var(--accent-500)]/40 hover:bg-[var(--ink-50)]">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-[var(--ink-500)]"><FileText className="h-3 w-3" /> Invoice</div>
+              <div className="mt-1 text-[13px] font-semibold">{linkedInvoice.id}</div>
+              <div className="text-[11.5px] text-[var(--ink-500)]">£{linkedInvoice.invoiced.toLocaleString()}</div>
+            </Link>
+          ) : (
+            <div className="rounded-md border border-[var(--ink-200)] p-3">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-[var(--ink-500)]"><FileText className="h-3 w-3" /> Invoice</div>
+              <div className="mt-1 text-[13px] font-semibold">Awaiting</div>
+              <div className="text-[11.5px] text-[var(--ink-500)]">No invoice received yet</div>
+            </div>
+          )}
+          <Link to="/calloffs/$ref" params={{ ref: grn.callOffRef }} className="rounded-md border border-[var(--ink-200)] p-3 hover:border-[var(--accent-500)]/40 hover:bg-[var(--ink-50)]">
             <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-[var(--ink-500)]"><FileText className="h-3 w-3" /> Call-off</div>
-            <div className="mt-1 text-[13px] font-semibold">{inv.callOffRef}</div>
+            <div className="mt-1 text-[13px] font-semibold">{grn.callOffRef}</div>
             <div className="text-[11.5px] text-[var(--ink-500)]">Framework draw-down</div>
-          </div>
+          </Link>
         </div>
       </Card>
     </div>

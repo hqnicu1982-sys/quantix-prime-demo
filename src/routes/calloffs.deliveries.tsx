@@ -3,12 +3,11 @@ import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { WorkflowStrip } from "@/components/calloffs/WorkflowStrip";
-import { deliveries } from "@/lib/callOffWorkflow";
 import { Gated } from "@/components/auth/Gated";
 import { Truck, PackageCheck } from "lucide-react";
 import { useState } from "react";
 import { LogGrnDialog } from "@/components/calloffs/CallOffActionDialogs";
-import { useCallOffActions, latestCallOffAction } from "@/lib/callOffActions";
+import { useGrns } from "@/lib/grnRegistry";
 
 export const Route = createFileRoute("/calloffs/deliveries")({ component: Deliveries });
 
@@ -26,8 +25,11 @@ const LABEL = {
 };
 
 function Deliveries() {
-  const all = useCallOffActions();
-  const [grnFor, setGrnFor] = useState<{ ref: string; qty: string } | null>(null);
+  const grns = useGrns();
+  const [grnFor, setGrnFor] = useState<{ ref: string; qty: string; supplier: string } | null>(null);
+  const inboundThisWeek = grns.filter((g) => g.status === "scheduled" || g.status === "in-transit").length;
+  const partialOpen = grns.filter((g) => g.status === "partial").length;
+  const receivedMtd = grns.filter((g) => g.status === "received").length;
   return (
     <div className="space-y-5">
       <Card>
@@ -38,19 +40,19 @@ function Deliveries() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Inbound this week" value="3" tone="info" />
-        <Kpi label="Partial GRN open" value="1" tone="warning" delta="CO-245 · 380 m short" />
-        <Kpi label="Received MTD" value="14" tone="success" />
+        <Kpi label="Inbound this week" value={String(inboundThisWeek)} tone="info" />
+        <Kpi label="Partial GRN open" value={String(partialOpen)} tone={partialOpen ? "warning" : "neutral"} />
+        <Kpi label="Received MTD" value={String(receivedMtd)} tone="success" />
         <Kpi label="Disputes" value="0" tone="neutral" />
       </div>
 
       <Card>
-        <CardHead title="Deliveries" subtitle="Logged from Daily Site Report or via GRN scan" />
+        <CardHead title="Deliveries" subtitle="Live from the GRN registry — every logged delivery, persistent across pages." />
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead className="bg-[var(--ink-50)] text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
               <tr>
-                <th className="px-4 py-2.5 text-left font-semibold">Delivery</th>
+                <th className="px-4 py-2.5 text-left font-semibold">GRN</th>
                 <th className="px-4 py-2.5 text-left font-semibold">Call-off</th>
                 <th className="px-4 py-2.5 text-left font-semibold">Supplier</th>
                 <th className="px-4 py-2.5 text-left font-semibold">Qty</th>
@@ -60,26 +62,32 @@ function Deliveries() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--ink-200)]">
-              {deliveries.map((d) => {
-                const logged = latestCallOffAction(d.callOff, all.filter((a) => a.kind === "log-grn"));
-                const status = logged ? (logged.grnPartial ? "partial" : "received") : d.status;
+              {grns.length === 0 && (
+                <tr><td colSpan={7} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">No deliveries logged yet.</td></tr>
+              )}
+              {grns.map((g) => {
+                const signedDisplay = g.signedAt
+                  ? (g.signedAt.includes("T") ? new Date(g.signedAt).toLocaleString() : g.signedAt)
+                  : (g.eta ?? "—");
                 return (
-                <tr key={d.ref} className="hover:bg-[var(--ink-50)]">
-                  <td className="px-4 py-3 font-mono-num text-[12px]">{d.ref}</td>
+                <tr key={g.id} className="hover:bg-[var(--ink-50)]">
                   <td className="px-4 py-3 font-mono-num text-[12px]">
-                    <Link to="/calloffs/$ref" params={{ ref: d.callOff }} className="hover:underline">{d.callOff}</Link>
+                    <Link to="/grn/$ref" params={{ ref: g.id }} className="hover:underline">{g.id}</Link>
                   </td>
-                  <td className="px-4 py-3 font-semibold">{d.supplier}</td>
-                  <td className="px-4 py-3 text-[12px]">{logged?.grnQty ?? d.qty}</td>
+                  <td className="px-4 py-3 font-mono-num text-[12px]">
+                    <Link to="/calloffs/$ref" params={{ ref: g.callOffRef }} className="hover:underline">{g.callOffRef}</Link>
+                  </td>
+                  <td className="px-4 py-3 font-semibold">{g.supplier}</td>
+                  <td className="px-4 py-3 text-[12px]">{g.qty}</td>
                   <td className="px-4 py-3 text-[12px]">
                     <Truck className="mr-1 inline h-3 w-3 text-[var(--ink-500)]" />
-                    {logged ? `GRN ${new Date(logged.ts).toLocaleString()}` : (d.grnBy ?? d.eta)}
+                    {g.signedBy ? `${g.signedBy} · ${signedDisplay}` : signedDisplay}
                   </td>
-                  <td className="px-4 py-3"><StatusBadge tone={TONE[status]} dot>{LABEL[status]}</StatusBadge></td>
+                  <td className="px-4 py-3"><StatusBadge tone={TONE[g.status]} dot>{LABEL[g.status]}</StatusBadge></td>
                   <td className="px-4 py-3 text-right">
-                    {status !== "received" && (
+                    {g.status !== "received" && (
                       <Gated cap="create.calloffs">
-                        <Button size="sm" variant="outline" onClick={() => setGrnFor({ ref: d.callOff, qty: d.qty })}>
+                        <Button size="sm" variant="outline" onClick={() => setGrnFor({ ref: g.callOffRef, qty: g.qty, supplier: g.supplier })}>
                           <PackageCheck className="mr-1 h-3 w-3" /> Log GRN
                         </Button>
                       </Gated>
@@ -93,7 +101,7 @@ function Deliveries() {
         </div>
       </Card>
       {grnFor && (
-        <LogGrnDialog ref={grnFor.ref} defaultQty={grnFor.qty} open={!!grnFor} onOpenChange={(v) => !v && setGrnFor(null)} />
+        <LogGrnDialog ref={grnFor.ref} defaultQty={grnFor.qty} supplier={grnFor.supplier} open={!!grnFor} onOpenChange={(v) => !v && setGrnFor(null)} />
       )}
     </div>
   );

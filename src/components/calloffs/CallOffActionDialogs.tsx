@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { recordCallOffAction, REJECT_REASONS } from "@/lib/callOffActions";
+import { logGrn } from "@/lib/grnRegistry";
+import { useProject } from "@/lib/ProjectContext";
+import { currentUser } from "@/lib/mockData";
 import { X, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -73,14 +76,16 @@ export function RejectCallOffDialog({ ref, open, onOpenChange }: RejectProps) {
 type GrnProps = {
   ref: string;
   defaultQty?: string;
+  supplier?: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
 };
 
-export function LogGrnDialog({ ref, defaultQty, open, onOpenChange }: GrnProps) {
+export function LogGrnDialog({ ref, defaultQty, supplier, open, onOpenChange }: GrnProps) {
   const [qty, setQty] = useState(defaultQty ?? "");
   const [partial, setPartial] = useState(false);
   const [note, setNote] = useState("");
+  const { current } = useProject();
   const submit = () => {
     if (!qty.trim()) { toast.error("Enter the received quantity"); return; }
     recordCallOffAction({
@@ -90,6 +95,15 @@ export function LogGrnDialog({ ref, defaultQty, open, onOpenChange }: GrnProps) 
       grnQty: qty,
       grnPartial: partial,
       note,
+    });
+    logGrn({
+      callOffRef: ref,
+      projectId: current?.id,
+      supplier: supplier ?? "—",
+      qty,
+      partial,
+      note,
+      signedBy: currentUser.name,
     });
     toast.success(partial ? "Partial GRN logged" : "GRN logged · call-off closed", {
       description: `${ref} · ${qty}${note ? " · " + note : ""}`,
