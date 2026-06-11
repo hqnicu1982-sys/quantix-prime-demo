@@ -20,10 +20,12 @@ import {
 import { Plus } from "lucide-react";
 import { addDays, addTask, isoDate, PLANNER_TODAY } from "@/lib/planner";
 import { useProjectCrews } from "@/lib/labour";
+import { useProjectData } from "@/lib/projectData";
 import { toast } from "sonner";
 
 export function NewTaskDialog({ projectId }: { projectId: string }) {
   const crews = useProjectCrews(projectId);
+  const projectData = useProjectData(projectId);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [level, setLevel] = useState("L4");
@@ -31,6 +33,7 @@ export function NewTaskDialog({ projectId }: { projectId: string }) {
   const [start, setStart] = useState(isoDate(PLANNER_TODAY));
   const [end, setEnd] = useState(addDays(isoDate(PLANNER_TODAY), 5));
   const [plannedHours, setPlannedHours] = useState<string>("");
+  const [boqLineIds, setBoqLineIds] = useState<string[]>([]);
 
   const reset = () => {
     setTitle("");
@@ -39,6 +42,7 @@ export function NewTaskDialog({ projectId }: { projectId: string }) {
     setStart(isoDate(PLANNER_TODAY));
     setEnd(addDays(isoDate(PLANNER_TODAY), 5));
     setPlannedHours("");
+    setBoqLineIds([]);
   };
 
   const submit = () => {
@@ -53,12 +57,16 @@ export function NewTaskDialog({ projectId }: { projectId: string }) {
       end,
       progress: 0,
       status: "scheduled",
-      boqLineIds: [],
+      boqLineIds,
       calloffIds: [],
       dependsOn: [],
       plannedHours: hrs && Number.isFinite(hrs) && hrs > 0 ? hrs : undefined,
     });
-    toast.success("Task added", { description: title.trim() });
+    toast.success("Task added", {
+      description: boqLineIds.length
+        ? `${title.trim()} · linked to ${boqLineIds.length} BoQ line${boqLineIds.length === 1 ? "" : "s"}`
+        : title.trim(),
+    });
     reset();
     setOpen(false);
   };
@@ -132,6 +140,40 @@ export function NewTaskDialog({ projectId }: { projectId: string }) {
               ) : (
                 "Assign a crew to see estimated cost"
               )}
+            </p>
+          </div>
+          <div className="col-span-2">
+            <Label className="text-[11px]">Link BoQ lines (drives auto call-offs)</Label>
+            {projectData.boqLines.length === 0 ? (
+              <p className="mt-1 rounded border border-dashed border-[var(--ink-200)] px-3 py-2 text-[11.5px] text-[var(--ink-500)]">
+                No BoQ lines on this project yet. Add a system from the Calculator first.
+              </p>
+            ) : (
+              <div className="mt-1 max-h-[140px] space-y-1 overflow-y-auto rounded border border-[var(--ink-200)] p-2">
+                {projectData.boqLines.map((l) => {
+                  const checked = boqLineIds.includes(l.id);
+                  return (
+                    <label key={l.id} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-[12px] hover:bg-[var(--ink-50)]">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) =>
+                          setBoqLineIds((prev) =>
+                            e.target.checked ? [...prev, l.id] : prev.filter((x) => x !== l.id),
+                          )
+                        }
+                      />
+                      <span className="flex-1 truncate">
+                        <span className="font-medium">{l.material}</span>
+                        <span className="ml-1 text-[var(--ink-500)]">· {l.qty} {l.unit}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+            <p className="mt-1 text-[11px] text-[var(--ink-500)]">
+              Linked lines feed the Auto call-off banner — proposals appear when these materials need to be on site before the task starts.
             </p>
           </div>
         </div>
