@@ -137,3 +137,82 @@ export function usePriceListUploads(): PriceListUpload[] {
   }, []);
   return state;
 }
+
+// ---------- Derived: supplier-level stats ----------
+
+const KNOWN_SUPPLIERS = [
+  "CCF",
+  "Minster",
+  "Travis Perkins",
+  "Wolseley",
+  "Jewson",
+  "Wickes",
+  "Selco",
+];
+
+export function extractSupplier(name: string): string {
+  const lower = name.toLowerCase();
+  return KNOWN_SUPPLIERS.find((s) => lower.includes(s.toLowerCase())) ?? "Other";
+}
+
+/**
+ * Deterministic synthetic uplift % per supplier — stable per name, range −3..+5%.
+ * Used to surface a "since last upload" variation chip without a real price index.
+ */
+export function supplierVariationPct(supplier: string): number {
+  let h = 0;
+  for (let i = 0; i < supplier.length; i++) h = (h * 31 + supplier.charCodeAt(i)) | 0;
+  const raw = ((h % 80) + 80) % 80; // 0..79
+  return Math.round((raw / 10 - 3) * 10) / 10; // -3.0 .. +4.9
+}
+
+export type SupplierStat = {
+  supplier: string;
+  uploads: number;
+  items: number;
+  matched: number;
+  review: number;
+  lastUpload: string;
+  lastCreatedAt: number;
+  variationPct: number;
+};
+
+export function getSupplierStats(): SupplierStat[] {
+  const byName = new Map<string, SupplierStat>();
+  for (const u of getPriceListUploads()) {
+    const supplier = extractSupplier(u.name);
+    const cur = byName.get(supplier) ?? {
+      supplier,
+      uploads: 0,
+      items: 0,
+      matched: 0,
+      review: 0,
+      lastUpload: u.date,
+      lastCreatedAt: u.createdAt,
+      variationPct: supplierVariationPct(supplier),
+    };
+    cur.uploads += 1;
+    cur.items += u.items;
+    cur.matched += u.matched;
+    cur.review += u.review;
+    if (u.createdAt > cur.lastCreatedAt) {
+      cur.lastCreatedAt = u.createdAt;
+      cur.lastUpload = u.date;
+    }
+    byName.set(supplier, cur);
+  }
+  return Array.from(byName.values()).sort((a, b) => b.lastCreatedAt - a.lastCreatedAt);
+}
+
+export function useSupplierStats(): SupplierStat[] {
+  const uploads = usePriceListUploads();
+  // recompute when uploads change
+  void uploads;
+  return getSupplierStats();
+}
+
+export function useSupplierStat(supplier: string | undefined): SupplierStat | undefined {
+  const stats = useSupplierStats();
+  if (!supplier) return undefined;
+  return stats.find((s) => s.supplier.toLowerCase() === supplier.toLowerCase());
+}

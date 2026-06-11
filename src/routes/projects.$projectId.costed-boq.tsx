@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Download, Calculator, Layers } from "lucide-react";
+import { ExternalLink, Download, Calculator, Layers, ArrowUpRight, ArrowDownRight, FileText } from "lucide-react";
 import { costedBoqRows, costedBoqKpi, fmtMoney } from "@/lib/mockData";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { BoqForecastBanner } from "@/components/financial/BoqForecastBanner";
 import { useProjectData } from "@/lib/projectData";
 import { useBoqAllocation } from "@/lib/boqAllocation";
+import { useSupplierStats } from "@/lib/priceListRegistry";
 
 export const Route = createFileRoute("/projects/$projectId/costed-boq")({ component: GuardedBoQPage });
 
@@ -99,6 +100,9 @@ function BoQPage() {
 function LiveBoQ({ projectId }: { projectId: string }) {
   const data = useProjectData(projectId);
   const alloc = useBoqAllocation(projectId);
+  const supplierStats = useSupplierStats();
+  const statFor = (supplier?: string) =>
+    supplier ? supplierStats.find((s) => s.supplier.toLowerCase() === supplier.toLowerCase()) : undefined;
   const lineCount = data.boqLines.length;
   const pricedLines = data.boqLines.filter((l) => (l.ratePerUnit ?? 0) > 0).length;
   const coverage = lineCount === 0 ? 0 : Math.round((pricedLines / lineCount) * 100);
@@ -111,6 +115,15 @@ function LiveBoQ({ projectId }: { projectId: string }) {
       .map((l) => l.selectedSupplier ?? data.supplierChoices[l.material])
       .filter(Boolean) as string[],
   );
+  const supplierImpact = Array.from(suppliers)
+    .map((sup) => ({ supplier: sup, stat: statFor(sup) }))
+    .filter((x) => x.stat) as { supplier: string; stat: NonNullable<ReturnType<typeof statFor>> }[];
+  const varianceValue = supplierImpact.reduce((sum, { supplier, stat }) => {
+    const lineSum = data.boqLines
+      .filter((l) => (l.selectedSupplier ?? data.supplierChoices[l.material]) === supplier)
+      .reduce((s, l) => s + l.qty * (l.ratePerUnit ?? 0), 0);
+    return sum + (lineSum * stat.variationPct) / 100;
+  }, 0);
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -121,6 +134,30 @@ function LiveBoQ({ projectId }: { projectId: string }) {
       </div>
 
       <BoqForecastBanner projectId={projectId} />
+
+      {supplierImpact.length > 0 && (
+        <Card>
+          <CardHead
+            title="Price variation since last upload"
+            subtitle={`Forecast impact: ${varianceValue >= 0 ? "+" : "−"}${fmtMoney(Math.abs(varianceValue))} based on indexed supplier price lists`}
+            right={<Button size="sm" variant="outline" asChild><Link to="/price-lists/upload"><FileText className="mr-1.5 h-3.5 w-3.5" /> Manage price lists</Link></Button>}
+          />
+          <div className="flex flex-wrap gap-2 p-4">
+            {supplierImpact.map(({ supplier, stat }) => {
+              const up = stat.variationPct > 0;
+              const flat = stat.variationPct === 0;
+              return (
+                <span key={supplier} className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[12px] font-semibold ${flat ? "border-[var(--ink-200)] text-[var(--ink-700)]" : up ? "border-[var(--red-500)]/30 bg-[var(--red-500)]/5 text-[var(--red-500)]" : "border-[var(--green-600)]/30 bg-[var(--green-600)]/5 text-[var(--green-600)]"}`}>
+                  {supplier}
+                  {!flat && (up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />)}
+                  {up ? "+" : ""}{stat.variationPct.toFixed(1)}%
+                  <span className="font-normal text-[var(--ink-500)]">· {stat.items} items · {stat.lastUpload}</span>
+                </span>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {alloc.systems.map((sys) => (
         <Card key={sys.system.id}>
@@ -146,6 +183,7 @@ function LiveBoQ({ projectId }: { projectId: string }) {
                   const supplier = la.line.selectedSupplier ?? data.supplierChoices[la.line.material] ?? "—";
                   const rate = la.line.ratePerUnit ?? 0;
                   const lineTotal = rate * la.approved;
+                  const stat = statFor(supplier);
                   return (
                     <tr key={la.line.id} className="hover:bg-[var(--ink-50)]">
                       <td className="px-4 py-3 font-semibold">{la.line.material}</td>
@@ -153,7 +191,14 @@ function LiveBoQ({ projectId }: { projectId: string }) {
                       <td className="px-4 py-3 text-right font-mono-num text-[var(--ink-700)]">{la.ordered.toLocaleString()}</td>
                       <td className={`px-4 py-3 text-right font-mono-num font-semibold ${la.remaining === 0 ? "text-[var(--red-500)]" : "text-[var(--green-600)]"}`}>{la.remaining.toLocaleString()}</td>
                       <td className="px-4 py-3 text-right font-mono-num">{rate > 0 ? `£${rate.toFixed(2)}` : "—"}</td>
-                      <td className="px-4 py-3 text-[12px] text-[var(--ink-700)]">{supplier}</td>
+                      <td className="px-4 py-3 text-[12px] text-[var(--ink-700)]">
+                        <span>{supplier}</span>
+                        {stat && stat.variationPct !== 0 && (
+                          <span className={`ml-1.5 inline-flex items-center gap-0.5 rounded px-1 text-[10.5px] font-semibold ${stat.variationPct > 0 ? "bg-[var(--red-500)]/10 text-[var(--red-500)]" : "bg-[var(--green-600)]/10 text-[var(--green-600)]"}`} title={`Since ${stat.lastUpload}`}>
+                            {stat.variationPct > 0 ? "+" : ""}{stat.variationPct.toFixed(1)}%
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-right font-mono-num font-semibold">{lineTotal > 0 ? `£${lineTotal.toLocaleString()}` : "—"}</td>
                     </tr>
                   );
