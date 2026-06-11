@@ -6,6 +6,7 @@ import { useInvoices, useInvoiceTotals, markInvoicePaid } from "@/lib/invoiceReg
 import { toast } from "sonner";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
+import { matchLines } from "@/lib/invoiceWorkflow";
 
 export const Route = createFileRoute("/projects/$projectId/invoices")({ component: GuardedInvoicesPage });
 
@@ -14,14 +15,6 @@ function GuardedInvoicesPage() {
   if (!allowed) return <NoAccess cap="view.invoices" title="Invoices restricted" />;
   return <InvoicesPage />;
 }
-
-const invoices = [
-  { id: "CCF-10824", supplier: "CCF", date: "18 Apr", po: 7093, invoiced: 8340, variance: 1247, status: "variance" as const },
-  { id: "MIN-44218", supplier: "Minster", date: "17 Apr", po: 4820, invoiced: 4820, variance: 0, status: "matched" as const },
-  { id: "CCF-10818", supplier: "CCF", date: "15 Apr", po: 3776, invoiced: 3776, variance: 0, status: "matched" as const },
-  { id: "MIN-44201", supplier: "Minster", date: "12 Apr", po: 2410, invoiced: 2492, variance: 82, status: "matched" as const },
-  { id: "KNF-9981", supplier: "Knauf Direct", date: "08 Apr", po: 18420, invoiced: 18420, variance: 0, status: "paid" as const },
-];
 
 function InvoicesPage() {
   const { projectId } = Route.useParams();
@@ -36,6 +29,21 @@ function InvoicesPage() {
     if (aOverdue && bOverdue) return a.due.localeCompare(b.due); // most overdue first
     return a.due.localeCompare(b.due);
   });
+
+  // Reconciliation: derive PO vs invoiced from registry payables + matchLines.
+  const reconciliation = registry
+    .filter((r) => r.direction === "payable")
+    .map((inv) => {
+      const lines = matchLines[inv.reference] ?? [];
+      const poTotal = lines.reduce((s, l) => s + l.poQty * l.poRate, 0);
+      const invTotal = lines.reduce((s, l) => s + l.invQty * l.invRate, 0);
+      const po = poTotal > 0 ? poTotal : inv.amount;
+      const invoiced = invTotal > 0 ? invTotal : inv.amount;
+      const variance = Math.round(invoiced - po);
+      const status: "paid" | "variance" | "matched" =
+        inv.status === "paid" ? "paid" : Math.abs(variance) > 100 ? "variance" : "matched";
+      return { id: inv.reference, supplier: inv.counterparty, date: inv.issued, po, invoiced, variance, status };
+    });
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -136,15 +144,18 @@ function InvoicesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--ink-200)]">
-              {invoices.map((i) => (
+              {reconciliation.length === 0 && (
+                <tr><td colSpan={7} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">No payables to reconcile yet.</td></tr>
+              )}
+              {reconciliation.map((i) => (
                 <tr key={i.id} className="hover:bg-[var(--ink-50)]">
                   <td className="px-4 py-3 font-mono-num text-[12px] text-[var(--ink-700)]">{i.id}</td>
                   <td className="px-4 py-3 font-semibold">{i.supplier}</td>
                   <td className="px-4 py-3 text-[12px] text-[var(--ink-500)]">{i.date}</td>
-                  <td className="px-4 py-3 text-right font-mono-num">£{i.po.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right font-mono-num">£{i.invoiced.toLocaleString()}</td>
-                  <td className={`px-4 py-3 text-right font-mono-num font-semibold ${i.variance > 100 ? "text-[var(--red-500)]" : i.variance > 0 ? "text-[var(--amber-500)]" : "text-[var(--ink-500)]"}`}>
-                    {i.variance > 0 ? `+£${i.variance.toLocaleString()}` : "—"}
+                  <td className="px-4 py-3 text-right font-mono-num">£{Math.round(i.po).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right font-mono-num">£{Math.round(i.invoiced).toLocaleString()}</td>
+                  <td className={`px-4 py-3 text-right font-mono-num font-semibold ${Math.abs(i.variance) > 100 ? "text-[var(--red-500)]" : i.variance !== 0 ? "text-[var(--amber-500)]" : "text-[var(--ink-500)]"}`}>
+                    {i.variance !== 0 ? `${i.variance > 0 ? "+" : "−"}£${Math.abs(i.variance).toLocaleString()}` : "—"}
                   </td>
                   <td className="px-4 py-3">
                     {i.status === "variance" ? (
