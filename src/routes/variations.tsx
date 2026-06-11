@@ -8,6 +8,9 @@ import { VariationsTable } from "@/components/variations/VariationsTable";
 import { CostBreakdownPanel } from "@/components/variations/CostBreakdownPanel";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { FileText } from "lucide-react";
 
 export const Route = createFileRoute("/variations")({ component: GuardedVariationsPage });
 
@@ -31,7 +34,14 @@ function VariationsPage() {
     <Section
       title="Variations"
       subtitle="Track client/contractor changes against the baseline scope. Protect margin with full audit trail."
-      right={<NewVariationDialog />}
+      right={
+        <>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/forms/variation"><FileText className="mr-1 h-3.5 w-3.5" /> Full form</Link>
+          </Button>
+          <NewVariationDialog />
+        </>
+      }
     >
       <ProjectBanner scope="Variations" />
 
