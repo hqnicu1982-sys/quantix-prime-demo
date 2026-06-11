@@ -6,6 +6,9 @@ import { invoices } from "@/lib/mockData";
 import { matchLines } from "@/lib/invoiceWorkflow";
 import { ArrowLeft, FileText, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useProject } from "@/lib/ProjectContext";
+import { useProjectData } from "@/lib/projectData";
+import { useCallOffActions } from "@/lib/callOffActions";
 
 export const Route = createFileRoute("/grn/$ref")({
   component: GrnDetail,
@@ -19,6 +22,78 @@ export const Route = createFileRoute("/grn/$ref")({
 
 function GrnDetail() {
   const { ref } = Route.useParams();
+  const { current } = useProject();
+  const projectData = useProjectData(current.id);
+  const grnActions = useCallOffActions().filter((a) => a.kind === "log-grn");
+
+  // Live path: ref points at a live call-off id (co-...) or its GRN id (GRN-co-...).
+  const liveCallOffId = ref.startsWith("GRN-") ? ref.slice(4) : ref;
+  const liveCo = projectData.callOffs.find((c) => c.id === liveCallOffId);
+  if (liveCo) {
+    const lineById = new Map(projectData.boqLines.map((l) => [l.id, l]));
+    const lines = liveCo.lineIds.map((id) => lineById.get(id)).filter(Boolean) as NonNullable<ReturnType<typeof lineById.get>>[];
+    const action = grnActions.find((a) => a.ref === liveCallOffId);
+    const signedAt = action ? new Date(action.ts).toLocaleDateString() : "—";
+    const signedBy = action?.actor ?? "Not yet signed";
+    return (
+      <div className="space-y-5">
+        <div className="flex items-center justify-between">
+          <Button asChild size="sm" variant="ghost">
+            <Link to="/calloffs/$ref" params={{ ref: liveCallOffId }}>
+              <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to call-off {liveCallOffId}
+            </Link>
+          </Button>
+          <StatusBadge tone={action ? (action.grnPartial ? "warning" : "success") : "neutral"} dot>
+            {action ? (action.grnPartial ? "Partial GRN" : "GRN signed") : "Awaiting delivery"}
+          </StatusBadge>
+        </div>
+        <Card>
+          <CardHead
+            title={`GRN-${liveCallOffId} · ${liveCo.supplier}`}
+            subtitle={`${current.name} · delivery against call-off ${liveCallOffId}`}
+            right={<span className="text-[10.5px] text-[var(--ink-500)]"><Truck className="inline h-3 w-3" /> proof of delivery</span>}
+          />
+          <div className="grid gap-4 p-5 md:grid-cols-3">
+            <Kpi label="Received" value={signedAt} tone={action ? "info" : "neutral"} />
+            <Kpi label="Signed by" value={signedBy} />
+            <Kpi label="Linked call-off" value={liveCallOffId} tone="info" />
+          </div>
+          {action?.note && (
+            <div className="border-t border-[var(--ink-200)] px-5 py-3 text-[12px] text-[var(--ink-500)]">
+              <span className="font-semibold text-[var(--ink-700)]">Note:</span> {action.note}
+            </div>
+          )}
+        </Card>
+        <Card>
+          <CardHead title="Goods received" subtitle="BoQ-linked materials on this delivery" />
+          <div className="overflow-x-auto">
+            <table className="w-full text-[13px]">
+              <thead className="bg-[var(--ink-50)] text-[10.5px] uppercase tracking-wider text-[var(--ink-500)]">
+                <tr>
+                  <th className="px-4 py-2.5 text-left font-semibold">Material</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Qty ordered</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Unit</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--ink-200)]">
+                {lines.length === 0 && (
+                  <tr><td colSpan={3} className="px-4 py-6 text-center text-[12px] text-[var(--ink-500)]">No BoQ lines linked.</td></tr>
+                )}
+                {lines.map((l) => (
+                  <tr key={l.id}>
+                    <td className="px-4 py-3 font-medium">{l.material}</td>
+                    <td className="px-4 py-3 text-right font-mono-num">{l.qty.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-[12px] text-[var(--ink-500)]">{l.unit}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   const inv = invoices.find((i) => i.id === ref);
   if (!inv) throw notFound();
   const lines = matchLines[ref] ?? [];
