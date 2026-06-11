@@ -1,6 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Card, CardHead } from "@/components/Primitives";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InvoiceWorkflowStrip } from "@/components/invoices/InvoiceWorkflowStrip";
@@ -8,8 +6,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
-import { Check, ChevronRight, UploadCloud, Sparkles, AlertTriangle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { UploadCloud, Sparkles, AlertTriangle } from "lucide-react";
+import { FormWizard } from "@/components/forms/FormWizard";
 
 export const Route = createFileRoute("/invoices/new")({ component: Guarded });
 
@@ -19,27 +17,13 @@ function Guarded() {
   return <NewInvoice />;
 }
 
-const STEPS = [
-  { id: "upload",  label: "1 · Upload file" },
-  { id: "parse",   label: "2 · Confirm parsed data" },
-  { id: "match",   label: "3 · Link to PO" },
-  { id: "submit",  label: "4 · Submit to match engine" },
-];
-
 function NewInvoice() {
   const nav = useNavigate();
-  const [step, setStep] = useState(0);
   const [fileName, setFileName] = useState<string>("");
   const [supplier, setSupplier] = useState("CCF");
   const [ref, setRef] = useState("CCF-10825");
   const [amount, setAmount] = useState<number>(0);
   const [po, setPo] = useState("PO-00248");
-
-  const canNext =
-    (step === 0 && !!fileName) ||
-    (step === 1 && !!supplier && !!ref && amount > 0) ||
-    (step === 2 && !!po) ||
-    step === 3;
 
   const handleSubmit = () => {
     toast.success("Invoice queued for 3-way match", {
@@ -49,36 +33,19 @@ function NewInvoice() {
   };
 
   return (
-    <div className="space-y-5">
-      <Card>
-        <CardHead title="Where this lands in the workflow" subtitle="Uploading creates a Received → Parsed → 3-way match cycle" />
-        <div className="p-5">
-          <InvoiceWorkflowStrip stage="received" compact />
-        </div>
-      </Card>
-
-      <Card>
-        <CardHead title="Upload invoice" subtitle="4-step wizard · OCR extracts lines and the engine matches them to a PO + GRN" />
-
-        <ol className="flex flex-wrap gap-2 border-b border-[var(--ink-200)] px-5 py-3 text-[11.5px]">
-          {STEPS.map((s, i) => (
-            <li key={s.id} className="flex items-center gap-2">
-              <span className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-semibold",
-                i === step && "bg-[var(--accent-500)]/10 text-[var(--accent-500)] ring-1 ring-[var(--accent-500)]/40",
-                i < step && "bg-[var(--green-600)]/10 text-[var(--green-600)]",
-                i > step && "text-[var(--ink-500)]",
-              )}>
-                {i < step && <Check className="h-3 w-3" />}
-                {s.label}
-              </span>
-              {i < STEPS.length - 1 && <ChevronRight className="h-3 w-3 text-[var(--ink-500)]" />}
-            </li>
-          ))}
-        </ol>
-
-        <div className="space-y-4 p-5 text-[13px]">
-          {step === 0 && (
+    <FormWizard
+      title="Upload invoice"
+      subtitle="4-step wizard · OCR extracts lines and the engine matches them to a PO + GRN"
+      workflowStrip={<InvoiceWorkflowStrip stage="received" compact />}
+      submitLabel="Submit to match engine"
+      onSubmit={handleSubmit}
+      onCancel={() => nav({ to: "/invoices" })}
+      steps={[
+        {
+          id: "upload",
+          label: "Upload file",
+          canAdvance: () => !!fileName,
+          render: () => (
             <div className="space-y-3">
               <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-[var(--ink-200)] bg-[var(--ink-50)] p-8 text-center hover:border-[var(--accent-500)]">
                 <UploadCloud className="h-6 w-6 text-[var(--ink-500)]" />
@@ -96,8 +63,13 @@ function NewInvoice() {
                 </div>
               )}
             </div>
-          )}
-          {step === 1 && (
+          ),
+        },
+        {
+          id: "parse",
+          label: "Confirm parsed data",
+          canAdvance: () => !!supplier && !!ref && amount > 0,
+          render: () => (
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Supplier</Label>
@@ -125,8 +97,13 @@ function NewInvoice() {
                 <textarea className="min-h-[64px] w-full rounded-md border border-[var(--ink-200)] bg-background px-3 py-2 text-[13px]" placeholder="OCR confidence 0.96 · review any odd line items here" />
               </div>
             </div>
-          )}
-          {step === 2 && (
+          ),
+        },
+        {
+          id: "match",
+          label: "Link to PO",
+          canAdvance: () => !!po,
+          render: () => (
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Match to PO</Label>
@@ -154,8 +131,12 @@ function NewInvoice() {
                 </p>
               </div>
             </div>
-          )}
-          {step === 3 && (
+          ),
+        },
+        {
+          id: "submit",
+          label: "Submit to match engine",
+          render: () => (
             <div className="space-y-3">
               <div className="rounded-md border border-[var(--green-600)]/30 bg-[var(--green-600)]/5 p-4 text-[12.5px]">
                 <p className="font-semibold text-[var(--green-600)]">Ready to submit</p>
@@ -170,18 +151,9 @@ function NewInvoice() {
                 </div>
               )}
             </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between border-t border-[var(--ink-200)] px-5 py-3">
-          <Button variant="ghost" size="sm" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))}>Back</Button>
-          {step < STEPS.length - 1 ? (
-            <Button size="sm" disabled={!canNext} onClick={() => setStep((s) => s + 1)}>Next</Button>
-          ) : (
-            <Button size="sm" onClick={handleSubmit}>Submit to match engine</Button>
-          )}
-        </div>
-      </Card>
-    </div>
+          ),
+        },
+      ]}
+    />
   );
 }
