@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { WorkflowStrip } from "@/components/calloffs/WorkflowStrip";
 import { callOffs, fmtMoney } from "@/lib/mockData";
+import { useProject } from "@/lib/ProjectContext";
+import { useProjectData } from "@/lib/projectData";
 import { STATE_LABEL, STATE_TONE, auditLog } from "@/lib/callOffWorkflow";
 import { Gated } from "@/components/auth/Gated";
 import { ArrowLeft, ShieldCheck, Send, PackageCheck, X, FileText } from "lucide-react";
@@ -25,7 +27,32 @@ export const Route = createFileRoute("/calloffs/$ref")({
 
 function Detail() {
   const { ref } = Route.useParams();
-  const co = callOffs.find((c) => c.ref === ref);
+  const { current } = useProject();
+  const projectData = useProjectData(current.id);
+  const live = projectData.callOffs.find((c) => c.id === ref);
+  const lineById = new Map(projectData.boqLines.map((l) => [l.id, l]));
+  const co = live
+    ? (() => {
+        const lines = live.lineIds.map((id) => lineById.get(id)).filter(Boolean);
+        const item = lines.map((l) => l!.material).join(", ") || `${live.lineIds.length} BoQ line(s)`;
+        const qty = lines.map((l) => `${l!.qty} ${l!.unit}`).join(" · ");
+        const stateMap: Record<string, "draft" | "po-sent" | "in-delivery"> = {
+          draft: "draft",
+          sent: "po-sent",
+          delivered: "in-delivery",
+        };
+        return {
+          ref: live.id,
+          item,
+          subtitle: `${current.name} · auto-generated from Planner`,
+          supplier: live.supplier,
+          qty: qty || String(live.lineIds.length),
+          value: 0,
+          state: stateMap[live.status] ?? "draft",
+          needBy: new Date(live.createdAt).toLocaleDateString(),
+        };
+      })()
+    : callOffs.find((c) => c.ref === ref);
   if (!co) throw notFound();
   const actions = useCallOffActions(ref);
   const state = effectiveState(ref, co.state, actions);
@@ -68,7 +95,7 @@ function Detail() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Value" value={fmtMoney(co.value)} delta="committed against BoQ rev 3.2" />
+        <Kpi label="Value" value={co.value > 0 ? fmtMoney(co.value) : "—"} delta={live ? "live draft" : "committed against BoQ rev 3.2"} />
         <Kpi label="Quantity" value={co.qty} />
         <Kpi label="Supplier" value={co.supplier} delta="framework" tone="info" />
         <Kpi label="Status" value={STATE_LABEL[state]} tone={STATE_TONE[state] === "success" ? "success" : STATE_TONE[state] === "warning" ? "warning" : "info"} />
