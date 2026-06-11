@@ -12,6 +12,7 @@ import { PhotoDropzone } from "@/components/forms/PhotoDropzone";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { useProject } from "@/lib/ProjectContext";
+import { useSupplierStats } from "@/lib/priceListRegistry";
 import {
   addVariation,
   newChange,
@@ -26,6 +27,7 @@ import {
 const search = z.object({
   source: z.enum(["manual", "daily-report", "rfi"]).optional(),
   sourceDate: z.string().optional(),
+  sourceTaskId: z.string().optional(),
   title: z.string().optional(),
 });
 
@@ -88,6 +90,7 @@ function VariationForm() {
       attachments: photos.map((_, i) => ({ name: `photo-${i + 1}.jpg` })),
       source: (params.source as VariationSource | undefined) ?? "manual",
       sourceDate: params.sourceDate,
+      sourceTaskId: params.sourceTaskId,
     });
     toast.success("Variation submitted", { description: `${v.id} · ${title.trim()}` });
     nav({ to: "/variations" });
