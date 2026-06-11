@@ -1,79 +1,68 @@
-## Răspuns scurt
-Da, e fezabil — și avem deja toate piesele în model. Tasks în planner au `boqLineIds: string[]` (linkează direct la `ProjectBoqLine`), iar fiecare linie BoQ are `material`, `qty`, `unit`, `selectedSupplier`. Singura piesă lipsă în model este **lead time** per material/furnizor. Restul e orchestrare + un dialog de confirmare.
+## Audit — loose ends în ecosistem
 
-## Cum ar funcționa (flux utilizator)
+Am scanat toate paginile și sursele de date. Designul UI este complet peste tot (nu mai există `StubPage` activ), dar mai sunt **6 puncte unde fluxul nu vede datele live** și **2 zone decorative** care arată bine dar nu fac nimic real.
 
-1. Utilizatorul face MSProject import sau apasă "Pull from MSProject" (deja există via `MsProjectImportDialog` + `mspBidirectionalSync.ts`).
-2. La final, în loc de toast simplu, apare un banner / pas adițional: **"X call-off-uri propuse pentru tasks nou importate"** → buton "Review proposals".
-3. Se deschide un dialog **Auto-generated call-offs** care listează proposals grupate pe furnizor, fiecare cu:
-   - materialele + cantitățile cumulate
-   - task-urile sursă (chip-uri navigabile)
-   - data țintă pentru "needed-on-site" (cea mai timpurie `task.start` între task-urile sursă)
-   - data recomandată "send by" = needed-on-site − leadTimeDays − bufferDays
-   - badge urgență: `overdue` / `imminent` / `ok` (verde/amber/roșu pe baza zilelor rămase)
-4. Utilizatorul bifează ce vrea să accepte (sau "Accept all"), poate edita cantitatea/furnizorul/data per rând, apoi confirmă.
-5. Pe confirmare se creează draft-uri în `ProjectCallOff` (status `draft`) + se actualizează `task.calloffIds` și se loghează în `auditLog`. Nu se trimit automat — rămân draft până la `Send` manual.
+---
 
-## Algoritm de grupare (proposal generation)
+### 🔴 P0 — Pagini care ignoră complet datele live ale proiectului
 
-Pentru fiecare task din lista nou-importată / nou-modificată:
-```text
-for task in tasks:
-  for lineId in task.boqLineIds:
-    line = boqLines[lineId]
-    if already fully covered by existing CallOffs for this line: skip
-    push need { line, qty_needed, supplier: line.selectedSupplier, needed_on: task.start, source_task: task.id }
+1. **`/projects/$id/costed-boq`** — afișează `costedBoqRows` din `mockData` în loc de `useProjectData(projectId).boqLines`. Tot ce intră prin Calculator se vede în `/costed-boq` global, dar **nu apare** în tab-ul propriu al proiectului. Lanțul Calculator → BoQ rupt aici.
 
-group needs by (supplier, line.id) over a coalescing window (default 5 zile):
-  → 1 proposal per (supplier, batch_of_needs)
-  → qty = Σ qty_needed
-  → needed_on = min(needed_on)
-  → send_by = needed_on − leadTime(material|supplier) − buffer
-```
+2. **`/calloffs/new`** — wizard-ul cheamă `reserve()` pe `boqAllocation` și navighează spre inbox, dar **nu cheamă `addCallOff(projectId, …)`**. Deci call-off-ul nou nu apare nici în `/projects/$id/calloffs`, nici în "Drafts from Planner" pe inbox.
 
-Coalescing-ul previne 14 call-off-uri mici către același furnizor — devine 2-3 livrări mari aliniate cu fazele.
+3. **`/calloffs/approvals`** — iterează doar `callOffs` din mock. Draft-urile generate de Planner auto-propose (scrise în `projectData.callOffs`) **nu ajung niciodată în coada QS**.
 
-## Ce trebuie adăugat în model
+4. **`/calloffs/pipeline`** — aceeași problemă: coloanele Kanban arată doar mock, nu și call-off-urile reale.
 
-| Element | Unde | De ce |
-|---|---|---|
-| `leadTimeDays` per material (sau per `(supplier, material)`) | extindere în `mockData.ts` / `systemLibrary.ts` sau câmp pe `ProjectBoqLine` | Fără el nu putem calcula `send_by` realist. Default global 5 zile dacă lipsește. |
-| `bufferDays` (setting de proiect) | `projectData.ts` sau `settings` | Marja de siguranță. Default 2. |
-| Helper `coverageFor(lineId)` | nou `src/lib/callOffPlanning.ts` | Verifică ce cantitate e deja acoperită prin call-off-uri existente (status ≠ rejected). |
-| `proposeCallOffs(projectId, taskIds?)` | același fișier nou | Pure function — fără side effects, returnează `CallOffProposal[]`. Ușor de testat cu vitest. |
-| `acceptProposals(projectId, accepted, edits)` | tot acolo | Creează draft-uri în `ProjectCallOff` + leagă `task.calloffIds`. |
+### 🟠 P1 — Tab-uri de proiect cu carduri hardcoded peste date corecte
 
-## UI nou (3 componente)
+5. **`/projects/$id/invoices`** — primul card (`Invoice ledger`) folosește registry-ul live ✅, dar al doilea card (`Invoice reconciliation` cu PO/Invoiced/Variance) e un array hardcoded de 5 linii. Ar trebui să citească din `useInvoices(projectId)` cu join pe `matchLines` sau GRN registry.
 
-1. **`AutoCallOffBanner`** — în planner route, vizibil când există proposals nepublicate după ultimul import/sync. Dispare după accept sau "Dismiss".
-2. **`AutoCallOffReviewDialog`** — tabelul de mai sus, cu select-all, edit inline (qty, supplier, send_by), badge urgență, link la BoQ line + task.
-3. Mic indicator pe `MsProjectImportDialog` final step: "Generate X call-off proposals after import" (toggle, on by default).
+6. **`/projects/$id/reports`** — tot array-ul de rapoarte (`DR-118`, `WR-22`…) e hardcoded. Avem deja `dailyReportSubmissions` și `getProjectVariations` care țin datele reale; tab-ul trebuie conectat la ele.
 
-## Reguli de fall-back (need handling)
+### 🟡 P2 — Zone decorative (arată bine, dar nu salvează nimic)
 
-- Linie fără `selectedSupplier`: proposal marcat "Needs supplier" — utilizatorul trebuie să aleagă în dialog înainte să confirme.
-- Linie fără `leadTimeDays`: folosim default proiect (5z) + arătăm tag "lead time presumed".
-- Task fără `boqLineIds`: ignorat — apare în secțiunea "Skipped: no BoM links" la final.
-- Material deja complet acoperit: skipped, vizibil în "Skipped: already covered".
+7. **`/price-lists/upload`** — drop zone și "Recent uploads" sunt 100% mock. Toast-ul "82 items extracted" nu persistă nimic. Fie persistăm într-un `priceListRegistry` mic, fie marcăm explicit ca demo.
 
-## Integrare cu prioritizarea existentă
+8. **`/integrations`** — `useIntegrationConnections()` ține starea de conectare, dar nimic în afara paginii nu o citește (cu excepția banner-ului MSP din Planner). Statusul "Connected" e cosmetic pentru Accounting/Main contractor/Collaboration.
 
-Recommended action din `BlockersPanel` deja propune "Raise call-off" pentru blockers de tip `material`. După implementare, butonul respectiv poate redirecționa direct către `AutoCallOffReviewDialog` cu proposal-ul pre-selectat pentru task-ul curent — închidem bucla blocker → propunere → draft.
+---
 
-## Testabilitate
+## Plan de rezolvare (recomandat: P0 + P1 într-un singur batch)
 
-`proposeCallOffs` rămâne pură (input: tasks + boqLines + existing call-offs + assumptions; output: proposals[]). Acoperim cu vitest:
-- coalescing pe fereastra de 5 zile
-- skip pentru linii deja acoperite
-- calcul corect al `send_by` cu/fără lead time
-- urgență tier (overdue/imminent/ok)
-- comportament când lipsește supplier-ul
+### Pas 1 — `projects.$projectId.costed-boq.tsx`
+- Citește `useProjectData(projectId)`.
+- Dacă `data.boqLines.length > 0`: randează tabel grupat pe sistem (material · qty · unit · supplier ales · rate dacă există), KPI-uri din `boqAllocation`.
+- Dacă e gol: păstrează vederea curentă pe `costedBoqRows` ca fallback demo + banner "No BoQ yet — open Calculator to add a system".
 
-## Ce NU rezolvăm acum (scope-out)
+### Pas 2 — `calloffs.new.tsx`
+- După `reserve(...)`, adaugă și `addCallOff(current.id, { supplier, lineIds: [selected.id], status: "draft" })`.
+- Redirect către `/calloffs/$ref` cu noul id, ca să se vadă imediat în registru.
 
-- Trimitere automată către furnizor (rămâne pas manual via `Send` existent).
-- Optimizare per camion / minim de comandă — putem adăuga ulterior ca soft-warning.
-- Re-planificare automată când task-ul se mută după acceptarea call-off-ului — afișăm doar un warning în Blockers (pattern deja existent).
+### Pas 3 — `calloffs.approvals.tsx`
+- Merge: mock `callOffs` (păstrate pentru demo Fitzrovia) + `projectData.callOffs` cu `status === "draft"` mapate ca "submitted" pentru coadă.
+- Butoanele Approve/Reject scriu deopotrivă în `callOffActions` (audit) și mută statusul în `projectData.callOffs` (draft → sent).
 
-## Verdict
-Fezabil cu efort moderat: ~1 fișier de lib nou (`callOffPlanning.ts`) + 2 componente UI + un câmp `leadTimeDays` în BoQ/mockData + un toggle în dialogul de import. Toată logica grea e deja prezentă (task↔BoQ link, supplier choice, baseline diff din MSP). Confirmarea utilizatorului e garantată — nimic nu pleacă fără bifa lui în review dialog.
+### Pas 4 — `calloffs.pipeline.tsx`
+- Adaugă mapare live: draft → coloana Draft, sent → PO sent, delivered → In delivery / Closed.
+- Card-uri identice cu cele mock, link tot către `/calloffs/$ref`.
+
+### Pas 5 — `projects.$projectId.invoices.tsx`
+- Înlocuiește array-ul hardcoded cu derivare din `useInvoices(projectId)` (filter pe direction="payable") + match opțional cu `matchLines` din `invoiceWorkflow` pentru coloana variance.
+
+### Pas 6 — `projects.$projectId.reports.tsx`
+- Înlocuiește array `reports` cu un merge live din:
+  - `useDailyReports(projectId)` (din `dailyReportSubmissions`)
+  - `getProjectVariations(projectId)` filtrate la cele recente
+- Păstrează badge-ul tip + butonul "New report".
+
+### Verificare
+- `bunx vitest run` (200+ teste actuale trebuie să rămână verzi).
+- Click manual: Calculator → adaugă sistem → vezi în `/projects/$id/costed-boq` și apare în `setup checklist`.
+- `/calloffs/new` → submit → vezi în `/projects/$id/calloffs` ȘI în `/calloffs/approvals` ȘI în `/calloffs/pipeline`.
+
+---
+
+## Întrebare
+
+Vrei să fac **doar P0+P1** (cele 6 wiring-uri, ~1 batch de fișiere), sau și **P2** (persistăm price-lists + folosim starea integrations în tab-urile relevante)?
