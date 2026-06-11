@@ -2,7 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardHead, Section } from "@/components/Primitives";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { priceListUploads, ambiguousMatches, livePreview } from "@/lib/mockData";
+import { ambiguousMatches, livePreview } from "@/lib/mockData";
+import { usePriceListUploads, logPriceListUpload } from "@/lib/priceListRegistry";
+import { useCurrentUser } from "@/lib/currentUser";
 import { CloudUpload, ArrowRight, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useCan } from "@/lib/permissions";
@@ -17,13 +19,30 @@ function GuardedUpload() {
 }
 
 function Upload() {
+  const uploads = usePriceListUploads();
+  const user = useCurrentUser();
+
+  function simulateUpload() {
+    const samples = [
+      { name: "CCF Full Catalogue April 2026.pdf", items: 82, matched: 78, review: 4 },
+      { name: "Minster Price List May 2026.xlsx", items: 152, matched: 149, review: 3 },
+      { name: "Travis Perkins Price Sheet.pdf", items: 48, matched: 29, review: 19 },
+      { name: "Wolseley Plumbing Q2 2026.xlsx", items: 64, matched: 60, review: 4 },
+    ];
+    const pick = samples[Math.floor(Math.random() * samples.length)];
+    const rec = logPriceListUpload({ ...pick, uploadedBy: user.name });
+    toast.success("Upload indexed", {
+      description: `${rec.items} items extracted · ${rec.matched} matched · ${rec.review} need review`,
+    });
+  }
+
   return (
     <Section
       title="Price List Upload"
       subtitle="Drop a supplier PDF or Excel. We extract items, match against your BoQ, flag ambiguous rows for review."
     >
       <Card>
-        <div onClick={() => toast.success("Upload simulated", { description: "82 items extracted from CCF April 2026 catalogue" })} className="m-5 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--ink-200)] bg-[var(--ink-50)]/50 p-12 text-center transition-colors hover:border-[var(--accent-500)] hover:bg-[var(--accent-500)]/5">
+        <div onClick={simulateUpload} className="m-5 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--ink-200)] bg-[var(--ink-50)]/50 p-12 text-center transition-colors hover:border-[var(--accent-500)] hover:bg-[var(--accent-500)]/5">
           <CloudUpload className="h-10 w-10 text-[var(--accent-500)]" />
           <p className="mt-3 text-[14px] font-semibold">Drop files or click to upload</p>
           <p className="mt-1 text-[12px] text-[var(--ink-500)]">Supported: PDF, XLSX, CSV, scanned images (OCR)</p>
@@ -35,13 +54,16 @@ function Upload() {
       </Card>
 
       <Card>
-        <CardHead title="Recent uploads" />
+        <CardHead title="Recent uploads" subtitle={`${uploads.length} indexed price lists`} />
         <div className="divide-y divide-[var(--ink-200)]">
-          {priceListUploads.map((u) => (
+          {uploads.length === 0 && (
+            <div className="px-5 py-6 text-center text-[12px] text-[var(--ink-500)]">No uploads yet — drop a file above to get started.</div>
+          )}
+          {uploads.map((u) => (
             <div key={u.id} className="flex items-center justify-between gap-4 px-5 py-3">
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-semibold">{u.name}</p>
-                <p className="text-[11.5px] text-[var(--ink-500)]">{u.date} · {u.items} items · {u.matched} matched · {u.review} review</p>
+                <p className="text-[11.5px] text-[var(--ink-500)]">{u.date} · {u.items} items · {u.matched} matched · {u.review} review{u.uploadedBy ? ` · by ${u.uploadedBy}` : ""}</p>
               </div>
               <StatusBadge tone={u.status === "ok" ? "success" : "warning"} dot>
                 {u.status === "ok" ? "Indexed" : "Needs review"}
