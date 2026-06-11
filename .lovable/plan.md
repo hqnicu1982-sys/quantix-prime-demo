@@ -1,68 +1,91 @@
-## Audit — loose ends în ecosistem
+## Goal
 
-Am scanat toate paginile și sursele de date. Designul UI este complet peste tot (nu mai există `StubPage` activ), dar mai sunt **6 puncte unde fluxul nu vede datele live** și **2 zone decorative** care arată bine dar nu fac nimic real.
+Standardize every "create / submit" flow in the app on a single, reusable **FormWizard** template, then build the four typed forms the user picked. Today the codebase has two ad-hoc wizards (`calloffs.new`, `invoices.new`), GRN sign-off lives only as a quick dialog (`LogGrnDialog`) with no full form page, Variation creation is a dialog (`NewVariationDialog`), and Daily Report is a free-form page.
 
----
+## What gets built
 
-### 🔴 P0 — Pagini care ignoră complet datele live ale proiectului
+### 1. Reusable template — `src/components/forms/FormWizard.tsx`
 
-1. **`/projects/$id/costed-boq`** — afișează `costedBoqRows` din `mockData` în loc de `useProjectData(projectId).boqLines`. Tot ce intră prin Calculator se vede în `/costed-boq` global, dar **nu apare** în tab-ul propriu al proiectului. Lanțul Calculator → BoQ rupt aici.
+Generic stepper-form shell used by every form below. Props:
+- `title`, `subtitle`, `workflowStrip?` (optional ReactNode shown above the wizard, e.g. `<WorkflowStrip />`)
+- `steps: { id, label, render: () => ReactNode, canAdvance?: () => boolean }[]`
+- `onSubmit`, `submitLabel`
+- Optional `onCancel`, `sticky` footer
 
-2. **`/calloffs/new`** — wizard-ul cheamă `reserve()` pe `boqAllocation` și navighează spre inbox, dar **nu cheamă `addCallOff(projectId, …)`**. Deci call-off-ul nou nu apare nici în `/projects/$id/calloffs`, nici în "Drafts from Planner" pe inbox.
+Internals: matches the visual language already used in `calloffs.new` / `invoices.new` (numbered chips, green check on completed, accent on current, `ChevronRight` between, sticky Back/Next/Submit row). Refactor those two existing wizards to consume the template so the look stays identical and we get a single source of truth.
 
-3. **`/calloffs/approvals`** — iterează doar `callOffs` din mock. Draft-urile generate de Planner auto-propose (scrise în `projectData.callOffs`) **nu ajung niciodată în coada QS**.
+Plus two small primitives reused by the forms:
+- `src/components/forms/FormField.tsx` — `<Label>` + control + hint + error slot (already inline in `CallOffActionDialogs`, promoting it).
+- `src/components/forms/SignaturePad.tsx` — canvas signature capture (mouse + touch), exposes `toDataURL()` and a Clear button. Pure client, no deps.
+- `src/components/forms/PhotoDropzone.tsx` — multi-file image picker with thumbnail strip, base64-stored in form state (mock — same pattern as existing upload flows).
 
-4. **`/calloffs/pipeline`** — aceeași problemă: coloanele Kanban arată doar mock, nu și call-off-urile reale.
+### 2. GRN — full sign-off form
 
-### 🟠 P1 — Tab-uri de proiect cu carduri hardcoded peste date corecte
+Replace today's read-only `/grn/$ref` page with a tabbed view:
+- **Summary** tab → current read-only content (kept verbatim).
+- **Sign GRN** tab → `FormWizard` with steps:
+  1. Goods received — editable line table (received qty per material, short/over flags), copies ordered qty from the linked call-off.
+  2. Condition & notes — textarea + checkbox "partial delivery — keep call-off open for balance".
+  3. Proof — `PhotoDropzone` (delivery photos) + delivery note ref + driver name.
+  4. Sign & submit — `SignaturePad` + signed-by name (prefilled from `currentUser`) + date/time.
 
-5. **`/projects/$id/invoices`** — primul card (`Invoice ledger`) folosește registry-ul live ✅, dar al doilea card (`Invoice reconciliation` cu PO/Invoiced/Variance) e un array hardcoded de 5 linii. Ar trebui să citească din `useInvoices(projectId)` cu join pe `matchLines` sau GRN registry.
+On submit: extend `grnRegistry.logGrn` (already exists) to accept `signature` (data URL), `photos` (string[]), `lines` (already supported), `deliveryNoteRef`, `driverName`. Mark status `received` when not partial, `partial` otherwise. Toast + route back to `/calloffs/$ref`.
 
-6. **`/projects/$id/reports`** — tot array-ul de rapoarte (`DR-118`, `WR-22`…) e hardcoded. Avem deja `dailyReportSubmissions` și `getProjectVariations` care țin datele reale; tab-ul trebuie conectat la ele.
+Also add an entry point: `/grn/new?callOff=CO-246` route (and a "Sign GRN" button on the call-off detail page that opens the form pre-filled instead of the lightweight dialog). The existing `LogGrnDialog` stays for the quick-log path from list views, but the call-off detail CTA points to the full form.
 
-### 🟡 P2 — Zone decorative (arată bine, dar nu salvează nimic)
+### 3. Call-Off — refactor existing wizard onto the template
 
-7. **`/price-lists/upload`** — drop zone și "Recent uploads" sunt 100% mock. Toast-ul "82 items extracted" nu persistă nimic. Fie persistăm într-un `priceListRegistry` mic, fie marcăm explicit ca demo.
+`src/routes/calloffs.new.tsx` keeps identical UX and submit logic but is rewritten to use `FormWizard` + `FormField`. No behavior changes, no new fields.
 
-8. **`/integrations`** — `useIntegrationConnections()` ține starea de conectare, dar nimic în afara paginii nu o citește (cu excepția banner-ului MSP din Planner). Statusul "Connected" e cosmetic pentru Accounting/Main contractor/Collaboration.
+### 4. Invoice — refactor existing wizard onto the template
 
----
+`src/routes/invoices.new.tsx` same treatment: rewrite to use `FormWizard`, no behavioral change.
 
-## Plan de rezolvare (recomandat: P0 + P1 într-un singur batch)
+### 5. Variation — new full-page form
 
-### Pas 1 — `projects.$projectId.costed-boq.tsx`
-- Citește `useProjectData(projectId)`.
-- Dacă `data.boqLines.length > 0`: randează tabel grupat pe sistem (material · qty · unit · supplier ales · rate dacă există), KPI-uri din `boqAllocation`.
-- Dacă e gol: păstrează vederea curentă pe `costedBoqRows` ca fallback demo + banner "No BoQ yet — open Calculator to add a system".
+New route `src/routes/variations.new.tsx` ("Raise variation" CTA from variations table and from the existing daily-report "raise variation" flow links here when the user wants the long form; the existing dialog stays for quick capture). Steps:
+  1. Trigger — type (instruction / change / discrepancy), source (client, design, site), linked daily-report issue (optional).
+  2. Scope & description — title, description, affected zones.
+  3. Cost & time impact — labour hrs, materials £, plant £, prelims £, programme days delta (reuses `CostBreakdownPanel` calculation).
+  4. Attachments & submit — `PhotoDropzone` + notes + submit.
 
-### Pas 2 — `calloffs.new.tsx`
-- După `reserve(...)`, adaugă și `addCallOff(current.id, { supplier, lineIds: [selected.id], status: "draft" })`.
-- Redirect către `/calloffs/$ref` cu noul id, ca să se vadă imediat în registru.
+On submit: call existing variations registry add helper used by `NewVariationDialog` (keep one source of truth — the dialog's submit handler is extracted into `src/lib/variations.ts` and both surfaces call it).
 
-### Pas 3 — `calloffs.approvals.tsx`
-- Merge: mock `callOffs` (păstrate pentru demo Fitzrovia) + `projectData.callOffs` cu `status === "draft"` mapate ca "submitted" pentru coadă.
-- Butoanele Approve/Reject scriu deopotrivă în `callOffActions` (audit) și mută statusul în `projectData.callOffs` (draft → sent).
+### 6. Daily Report — submit form
 
-### Pas 4 — `calloffs.pipeline.tsx`
-- Adaugă mapare live: draft → coloana Draft, sent → PO sent, delivered → In delivery / Closed.
-- Card-uri identice cu cele mock, link tot către `/calloffs/$ref`.
+New route `src/routes/daily-report.new.tsx` (today's `daily-report.tsx` becomes a list/index of submitted reports — already partly wired via `dailyReportSubmissions`). Steps:
+  1. Day & crew — date, shift, weather, headcount per trade.
+  2. Progress — task progress lines (linked to planner tasks for the active project).
+  3. Issues & blockers — list + severity + "raise variation" toggle (links to variation form pre-filled).
+  4. Photos & sign-off — `PhotoDropzone` + `SignaturePad` (site manager) + submit.
 
-### Pas 5 — `projects.$projectId.invoices.tsx`
-- Înlocuiește array-ul hardcoded cu derivare din `useInvoices(projectId)` (filter pe direction="payable") + match opțional cu `matchLines` din `invoiceWorkflow` pentru coloana variance.
+On submit: append to `dailyReportSubmissions` registry (already persistent).
 
-### Pas 6 — `projects.$projectId.reports.tsx`
-- Înlocuiește array `reports` cu un merge live din:
-  - `useDailyReports(projectId)` (din `dailyReportSubmissions`)
-  - `getProjectVariations(projectId)` filtrate la cele recente
-- Păstrează badge-ul tip + butonul "New report".
+## Technical details
 
-### Verificare
-- `bunx vitest run` (200+ teste actuale trebuie să rămână verzi).
-- Click manual: Calculator → adaugă sistem → vezi în `/projects/$id/costed-boq` și apare în `setup checklist`.
-- `/calloffs/new` → submit → vezi în `/projects/$id/calloffs` ȘI în `/calloffs/approvals` ȘI în `/calloffs/pipeline`.
+- All new files are pure presentation + localStorage writes; no backend.
+- `grnRegistry`, `dailyReportSubmissions`, `variations` registries get small field additions (signature, photos, driverName, deliveryNoteRef) — added as optional so existing seeded data stays valid.
+- `FormWizard` is generic, no router coupling, so it works inside both routes and dialogs if needed later.
+- The two existing wizards are refactored in the same pass to prove the template; tests already covering their submit handlers continue to pass since handlers are untouched.
 
----
+## Files
 
-## Întrebare
+Created:
+- `src/components/forms/FormWizard.tsx`
+- `src/components/forms/FormField.tsx`
+- `src/components/forms/SignaturePad.tsx`
+- `src/components/forms/PhotoDropzone.tsx`
+- `src/routes/grn.new.tsx`
+- `src/routes/variations.new.tsx`
+- `src/routes/daily-report.new.tsx`
 
-Vrei să fac **doar P0+P1** (cele 6 wiring-uri, ~1 batch de fișiere), sau și **P2** (persistăm price-lists + folosim starea integrations în tab-urile relevante)?
+Edited:
+- `src/routes/grn.$ref.tsx` (add Sign GRN tab + entry point)
+- `src/routes/calloffs.new.tsx` (refactor onto FormWizard)
+- `src/routes/invoices.new.tsx` (refactor onto FormWizard)
+- `src/routes/calloffs.$ref.tsx` (CTA → full GRN form)
+- `src/routes/daily-report.tsx` (becomes list, links to `daily-report.new`)
+- `src/routes/variations.tsx` + `src/routes/projects.$projectId.variations.tsx` (CTA → `variations.new`)
+- `src/lib/grnRegistry.ts` (extra optional fields)
+- `src/lib/variations.ts` (extract shared submit helper)
+- `src/lib/dailyReportSubmissions.ts` (extra optional fields)
