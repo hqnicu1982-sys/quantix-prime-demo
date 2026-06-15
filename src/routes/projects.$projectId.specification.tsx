@@ -9,6 +9,8 @@ import { SystemDetailsDialog } from "@/components/specification/SystemDetailsDia
 import { useAllSystemDetails } from "@/lib/systemDetails";
 import { UploadSpecDocDialog } from "@/components/specification/UploadSpecDocDialog";
 import { useProjectDocs, removeProjectDoc, formatBytes, tagTone } from "@/lib/projectDocuments";
+import { DrawingRevisionsCard } from "@/components/specification/DrawingRevisionsCard";
+import { useDrawings, groupByDrawing } from "@/lib/drawingRegistry";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/projects/$projectId/specification")({ component: SpecificationPage });
@@ -27,19 +29,33 @@ function SpecificationPage() {
   const canEdit = useCan("edit.specification");
   const allDetails = useAllSystemDetails(projectId);
   const docs = useProjectDocs(projectId);
+  const drawings = useDrawings(projectId);
+  const drawingGroups = groupByDrawing(drawings);
+  const pendingDrawings = drawings.revisions.filter((r) => r.status === "pending").length;
   const [selected, setSelected] = useState<typeof fitzroviaSystems[number] | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Spec documents" value={`${docs.length}`} delta={`${docs.filter(d => !d.seed).length} uploaded by team`} tone="info" />
+        <Kpi
+          label="Drawings"
+          value={`${drawingGroups.length}`}
+          delta={
+            drawings.tenderLocked
+              ? (pendingDrawings > 0 ? `${pendingDrawings} pending review` : "Tender baseline locked")
+              : "Tender not issued yet"
+          }
+          tone={pendingDrawings > 0 ? "warning" : drawings.tenderLocked ? "success" : "info"}
+        />
         <Kpi label="Systems specified" value={`${fitzroviaSystems.length}`} delta="2 awaiting BG approval" tone="warning" />
         <Kpi label="Spec coverage" value="92%" delta="8% pending shaft details" tone="success" />
-        <Kpi label="Open RFIs" value="3" delta="1 with architect 4d" tone="warning" />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
+          <DrawingRevisionsCard projectId={projectId} />
+
           <Card>
             <CardHead
               title="Specification documents"
