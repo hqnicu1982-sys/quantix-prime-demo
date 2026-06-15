@@ -1,91 +1,124 @@
-## Goal
 
-Standardize every "create / submit" flow in the app on a single, reusable **FormWizard** template, then build the four typed forms the user picked. Today the codebase has two ad-hoc wizards (`calloffs.new`, `invoices.new`), GRN sign-off lives only as a quick dialog (`LogGrnDialog`) with no full form page, Variation creation is a dialog (`NewVariationDialog`), and Daily Report is a free-form page.
+# Drawing revisions & tender baseline
 
-## What gets built
+Adaug o secțiune nouă **„Drawing revisions"** în tab-ul existent `/projects/$projectId/specification`, deasupra listei „Specification documents". Documentele de spec (NBS, fire, acoustic) rămân unde sunt — desenele de arhitectură capătă tratament special cu numere de drawing, revizii grupate, baseline tender blocat și aprobare per revizie.
 
-### 1. Reusable template — `src/components/forms/FormWizard.tsx`
+## Concept
 
-Generic stepper-form shell used by every form below. Props:
-- `title`, `subtitle`, `workflowStrip?` (optional ReactNode shown above the wizard, e.g. `<WorkflowStrip />`)
-- `steps: { id, label, render: () => ReactNode, canAdvance?: () => boolean }[]`
-- `onSubmit`, `submitLabel`
-- Optional `onCancel`, `sticky` footer
+Fiecare „drawing" e un grup logic identificat printr-un **drawing number** (ex. `A-201`, `M-110`). Sub el stau una sau mai multe **revizii** (`T1` tender, `C1`, `C2`…). Una singură e marcată `Current`; restul sunt istoric. Baseline-ul tender este înghețat când Admin/Pro apasă „Issue tender set" — după acel moment nimic nu mai poate șterge sau înlocui un fișier marcat tender, doar adăuga revizii noi peste.
 
-Internals: matches the visual language already used in `calloffs.new` / `invoices.new` (numbered chips, green check on completed, accent on current, `ChevronRight` between, sticky Back/Next/Submit row). Refactor those two existing wizards to consume the template so the look stays identical and we get a single source of truth.
+## Model de date (`src/lib/drawingRegistry.ts`, localStorage)
 
-Plus two small primitives reused by the forms:
-- `src/components/forms/FormField.tsx` — `<Label>` + control + hint + error slot (already inline in `CallOffActionDialogs`, promoting it).
-- `src/components/forms/SignaturePad.tsx` — canvas signature capture (mouse + touch), exposes `toDataURL()` and a Clear button. Pure client, no deps.
-- `src/components/forms/PhotoDropzone.tsx` — multi-file image picker with thumbnail strip, base64-stored in form state (mock — same pattern as existing upload flows).
+```ts
+type DrawingRevisionStatus = "pending" | "current" | "superseded" | "rejected";
 
-### 2. GRN — full sign-off form
+type DrawingRevision = {
+  id: string;
+  drawingNumber: string;       // ex "A-201"
+  revisionCode: string;        // ex "T1", "C1", "P02"
+  isTender: boolean;           // true doar pentru revizia inclusă în tender baseline
+  status: DrawingRevisionStatus;
+  fileName: string; fileSize: number; mimeType: string; dataUrl: string;
+  title?: string;              // ex "Level 04 GA"
+  discipline: "Architect" | "Structural" | "MEP" | "Fire" | "Other";
+  changeNotes?: string;        // ce s-a schimbat față de revizia anterioară
+  affectedAreas?: string[];    // free tags ex ["L4 corridors", "Lift shaft"]
+  uploadedBy: string; uploadedAt: number;
+  approvedBy?: string; approvedAt?: number;
+  rejectedReason?: string;
+};
 
-Replace today's read-only `/grn/$ref` page with a tabbed view:
-- **Summary** tab → current read-only content (kept verbatim).
-- **Sign GRN** tab → `FormWizard` with steps:
-  1. Goods received — editable line table (received qty per material, short/over flags), copies ordered qty from the linked call-off.
-  2. Condition & notes — textarea + checkbox "partial delivery — keep call-off open for balance".
-  3. Proof — `PhotoDropzone` (delivery photos) + delivery note ref + driver name.
-  4. Sign & submit — `SignaturePad` + signed-by name (prefilled from `currentUser`) + date/time.
+type DrawingsState = {
+  tenderLocked: boolean;
+  tenderIssuedAt?: number;
+  tenderIssuedBy?: string;
+  revisions: DrawingRevision[];
+};
+```
 
-On submit: extend `grnRegistry.logGrn` (already exists) to accept `signature` (data URL), `photos` (string[]), `lines` (already supported), `deliveryNoteRef`, `driverName`. Mark status `received` when not partial, `partial` otherwise. Toast + route back to `/calloffs/$ref`.
+API: `getDrawings`, `useDrawings`, `addRevision`, `approveRevision`, `rejectRevision`, `issueTenderSet`, `groupByDrawing` (returnează `{ drawingNumber, current, tender, history[] }`).
 
-Also add an entry point: `/grn/new?callOff=CO-246` route (and a "Sign GRN" button on the call-off detail page that opens the form pre-filled instead of the lightweight dialog). The existing `LogGrnDialog` stays for the quick-log path from list views, but the call-off detail CTA points to the full form.
+## Permisiuni (`src/lib/permissions.ts`)
 
-### 3. Call-Off — refactor existing wizard onto the template
+Adaug 3 capabilities noi:
+- `upload.drawings` → Pro, Pro Control, Admin (Site nu mai poate urca desene, doar spec docs)
+- `approve.drawings` → Pro Control, Admin
+- `lock.tender` → Admin
 
-`src/routes/calloffs.new.tsx` keeps identical UX and submit logic but is rewritten to use `FormWizard` + `FormField`. No behavior changes, no new fields.
+Operative & Site văd doar reviziile `current` + tender, fără butoane.
 
-### 4. Invoice — refactor existing wizard onto the template
+## UI în Specification page
 
-`src/routes/invoices.new.tsx` same treatment: rewrite to use `FormWizard`, no behavioral change.
+Card nou **„Drawing revisions"** plasat înaintea „Specification documents":
 
-### 5. Variation — new full-page form
+- **Header**: KPI mic — `12 drawings · 3 pending review · Tender locked 18 Apr`. Buton `Upload revision` (gated `upload.drawings`). Dacă tender nu e lock-uit: buton suplimentar `Issue tender set` (gated `lock.tender`) cu confirm dialog explicând că devine read-only.
+- **Listă grupată pe drawing number** (acordeon): rândul principal arată `A-201 · Level 04 GA · Current: C2 · Tender: T1`. Pending reviziile au badge portocaliu „Awaiting approval".
+- **Expand**: timeline vertical cu toate reviziile, status badge, uploader, date, change notes. Acțiuni per revizie: `Download`, `Compare with tender` (deschide viewer), `Approve` / `Reject` (gated).
+- **Empty state** explică flow-ul: încarcă T1-uri → Issue tender → urcă C1/C2 când vin revizii.
 
-New route `src/routes/variations.new.tsx` ("Raise variation" CTA from variations table and from the existing daily-report "raise variation" flow links here when the user wants the long form; the existing dialog stays for quick capture). Steps:
-  1. Trigger — type (instruction / change / discrepancy), source (client, design, site), linked daily-report issue (optional).
-  2. Scope & description — title, description, affected zones.
-  3. Cost & time impact — labour hrs, materials £, plant £, prelims £, programme days delta (reuses `CostBreakdownPanel` calculation).
-  4. Attachments & submit — `PhotoDropzone` + notes + submit.
+## Upload dialog (`UploadDrawingRevisionDialog.tsx`)
 
-On submit: call existing variations registry add helper used by `NewVariationDialog` (keep one source of truth — the dialog's submit handler is extracted into `src/lib/variations.ts` and both surfaces call it).
+Form cu validare zod:
+- File picker (PDF, DWG, PNG, JPG; același `MAX_FILE_BYTES` ca spec docs)
+- **Drawing number** (obligatoriu, regex `^[A-Z]{1,3}-\d{2,4}[A-Z]?$`, auto-uppercase). Dacă există deja, dialogul arată „Adding revision to existing drawing A-201 (current: C1)".
+- **Revision code** (obligatoriu, max 6 chars). Dacă tender nu e încă issued: checkbox „Mark as tender revision" (default on).
+- **Title** (opțional), **Discipline** (select).
+- **Change notes** (obligatoriu pentru revizii post-tender; opțional pentru tender) + **Affected areas** (chip input).
+- Dacă tender e lock-uit și user încearcă să încarce cu `isTender=true` → blocat client-side + server-side în `addRevision`.
 
-### 6. Daily Report — submit form
+Post-tender, reviziile noi intră cu `status: "pending"`. Pre-tender, intră direct `status: "current"`.
 
-New route `src/routes/daily-report.new.tsx` (today's `daily-report.tsx` becomes a list/index of submitted reports — already partly wired via `dailyReportSubmissions`). Steps:
-  1. Day & crew — date, shift, weather, headcount per trade.
-  2. Progress — task progress lines (linked to planner tasks for the active project).
-  3. Issues & blockers — list + severity + "raise variation" toggle (links to variation form pre-filled).
-  4. Photos & sign-off — `PhotoDropzone` + `SignaturePad` (site manager) + submit.
+## Approval flow
 
-On submit: append to `dailyReportSubmissions` registry (already persistent).
+- `Pro Control` / `Admin` văd în header card-ului „3 pending review" → click filtrează lista.
+- Approve: revizia devine `current`, vechea `current` devine `superseded`. Toast cu link spre compare.
+- Reject: cere motiv (textarea), revizia devine `rejected`, vechea `current` rămâne.
 
-## Technical details
+## Side-by-side viewer (`DrawingCompareDialog.tsx`)
 
-- All new files are pure presentation + localStorage writes; no backend.
-- `grnRegistry`, `dailyReportSubmissions`, `variations` registries get small field additions (signature, photos, driverName, deliveryNoteRef) — added as optional so existing seeded data stays valid.
-- `FormWizard` is generic, no router coupling, so it works inside both routes and dialogs if needed later.
-- The two existing wizards are refactored in the same pass to prove the template; tests already covering their submit handlers continue to pass since handlers are untouched.
+Dialog full-screen (`max-w-[95vw] h-[90vh]`). Două panouri egale:
+- Stânga: revizia tender (badge „Tender · T1 · 18 Apr").
+- Dreapta: revizia selectată (badge „Current · C2 · 02 Jun").
+- Pentru PDF: `<iframe src={dataUrl}>` cu `toolbar=0`. Pentru imagini: `<img>` cu wrapper zoom (`react-zoom-pan-pinch` deja-n stack? — dacă nu, controale custom +/- ca în diagrame).
+- Zoom sincronizat opțional (toggle „Sync zoom" în header). Implementare: state comun `{scale, x, y}` propagat la ambele panouri când toggle e on.
+- Footer: `change notes` ale reviziei curente + buton `Download both`.
+- DWG: fallback „Preview not available — download to compare in CAD".
 
-## Files
+## Lock tender set
 
-Created:
-- `src/components/forms/FormWizard.tsx`
-- `src/components/forms/FormField.tsx`
-- `src/components/forms/SignaturePad.tsx`
-- `src/components/forms/PhotoDropzone.tsx`
-- `src/routes/grn.new.tsx`
-- `src/routes/variations.new.tsx`
-- `src/routes/daily-report.new.tsx`
+Confirm dialog: lista reviziilor marcate tender, avertisment „După lock, aceste fișiere devin read-only. Reviziile noi vor cere aprobare." Acțiunea setează `tenderLocked: true` + `tenderIssuedAt/By`. După lock:
+- Butonul „Issue tender set" dispare.
+- În locul lui apare un mic banner verde sub header: „Tender set issued 18 Apr by Sarah K · 8 drawings frozen".
+- `addRevision` respinge orice request cu `isTender: true`.
+- Delete pe revizii tender e blocat în UI + în registru.
 
-Edited:
-- `src/routes/grn.$ref.tsx` (add Sign GRN tab + entry point)
-- `src/routes/calloffs.new.tsx` (refactor onto FormWizard)
-- `src/routes/invoices.new.tsx` (refactor onto FormWizard)
-- `src/routes/calloffs.$ref.tsx` (CTA → full GRN form)
-- `src/routes/daily-report.tsx` (becomes list, links to `daily-report.new`)
-- `src/routes/variations.tsx` + `src/routes/projects.$projectId.variations.tsx` (CTA → `variations.new`)
-- `src/lib/grnRegistry.ts` (extra optional fields)
-- `src/lib/variations.ts` (extract shared submit helper)
-- `src/lib/dailyReportSubmissions.ts` (extra optional fields)
+## Integrare cross-module (light touch)
+
+- **Variations** (`/projects/.../variations`): adaug un mic banner deasupra tabelului „2 drawing revisions pending review may affect pricing — review" → link spre tab-ul Specification cu anchor `#drawing-revisions`. Nu modific logica VO existentă, doar semnalizez.
+- **Specification KPI strip**: KPI „Spec documents" rămâne; adaug unul nou „Drawing revisions" cu `total · X pending`.
+
+## Fișiere
+
+Noi:
+- `src/lib/drawingRegistry.ts` — store + hooks
+- `src/lib/drawingRegistry.test.ts` — lock invariants, group-by-drawing, approve/reject transitions
+- `src/components/specification/DrawingRevisionsCard.tsx`
+- `src/components/specification/UploadDrawingRevisionDialog.tsx`
+- `src/components/specification/DrawingCompareDialog.tsx`
+- `src/components/specification/IssueTenderSetDialog.tsx`
+
+Modificate:
+- `src/routes/projects.$projectId.specification.tsx` — adaug card + KPI
+- `src/lib/permissions.ts` — 3 capabilities noi + maping per tier
+- `src/routes/projects.$projectId.variations.tsx` — banner informativ
+- `quantix_lovable_full_inventory.md` — secțiune nouă „Drawings registry"
+
+## Seed pentru demo
+
+8 drawings cu `T1` toate marcate tender + lock activ pe proiectul `camden`, plus 2 revizii `pending` (`A-201 C1` și `M-110 C2`) ca să se vadă imediat flow-ul de approval și compare. Pentru alte proiecte: empty state.
+
+## Out of scope (explicit)
+
+- Diff vizual automat între PDF-uri (overlay roșu/verde). Doar side-by-side manual.
+- Detectare automată „ce linii BoQ sunt afectate". Affected areas e free-text acum.
+- Watermark pe PDF, OCR pe revisions clouds.
