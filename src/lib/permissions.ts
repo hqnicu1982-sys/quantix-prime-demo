@@ -32,6 +32,9 @@ export type Capability =
   | "view.integrations"
   | "view.settings.labour"
   | "edit.specification"   // upload/edit/delete system docs & notes
+  | "upload.drawings"          // upload drawing files & new revisions
+  | "approve.drawings"         // approve / reject pending revisions
+  | "lock.tender"              // issue tender baseline (freezes tender revisions)
   | "view.payments"              // see Payments tab
   | "create.payment.application" // subbie side: draft & submit AFP
   | "issue.payment.notice"       // MC side: issue Payment Notice / Pay Less / Certificate
@@ -53,6 +56,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.integrations",
     "view.settings.labour",
     "edit.specification",
+    "upload.drawings", "approve.drawings", "lock.tender",
     "view.payments", "create.payment.application", "issue.payment.notice", "record.payment",
   ],
   "Pro Control": [
@@ -69,6 +73,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.integrations",
     "view.settings.labour",
     "edit.specification",
+    "upload.drawings", "approve.drawings",
     "view.payments", "create.payment.application", "issue.payment.notice",
   ],
   Pro: [
@@ -83,6 +88,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.pwRates",
     "view.variations",
     "edit.specification",
+    "upload.drawings",
     "view.payments",
   ],
   "Site User": [
