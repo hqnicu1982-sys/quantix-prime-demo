@@ -346,6 +346,7 @@ export function statusTone(status: DrawingRevisionStatus): "info" | "neutral" | 
     case "pending":   return "warning";
     case "rejected":  return "danger";
     case "superseded":return "neutral";
+    case "withdrawn": return "neutral";
   }
 }
 
