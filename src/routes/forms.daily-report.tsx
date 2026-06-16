@@ -15,6 +15,7 @@ import { NoAccess } from "@/components/auth/NoAccess";
 import { useProject } from "@/lib/ProjectContext";
 import { recordDailyReportSubmission, useDailyReportSubmission } from "@/lib/dailyReportSubmissions";
 import { dailyReport } from "@/lib/mockData";
+import { useDrawings, groupByDrawing } from "@/lib/drawingRegistry";
 
 export const Route = createFileRoute("/forms/daily-report")({ component: Guarded });
 
@@ -26,13 +27,17 @@ function Guarded() {
 
 type CrewLine = { trade: string; headcount: number };
 type ProgressLine = { task: string; pctComplete: number };
-type IssueLine = { description: string; severity: "low" | "med" | "high"; raiseVo: boolean };
+type IssueLine = { description: string; severity: "low" | "med" | "high"; raiseVo: boolean; drawingRef?: string };
 
 function DailyReportForm() {
   const nav = useNavigate();
   const { current } = useProject();
   const today = new Date().toISOString().slice(0, 10);
   const existing = useDailyReportSubmission(current.id, today);
+  const drawings = useDrawings(current.id);
+  const drawingOptions = groupByDrawing(drawings)
+    .filter((g) => g.current)
+    .map((g) => `${g.drawingNumber} · ${g.current!.revisionCode}`);
 
   const [date, setDate] = useState(today);
   const [shift, setShift] = useState<"day" | "night">("day");
@@ -199,6 +204,19 @@ function DailyReportForm() {
                         <Checkbox checked={it.raiseVo} onCheckedChange={(v) => setIssues((arr) => arr.map((x, j) => j === i ? { ...x, raiseVo: v === true } : x))} />
                         <span>Raise a variation for this issue on submit</span>
                       </label>
+                      {drawingOptions.length > 0 && (
+                        <div className="flex items-center gap-2 text-[11px] text-[var(--ink-500)]">
+                          <span>Reference drawing:</span>
+                          <select
+                            value={it.drawingRef ?? ""}
+                            onChange={(e) => setIssues((arr) => arr.map((x, j) => j === i ? { ...x, drawingRef: e.target.value || undefined } : x))}
+                            className="h-7 rounded border border-[var(--ink-200)] bg-transparent px-2 text-[11px]"
+                          >
+                            <option value="">— optional —</option>
+                            {drawingOptions.map((d) => <option key={d} value={d}>{d}</option>)}
+                          </select>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -13,6 +13,8 @@ import { useBoqAllocation, reserve } from "@/lib/boqAllocation";
 import { addCallOff } from "@/lib/projectData";
 import { recordCallOffAction } from "@/lib/callOffActions";
 import { FormWizard } from "@/components/forms/FormWizard";
+import { useDrawings } from "@/lib/drawingRegistry";
+import { GitCompare } from "lucide-react";
 
 export const Route = createFileRoute("/calloffs/new")({ component: Guarded });
 
@@ -26,6 +28,13 @@ function NewCallOff() {
   const nav = useNavigate();
   const { current } = useProject();
   const alloc = useBoqAllocation(current.id);
+  const drawings = useDrawings(current.id);
+  const pendingLineIds = new Set<string>();
+  for (const r of drawings.revisions) {
+    if (r.status !== "pending") continue;
+    (r.affectedBoqLineIds ?? []).forEach((id) => pendingLineIds.add(id));
+  }
+  const lineHasPendingRev = (id: string) => pendingLineIds.has(id);
 
   const lineOptions = useMemo(() => {
     return alloc.systems.flatMap((s) =>
@@ -54,6 +63,7 @@ function NewCallOff() {
 
   const remaining = selected?.remaining ?? 0;
   const exceed = qty > remaining;
+  const selectedHasPending = !!selected && lineHasPendingRev(selected.id);
   const canSubmit = !!selected && qty > 0 && !exceed;
 
   const handleSubmit = () => {
@@ -117,6 +127,12 @@ function NewCallOff() {
                   </select>
                 )}
                 <p className="text-[10.5px] text-[var(--ink-500)]">Sourced from estimator's BoQ on {current.name}.</p>
+                {selectedHasPending && (
+                  <div className="mt-1 flex items-center gap-1.5 rounded-md border border-[var(--amber-500)]/30 bg-[var(--amber-500)]/10 px-2 py-1 text-[10.5px] text-[var(--amber-500)]">
+                    <GitCompare className="h-3 w-3" />
+                    Pending drawing revision affects this BoQ line — confirm before sending PO.
+                  </div>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label>Project zone</Label>

@@ -144,6 +144,26 @@ export function NewVariationDialog({
             />
           </div>
 
+          {triggerOptions.length > 0 && (
+            <div className="grid gap-1.5">
+              <Label htmlFor="vo-trigger" className="flex items-center gap-1.5">
+                <GitCompare className="h-3 w-3 text-[var(--accent-500)]" /> Triggered by drawing revision
+              </Label>
+              <select
+                id="vo-trigger"
+                value={triggeredByRevisionId}
+                onChange={(e) => setTriggeredByRevisionId(e.target.value)}
+                className="h-9 w-full rounded-md border border-[var(--ink-200)] bg-background px-3 text-[12.5px]"
+              >
+                <option value="">— None / manual —</option>
+                {triggerOptions.map((o) => (
+                  <option key={o.id} value={o.id}>{o.label}{o.status === "pending" ? " (pending review)" : ""}</option>
+                ))}
+              </select>
+              <p className="text-[10.5px] text-[var(--ink-500)]">Links the VO back to the drawing revision that triggered it — visible in detail view.</p>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-3">
             <div className="grid gap-1.5 col-span-2">
               <Label>Raised by</Label>
