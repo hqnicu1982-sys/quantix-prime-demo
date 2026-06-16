@@ -28,6 +28,9 @@ import { PlannerHowTo } from "@/components/planner/PlannerHowTo";
 import { AutoCallOffBanner } from "@/components/planner/AutoCallOffBanner";
 import { BlockersPanel } from "@/components/planner/BlockersPanel";
 import { useProjectVariations } from "@/lib/variations";
+import { useDrawings } from "@/lib/drawingRegistry";
+import { Link } from "@tanstack/react-router";
+import { GitCompare } from "lucide-react";
 
 export const Route = createFileRoute("/projects/$projectId/planner")({
   component: PlannerPage,
@@ -46,9 +49,20 @@ function PlannerPage() {
   const { projectId: PID } = Route.useParams();
   const tasks = useProjectTasks(PID);
   const variations = useProjectVariations(PID);
+  const drawings = useDrawings(PID);
   const approvedVariationIds = variations
     .filter((v) => v.status === "approved")
     .map((v) => v.id);
+
+  // Tasks consuming a BoQ line that has a pending revision flagged against it.
+  const pendingLineIds = new Set<string>();
+  for (const r of drawings.revisions) {
+    if (r.status !== "pending") continue;
+    (r.affectedBoqLineIds ?? []).forEach((id) => pendingLineIds.add(id));
+  }
+  const affectedTasks = pendingLineIds.size === 0
+    ? []
+    : tasks.filter((t) => t.boqLineIds.some((id) => pendingLineIds.has(id)));
 
   const [zoom, setZoom] = useState<"day" | "week" | "month">("day");
   const [statusFilter, setStatusFilter] = useState<"all" | TaskStatus>("all");
@@ -101,6 +115,20 @@ function PlannerPage() {
       <MspSyncBanner projectId={PID} />
 
       <AutoCallOffBanner projectId={PID} />
+
+      {affectedTasks.length > 0 && (
+        <Link
+          to="/projects/$projectId/specification"
+          params={{ projectId: PID }}
+          className="flex items-center gap-2 rounded-md border border-[var(--amber-500)]/30 bg-[var(--amber-500)]/10 px-4 py-2.5 text-[12px] text-[var(--ink-700)] hover:bg-[var(--amber-500)]/15"
+        >
+          <GitCompare className="h-4 w-4 shrink-0 text-[var(--amber-500)]" />
+          <span>
+            <span className="font-semibold">{affectedTasks.length} task{affectedTasks.length === 1 ? "" : "s"}</span>
+            {" "}consume BoQ lines with pending drawing revisions — review before resourcing.
+          </span>
+        </Link>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Kpi
