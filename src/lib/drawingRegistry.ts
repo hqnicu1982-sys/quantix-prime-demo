@@ -122,6 +122,19 @@ function seedFor(projectId: string): DrawingsState {
         changeNotes: "Riser shaft size increased — shaft wall spec may need uplift to 120 min fire rating.",
         affectedAreas: ["Lift & service shafts"],
       }),
+      mk(11, "A-410", "C1", "Bedroom typical",     "Architect",  false, "withdrawn", {
+        uploadedBy: "Marco Reyes",
+        uploadedAt: Date.parse("2026-06-10"),
+        changeNotes: "Wrong sheet uploaded — withdrawn before review.",
+        withdrawnBy: "Marco Reyes",
+        withdrawnAt: Date.parse("2026-06-10") + 3600_000,
+      }),
+    ],
+    auditLog: [
+      { id: "aud-seed-1", ts: Date.parse("2026-04-18"), actor: "Sarah Klein", kind: "lock-tender", detail: "8 drawings frozen" },
+      { id: "aud-seed-2", ts: Date.parse("2026-06-02"), actor: "Marco Reyes", kind: "upload", drawingNumber: "A-201", revisionCode: "C1", detail: "Awaiting review" },
+      { id: "aud-seed-3", ts: Date.parse("2026-06-08"), actor: "Priya Shah",  kind: "upload", drawingNumber: "M-110", revisionCode: "C2", detail: "Awaiting review" },
+      { id: "aud-seed-4", ts: Date.parse("2026-06-10") + 3600_000, actor: "Marco Reyes", kind: "withdraw", drawingNumber: "A-410", revisionCode: "C1", detail: "Wrong sheet" },
     ],
   };
 }
