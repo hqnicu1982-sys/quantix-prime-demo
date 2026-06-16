@@ -7,9 +7,7 @@ import { CostBreakdownPanel } from "@/components/variations/CostBreakdownPanel";
 import { useProject } from "@/lib/ProjectContext";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
-import { useDrawings } from "@/lib/drawingRegistry";
-import { Link } from "@tanstack/react-router";
-import { GitCompare } from "lucide-react";
+import { DrawingImpactCard } from "@/components/specification/DrawingImpactCard";
 
 export const Route = createFileRoute("/projects/$projectId/variations")({
   component: GuardedProjectVariations,
@@ -32,24 +30,10 @@ function ProjectVariations() {
   const baseline = useBaseline(projectId);
   const net = baseline + s.approvedValue;
   const upliftPct = baseline > 0 ? (s.approvedValue / baseline) * 100 : 0;
-  const drawings = useDrawings(projectId);
-  const pendingDrawings = drawings.revisions.filter((r) => r.status === "pending").length;
 
   return (
     <div className="space-y-5 pt-5">
-      {pendingDrawings > 0 && (
-        <Link
-          to="/projects/$projectId/specification"
-          params={{ projectId }}
-          className="flex items-center gap-2 rounded-md border border-[var(--amber-500)]/30 bg-[var(--amber-500)]/10 px-4 py-2.5 text-[12px] text-[var(--ink-700)] hover:bg-[var(--amber-500)]/15"
-        >
-          <GitCompare className="h-4 w-4 shrink-0 text-[var(--amber-500)]" />
-          <span>
-            <span className="font-semibold">{pendingDrawings} drawing revision{pendingDrawings === 1 ? "" : "s"} pending review</span>
-            {" "}— may affect tender pricing. Compare with tender baseline in Specification.
-          </span>
-        </Link>
-      )}
+      <DrawingImpactCard projectId={projectId} mode="variations" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-[20px] font-semibold tracking-tight">Variations register</h2>
