@@ -12,7 +12,7 @@ export const DRAWING_DISCIPLINES: DrawingDiscipline[] = [
   "Architect", "Structural", "MEP", "Fire", "Other",
 ];
 
-export type DrawingRevisionStatus = "pending" | "current" | "superseded" | "rejected";
+export type DrawingRevisionStatus = "pending" | "current" | "superseded" | "rejected" | "withdrawn";
 
 export type DrawingRevision = {
   id: string;
@@ -28,6 +28,8 @@ export type DrawingRevision = {
   discipline: DrawingDiscipline;
   changeNotes?: string;
   affectedAreas?: string[];
+  affectedSystemIds?: string[];   // → ProjectSystem.id, for impact selectors
+  affectedBoqLineIds?: string[];  // → ProjectBoqLine.id
   uploadedBy: string;
   uploadedAt: number;
   approvedBy?: string;
@@ -35,18 +37,38 @@ export type DrawingRevision = {
   rejectedBy?: string;
   rejectedAt?: number;
   rejectedReason?: string;
+  withdrawnBy?: string;
+  withdrawnAt?: number;
   seed?: boolean;
+};
+
+export type DrawingAuditKind =
+  | "upload" | "approve" | "reject" | "withdraw" | "supersede"
+  | "lock-tender" | "unlock-tender" | "delete" | "bulk-upload";
+
+export type DrawingAuditEntry = {
+  id: string;
+  ts: number;
+  actor: string;
+  kind: DrawingAuditKind;
+  drawingNumber?: string;
+  revisionCode?: string;
+  revisionId?: string;
+  detail?: string;
 };
 
 export type DrawingsState = {
   tenderLocked: boolean;
   tenderIssuedAt?: number;
   tenderIssuedBy?: string;
+  tenderUnlockHistory?: { at: number; by: string; reason: string }[];
   revisions: DrawingRevision[];
+  auditLog?: DrawingAuditEntry[];
 };
 
 export const MAX_REVISIONS_PER_PROJECT = 200;
 export const DRAWING_NUMBER_REGEX = /^[A-Z]{1,3}-\d{2,4}[A-Z]?$/;
+export const REVISION_CODE_REGEX = /^[A-Z0-9]{1,6}$/;
 export { MAX_FILE_BYTES, formatBytes, fileToDataUrl };
 
 const KEY = (projectId: string) => `qp-drawings-${projectId}`;
