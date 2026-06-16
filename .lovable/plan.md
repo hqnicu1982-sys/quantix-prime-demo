@@ -1,124 +1,194 @@
+## Goal
 
-# Drawing revisions & tender baseline
+Extind sistemul de drawing revisions de la "upload + approve + compare" la un **registru complet integrat în workflow-ul Quantix**: notificări, link cu BoQ/call-offs, semnale către operative, bulk upload, audit, export, unlock controlat. Tot ce am enumerat (critic → nice-to-have) intră în acest plan, ordonat pe priorități și grupat în file changes mici.
 
-Adaug o secțiune nouă **„Drawing revisions"** în tab-ul existent `/projects/$projectId/specification`, deasupra listei „Specification documents". Documentele de spec (NBS, fire, acoustic) rămân unde sunt — desenele de arhitectură capătă tratament special cu numere de drawing, revizii grupate, baseline tender blocat și aprobare per revizie.
+## A. Extensii la modelul de date (`src/lib/drawingRegistry.ts`)
 
-## Concept
-
-Fiecare „drawing" e un grup logic identificat printr-un **drawing number** (ex. `A-201`, `M-110`). Sub el stau una sau mai multe **revizii** (`T1` tender, `C1`, `C2`…). Una singură e marcată `Current`; restul sunt istoric. Baseline-ul tender este înghețat când Admin/Pro apasă „Issue tender set" — după acel moment nimic nu mai poate șterge sau înlocui un fișier marcat tender, doar adăuga revizii noi peste.
-
-## Model de date (`src/lib/drawingRegistry.ts`, localStorage)
-
+Adaug pe `DrawingRevision`:
 ```ts
-type DrawingRevisionStatus = "pending" | "current" | "superseded" | "rejected";
+affectedSystemIds?: string[];   // link → ProjectSystem.id (dropdown la upload)
+affectedBoqLineIds?: string[];  // link → ProjectBoqLine.id
+withdrawnAt?: number;           // pentru "retract before approval"
+withdrawnBy?: string;
+```
+Status nou: `"withdrawn"` adăugat la `DrawingRevisionStatus`.
 
-type DrawingRevision = {
-  id: string;
-  drawingNumber: string;       // ex "A-201"
-  revisionCode: string;        // ex "T1", "C1", "P02"
-  isTender: boolean;           // true doar pentru revizia inclusă în tender baseline
-  status: DrawingRevisionStatus;
-  fileName: string; fileSize: number; mimeType: string; dataUrl: string;
-  title?: string;              // ex "Level 04 GA"
-  discipline: "Architect" | "Structural" | "MEP" | "Fire" | "Other";
-  changeNotes?: string;        // ce s-a schimbat față de revizia anterioară
-  affectedAreas?: string[];    // free tags ex ["L4 corridors", "Lift shaft"]
-  uploadedBy: string; uploadedAt: number;
-  approvedBy?: string; approvedAt?: number;
-  rejectedReason?: string;
-};
+Pe `DrawingsState`:
+```ts
+auditLog: DrawingAuditEntry[];  // append-only
+tenderUnlockedAt?: number;      // dacă a fost vreodată unlock-uit
+tenderUnlockHistory?: { at: number; by: string; reason: string }[];
+```
 
-type DrawingsState = {
-  tenderLocked: boolean;
-  tenderIssuedAt?: number;
-  tenderIssuedBy?: string;
-  revisions: DrawingRevision[];
+`DrawingAuditEntry`:
+```ts
+type DrawingAuditKind = "upload" | "approve" | "reject" | "withdraw" | "supersede"
+                     | "lock-tender" | "unlock-tender" | "delete" | "bulk-upload";
+type DrawingAuditEntry = {
+  id: string; ts: number; actor: string; kind: DrawingAuditKind;
+  drawingNumber?: string; revisionCode?: string; revisionId?: string;
+  detail?: string;
 };
 ```
 
-API: `getDrawings`, `useDrawings`, `addRevision`, `approveRevision`, `rejectRevision`, `issueTenderSet`, `groupByDrawing` (returnează `{ drawingNumber, current, tender, history[] }`).
+API nou:
+- `withdrawRevision(projectId, revId, actor)` — doar uploaderul propriu, doar dacă `status === "pending"`.
+- `unlockTender(projectId, actor, reason)` — gated `lock.tender`, cere reason, scrie în `tenderUnlockHistory`.
+- `bulkAddRevisions(projectId, inputs[])` — atomic, returnează `{ ok, added, errors[] }`.
+- `getDrawingAudit(projectId)` + `useDrawingAudit(projectId)`.
+- `getImpactedDrawings(projectId, { systemId?, boqLineId? })` — folosit din BoQ/call-offs ca să arătăm „acest BoQ are 2 revizii pending".
+- Validare suplimentară în `addRevision`: rejectează dacă `drawingNumber+revisionCode` deja există (deja are guard, păstrăm); rejectează `revisionCode` cu chars în afara `[A-Z0-9]`.
 
-## Permisiuni (`src/lib/permissions.ts`)
+Toate mutațiile actuale (`addRevision`, `approveRevision`, `rejectRevision`, `removeRevision`, `issueTenderSet`, plus cele noi) push într-un `auditLog` entry.
 
-Adaug 3 capabilities noi:
-- `upload.drawings` → Pro, Pro Control, Admin (Site nu mai poate urca desene, doar spec docs)
-- `approve.drawings` → Pro Control, Admin
-- `lock.tender` → Admin
+Teste noi în `drawingRegistry.test.ts`: withdraw flow, unlock + reissue, bulk upload (partial failure), impact selectors, audit append.
 
-Operative & Site văd doar reviziile `current` + tender, fără butoane.
+## B. Permissions (`src/lib/permissions.ts`)
 
-## UI în Specification page
+Adaug:
+- `unlock.tender` → **doar Admin** (separat de `lock.tender` pentru audit clarity).
+- `withdraw.drawings.own` → Pro, Pro Control, Admin.
+- `bulk.upload.drawings` → Pro, Pro Control, Admin.
+- `export.drawings.register` → toți cu `view.calloffs` sau mai sus (e read-only).
 
-Card nou **„Drawing revisions"** plasat înaintea „Specification documents":
+## C. Componente UI noi
 
-- **Header**: KPI mic — `12 drawings · 3 pending review · Tender locked 18 Apr`. Buton `Upload revision` (gated `upload.drawings`). Dacă tender nu e lock-uit: buton suplimentar `Issue tender set` (gated `lock.tender`) cu confirm dialog explicând că devine read-only.
-- **Listă grupată pe drawing number** (acordeon): rândul principal arată `A-201 · Level 04 GA · Current: C2 · Tender: T1`. Pending reviziile au badge portocaliu „Awaiting approval".
-- **Expand**: timeline vertical cu toate reviziile, status badge, uploader, date, change notes. Acțiuni per revizie: `Download`, `Compare with tender` (deschide viewer), `Approve` / `Reject` (gated).
-- **Empty state** explică flow-ul: încarcă T1-uri → Issue tender → urcă C1/C2 când vin revizii.
+### 1. Notificări → în `ApprovalInboxCard` (item #1 critic)
+Modific `src/components/dashboard/ApprovalInboxCard.tsx`:
+- Adaug secțiune nouă „Drawing revisions to review" gated pe `approve.drawings`, count = `pendingCount`, link → `/projects/$projectId/specification#drawing-revisions`.
 
-## Upload dialog (`UploadDrawingRevisionDialog.tsx`)
+### 2. Superseded badge / „nu mai folosi" (item #3 critic)
+- În `DrawingRevisionsCard`: când istoric e expand-at, `superseded` revizii primesc deja badge — adaug ribbon roșu „SUPERSEDED — current is C2" + tooltip explicativ.
+- La download: dacă rev e `superseded`, intercept click, deschide confirm dialog „You're downloading a superseded revision. Current is C2 (02 Jun). Continue?".
 
-Form cu validare zod:
-- File picker (PDF, DWG, PNG, JPG; același `MAX_FILE_BYTES` ca spec docs)
-- **Drawing number** (obligatoriu, regex `^[A-Z]{1,3}-\d{2,4}[A-Z]?$`, auto-uppercase). Dacă există deja, dialogul arată „Adding revision to existing drawing A-201 (current: C1)".
-- **Revision code** (obligatoriu, max 6 chars). Dacă tender nu e încă issued: checkbox „Mark as tender revision" (default on).
-- **Title** (opțional), **Discipline** (select).
-- **Change notes** (obligatoriu pentru revizii post-tender; opțional pentru tender) + **Affected areas** (chip input).
-- Dacă tender e lock-uit și user încearcă să încarce cu `isTender=true` → blocat client-side + server-side în `addRevision`.
+### 3. Link BoQ ↔ Drawing (item #2 critic)
+- În `UploadDrawingRevisionDialog.tsx`: două multi-select dropdowns noi „Affected systems" (din `useProjectData(projectId).systems`) și „Affected BoQ lines" (filtrate pe sisteme selectate). Doar pentru revizii post-tender.
+- Card nou `DrawingImpactCard.tsx` afișat în `/variations` și în `/costed-boq`:
+  ```
+  ⚠ 2 pending drawing revisions affect priced scope
+  · A-201 C1 → System "Acoustic walls L4" · £12,400 exposure
+  · M-110 C2 → System "MEP risers" · £3,800 exposure
+  [Review revisions]
+  ```
+  Exposure = sum(`qty * ratePerUnit`) al BoQ lines impactate. Reads via `getImpactedDrawings`.
 
-Post-tender, reviziile noi intră cu `status: "pending"`. Pre-tender, intră direct `status: "current"`.
+### 4. Audit log per drawing (item #6)
+- Tab nou în Specification: sub `DrawingRevisionsCard`, accordion „Drawing audit log" (collapsed default). Pattern copiat din `invoices.audit.tsx`.
+- Filtru per drawing-number; export CSV.
 
-## Approval flow
+### 5. Bulk upload (item #4)
+- Buton secundar în header card-ului „Bulk upload" (gated `bulk.upload.drawings`).
+- Dialog `BulkUploadDrawingsDialog.tsx`: drag-drop multiplu, parse file names cu regex `^([A-Z]{1,3}-\d{2,4}[A-Z]?)[ _-]+(T\d+|C\d+|P\d+)\.(pdf|dwg|png|jpg)$`. Fișiere care nu matchează regex apar în secțiune „Needs manual mapping" cu input-uri inline pentru drawingNumber + revisionCode + discipline.
+- Pre-tender: toate intră ca `isTender=true`. Post-tender: ca `pending` cu prompt pentru change notes global.
+- Submit → `bulkAddRevisions`, raport „24 added · 2 duplicates skipped".
 
-- `Pro Control` / `Admin` văd în header card-ului „3 pending review" → click filtrează lista.
-- Approve: revizia devine `current`, vechea `current` devine `superseded`. Toast cu link spre compare.
-- Reject: cere motiv (textarea), revizia devine `rejected`, vechea `current` rămâne.
+### 6. Drawing register export (item #5)
+- Buton „Export register" în header card.
+- Generează CSV: `drawingNumber, title, discipline, currentRevision, tenderRevision, status, lastUpload, uploadedBy, notes, affectedSystems`.
+- Fără PDF export deocamdată (out of scope) — semnalat că poate fi adăugat după.
 
-## Side-by-side viewer (`DrawingCompareDialog.tsx`)
+### 7. „Latest only" toggle (item #7)
+- În header card, switch „Hide history" (default ON pentru Site/Operative, OFF pentru Pro+).
+- Când ON: ascunde rândurile expand-ate, afișează doar reviziile `current`.
 
-Dialog full-screen (`max-w-[95vw] h-[90vh]`). Două panouri egale:
-- Stânga: revizia tender (badge „Tender · T1 · 18 Apr").
-- Dreapta: revizia selectată (badge „Current · C2 · 02 Jun").
-- Pentru PDF: `<iframe src={dataUrl}>` cu `toolbar=0`. Pentru imagini: `<img>` cu wrapper zoom (`react-zoom-pan-pinch` deja-n stack? — dacă nu, controale custom +/- ca în diagrame).
-- Zoom sincronizat opțional (toggle „Sync zoom" în header). Implementare: state comun `{scale, x, y}` propagat la ambele panouri când toggle e on.
-- Footer: `change notes` ale reviziei curente + buton `Download both`.
-- DWG: fallback „Preview not available — download to compare in CAD".
+### 8. Multi-discipline filter (item #10)
+- Strip cu chips deasupra listei: `All · Architect · Structural · MEP · Fire · Other`. Filtrare client-side.
 
-## Lock tender set
+### 9. Withdraw revision (edge case)
+- În UI per-revizie: buton `Withdraw` vizibil DOAR pentru `uploadedBy === me.name && status === "pending"`. Confirm dialog, fără reason.
 
-Confirm dialog: lista reviziilor marcate tender, avertisment „După lock, aceste fișiere devin read-only. Reviziile noi vor cere aprobare." Acțiunea setează `tenderLocked: true` + `tenderIssuedAt/By`. După lock:
-- Butonul „Issue tender set" dispare.
-- În locul lui apare un mic banner verde sub header: „Tender set issued 18 Apr by Sarah K · 8 drawings frozen".
-- `addRevision` respinge orice request cu `isTender: true`.
-- Delete pe revizii tender e blocat în UI + în registru.
+### 10. Tender re-issue / unlock (edge case)
+- În banner-ul verde „Tender baseline frozen": apare buton mic `Unlock` (gated `unlock.tender`).
+- Dialog `UnlockTenderDialog.tsx`: textarea reason obligatorie + warning roșu „This invalidates all pending comparisons. Use only when the client re-issues the tender set."
+- După unlock: bannerul devine portocaliu „Tender unlocked 18 Jun by Admin · reason: client re-issued package B" și butonul `Issue tender set` reapare.
+- `tenderUnlockHistory` afișat în audit log.
 
-## Integrare cross-module (light touch)
+### 11. Validări existente
+- Unicitate `drawingNumber + revisionCode` (deja are guard în registru — adaug test explicit).
+- Mesaj toast: „A-201 C1 already exists — use a new revision code".
 
-- **Variations** (`/projects/.../variations`): adaug un mic banner deasupra tabelului „2 drawing revisions pending review may affect pricing — review" → link spre tab-ul Specification cu anchor `#drawing-revisions`. Nu modific logica VO existentă, doar semnalizez.
-- **Specification KPI strip**: KPI „Spec documents" rămâne; adaug unul nou „Drawing revisions" cu `total · X pending`.
+### 12. Mobile-friendly compare (item #11)
+- În `DrawingCompareDialog.tsx`: pe viewport <768px (use `useIsMobile`), trec layoutul din side-by-side în tabs (`Tender` / `Revision`), păstrând zoom controls.
 
-## Fișiere
+## D. Conexiuni în workflow (cross-module)
 
-Noi:
-- `src/lib/drawingRegistry.ts` — store + hooks
-- `src/lib/drawingRegistry.test.ts` — lock invariants, group-by-drawing, approve/reject transitions
-- `src/components/specification/DrawingRevisionsCard.tsx`
-- `src/components/specification/UploadDrawingRevisionDialog.tsx`
-- `src/components/specification/DrawingCompareDialog.tsx`
-- `src/components/specification/IssueTenderSetDialog.tsx`
+Acesta e jumătatea care lipsea — drawing registry devine o sursă consumată în alte module.
 
-Modificate:
-- `src/routes/projects.$projectId.specification.tsx` — adaug card + KPI
-- `src/lib/permissions.ts` — 3 capabilities noi + maping per tier
-- `src/routes/projects.$projectId.variations.tsx` — banner informativ
-- `quantix_lovable_full_inventory.md` — secțiune nouă „Drawings registry"
+### 1. **Variations** (`projects.$projectId.variations.tsx`)
+- Înlocuiesc banner-ul actual cu `<DrawingImpactCard projectId={…} mode="variations" />`.
+- În dialog-ul „New variation": câmp opțional „Triggered by drawing revision" cu autocomplete peste reviziile `pending`/`current` post-tender. Salvat ca metadata pe variation (extind `Variation` type cu `triggeredByRevisionId?: string`).
+- VariationDetail arată back-link spre revizie + buton „Open compare".
 
-## Seed pentru demo
+### 2. **Call-offs** (`calloffs.new.tsx` + `calloffs.$ref.tsx`)
+- În wizard, când utilizatorul selectează BoQ lines: dacă o linie selectată e legată de o revizie `pending` (via `affectedBoqLineIds`), warning inline „A-201 C1 pending review may change this BoQ — confirm before sending PO".
+- Pe pagina call-off existentă: badge „Based on drawing rev T1" (snapshot la momentul creării).
 
-8 drawings cu `T1` toate marcate tender + lock activ pe proiectul `camden`, plus 2 revizii `pending` (`A-201 C1` și `M-110 C2`) ca să se vadă imediat flow-ul de approval și compare. Pentru alte proiecte: empty state.
+### 3. **Costed BoQ** (`projects.$projectId.costed-boq.tsx`)
+- Coloană nouă (sau iconiță) per row: dacă `boqLine.id ∈ affectedBoqLineIds` al unei revizii `pending` → iconiță `GitCompare` portocalie cu tooltip „Pending revision: A-201 C1".
 
-## Out of scope (explicit)
+### 4. **Planner** (`projects.$projectId.planner.tsx`)
+- Task-uri legate de un sistem care are revizii pending: badge mic „rev pending" pe bara Gantt + în tooltip.
+- Soft integration — citește `getImpactedDrawings` per task.systemId.
 
-- Diff vizual automat între PDF-uri (overlay roșu/verde). Doar side-by-side manual.
-- Detectare automată „ce linii BoQ sunt afectate". Affected areas e free-text acum.
-- Watermark pe PDF, OCR pe revisions clouds.
+### 5. **Daily report** (`forms.daily-report.tsx`)
+- În secțiunea „Issues raised": câmp opțional „Reference drawing" (autocomplete drawingNumber + revisionCode). Util când operativul flag-uiește o diferență față de desen.
+
+### 6. **Project KPI strip** (Specification + Project home)
+- Update `projects.$projectId.specification.tsx` KPI „Drawing revisions" să arate `X total · Y pending · Z affecting BoQ`.
+- În `projects.$projectId.index.tsx` (project home): mic widget „Drawings" cu același rezumat + link.
+
+### 7. **Audit log global**
+- `invoices.audit.tsx` rămâne separat. NU contopesc — drawing audit are scope diferit. Doar adaug link la cross-nav.
+
+## E. Seed extension (proiect `camden`)
+
+- Adaug 2 audit entries istorice (issue tender + 2 upload-uri pending).
+- Leg revizia `A-201 C1` la sistemul „Acoustic walls L4" (primul system din seed).
+- Leg `M-110 C2` la sistemul MEP.
+- Adaug 1 revizie `withdrawn` ca demo pentru flow-ul withdraw.
+- NU adaug bulk upload sau unlock — acestea se demo-iesc live.
+
+## F. Files
+
+**New:**
+- `src/components/specification/BulkUploadDrawingsDialog.tsx`
+- `src/components/specification/UnlockTenderDialog.tsx`
+- `src/components/specification/DrawingAuditLog.tsx`
+- `src/components/specification/DrawingImpactCard.tsx`
+- `src/lib/drawingExport.ts` (CSV generator)
+
+**Modified:**
+- `src/lib/drawingRegistry.ts` (audit, withdraw, unlock, bulk, impact selectors, links)
+- `src/lib/drawingRegistry.test.ts` (new tests)
+- `src/lib/permissions.ts` (3 new caps)
+- `src/lib/variations.ts` (add `triggeredByRevisionId`)
+- `src/components/specification/DrawingRevisionsCard.tsx` (filters, latest-only, withdraw, unlock banner, superseded ribbon, intercept download, audit toggle, export button, bulk button)
+- `src/components/specification/UploadDrawingRevisionDialog.tsx` (affected systems/lines selects)
+- `src/components/specification/DrawingCompareDialog.tsx` (mobile tabs)
+- `src/components/dashboard/ApprovalInboxCard.tsx` (drawings section)
+- `src/components/variations/NewVariationDialog.tsx` (triggered-by select)
+- `src/components/variations/VariationDetailDialog.tsx` (back-link)
+- `src/routes/projects.$projectId.variations.tsx` (impact card)
+- `src/routes/projects.$projectId.costed-boq.tsx` (pending icon column)
+- `src/routes/projects.$projectId.specification.tsx` (KPI update + audit accordion)
+- `src/routes/projects.$projectId.index.tsx` (mini widget)
+- `src/routes/projects.$projectId.planner.tsx` (rev-pending badge)
+- `src/routes/calloffs.new.tsx` (BoQ warning)
+- `src/routes/calloffs.$ref.tsx` (drawing-rev snapshot badge)
+- `src/routes/forms.daily-report.tsx` (drawing reference field)
+- `quantix_lovable_full_inventory.md` (update Drawings registry section)
+
+## G. Out of scope (explicit)
+
+- PDF overlay diff (vizual auto-diff) — rămâne manual side-by-side.
+- Cross-project drawing library (shared între proiecte).
+- Email/push notifications reale — doar in-app inbox.
+- PDF export al registrului — doar CSV.
+- Thumbnail generation pentru drawings.
+- OCR pe revision clouds.
+- Realtime collaboration / locking pe drawing.
+
+## H. Verificare
+
+- `bunx vitest run` — toate testele noi + cele 94 existente.
+- Manual smoke: upload → pending → approve → check că Variations + Costed BoQ + ApprovalInbox afișează corect; unlock → reissue; bulk upload cu 1 fișier malformat.
