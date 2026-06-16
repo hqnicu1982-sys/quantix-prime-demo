@@ -18,6 +18,7 @@ import {
   type DrawingDiscipline,
 } from "@/lib/drawingRegistry";
 import { useCurrentUser } from "@/lib/currentUser";
+import { useProjectData } from "@/lib/projectData";
 
 export function UploadDrawingRevisionDialog({
   projectId, open, onOpenChange, defaultDrawingNumber,
@@ -29,6 +30,7 @@ export function UploadDrawingRevisionDialog({
 }) {
   const me = useCurrentUser();
   const state = getDrawings(projectId);
+  const projectData = useProjectData(projectId);
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [drawingNumber, setDrawingNumber] = useState(defaultDrawingNumber ?? "");
@@ -38,15 +40,22 @@ export function UploadDrawingRevisionDialog({
   const [isTender, setIsTender] = useState(!state.tenderLocked);
   const [changeNotes, setChangeNotes] = useState("");
   const [areasInput, setAreasInput] = useState("");
+  const [selectedSystemIds, setSelectedSystemIds] = useState<string[]>([]);
+  const [selectedBoqLineIds, setSelectedBoqLineIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
   const groups = useMemo(() => groupByDrawing(state), [state]);
   const matchingGroup = groups.find((g) => g.drawingNumber === drawingNumber.trim().toUpperCase());
+  const lineOptions = useMemo(() => {
+    if (selectedSystemIds.length === 0) return [];
+    return projectData.boqLines.filter((l) => selectedSystemIds.includes(l.systemId));
+  }, [projectData.boqLines, selectedSystemIds]);
 
   function reset() {
     setFile(null); setDrawingNumber(defaultDrawingNumber ?? ""); setRevisionCode("");
     setTitle(""); setDiscipline("Architect"); setIsTender(!state.tenderLocked);
     setChangeNotes(""); setAreasInput("");
+    setSelectedSystemIds([]); setSelectedBoqLineIds([]);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -82,6 +91,8 @@ export function UploadDrawingRevisionDialog({
       discipline,
       changeNotes: changeNotes.trim() || undefined,
       affectedAreas: areas.length ? areas : undefined,
+      affectedSystemIds: selectedSystemIds.length ? selectedSystemIds : undefined,
+      affectedBoqLineIds: selectedBoqLineIds.length ? selectedBoqLineIds : undefined,
       uploadedBy: me.name,
     });
     setBusy(false);
@@ -208,6 +219,68 @@ export function UploadDrawingRevisionDialog({
             <Input id="areas" placeholder="L4 corridor, Bedrooms 4.12–4.18"
                    value={areasInput} onChange={(e) => setAreasInput(e.target.value)} />
           </div>
+
+          {state.tenderLocked && projectData.systems.length > 0 && (
+            <div className="space-y-2 rounded-md border border-[var(--ink-200)] bg-[var(--ink-50)]/40 p-3">
+              <div>
+                <Label className="text-[11.5px] font-semibold">Affected systems</Label>
+                <p className="text-[10.5px] text-[var(--ink-500)]">
+                  Linking flags potential pricing exposure on the Variations &amp; Costed BoQ tabs.
+                </p>
+              </div>
+              <div className="flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
+                {projectData.systems.map((s) => {
+                  const active = selectedSystemIds.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedSystemIds((cur) =>
+                          active ? cur.filter((x) => x !== s.id) : [...cur, s.id],
+                        )
+                      }
+                      className={`rounded border px-2 py-1 text-[11px] ${
+                        active
+                          ? "border-[var(--accent-500)] bg-[var(--accent-500)]/10 text-[var(--accent-500)] font-semibold"
+                          : "border-[var(--ink-200)] text-[var(--ink-700)] hover:bg-[var(--ink-50)]"
+                      }`}
+                    >
+                      {s.systemName}
+                    </button>
+                  );
+                })}
+              </div>
+              {lineOptions.length > 0 && (
+                <div>
+                  <Label className="text-[11.5px] font-semibold">Affected BoQ lines (optional)</Label>
+                  <div className="mt-1 flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
+                    {lineOptions.map((l) => {
+                      const active = selectedBoqLineIds.includes(l.id);
+                      return (
+                        <button
+                          key={l.id}
+                          type="button"
+                          onClick={() =>
+                            setSelectedBoqLineIds((cur) =>
+                              active ? cur.filter((x) => x !== l.id) : [...cur, l.id],
+                            )
+                          }
+                          className={`rounded border px-2 py-1 text-[10.5px] ${
+                            active
+                              ? "border-[var(--amber-500)] bg-[var(--amber-500)]/10 text-[var(--amber-500)] font-semibold"
+                              : "border-[var(--ink-200)] text-[var(--ink-500)] hover:bg-[var(--ink-50)]"
+                          }`}
+                        >
+                          {l.material} · {l.qty} {l.unit}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter>
