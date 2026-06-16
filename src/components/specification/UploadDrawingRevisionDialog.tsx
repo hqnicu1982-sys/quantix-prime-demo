@@ -91,6 +91,7 @@ export function UploadDrawingRevisionDialog({
         "limit-reached": "Project revision limit reached",
         "tender-locked": "Tender set is locked — uploads cannot be marked tender",
         "invalid-number": "Invalid drawing number format",
+        "invalid-revision-code": "Revision code must be 1–6 letters/digits (A–Z, 0–9)",
         "duplicate-revision": `Revision ${revisionCode} already exists for ${dn}`,
         "post-tender-needs-notes": "Change notes are required for post-tender revisions",
       };

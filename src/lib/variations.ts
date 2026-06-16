@@ -50,6 +50,9 @@ export type ProjectVariation = {
   source?: VariationSource;
   sourceDate?: string;   // e.g. the Daily Report ISO date this was raised from
   sourceTaskId?: string; // optional planner task this VO blocks/extends
+  // Link back to a drawing revision that triggered this VO (if any).
+  triggeredByRevisionId?: string;
+  triggeredByDrawing?: string; // "A-201 · C1" — denormalised label for display
 };
 
 const KEY = (pid: string) => `qp-project-variations-${pid}`;
