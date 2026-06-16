@@ -151,6 +151,18 @@ function uid() {
   return `dr-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function auditUid() {
+  return `aud-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function appendAudit(state: DrawingsState, entry: Omit<DrawingAuditEntry, "id" | "ts">): DrawingsState {
+  const log: DrawingAuditEntry[] = state.auditLog ?? [];
+  return {
+    ...state,
+    auditLog: [{ id: auditUid(), ts: Date.now(), ...entry }, ...log].slice(0, 500),
+  };
+}
+
 // ----- Reads ---------------------------------------------------------------
 
 export function getDrawings(projectId: string): DrawingsState {
@@ -173,6 +185,16 @@ export function useDrawings(projectId: string): DrawingsState {
     };
   }, [projectId]);
   return state;
+}
+
+/** Stable hook for the audit log slice. */
+export function useDrawingAudit(projectId: string): DrawingAuditEntry[] {
+  return useDrawings(projectId).auditLog ?? [];
+}
+
+/** Non-reactive read of audit log. */
+export function getDrawingAudit(projectId: string): DrawingAuditEntry[] {
+  return read(projectId).auditLog ?? [];
 }
 
 export type DrawingGroup = {
@@ -224,15 +246,18 @@ export type AddRevisionInput = {
   discipline: DrawingDiscipline;
   changeNotes?: string;
   affectedAreas?: string[];
+  affectedSystemIds?: string[];
+  affectedBoqLineIds?: string[];
   uploadedBy: string;
 };
 
 export type AddRevisionResult =
   | { ok: true; revision: DrawingRevision }
-  | { ok: false; error: "too-large" | "limit-reached" | "tender-locked" | "invalid-number" | "duplicate-revision" | "post-tender-needs-notes" };
+  | { ok: false; error: "too-large" | "limit-reached" | "tender-locked" | "invalid-number" | "invalid-revision-code" | "duplicate-revision" | "post-tender-needs-notes" };
 
 export function addRevision(projectId: string, input: AddRevisionInput): AddRevisionResult {
   if (!DRAWING_NUMBER_REGEX.test(input.drawingNumber)) return { ok: false, error: "invalid-number" };
+  if (!REVISION_CODE_REGEX.test(input.revisionCode.toUpperCase())) return { ok: false, error: "invalid-revision-code" };
   if (input.fileSize > MAX_FILE_BYTES) return { ok: false, error: "too-large" };
 
   const state = read(projectId);
@@ -262,11 +287,14 @@ export function addRevision(projectId: string, input: AddRevisionInput): AddRevi
     discipline: input.discipline,
     changeNotes: input.changeNotes,
     affectedAreas: input.affectedAreas,
+    affectedSystemIds: input.affectedSystemIds,
+    affectedBoqLineIds: input.affectedBoqLineIds,
     uploadedBy: input.uploadedBy,
     uploadedAt: Date.now(),
   };
 
   let next = [rev, ...state.revisions];
+  let nextState: DrawingsState = { ...state, revisions: next };
   // If new rev is current, supersede any previous current for the same drawing.
   if (rev.status === "current") {
     next = next.map((r) =>
@@ -274,8 +302,14 @@ export function addRevision(projectId: string, input: AddRevisionInput): AddRevi
         ? { ...r, status: "superseded" }
         : r,
     );
+    nextState = { ...nextState, revisions: next };
   }
-  write(projectId, { ...state, revisions: next });
+  nextState = appendAudit(nextState, {
+    actor: input.uploadedBy, kind: "upload",
+    drawingNumber: rev.drawingNumber, revisionCode: rev.revisionCode, revisionId: rev.id,
+    detail: rev.isTender ? "Tender baseline" : (goesPending ? "Awaiting review" : "Set as current"),
+  });
+  write(projectId, nextState);
   return { ok: true, revision: rev };
 }
 
@@ -292,17 +326,49 @@ export function approveRevision(projectId: string, revId: string, approver: stri
     }
     return r;
   });
-  write(projectId, { ...state, revisions: next });
+  const audited = appendAudit({ ...state, revisions: next }, {
+    actor: approver, kind: "approve",
+    drawingNumber: target.drawingNumber, revisionCode: target.revisionCode, revisionId: target.id,
+    detail: "Now current",
+  });
+  write(projectId, audited);
 }
 
 export function rejectRevision(projectId: string, revId: string, rejector: string, reason: string) {
   const state = read(projectId);
+  const target = state.revisions.find((r) => r.id === revId);
+  if (!target || target.status !== "pending") return;
   const next = state.revisions.map((r) =>
     r.id === revId && r.status === "pending"
       ? { ...r, status: "rejected" as const, rejectedBy: rejector, rejectedAt: Date.now(), rejectedReason: reason }
       : r,
   );
-  write(projectId, { ...state, revisions: next });
+  const audited = appendAudit({ ...state, revisions: next }, {
+    actor: rejector, kind: "reject",
+    drawingNumber: target.drawingNumber, revisionCode: target.revisionCode, revisionId: target.id,
+    detail: reason,
+  });
+  write(projectId, audited);
+}
+
+export type WithdrawResult = { ok: true } | { ok: false; error: "not-pending" | "not-owner" };
+
+export function withdrawRevision(projectId: string, revId: string, actor: string): WithdrawResult {
+  const state = read(projectId);
+  const target = state.revisions.find((r) => r.id === revId);
+  if (!target || target.status !== "pending") return { ok: false, error: "not-pending" };
+  if (target.uploadedBy !== actor) return { ok: false, error: "not-owner" };
+  const next = state.revisions.map((r) =>
+    r.id === revId
+      ? { ...r, status: "withdrawn" as const, withdrawnBy: actor, withdrawnAt: Date.now() }
+      : r,
+  );
+  const audited = appendAudit({ ...state, revisions: next }, {
+    actor, kind: "withdraw",
+    drawingNumber: target.drawingNumber, revisionCode: target.revisionCode, revisionId: target.id,
+  });
+  write(projectId, audited);
+  return { ok: true };
 }
 
 export type RemoveRevisionResult = { ok: true } | { ok: false; error: "tender-locked" };
@@ -314,7 +380,11 @@ export function removeRevision(projectId: string, revId: string): RemoveRevision
   // Cannot remove a tender revision after tender is locked.
   if (state.tenderLocked && target.isTender) return { ok: false, error: "tender-locked" };
   const next = state.revisions.filter((r) => r.id !== revId);
-  write(projectId, { ...state, revisions: next });
+  const audited = appendAudit({ ...state, revisions: next }, {
+    actor: target.uploadedBy, kind: "delete",
+    drawingNumber: target.drawingNumber, revisionCode: target.revisionCode, revisionId: target.id,
+  });
+  write(projectId, audited);
   return { ok: true };
 }
 
@@ -326,7 +396,7 @@ export function issueTenderSet(projectId: string, issuer: string): IssueTenderRe
   const tenderRevs = state.revisions.filter((r) => r.isTender);
   if (tenderRevs.length === 0) return { ok: false, error: "no-tender-revisions" };
   const now = Date.now();
-  write(projectId, {
+  const next: DrawingsState = {
     ...state,
     tenderLocked: true,
     tenderIssuedAt: now,
@@ -334,8 +404,76 @@ export function issueTenderSet(projectId: string, issuer: string): IssueTenderRe
     revisions: state.revisions.map((r) =>
       r.isTender && !r.approvedBy ? { ...r, approvedBy: issuer, approvedAt: now } : r,
     ),
-  });
+  };
+  write(projectId, appendAudit(next, {
+    actor: issuer, kind: "lock-tender",
+    detail: `${tenderRevs.length} drawings frozen`,
+  }));
   return { ok: true };
+}
+
+export type UnlockTenderResult = { ok: true } | { ok: false; error: "not-locked" | "needs-reason" };
+
+export function unlockTender(projectId: string, actor: string, reason: string): UnlockTenderResult {
+  const state = read(projectId);
+  if (!state.tenderLocked) return { ok: false, error: "not-locked" };
+  if (!reason.trim()) return { ok: false, error: "needs-reason" };
+  const history = state.tenderUnlockHistory ?? [];
+  const next: DrawingsState = {
+    ...state,
+    tenderLocked: false,
+    tenderIssuedAt: undefined,
+    tenderIssuedBy: undefined,
+    tenderUnlockHistory: [{ at: Date.now(), by: actor, reason: reason.trim() }, ...history],
+  };
+  write(projectId, appendAudit(next, { actor, kind: "unlock-tender", detail: reason.trim() }));
+  return { ok: true };
+}
+
+export type BulkAddResult = {
+  added: DrawingRevision[];
+  errors: { input: AddRevisionInput; error: Exclude<AddRevisionResult, { ok: true }>["error"] }[];
+};
+
+/** Best-effort sequential add. Each entry is validated; failures are returned for UI display. */
+export function bulkAddRevisions(projectId: string, inputs: AddRevisionInput[]): BulkAddResult {
+  const added: DrawingRevision[] = [];
+  const errors: BulkAddResult["errors"] = [];
+  for (const input of inputs) {
+    const r = addRevision(projectId, input);
+    if (r.ok) added.push(r.revision); else errors.push({ input, error: r.error });
+  }
+  // One summary audit entry on top of per-item upload entries.
+  if (added.length > 0) {
+    const state = read(projectId);
+    write(projectId, appendAudit(state, {
+      actor: inputs[0]?.uploadedBy ?? "system", kind: "bulk-upload",
+      detail: `${added.length} added${errors.length ? `, ${errors.length} skipped` : ""}`,
+    }));
+  }
+  return { added, errors };
+}
+
+// ----- Impact selectors ----------------------------------------------------
+
+export type ImpactFilter = { systemId?: string; boqLineId?: string; status?: DrawingRevisionStatus };
+
+/**
+ * Find revisions that affect a given system or BoQ line. Used cross-module
+ * (Variations, Costed BoQ, Call-offs, Planner) to flag pricing exposure.
+ */
+export function getImpactedDrawings(
+  projectId: string,
+  filter: ImpactFilter,
+): DrawingRevision[] {
+  const state = read(projectId);
+  return state.revisions.filter((r) => {
+    if (filter.status && r.status !== filter.status) return false;
+    if (filter.systemId && !(r.affectedSystemIds ?? []).includes(filter.systemId)) return false;
+    if (filter.boqLineId && !(r.affectedBoqLineIds ?? []).includes(filter.boqLineId)) return false;
+    if (!filter.systemId && !filter.boqLineId) return false;
+    return true;
+  });
 }
 
 // ----- Utilities -----------------------------------------------------------
