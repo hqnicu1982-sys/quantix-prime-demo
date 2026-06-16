@@ -35,6 +35,10 @@ export type Capability =
   | "upload.drawings"          // upload drawing files & new revisions
   | "approve.drawings"         // approve / reject pending revisions
   | "lock.tender"              // issue tender baseline (freezes tender revisions)
+  | "unlock.tender"            // unlock the tender baseline (Admin only)
+  | "withdraw.drawings.own"    // retract a pending revision the user uploaded
+  | "bulk.upload.drawings"     // multi-file drawing upload
+  | "export.drawings.register" // export the drawing register CSV
   | "view.payments"              // see Payments tab
   | "create.payment.application" // subbie side: draft & submit AFP
   | "issue.payment.notice"       // MC side: issue Payment Notice / Pay Less / Certificate
@@ -56,7 +60,8 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.integrations",
     "view.settings.labour",
     "edit.specification",
-    "upload.drawings", "approve.drawings", "lock.tender",
+    "upload.drawings", "approve.drawings", "lock.tender", "unlock.tender",
+    "withdraw.drawings.own", "bulk.upload.drawings", "export.drawings.register",
     "view.payments", "create.payment.application", "issue.payment.notice", "record.payment",
   ],
   "Pro Control": [
@@ -74,6 +79,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.settings.labour",
     "edit.specification",
     "upload.drawings", "approve.drawings",
+    "withdraw.drawings.own", "bulk.upload.drawings", "export.drawings.register",
     "view.payments", "create.payment.application", "issue.payment.notice",
   ],
   Pro: [
@@ -89,6 +95,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.variations",
     "edit.specification",
     "upload.drawings",
+    "withdraw.drawings.own", "bulk.upload.drawings", "export.drawings.register",
     "view.payments",
   ],
   "Site User": [
@@ -97,6 +104,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.team",
     "view.pwRates",
     "view.calloffs",
+    "export.drawings.register",
     "view.payments",
   ],
   Operative: [

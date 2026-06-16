@@ -2,9 +2,11 @@ import { useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Download, AlertCircle } from "lucide-react";
 import { isPreviewable, type DrawingRevision } from "@/lib/drawingRegistry";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function fmtDate(ts: number) {
   return new Date(ts).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
@@ -71,6 +73,7 @@ export function DrawingCompareDialog({
   current?: DrawingRevision;
 }) {
   const [showAreas, setShowAreas] = useState(true);
+  const isMobile = useIsMobile();
   const areas = current?.affectedAreas ?? [];
 
   return (
@@ -100,10 +103,25 @@ export function DrawingCompareDialog({
             </div>
           )}
         </DialogHeader>
-        <div className="grid flex-1 min-h-0 grid-cols-2 gap-3 p-3">
-          <Pane label="Tender baseline" badge="Tender" rev={tender} />
-          <Pane label="Selected revision" badge={current?.isTender ? "Tender" : "Revision"} rev={current} />
-        </div>
+        {isMobile ? (
+          <Tabs defaultValue="revision" className="flex-1 min-h-0 flex flex-col">
+            <TabsList className="mx-3 mt-2 self-start">
+              <TabsTrigger value="tender">Tender</TabsTrigger>
+              <TabsTrigger value="revision">Revision</TabsTrigger>
+            </TabsList>
+            <TabsContent value="tender" className="flex-1 min-h-0 p-3">
+              <Pane label="Tender baseline" badge="Tender" rev={tender} />
+            </TabsContent>
+            <TabsContent value="revision" className="flex-1 min-h-0 p-3">
+              <Pane label="Selected revision" badge={current?.isTender ? "Tender" : "Revision"} rev={current} />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <div className="grid flex-1 min-h-0 grid-cols-2 gap-3 p-3">
+            <Pane label="Tender baseline" badge="Tender" rev={tender} />
+            <Pane label="Selected revision" badge={current?.isTender ? "Tender" : "Revision"} rev={current} />
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

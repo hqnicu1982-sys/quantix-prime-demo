@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, Upload, FileText } from "lucide-react";
+import { Plus, Trash2, Upload, FileText, GitCompare } from "lucide-react";
 import {
   addVariation,
   newChange,
@@ -26,6 +26,7 @@ import {
 import { toast } from "sonner";
 import { useProject } from "@/lib/ProjectContext";
 import { useCan } from "@/lib/permissions";
+import { useDrawings } from "@/lib/drawingRegistry";
 
 export function NewVariationDialog({
   trigger,
@@ -37,6 +38,10 @@ export function NewVariationDialog({
   const { current } = useProject();
   const pid = projectId ?? current.id;
   const canEdit = useCan("edit.variations");
+  const drawings = useDrawings(pid);
+  const triggerOptions = drawings.revisions
+    .filter((r) => r.status === "pending" || (r.status === "current" && !r.isTender))
+    .map((r) => ({ id: r.id, label: `${r.drawingNumber} · ${r.revisionCode}${r.title ? ` — ${r.title}` : ""}`, status: r.status }));
 
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -46,6 +51,7 @@ export function NewVariationDialog({
   const [timeImpactDays, setTimeImpactDays] = useState<string>("0");
   const [changes, setChanges] = useState<VariationChange[]>([newChange()]);
   const [attachments, setAttachments] = useState<VariationAttachment[]>([]);
+  const [triggeredByRevisionId, setTriggeredByRevisionId] = useState<string>("");
 
   const reset = () => {
     setTitle("");
@@ -55,6 +61,7 @@ export function NewVariationDialog({
     setTimeImpactDays("0");
     setChanges([newChange()]);
     setAttachments([]);
+    setTriggeredByRevisionId("");
   };
 
   const updateChange = (id: string, patch: Partial<VariationChange>) => {
@@ -78,6 +85,7 @@ export function NewVariationDialog({
   const save = (submit: boolean) => {
     if (!canSave) return;
     const cleaned = changes.filter((c) => c.description.trim().length > 0);
+    const triggerRev = drawings.revisions.find((r) => r.id === triggeredByRevisionId);
     addVariation(pid, {
       title: title.trim(),
       reason: reason.trim(),
@@ -87,6 +95,8 @@ export function NewVariationDialog({
       changes: cleaned,
       timeImpactDays: Number(timeImpactDays) || 0,
       attachments,
+      triggeredByRevisionId: triggerRev?.id,
+      triggeredByDrawing: triggerRev ? `${triggerRev.drawingNumber} · ${triggerRev.revisionCode}` : undefined,
     });
     toast.success(submit ? "Variation submitted" : "Variation saved as draft", {
       description: title.trim(),
@@ -133,6 +143,26 @@ export function NewVariationDialog({
               rows={2}
             />
           </div>
+
+          {triggerOptions.length > 0 && (
+            <div className="grid gap-1.5">
+              <Label htmlFor="vo-trigger" className="flex items-center gap-1.5">
+                <GitCompare className="h-3 w-3 text-[var(--accent-500)]" /> Triggered by drawing revision
+              </Label>
+              <select
+                id="vo-trigger"
+                value={triggeredByRevisionId}
+                onChange={(e) => setTriggeredByRevisionId(e.target.value)}
+                className="h-9 w-full rounded-md border border-[var(--ink-200)] bg-background px-3 text-[12.5px]"
+              >
+                <option value="">— None / manual —</option>
+                {triggerOptions.map((o) => (
+                  <option key={o.id} value={o.id}>{o.label}{o.status === "pending" ? " (pending review)" : ""}</option>
+                ))}
+              </select>
+              <p className="text-[10.5px] text-[var(--ink-500)]">Links the VO back to the drawing revision that triggered it — visible in detail view.</p>
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-3">
             <div className="grid gap-1.5 col-span-2">

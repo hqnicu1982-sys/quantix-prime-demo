@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Calendar, User, ClipboardList } from "lucide-react";
+import { FileText, Calendar, User, ClipboardList, GitCompare } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
   deleteVariation,
@@ -125,6 +125,22 @@ export function VariationDetailDialog({
                     Linked planner task: <span className="font-mono">{v.sourceTaskId}</span>
                   </span>
                 )}
+              </div>
+            )}
+
+            {v.triggeredByDrawing && (
+              <div className="flex flex-wrap items-center gap-2 rounded-md border border-[var(--amber-500)]/30 bg-[var(--amber-500)]/[0.06] px-3 py-2 text-[12px]">
+                <GitCompare className="h-3.5 w-3.5 text-[var(--amber-500)]" />
+                <span className="text-[var(--ink-700)]">
+                  Triggered by drawing revision <strong>{v.triggeredByDrawing}</strong>
+                </span>
+                <Link
+                  to="/projects/$projectId/specification"
+                  params={{ projectId }}
+                  className="ml-auto text-[11.5px] font-semibold text-[var(--amber-500)] hover:underline"
+                >
+                  Open Specification →
+                </Link>
               </div>
             )}
 

@@ -10,6 +10,7 @@ import { useAllSystemDetails } from "@/lib/systemDetails";
 import { UploadSpecDocDialog } from "@/components/specification/UploadSpecDocDialog";
 import { useProjectDocs, removeProjectDoc, formatBytes, tagTone } from "@/lib/projectDocuments";
 import { DrawingRevisionsCard } from "@/components/specification/DrawingRevisionsCard";
+import { DrawingAuditLog } from "@/components/specification/DrawingAuditLog";
 import { useDrawings, groupByDrawing } from "@/lib/drawingRegistry";
 import { toast } from "sonner";
 
@@ -32,6 +33,9 @@ function SpecificationPage() {
   const drawings = useDrawings(projectId);
   const drawingGroups = groupByDrawing(drawings);
   const pendingDrawings = drawings.revisions.filter((r) => r.status === "pending").length;
+  const affectingDrawings = drawings.revisions.filter(
+    (r) => r.status === "pending" && ((r.affectedBoqLineIds?.length ?? 0) > 0 || (r.affectedSystemIds?.length ?? 0) > 0),
+  ).length;
   const [selected, setSelected] = useState<typeof fitzroviaSystems[number] | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   return (
@@ -43,7 +47,9 @@ function SpecificationPage() {
           value={`${drawingGroups.length}`}
           delta={
             drawings.tenderLocked
-              ? (pendingDrawings > 0 ? `${pendingDrawings} pending review` : "Tender baseline locked")
+              ? pendingDrawings > 0
+                ? `${pendingDrawings} pending${affectingDrawings > 0 ? ` · ${affectingDrawings} affect BoQ` : ""}`
+                : "Tender baseline locked"
               : "Tender not issued yet"
           }
           tone={pendingDrawings > 0 ? "warning" : drawings.tenderLocked ? "success" : "info"}
@@ -55,6 +61,8 @@ function SpecificationPage() {
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           <DrawingRevisionsCard projectId={projectId} />
+
+          <DrawingAuditLog projectId={projectId} />
 
           <Card>
             <CardHead
