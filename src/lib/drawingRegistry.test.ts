@@ -5,6 +5,11 @@ import {
   rejectRevision,
   removeRevision,
   issueTenderSet,
+  unlockTender,
+  withdrawRevision,
+  bulkAddRevisions,
+  getImpactedDrawings,
+  getDrawingAudit,
   groupByDrawing,
   getDrawings,
   __resetForTests,
@@ -104,5 +109,80 @@ describe("drawingRegistry", () => {
     const r = issueTenderSet(P, "Admin");
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toBe("no-tender-revisions");
+  });
+
+  it("rejects an invalid revision code", () => {
+    const r = addRevision(P, base({ revisionCode: "bad code!" }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe("invalid-revision-code");
+  });
+
+  it("withdraw is owner-only and flips status to withdrawn", () => {
+    addRevision(P, base());
+    issueTenderSet(P, "Admin");
+    const c1 = addRevision(P, base({ revisionCode: "C1", isTender: false, changeNotes: "x", uploadedBy: "Marco" }));
+    if (!c1.ok) throw new Error("setup");
+    const wrong = withdrawRevision(P, c1.revision.id, "Other Person");
+    expect(wrong.ok).toBe(false);
+    if (!wrong.ok) expect(wrong.error).toBe("not-owner");
+    const ok = withdrawRevision(P, c1.revision.id, "Marco");
+    expect(ok.ok).toBe(true);
+    const after = getDrawings(P).revisions.find((r) => r.id === c1.revision.id)!;
+    expect(after.status).toBe("withdrawn");
+  });
+
+  it("unlock requires reason and reopens tender uploads", () => {
+    addRevision(P, base());
+    issueTenderSet(P, "Admin");
+    expect(getDrawings(P).tenderLocked).toBe(true);
+    const noReason = unlockTender(P, "Admin", "  ");
+    expect(noReason.ok).toBe(false);
+    if (!noReason.ok) expect(noReason.error).toBe("needs-reason");
+    const ok = unlockTender(P, "Admin", "Client re-issued package B");
+    expect(ok.ok).toBe(true);
+    expect(getDrawings(P).tenderLocked).toBe(false);
+    expect(getDrawings(P).tenderUnlockHistory?.length).toBe(1);
+    // tender uploads work again
+    const t2 = addRevision(P, base({ drawingNumber: "A-300", revisionCode: "T1" }));
+    expect(t2.ok).toBe(true);
+  });
+
+  it("bulkAddRevisions reports successes and per-item errors", () => {
+    const r = bulkAddRevisions(P, [
+      base({ drawingNumber: "A-100", revisionCode: "T1" }),
+      base({ drawingNumber: "A-101", revisionCode: "T1" }),
+      base({ drawingNumber: "A-100", revisionCode: "T1" }), // duplicate
+    ]);
+    expect(r.added.length).toBe(2);
+    expect(r.errors.length).toBe(1);
+    expect(r.errors[0].error).toBe("duplicate-revision");
+  });
+
+  it("getImpactedDrawings filters by system or BoQ line", () => {
+    addRevision(P, base());
+    issueTenderSet(P, "Admin");
+    addRevision(P, base({
+      revisionCode: "C1", isTender: false, changeNotes: "x",
+      affectedSystemIds: ["sys-1"], affectedBoqLineIds: ["line-9"],
+    }));
+    expect(getImpactedDrawings(P, { systemId: "sys-1" }).length).toBe(1);
+    expect(getImpactedDrawings(P, { systemId: "sys-other" }).length).toBe(0);
+    expect(getImpactedDrawings(P, { boqLineId: "line-9" }).length).toBe(1);
+    // Empty filter returns nothing (guards against accidental full scan).
+    expect(getImpactedDrawings(P, {}).length).toBe(0);
+  });
+
+  it("every mutation appends an audit entry", () => {
+    const t1 = addRevision(P, base());
+    issueTenderSet(P, "Admin");
+    const c1 = addRevision(P, base({ revisionCode: "C1", isTender: false, changeNotes: "x" }));
+    if (!t1.ok || !c1.ok) throw new Error("setup");
+    approveRevision(P, c1.revision.id, "PM");
+    rejectRevision(P, "missing", "PM", "noop"); // no-op should not append
+    const log = getDrawingAudit(P);
+    const kinds = log.map((e) => e.kind);
+    expect(kinds).toContain("upload");
+    expect(kinds).toContain("lock-tender");
+    expect(kinds).toContain("approve");
   });
 });
