@@ -9,6 +9,9 @@ import { BoqForecastBanner } from "@/components/financial/BoqForecastBanner";
 import { useProjectData } from "@/lib/projectData";
 import { useBoqAllocation } from "@/lib/boqAllocation";
 import { useSupplierStats } from "@/lib/priceListRegistry";
+import { DrawingImpactCard } from "@/components/specification/DrawingImpactCard";
+import { useDrawings } from "@/lib/drawingRegistry";
+import { GitCompare } from "lucide-react";
 
 export const Route = createFileRoute("/projects/$projectId/costed-boq")({ component: GuardedBoQPage });
 
@@ -101,6 +104,19 @@ function LiveBoQ({ projectId }: { projectId: string }) {
   const data = useProjectData(projectId);
   const alloc = useBoqAllocation(projectId);
   const supplierStats = useSupplierStats();
+  const drawings = useDrawings(projectId);
+  const pendingByLine = new Map<string, { drawingNumber: string; revisionCode: string }>();
+  for (const r of drawings.revisions) {
+    if (r.status !== "pending") continue;
+    for (const lid of r.affectedBoqLineIds ?? []) {
+      if (!pendingByLine.has(lid)) pendingByLine.set(lid, { drawingNumber: r.drawingNumber, revisionCode: r.revisionCode });
+    }
+    for (const sid of r.affectedSystemIds ?? []) {
+      for (const l of data.boqLines.filter((bl) => bl.systemId === sid)) {
+        if (!pendingByLine.has(l.id)) pendingByLine.set(l.id, { drawingNumber: r.drawingNumber, revisionCode: r.revisionCode });
+      }
+    }
+  }
   const statFor = (supplier?: string) =>
     supplier ? supplierStats.find((s) => s.supplier.toLowerCase() === supplier.toLowerCase()) : undefined;
   const lineCount = data.boqLines.length;
@@ -134,6 +150,8 @@ function LiveBoQ({ projectId }: { projectId: string }) {
       </div>
 
       <BoqForecastBanner projectId={projectId} />
+
+      <DrawingImpactCard projectId={projectId} mode="boq" />
 
       {supplierImpact.length > 0 && (
         <Card>
@@ -187,6 +205,7 @@ function LiveBoQ({ projectId }: { projectId: string }) {
                   const stat = statFor(supplier);
                   const pct = stat?.variationPct ?? 0;
                   const impact = (lineTotal * pct) / 100;
+                  const pendingRev = pendingByLine.get(la.line.id);
                   // tone: green = saving / flat, amber = mild uplift, red = significant uplift
                   const tone =
                     !stat || lineTotal === 0
@@ -214,7 +233,19 @@ function LiveBoQ({ projectId }: { projectId: string }) {
                           : "";
                   return (
                     <tr key={la.line.id} className="hover:bg-[var(--ink-50)]">
-                      <td className="px-4 py-3 font-semibold">{la.line.material}</td>
+                      <td className="px-4 py-3 font-semibold">
+                        <span className="inline-flex items-center gap-1.5">
+                          {la.line.material}
+                          {pendingRev && (
+                            <span
+                              title={`Pending revision: ${pendingRev.drawingNumber} · ${pendingRev.revisionCode}`}
+                              className="inline-flex items-center gap-0.5 rounded bg-[var(--amber-500)]/10 px-1 py-0.5 text-[9.5px] font-bold text-[var(--amber-500)]"
+                            >
+                              <GitCompare className="h-2.5 w-2.5" /> {pendingRev.revisionCode}
+                            </span>
+                          )}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-right font-mono-num">{la.approved.toLocaleString()} {la.line.unit}</td>
                       <td className="px-4 py-3 text-right font-mono-num text-[var(--ink-700)]">{la.ordered.toLocaleString()}</td>
                       <td className={`px-4 py-3 text-right font-mono-num font-semibold ${la.remaining === 0 ? "text-[var(--red-500)]" : "text-[var(--green-600)]"}`}>{la.remaining.toLocaleString()}</td>

@@ -7,7 +7,8 @@ import { useInvoices, type RegistryInvoice } from "@/lib/invoiceRegistry";
 import { useProjectVariations } from "@/lib/variations";
 import { useCan } from "@/lib/permissions";
 import { usePendingNotices, usePaymentCycle } from "@/lib/paymentCycle";
-import { ClipboardCheck, FileSignature, Truck, GitBranch, ArrowRight, Inbox, Banknote } from "lucide-react";
+import { useDrawings } from "@/lib/drawingRegistry";
+import { ClipboardCheck, FileSignature, Truck, GitBranch, ArrowRight, Inbox, Banknote, GitCompare } from "lucide-react";
 
 /**
  * Approval inbox — surfaces every item the current user needs to act on,
@@ -24,6 +25,7 @@ export function ApprovalInboxCard() {
   const canEditVariations = useCan("edit.variations");
   const canIssuePaymentNotice = useCan("issue.payment.notice");
   const canRecordPayment = useCan("record.payment");
+  const canApproveDrawings = useCan("approve.drawings");
 
   const data = useProjectData(projectId);
   const labourLogs = useLabourLogs(projectId);
@@ -31,8 +33,9 @@ export function ApprovalInboxCard() {
   const variations = useProjectVariations(projectId);
   const pendingNotices = usePendingNotices(projectId, 7);
   const paymentCycle = usePaymentCycle(projectId);
+  const drawings = useDrawings(projectId);
 
-  const anyCap = canApproveLabour || canApproveCalloffs || canSignInvoices || canEditVariations || canIssuePaymentNotice || canRecordPayment;
+  const anyCap = canApproveLabour || canApproveCalloffs || canSignInvoices || canEditVariations || canIssuePaymentNotice || canRecordPayment || canApproveDrawings;
   if (!anyCap) return null;
 
   // Build sections for things the current user can act on
@@ -97,6 +100,23 @@ export function ApprovalInboxCard() {
       to: "/projects/$projectId/variations",
       params: { projectId },
     });
+  }
+
+  if (canApproveDrawings) {
+    const pending = drawings.revisions.filter((r) => r.status === "pending");
+    if (pending.length > 0) {
+      const affecting = pending.filter((r) => (r.affectedBoqLineIds?.length ?? 0) > 0 || (r.affectedSystemIds?.length ?? 0) > 0).length;
+      sections.push({
+        key: "drawings",
+        show: true,
+        icon: <GitCompare className="h-4 w-4" />,
+        title: "Drawing revisions to review",
+        count: pending.length,
+        subtitle: affecting > 0 ? `${affecting} flagged as affecting priced scope` : "Compare with tender baseline",
+        to: "/projects/$projectId/specification",
+        params: { projectId },
+      });
+    }
   }
 
   if (canIssuePaymentNotice && pendingNotices.length > 0) {
