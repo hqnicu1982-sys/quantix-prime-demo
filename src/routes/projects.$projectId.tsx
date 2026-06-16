@@ -209,7 +209,7 @@ function ProjectLayout() {
       }
     >
       <div className="border-b border-[var(--ink-200)]">
-        <nav className="flex gap-6 overflow-x-auto text-[13px] font-medium">
+        <nav className="flex gap-6 overflow-x-auto text-[13px] font-medium [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {visibleTabs.map((t) => {
             const path = t.key ? `/projects/${projectId}/${t.key}` : `/projects/${projectId}`;
             const active = t.key === ""
