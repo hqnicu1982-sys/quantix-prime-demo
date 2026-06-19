@@ -1,9 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import {
   ClipboardCheck, Receipt, Truck, GitBranch, Banknote, FileSignature,
-  CalendarClock, AlertTriangle, CheckCircle2, ChevronRight, ChevronDown,
+  CalendarClock, CheckCircle2, ChevronRight, AlertTriangle,
 } from "lucide-react";
-import { useState } from "react";
 import { useProject } from "@/lib/ProjectContext";
 import { useLabourLogs, computeEntryCost } from "@/lib/laborLog";
 import { useInvoices } from "@/lib/invoiceRegistry";
@@ -14,7 +13,6 @@ import { usePendingNotices } from "@/lib/paymentCycle";
 import { useCurrentUser } from "@/lib/currentUser";
 import { useCan } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { useUrgentMode, type UrgentMode } from "@/lib/sidebarUrgentMode";
 
 export type Severity = "critical" | "warning" | "info";
 
@@ -387,110 +385,4 @@ export function UrgentList({
   );
 }
 
-function UrgentHeader({ total, critical }: { total: number; critical: number }) {
-  return (
-    <div className="flex items-center justify-between px-1 pb-0.5">
-      <p className="text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/50">
-        Today's urgent tasks
-      </p>
-      {total > 0 && (
-        <span
-          className={cn(
-            "rounded-full px-1.5 py-px text-[9px] font-bold tabular-nums",
-            critical > 0
-              ? "bg-[var(--red-500)]/20 text-[var(--red-500)]"
-              : "bg-white/10 text-white/70",
-          )}
-        >
-          {total}
-        </span>
-      )}
-    </div>
-  );
-}
 
-/**
- * Sidebar footer wrapper. The `mode` controls how the urgent list is presented
- * so a fast-growing list cannot push the navigation off-screen.
- */
-export function SidebarQuickStats() {
-  const mode = useUrgentMode();
-  const urgent = useUrgentTasks();
-  const criticalCount = urgent.filter((u) => u.severity === "critical").length;
-
-  // V4: panel is hidden — bell in the header takes over.
-  if (mode === "bell") return null;
-
-  // V2: collapsible — only the header + count is visible by default.
-  if (mode === "collapsible") {
-    return <CollapsibleVariant urgent={urgent} critical={criticalCount} />;
-  }
-
-  // V3: top 2 only.
-  if (mode === "top2") {
-    const top = urgent.slice(0, 2);
-    const hidden = urgent.length - top.length;
-    return (
-      <div className="space-y-1.5">
-        <UrgentHeader total={urgent.length} critical={criticalCount} />
-        <UrgentList tasks={top} showMoreLink={false} />
-        {hidden > 0 && (
-          <Link
-            to="/"
-            className="flex items-center justify-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-white/50 hover:text-white"
-          >
-            +{hidden} more · open dashboard
-          </Link>
-        )}
-      </div>
-    );
-  }
-
-  // V1 default: capped height with internal scroll.
-  return (
-    <div className="space-y-1.5">
-      <UrgentHeader total={urgent.length} critical={criticalCount} />
-      <div
-        className="max-h-[280px] overflow-y-auto pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-white/15"
-      >
-        <UrgentList tasks={urgent.slice(0, 6)} showMoreLink={urgent.length > 6} />
-      </div>
-    </div>
-  );
-}
-
-function CollapsibleVariant({ urgent, critical }: { urgent: UrgentTask[]; critical: number }) {
-  const [open, setOpen] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("qp.sidebar.urgent.expanded") === "1";
-  });
-  const toggle = () => {
-    const next = !open;
-    setOpen(next);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("qp.sidebar.urgent.expanded", next ? "1" : "0");
-    }
-  };
-  return (
-    <div className="space-y-1.5">
-      <button
-        onClick={toggle}
-        className="flex w-full items-center gap-2 rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5 text-left hover:bg-white/10"
-      >
-        <AlertTriangle className={cn("h-3.5 w-3.5 shrink-0", critical > 0 ? "text-[var(--red-500)]" : "text-white/60")} />
-        <span className="flex-1 truncate text-[11px] font-semibold text-white">
-          {urgent.length === 0 ? "All clear" : `${urgent.length} urgent`}
-          {critical > 0 && (
-            <span className="ml-1 text-[var(--red-500)]">· {critical} critical</span>
-          )}
-        </span>
-        <ChevronDown className={cn("h-3.5 w-3.5 text-white/50 transition-transform", open && "rotate-180")} />
-      </button>
-      {open && (
-        <div className="max-h-[40vh] overflow-y-auto pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-white/15">
-          <UrgentList tasks={urgent.slice(0, 6)} showMoreLink={urgent.length > 6} />
-        </div>
-      )}
-    </div>
-  );
-}

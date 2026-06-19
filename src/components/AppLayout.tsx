@@ -13,9 +13,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ProjectProvider, useProject } from "@/lib/ProjectContext";
 import { cn } from "@/lib/utils";
 import { CompareTray } from "@/components/CompareTray";
-import { SidebarQuickStats } from "@/components/SidebarQuickStats";
 import { HeaderUrgentBell } from "@/components/HeaderUrgentBell";
-import { useUrgentMode, setUrgentMode, type UrgentMode } from "@/lib/sidebarUrgentMode";
 import { HeaderUserMenu } from "@/components/auth/HeaderUserMenu";
 import { useCurrentTier, useCurrentUser } from "@/lib/currentUser";
 import { can, type Capability } from "@/lib/permissions";
@@ -209,44 +207,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           );
         })}
       </div>
-      <div className="border-t border-white/10 p-3">
-        <UrgentModePicker />
-        <SidebarQuickStats />
-      </div>
     </>
-  );
-}
-
-function UrgentModePicker() {
-  const mode = useUrgentMode();
-  const opts: { id: UrgentMode; label: string }[] = [
-    { id: "scroll", label: "Scroll" },
-    { id: "collapsible", label: "Collapse" },
-    { id: "top2", label: "Top 2" },
-    { id: "bell", label: "Bell" },
-  ];
-  return (
-    <div className="mb-2 rounded-md border border-amber-400/25 bg-amber-400/5 p-1.5">
-      <p className="px-1 pb-1 text-[8.5px] font-bold uppercase tracking-[0.14em] text-amber-300">
-        Preview mode · pick one
-      </p>
-      <div className="grid grid-cols-4 gap-1">
-        {opts.map((o) => (
-          <button
-            key={o.id}
-            onClick={() => setUrgentMode(o.id)}
-            className={cn(
-              "rounded px-1 py-1 text-[9.5px] font-semibold transition-colors",
-              mode === o.id
-                ? "bg-white text-[var(--navy-950)]"
-                : "bg-white/5 text-white/65 hover:bg-white/10 hover:text-white",
-            )}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
-    </div>
   );
 }
 
