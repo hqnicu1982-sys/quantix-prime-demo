@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import {
   ClipboardCheck, Receipt, Truck, GitBranch, Banknote, FileSignature,
-  CalendarClock, AlertTriangle, CheckCircle2, ChevronRight,
+  CalendarClock, AlertTriangle, CheckCircle2, ChevronRight, ChevronDown,
 } from "lucide-react";
+import { useState } from "react";
 import { useProject } from "@/lib/ProjectContext";
 import { useLabourLogs, computeEntryCost } from "@/lib/laborLog";
 import { useInvoices } from "@/lib/invoiceRegistry";
@@ -13,10 +14,11 @@ import { usePendingNotices } from "@/lib/paymentCycle";
 import { useCurrentUser } from "@/lib/currentUser";
 import { useCan } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+import { useUrgentMode, type UrgentMode } from "@/lib/sidebarUrgentMode";
 
-type Severity = "critical" | "warning" | "info";
+export type Severity = "critical" | "warning" | "info";
 
-type UrgentTask = {
+export type UrgentTask = {
   key: string;
   icon: React.ComponentType<{ className?: string }>;
   title: string;
@@ -85,11 +87,10 @@ function daysUntil(iso: string): number {
 }
 
 /**
- * Sidebar footer: "Today's urgent tasks" — personalised by role.
- * Each row is a single thing the current user must action today.
- * Height auto-fits the number of urgents (sidebar grows / shrinks).
+ * Computes the urgent task list for the current user / project.
+ * Pure data hook — presentation lives in the components below.
  */
-export function SidebarQuickStats() {
+export function useUrgentTasks(): UrgentTask[] {
   const { current } = useProject();
   const projectId = current.id;
   const me = useCurrentUser();
@@ -286,103 +287,209 @@ export function SidebarQuickStats() {
     if (sev !== 0) return sev;
     return a.dueInDays - b.dueInDays;
   });
-  const visible = urgent.slice(0, 6);
+  return urgent;
+}
+
+/** A single urgent task card. Tone-styled by severity. */
+export function UrgentCard({ task, onClick }: { task: UrgentTask; onClick?: () => void }) {
+  const s = SEVERITY_STYLE[task.severity];
+  const Icon = task.icon;
+  const badge = dueBadge(task.dueInDays);
+  return (
+    <Link
+      to={task.to as "/"}
+      params={task.params as never}
+      onClick={onClick}
+      className={cn(
+        "group flex items-start gap-2 rounded-md border px-2 py-1.5 transition-colors",
+        s.border,
+        s.bg,
+      )}
+    >
+      <div className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded", s.iconBg)}>
+        <Icon className={cn("h-3 w-3", s.iconText)} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start gap-1.5">
+          <p className="min-w-0 flex-1 truncate text-[11px] font-semibold leading-tight text-white">
+            {task.title}
+          </p>
+          {badge && (
+            <span className={cn("shrink-0 rounded px-1 py-px text-[8.5px] font-bold uppercase tracking-wider tabular-nums", badge.tone)}>
+              {badge.label}
+            </span>
+          )}
+        </div>
+        <p className="truncate text-[10px] leading-tight text-white/50">{task.meta}</p>
+        <p className="mt-0.5 flex items-center gap-0.5 text-[9.5px] font-medium uppercase tracking-wider text-white/35 transition-colors group-hover:text-white/65">
+          Resolve in {task.resolveLabel}
+          <ChevronRight className="h-2.5 w-2.5" />
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+/** List of urgent task cards with severity group headers. */
+export function UrgentList({
+  tasks,
+  onItemClick,
+  showMoreLink = true,
+}: {
+  tasks: UrgentTask[];
+  onItemClick?: () => void;
+  showMoreLink?: boolean;
+}) {
+  if (tasks.length === 0) {
+    return (
+      <div className="flex items-center gap-2 rounded-md border border-emerald-400/20 bg-emerald-400/5 px-2.5 py-2">
+        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+        <p className="text-[10.5px] leading-tight text-white/70">
+          All clear — nothing urgent right now.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <ul className="space-y-1">
+      {tasks.map((u, idx) => {
+        const prevSev = idx > 0 ? tasks[idx - 1].severity : null;
+        const showHeader = u.severity !== prevSev;
+        return (
+          <li key={u.key}>
+            {showHeader && (
+              <p
+                className={cn(
+                  "px-1 pb-0.5 text-[8.5px] font-bold uppercase tracking-[0.14em]",
+                  idx > 0 && "pt-1.5",
+                  SEV_GROUP_TONE[u.severity],
+                )}
+              >
+                {SEV_GROUP_LABEL[u.severity]}
+              </p>
+            )}
+            <UrgentCard task={u} onClick={onItemClick} />
+          </li>
+        );
+      })}
+      {showMoreLink && (
+        <li>
+          <Link
+            to="/"
+            onClick={onItemClick}
+            className="flex items-center justify-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-white/50 hover:text-white"
+          >
+            Open dashboard for full view
+          </Link>
+        </li>
+      )}
+    </ul>
+  );
+}
+
+function UrgentHeader({ total, critical }: { total: number; critical: number }) {
+  return (
+    <div className="flex items-center justify-between px-1 pb-0.5">
+      <p className="text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/50">
+        Today's urgent tasks
+      </p>
+      {total > 0 && (
+        <span
+          className={cn(
+            "rounded-full px-1.5 py-px text-[9px] font-bold tabular-nums",
+            critical > 0
+              ? "bg-[var(--red-500)]/20 text-[var(--red-500)]"
+              : "bg-white/10 text-white/70",
+          )}
+        >
+          {total}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Sidebar footer wrapper. The `mode` controls how the urgent list is presented
+ * so a fast-growing list cannot push the navigation off-screen.
+ */
+export function SidebarQuickStats() {
+  const mode = useUrgentMode();
+  const urgent = useUrgentTasks();
   const criticalCount = urgent.filter((u) => u.severity === "critical").length;
 
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between px-1 pb-0.5">
-        <p className="text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/50">
-          Today's urgent tasks
-        </p>
-        {urgent.length > 0 && (
-          <span
-            className={cn(
-              "rounded-full px-1.5 py-px text-[9px] font-bold tabular-nums",
-              criticalCount > 0
-                ? "bg-[var(--red-500)]/20 text-[var(--red-500)]"
-                : "bg-white/10 text-white/70",
-            )}
+  // V4: panel is hidden — bell in the header takes over.
+  if (mode === "bell") return null;
+
+  // V2: collapsible — only the header + count is visible by default.
+  if (mode === "collapsible") {
+    return <CollapsibleVariant urgent={urgent} critical={criticalCount} />;
+  }
+
+  // V3: top 2 only.
+  if (mode === "top2") {
+    const top = urgent.slice(0, 2);
+    const hidden = urgent.length - top.length;
+    return (
+      <div className="space-y-1.5">
+        <UrgentHeader total={urgent.length} critical={criticalCount} />
+        <UrgentList tasks={top} showMoreLink={false} />
+        {hidden > 0 && (
+          <Link
+            to="/"
+            className="flex items-center justify-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-white/50 hover:text-white"
           >
-            {urgent.length}
-          </span>
+            +{hidden} more · open dashboard
+          </Link>
         )}
       </div>
+    );
+  }
 
-      {visible.length === 0 ? (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-400/20 bg-emerald-400/5 px-2.5 py-2">
-          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-          <p className="text-[10.5px] leading-tight text-white/70">
-            All clear — nothing urgent right now.
-          </p>
-        </div>
-      ) : (
-        <ul className="space-y-1">
-          {visible.map((u, idx) => {
-            const s = SEVERITY_STYLE[u.severity];
-            const Icon = u.icon;
-            const prevSev = idx > 0 ? visible[idx - 1].severity : null;
-            const showHeader = u.severity !== prevSev;
-            const badge = dueBadge(u.dueInDays);
-            return (
-              <li key={u.key}>
-                {showHeader && (
-                  <p
-                    className={cn(
-                      "px-1 pb-0.5 text-[8.5px] font-bold uppercase tracking-[0.14em]",
-                      idx > 0 && "pt-1.5",
-                      SEV_GROUP_TONE[u.severity],
-                    )}
-                  >
-                    {SEV_GROUP_LABEL[u.severity]}
-                  </p>
-                )}
-                <Link
-                  to={u.to as "/"}
-                  params={u.params as never}
-                  className={cn(
-                    "group flex items-start gap-2 rounded-md border px-2 py-1.5 transition-colors",
-                    s.border,
-                    s.bg,
-                  )}
-                >
-                  <div className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded", s.iconBg)}>
-                    <Icon className={cn("h-3 w-3", s.iconText)} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start gap-1.5">
-                      <p className="min-w-0 flex-1 truncate text-[11px] font-semibold leading-tight text-white">
-                        {u.title}
-                      </p>
-                      {badge && (
-                        <span className={cn("shrink-0 rounded px-1 py-px text-[8.5px] font-bold uppercase tracking-wider tabular-nums", badge.tone)}>
-                          {badge.label}
-                        </span>
-                      )}
-                    </div>
-                    <p className="truncate text-[10px] leading-tight text-white/50">
-                      {u.meta}
-                    </p>
-                    <p className="mt-0.5 flex items-center gap-0.5 text-[9.5px] font-medium uppercase tracking-wider text-white/35 transition-colors group-hover:text-white/65">
-                      Resolve in {u.resolveLabel}
-                      <ChevronRight className="h-2.5 w-2.5" />
-                    </p>
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-          {urgent.length > visible.length && (
-            <li>
-              <Link
-                to="/"
-                className="flex items-center justify-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-white/50 hover:text-white"
-              >
-                +{urgent.length - visible.length} more · open dashboard
-              </Link>
-            </li>
+  // V1 default: capped height with internal scroll.
+  return (
+    <div className="space-y-1.5">
+      <UrgentHeader total={urgent.length} critical={criticalCount} />
+      <div
+        className="max-h-[280px] overflow-y-auto pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-white/15"
+      >
+        <UrgentList tasks={urgent.slice(0, 6)} showMoreLink={urgent.length > 6} />
+      </div>
+    </div>
+  );
+}
+
+function CollapsibleVariant({ urgent, critical }: { urgent: UrgentTask[]; critical: number }) {
+  const [open, setOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("qp.sidebar.urgent.expanded") === "1";
+  });
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("qp.sidebar.urgent.expanded", next ? "1" : "0");
+    }
+  };
+  return (
+    <div className="space-y-1.5">
+      <button
+        onClick={toggle}
+        className="flex w-full items-center gap-2 rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5 text-left hover:bg-white/10"
+      >
+        <AlertTriangle className={cn("h-3.5 w-3.5 shrink-0", critical > 0 ? "text-[var(--red-500)]" : "text-white/60")} />
+        <span className="flex-1 truncate text-[11px] font-semibold text-white">
+          {urgent.length === 0 ? "All clear" : `${urgent.length} urgent`}
+          {critical > 0 && (
+            <span className="ml-1 text-[var(--red-500)]">· {critical} critical</span>
           )}
-        </ul>
+        </span>
+        <ChevronDown className={cn("h-3.5 w-3.5 text-white/50 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="max-h-[40vh] overflow-y-auto pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-white/15">
+          <UrgentList tasks={urgent.slice(0, 6)} showMoreLink={urgent.length > 6} />
+        </div>
       )}
     </div>
   );
