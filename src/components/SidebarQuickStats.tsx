@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import {
   ClipboardCheck, Receipt, Truck, GitBranch, Banknote, FileSignature,
-  CalendarClock, CheckCircle2, ChevronRight,
+  CalendarClock, CheckCircle2, ChevronRight, AlertTriangle,
 } from "lucide-react";
 import { useProject } from "@/lib/ProjectContext";
 import { useLabourLogs, computeEntryCost } from "@/lib/laborLog";
