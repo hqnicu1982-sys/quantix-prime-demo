@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import {
   ClipboardCheck, Receipt, Truck, GitBranch, Banknote, FileSignature,
-  CalendarClock, AlertTriangle, CheckCircle2, ChevronRight,
+  CalendarClock, CheckCircle2, ChevronRight,
 } from "lucide-react";
 import { useProject } from "@/lib/ProjectContext";
 import { useLabourLogs, computeEntryCost } from "@/lib/laborLog";
@@ -385,25 +385,4 @@ export function UrgentList({
   );
 }
 
-function UrgentHeader({ total, critical }: { total: number; critical: number }) {
-  return (
-    <div className="flex items-center justify-between px-1 pb-0.5">
-      <p className="text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/50">
-        Today's urgent tasks
-      </p>
-      {total > 0 && (
-        <span
-          className={cn(
-            "rounded-full px-1.5 py-px text-[9px] font-bold tabular-nums",
-            critical > 0
-              ? "bg-[var(--red-500)]/20 text-[var(--red-500)]"
-              : "bg-white/10 text-white/70",
-          )}
-        >
-          {total}
-        </span>
-      )}
-    </div>
-  );
-}
 
