@@ -1,9 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import {
   ClipboardCheck, Receipt, Truck, GitBranch, Banknote, FileSignature,
-  CalendarClock, AlertTriangle, CheckCircle2, ChevronRight, ChevronDown,
+  CalendarClock, AlertTriangle, CheckCircle2, ChevronRight,
 } from "lucide-react";
-import { useState } from "react";
 import { useProject } from "@/lib/ProjectContext";
 import { useLabourLogs, computeEntryCost } from "@/lib/laborLog";
 import { useInvoices } from "@/lib/invoiceRegistry";
@@ -14,7 +13,6 @@ import { usePendingNotices } from "@/lib/paymentCycle";
 import { useCurrentUser } from "@/lib/currentUser";
 import { useCan } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { useUrgentMode, type UrgentMode } from "@/lib/sidebarUrgentMode";
 
 export type Severity = "critical" | "warning" | "info";
 
