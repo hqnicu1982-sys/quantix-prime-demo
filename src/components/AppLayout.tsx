@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Calendar, Package, ClipboardList, FileSpreadsheet, Plug, Users2,
   Menu, X, Search, Settings, HardHat, LineChart, Check, FolderKanban, Library,
   Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Hammer, Sun, Moon,
-  ChevronDown, GitBranch, BookOpen, HelpCircle, LogIn, UserPlus,
+  ChevronDown, GitBranch, BookOpen, HelpCircle, LogIn, UserPlus, Layers,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -43,6 +43,7 @@ const navGroups: NavGroup[] = [
     { to: "/calloffs", label: "Call-offs", icon: ShoppingCart, requires: "view.calloffs" },
     { to: "/variations", label: "Variations", icon: GitBranch, badge: "NEW", requires: "view.variations" },
     { to: "/invoices", label: "Invoice Recon", icon: Receipt, badge: "BETA", requires: "view.invoices" },
+    { to: "/all-invoices", label: "All Invoices", icon: Layers, requires: "view.invoices" },
     { to: "/financial", label: "Financial", icon: TrendingUp, requires: "view.financials" },
   ]},
   { label: "Execution", persona: "site", items: [
