@@ -227,6 +227,7 @@ function Breadcrumb() {
     "/calloffs": "Call-offs",
     "/variations": "Variations",
     "/invoices": "Invoice Reconciliation",
+    "/all-invoices": "All Invoices",
     "/financial": "Financial Dashboard",
     "/planner": "Planner",
     "/readiness": "Material Readiness",

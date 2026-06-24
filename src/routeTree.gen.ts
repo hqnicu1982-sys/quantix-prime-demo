@@ -26,6 +26,7 @@ import { Route as CostedBoqRouteImport } from './routes/costed-boq'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CalloffsRouteImport } from './routes/calloffs'
 import { Route as CalculatorRouteImport } from './routes/calculator'
+import { Route as AllInvoicesRouteImport } from './routes/all-invoices'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as InvoicesIndexRouteImport } from './routes/invoices.index'
@@ -146,6 +147,11 @@ const CalloffsRoute = CalloffsRouteImport.update({
 const CalculatorRoute = CalculatorRouteImport.update({
   id: '/calculator',
   path: '/calculator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AllInvoicesRoute = AllInvoicesRouteImport.update({
+  id: '/all-invoices',
+  path: '/all-invoices',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -340,6 +346,7 @@ const ProjectsProjectIdAllocationRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/all-invoices': typeof AllInvoicesRoute
   '/calculator': typeof CalculatorRoute
   '/calloffs': typeof CalloffsRouteWithChildren
   '/catalog': typeof CatalogRoute
@@ -395,6 +402,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/all-invoices': typeof AllInvoicesRoute
   '/calculator': typeof CalculatorRoute
   '/catalog': typeof CatalogRoute
   '/costed-boq': typeof CostedBoqRoute
@@ -447,6 +455,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/all-invoices': typeof AllInvoicesRoute
   '/calculator': typeof CalculatorRoute
   '/calloffs': typeof CalloffsRouteWithChildren
   '/catalog': typeof CatalogRoute
@@ -504,6 +513,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/all-invoices'
     | '/calculator'
     | '/calloffs'
     | '/catalog'
@@ -559,6 +569,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/all-invoices'
     | '/calculator'
     | '/catalog'
     | '/costed-boq'
@@ -610,6 +621,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/all-invoices'
     | '/calculator'
     | '/calloffs'
     | '/catalog'
@@ -666,6 +678,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AllInvoicesRoute: typeof AllInvoicesRoute
   CalculatorRoute: typeof CalculatorRoute
   CalloffsRoute: typeof CalloffsRouteWithChildren
   CatalogRoute: typeof CatalogRoute
@@ -811,6 +824,13 @@ declare module '@tanstack/react-router' {
       path: '/calculator'
       fullPath: '/calculator'
       preLoaderRoute: typeof CalculatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/all-invoices': {
+      id: '/all-invoices'
+      path: '/all-invoices'
+      fullPath: '/all-invoices'
+      preLoaderRoute: typeof AllInvoicesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -1165,6 +1185,7 @@ const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AllInvoicesRoute: AllInvoicesRoute,
   CalculatorRoute: CalculatorRoute,
   CalloffsRoute: CalloffsRouteWithChildren,
   CatalogRoute: CatalogRoute,
