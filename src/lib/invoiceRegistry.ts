@@ -24,7 +24,7 @@ export type RegistryInvoice = {
 };
 
 const KEY = "qp-invoice-registry";
-const SEED_KEY = "qp-invoice-registry-seeded-v1";
+const SEED_KEY = "qp-invoice-registry-seeded-v2";
 const EVT = "qp-invoice-registry-change";
 
 function read(): RegistryInvoice[] {
@@ -70,6 +70,25 @@ function ensureSeed() {
     { projectId: "fitzrovia", direction: "payable", counterparty: "British Gypsum", reference: "BG-7712", issued: iso(-6), due: iso(24), amount: 12450, status: "outstanding" },
     { projectId: "fitzrovia", direction: "payable", counterparty: "Travis Perkins", reference: "TP-88410", issued: iso(-11), due: iso(19), amount: 6280, status: "outstanding" },
     { projectId: "fitzrovia", direction: "payable", counterparty: "Saint-Gobain", reference: "SG-22019", issued: iso(-3), due: iso(27), amount: 110440, status: "outstanding" },
+    // Trafalgar Wharf (Wates) — at-risk project, more overdues
+    { projectId: "trafalgar", direction: "receivable", counterparty: "Wates Group", reference: "QP-2026-044", issued: iso(-40), due: iso(-10), amount: 142000, status: "outstanding" },
+    { projectId: "trafalgar", direction: "receivable", counterparty: "Wates Group", reference: "QP-2026-039", issued: iso(-18), due: iso(12),  amount: 88000,  status: "outstanding" },
+    { projectId: "trafalgar", direction: "payable",    counterparty: "CCF",         reference: "CCF-10901", issued: iso(-14), due: iso(-4),  amount: 9120,   status: "outstanding" },
+    { projectId: "trafalgar", direction: "payable",    counterparty: "Saint-Gobain",reference: "SG-22188", issued: iso(-7),  due: iso(23),  amount: 23800,  status: "outstanding" },
+    { projectId: "trafalgar", direction: "payable",    counterparty: "Encon Insulation", reference: "ENC-3318", issued: iso(-22), due: iso(8), amount: 5410, status: "outstanding" },
+    // Greenwich Peninsula (Multiplex)
+    { projectId: "greenwich", direction: "receivable", counterparty: "Multiplex Construction", reference: "QP-2026-046", issued: iso(-6), due: iso(24), amount: 96000, status: "outstanding" },
+    { projectId: "greenwich", direction: "payable",    counterparty: "British Gypsum", reference: "BG-7841", issued: iso(-10), due: iso(20), amount: 18200, status: "outstanding" },
+    { projectId: "greenwich", direction: "payable",    counterparty: "Knauf Direct",   reference: "KNF-10044", issued: iso(-35), due: iso(-5), amount: 7640, status: "outstanding" },
+    { projectId: "greenwich", direction: "payable",    counterparty: "Minster",        reference: "MIN-44610", issued: iso(-40), due: iso(-10), amount: 3120, status: "paid", paidAt: iso(-8) },
+    // Camden Market (Kier) — early stage, small invoices, mostly disputed/outstanding
+    { projectId: "camden", direction: "receivable", counterparty: "Kier Construction", reference: "QP-2026-049", issued: iso(-4), due: iso(26), amount: 42000, status: "outstanding" },
+    { projectId: "camden", direction: "payable",    counterparty: "Travis Perkins",    reference: "TP-88712", issued: iso(-2), due: iso(28), amount: 1840, status: "outstanding" },
+    { projectId: "camden", direction: "payable",    counterparty: "CCF",               reference: "CCF-11014", issued: iso(-16), due: iso(-6), amount: 6210, status: "outstanding" },
+    // Bermondsey (ISG) — almost done, mostly paid
+    { projectId: "bermondsey", direction: "receivable", counterparty: "ISG plc", reference: "QP-2026-035", issued: iso(-45), due: iso(-15), amount: 58000, status: "paid", paidAt: iso(-10) },
+    { projectId: "bermondsey", direction: "payable",    counterparty: "Saint-Gobain", reference: "SG-21884", issued: iso(-50), due: iso(-20), amount: 9420, status: "paid", paidAt: iso(-18) },
+    { projectId: "bermondsey", direction: "payable",    counterparty: "Knauf Direct", reference: "KNF-9912", issued: iso(-5), due: iso(25), amount: 3120, status: "outstanding" },
   ];
   const list: RegistryInvoice[] = seeds.map((s, i) => ({
     ...s,
