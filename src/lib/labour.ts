@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { team } from "./mockData";
+import { logTeamEvent } from "./teamAudit";
 
 // ============================================================================
 // Labour — global role rates, per-member rate, project assignments, invites.
@@ -224,13 +225,37 @@ export function getRoles(): LabourRole[] {
 export function upsertRole(role: Omit<LabourRole, "id"> & { id?: string }) {
   const list = getRoles();
   if (role.id) {
+    const prev = list.find((r) => r.id === role.id);
     write(ROLES_KEY, list.map((r) => (r.id === role.id ? { ...r, ...role } as LabourRole : r)));
+    logTeamEvent({
+      kind: "role.upserted",
+      subject: role.name ?? prev?.name,
+      detail: prev
+        ? `Updated role '${prev.name}'${role.defaultRate !== undefined && role.defaultRate !== prev.defaultRate ? ` — default rate £${prev.defaultRate.toFixed(2)} → £${Number(role.defaultRate).toFixed(2)}/h` : ""}`
+        : `Updated role '${role.name}'`,
+      before: prev ? `£${prev.defaultRate.toFixed(2)}/h` : undefined,
+      after: role.defaultRate !== undefined ? `£${Number(role.defaultRate).toFixed(2)}/h` : undefined,
+    });
   } else {
     write(ROLES_KEY, [...list, { ...role, id: uid("role") } as LabourRole]);
+    logTeamEvent({
+      kind: "role.upserted",
+      subject: role.name,
+      detail: `Created role '${role.name}' with default rate £${Number(role.defaultRate).toFixed(2)}/h`,
+      after: `£${Number(role.defaultRate).toFixed(2)}/h`,
+    });
   }
 }
 export function deleteRole(id: string) {
+  const gone = getRoles().find((r) => r.id === id);
   write(ROLES_KEY, getRoles().filter((r) => r.id !== id));
+  if (gone) {
+    logTeamEvent({
+      kind: "role.deleted",
+      subject: gone.name,
+      detail: `Deleted role '${gone.name}' (was £${gone.defaultRate.toFixed(2)}/h)`,
+    });
+  }
 }
 
 // ---------- member rates ----------
@@ -241,8 +266,22 @@ export function getMemberRates(): MemberRate[] {
 export function setMemberRate(mr: MemberRate) {
   const list = getMemberRates();
   const i = list.findIndex((x) => x.memberId === mr.memberId);
+  const prev = i === -1 ? undefined : list[i];
   if (i === -1) write(MEMBER_RATES_KEY, [...list, mr]);
   else { const next = [...list]; next[i] = mr; write(MEMBER_RATES_KEY, next); }
+  if (!prev || prev.rate !== mr.rate) {
+    const member = team.find((t) => t.id === mr.memberId);
+    logTeamEvent({
+      kind: "rate.changed",
+      subject: member?.name ?? mr.memberId,
+      subjectId: mr.memberId,
+      before: prev ? `£${prev.rate.toFixed(2)}` : undefined,
+      after: `£${mr.rate.toFixed(2)}`,
+      detail: prev
+        ? `Rate updated £${prev.rate.toFixed(2)} → £${mr.rate.toFixed(2)}/h`
+        : `Rate set to £${mr.rate.toFixed(2)}/h`,
+    });
+  }
 }
 export function getMemberRate(memberId: string): MemberRate | undefined {
   return getMemberRates().find((m) => m.memberId === memberId);
@@ -258,10 +297,30 @@ export function addAssignment(a: Omit<ProjectAssignment, "id" | "createdAt">) {
   const all = read<ProjectAssignment[]>(ASSIGN_KEY, []);
   const next: ProjectAssignment = { ...a, id: uid("asg"), createdAt: Date.now() };
   write(ASSIGN_KEY, [...all, next]);
+  const member = team.find((t) => t.id === a.memberId);
+  logTeamEvent({
+    kind: "assignment.added",
+    subject: member?.name ?? a.memberId,
+    subjectId: a.memberId,
+    projectId: a.projectId,
+    detail: `Assigned as ${a.projectRole ?? member?.role ?? "member"}${a.crewName ? ` (${a.crewName})` : ""}${a.rateOverride !== undefined ? ` — override £${a.rateOverride.toFixed(2)}/h` : ""}`,
+  });
   return next;
 }
 export function removeAssignment(id: string) {
-  write(ASSIGN_KEY, read<ProjectAssignment[]>(ASSIGN_KEY, []).filter((a) => a.id !== id));
+  const all = read<ProjectAssignment[]>(ASSIGN_KEY, []);
+  const gone = all.find((a) => a.id === id);
+  write(ASSIGN_KEY, all.filter((a) => a.id !== id));
+  if (gone) {
+    const member = team.find((t) => t.id === gone.memberId);
+    logTeamEvent({
+      kind: "assignment.removed",
+      subject: member?.name ?? gone.memberId,
+      subjectId: gone.memberId,
+      projectId: gone.projectId,
+      detail: `Removed${gone.projectRole ? ` from ${gone.projectRole}` : ""}${gone.crewName ? ` (${gone.crewName})` : ""}`,
+    });
+  }
 }
 
 // ---------- invites ----------
@@ -273,10 +332,25 @@ export function addInvite(inv: Omit<Invite, "id" | "createdAt" | "status">) {
   const list = getInvites();
   const next: Invite = { ...inv, id: uid("inv"), createdAt: Date.now(), status: "pending" };
   write(INVITES_KEY, [...list, next]);
+  logTeamEvent({
+    kind: "invite.sent",
+    subject: inv.name ?? inv.email,
+    projectId: inv.projectId,
+    detail: `Invited as ${inv.tier} · £${inv.rate.toFixed(2)}/h`,
+  });
   return next;
 }
 export function removeInvite(id: string) {
+  const gone = getInvites().find((i) => i.id === id);
   write(INVITES_KEY, getInvites().filter((i) => i.id !== id));
+  if (gone) {
+    logTeamEvent({
+      kind: "invite.revoked",
+      subject: gone.name ?? gone.email,
+      projectId: gone.projectId,
+      detail: `Revoked invite (${gone.tier} · £${gone.rate.toFixed(2)}/h)`,
+    });
+  }
 }
 
 // ---------- effective rate logic ----------
