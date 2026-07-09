@@ -31,6 +31,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as InvoicesIndexRouteImport } from './routes/invoices.index'
 import { Route as CalloffsIndexRouteImport } from './routes/calloffs.index'
+import { Route as TeamAuditRouteImport } from './routes/team.audit'
 import { Route as SettingsLabourRouteImport } from './routes/settings.labour'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects.$projectId'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
@@ -173,6 +174,11 @@ const CalloffsIndexRoute = CalloffsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => CalloffsRoute,
+} as any)
+const TeamAuditRoute = TeamAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => TeamRoute,
 } as any)
 const SettingsLabourRoute = SettingsLabourRouteImport.update({
   id: '/settings/labour',
@@ -362,7 +368,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/signup': typeof SignupRoute
-  '/team': typeof TeamRoute
+  '/team': typeof TeamRouteWithChildren
   '/variations': typeof VariationsRoute
   '/calloffs/$ref': typeof CalloffsRefRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
@@ -384,6 +390,7 @@ export interface FileRoutesByFullPath {
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
+  '/team/audit': typeof TeamAuditRoute
   '/calloffs/': typeof CalloffsIndexRoute
   '/invoices/': typeof InvoicesIndexRoute
   '/projects/': typeof ProjectsIndexRoute
@@ -415,7 +422,7 @@ export interface FileRoutesByTo {
   '/price-intelligence': typeof PriceIntelligenceRoute
   '/readiness': typeof ReadinessRoute
   '/signup': typeof SignupRoute
-  '/team': typeof TeamRoute
+  '/team': typeof TeamRouteWithChildren
   '/variations': typeof VariationsRoute
   '/calloffs/$ref': typeof CalloffsRefRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
@@ -436,6 +443,7 @@ export interface FileRoutesByTo {
   '/po/$poRef': typeof PoPoRefRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/settings/labour': typeof SettingsLabourRoute
+  '/team/audit': typeof TeamAuditRoute
   '/calloffs': typeof CalloffsIndexRoute
   '/invoices': typeof InvoicesIndexRoute
   '/projects': typeof ProjectsIndexRoute
@@ -471,7 +479,7 @@ export interface FileRoutesById {
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/signup': typeof SignupRoute
-  '/team': typeof TeamRoute
+  '/team': typeof TeamRouteWithChildren
   '/variations': typeof VariationsRoute
   '/calloffs/$ref': typeof CalloffsRefRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
@@ -493,6 +501,7 @@ export interface FileRoutesById {
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
+  '/team/audit': typeof TeamAuditRoute
   '/calloffs/': typeof CalloffsIndexRoute
   '/invoices/': typeof InvoicesIndexRoute
   '/projects/': typeof ProjectsIndexRoute
@@ -551,6 +560,7 @@ export interface FileRouteTypes {
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
+    | '/team/audit'
     | '/calloffs/'
     | '/invoices/'
     | '/projects/'
@@ -603,6 +613,7 @@ export interface FileRouteTypes {
     | '/po/$poRef'
     | '/price-lists/upload'
     | '/settings/labour'
+    | '/team/audit'
     | '/calloffs'
     | '/invoices'
     | '/projects'
@@ -659,6 +670,7 @@ export interface FileRouteTypes {
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
+    | '/team/audit'
     | '/calloffs/'
     | '/invoices/'
     | '/projects/'
@@ -694,7 +706,7 @@ export interface RootRouteChildren {
   ProjectsRoute: typeof ProjectsRouteWithChildren
   ReadinessRoute: typeof ReadinessRoute
   SignupRoute: typeof SignupRoute
-  TeamRoute: typeof TeamRoute
+  TeamRoute: typeof TeamRouteWithChildren
   VariationsRoute: typeof VariationsRoute
   FormsDailyReportRoute: typeof FormsDailyReportRoute
   FormsGrnRoute: typeof FormsGrnRoute
@@ -860,6 +872,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/calloffs/'
       preLoaderRoute: typeof CalloffsIndexRouteImport
       parentRoute: typeof CalloffsRoute
+    }
+    '/team/audit': {
+      id: '/team/audit'
+      path: '/audit'
+      fullPath: '/team/audit'
+      preLoaderRoute: typeof TeamAuditRouteImport
+      parentRoute: typeof TeamRoute
     }
     '/settings/labour': {
       id: '/settings/labour'
@@ -1183,6 +1202,16 @@ const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
   ProjectsRouteChildren,
 )
 
+interface TeamRouteChildren {
+  TeamAuditRoute: typeof TeamAuditRoute
+}
+
+const TeamRouteChildren: TeamRouteChildren = {
+  TeamAuditRoute: TeamAuditRoute,
+}
+
+const TeamRouteWithChildren = TeamRoute._addFileChildren(TeamRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AllInvoicesRoute: AllInvoicesRoute,
@@ -1201,7 +1230,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProjectsRoute: ProjectsRouteWithChildren,
   ReadinessRoute: ReadinessRoute,
   SignupRoute: SignupRoute,
-  TeamRoute: TeamRoute,
+  TeamRoute: TeamRouteWithChildren,
   VariationsRoute: VariationsRoute,
   FormsDailyReportRoute: FormsDailyReportRoute,
   FormsGrnRoute: FormsGrnRoute,

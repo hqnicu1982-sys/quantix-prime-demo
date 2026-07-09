@@ -40,7 +40,9 @@ function Team() {
       subtitle="Role-based permissions · per-project membership · full audit trail of who did what"
       right={
         <>
-          <Button variant="outline" size="sm" onClick={() => toast("Audit log", { description: "Opening last 30 days · 247 events" })}><FileText className="mr-1.5 h-3.5 w-3.5" /> Audit log</Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/team/audit"><FileText className="mr-1.5 h-3.5 w-3.5" /> Audit log</Link>
+          </Button>
           <Button variant="outline" size="sm" asChild><Link to="/settings/labour"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> Labour rates</Link></Button>
           <InviteMemberDialog />
         </>
