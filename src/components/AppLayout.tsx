@@ -233,6 +233,7 @@ function Breadcrumb() {
     "/readiness": "Material Readiness",
     "/daily-report": "Daily Site Report",
     "/team": "Team & Roles",
+    "/team/audit": "Team Audit Log",
     "/integrations": "Integrations",
     "/how-to": "How to use",
   };
