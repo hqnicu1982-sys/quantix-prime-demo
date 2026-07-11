@@ -176,9 +176,9 @@ const CalloffsIndexRoute = CalloffsIndexRouteImport.update({
   getParentRoute: () => CalloffsRoute,
 } as any)
 const TeamAuditRoute = TeamAuditRouteImport.update({
-  id: '/team/audit',
-  path: '/team/audit',
-  getParentRoute: () => rootRouteImport,
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => TeamRoute,
 } as any)
 const SettingsLabourRoute = SettingsLabourRouteImport.update({
   id: '/settings/labour',
@@ -714,7 +714,6 @@ export interface RootRouteChildren {
   PoPoRefRoute: typeof PoPoRefRoute
   PriceListsUploadRoute: typeof PriceListsUploadRoute
   SettingsLabourRoute: typeof SettingsLabourRoute
-  TeamAuditRoute: typeof TeamAuditRoute
   TeamIndexRoute: typeof TeamIndexRoute
 }
 
@@ -876,10 +875,10 @@ declare module '@tanstack/react-router' {
     }
     '/team/audit': {
       id: '/team/audit'
-      path: '/team/audit'
+      path: '/audit'
       fullPath: '/team/audit'
       preLoaderRoute: typeof TeamAuditRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof TeamRoute
     }
     '/settings/labour': {
       id: '/settings/labour'
@@ -1229,9 +1228,17 @@ const rootRouteChildren: RootRouteChildren = {
   PoPoRefRoute: PoPoRefRoute,
   PriceListsUploadRoute: PriceListsUploadRoute,
   SettingsLabourRoute: SettingsLabourRoute,
-  TeamAuditRoute: TeamAuditRoute,
   TeamIndexRoute: TeamIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
