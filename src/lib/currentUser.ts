@@ -3,7 +3,7 @@ import { team, type TeamMember } from "./mockData";
 
 // ============================================================================
 // Current user — mock auth. Drives role-based UI throughout the app.
-// localStorage-backed. Default: Nick Andrei (Pro / Site Manager).
+// localStorage-backed. Default: Nick Aldea (Pro / Site Manager).
 // ============================================================================
 
 const KEY = "qp-current-user";

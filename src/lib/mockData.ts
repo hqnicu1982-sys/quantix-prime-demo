@@ -6,7 +6,7 @@
 // ==================================================================
 export const currentUser = {
   id: "na",
-  name: "Nick Andrei",
+  name: "Nick Aldea",
   role: "Site Manager",
   tier: "Pro",
   initials: "NA",
@@ -29,9 +29,9 @@ export type TeamMember = {
 };
 
 export const team: TeamMember[] = [
-  { id: "na", name: "Nick Andrei", role: "Site Manager", tier: "Pro", initials: "NA", joined: "Jan 2026", projects: 6, capability: "Upload price lists, create call-offs, log deliveries, raise dayworks", lastActive: "now", status: "active" },
-  { id: "sm", name: "Sarah Mitchell", role: "Commercial QS", tier: "Pro Control", initials: "SM", joined: "Feb 2026", projects: 11, capability: "Approves call-offs, manages BoQ, signs invoices, owns financials", lastActive: "2h ago", status: "active" },
-  { id: "dp", name: "David Park", role: "Managing Director", tier: "Admin", initials: "DP", joined: "Jan 2026", projects: 11, capability: "Full access, billing, user management", lastActive: "yesterday", status: "active" },
+  { id: "na", name: "Nick Aldea", role: "Site Manager", tier: "Pro", initials: "NA", joined: "Jan 2026", projects: 6, capability: "Upload price lists, create call-offs, log deliveries, raise dayworks", lastActive: "now", status: "active" },
+  { id: "sm", name: "Piu Piu Chick", role: "Commercial QS", tier: "Pro Control", initials: "SM", joined: "Feb 2026", projects: 11, capability: "Approves call-offs, manages BoQ, signs invoices, owns financials", lastActive: "2h ago", status: "active" },
+  { id: "dp", name: "David Andrei", role: "Managing Director", tier: "Admin", initials: "DP", joined: "Jan 2026", projects: 11, capability: "Full access, billing, user management", lastActive: "yesterday", status: "active" },
   { id: "mk", name: "Marcin Kowalski", role: "Lead Dryliner", tier: "Operative", initials: "MK", joined: "Mar 2026", projects: 2, capability: "View tasks, confirm labour hours", lastActive: "3h ago", status: "active" },
   { id: "ro", name: "Rachel Okonkwo", role: "Estimator", tier: "Pro", initials: "RO", joined: "Feb 2026", projects: 5, capability: "Builds BoQ, uses Calculator, read-only financials", lastActive: "yesterday", status: "active" },
   { id: "aj", name: "Andy Jones", role: "Lead Taper", tier: "Operative", initials: "AJ", joined: "Mar 2026", projects: 1, capability: "View tasks, confirm labour", lastActive: "1d ago", status: "active" },
@@ -116,10 +116,10 @@ export const fitzroviaHealth = [
 ];
 
 export const fitzroviaActivity = [
-  { id: 1, title: "Call-off #247 approved", who: "Sarah Mitchell QS", when: "today 09:14", tone: "success" as const },
+  { id: 1, title: "Call-off #247 approved", who: "Piu Piu Chick QS", when: "today 09:14", tone: "success" as const },
   { id: 2, title: "BoQ rev 3.2 published", who: "Rachel Okonkwo", when: "yesterday 17:22", tone: "info" as const },
-  { id: 3, title: "Price list uploaded — Minster (152 items, 3 review)", who: "Nick Andrei", when: "yesterday 14:48", tone: "info" as const },
-  { id: 4, title: "Site delay: L5 ceilings rain 1.5d", who: "Nick Andrei", when: "Fri 17 Apr", tone: "warning" as const },
+  { id: 3, title: "Price list uploaded — Minster (152 items, 3 review)", who: "Nick Aldea", when: "yesterday 14:48", tone: "info" as const },
+  { id: 4, title: "Site delay: L5 ceilings rain 1.5d", who: "Nick Aldea", when: "Fri 17 Apr", tone: "warning" as const },
 ];
 
 // ==================================================================
@@ -671,7 +671,7 @@ export const dailyReport = {
     "Deliveries expected: Gyproc tape + compound, CCF",
     "Inspection 14:00 by Kier site manager (Alex P)",
   ],
-  submittedBy: "Nick Andrei",
+  submittedBy: "Nick Aldea",
   submittedAt: "17:24 (draft)",
 };
 

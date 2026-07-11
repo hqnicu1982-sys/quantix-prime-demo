@@ -55,7 +55,7 @@ function DailyReportForm() {
   ]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [signature, setSignature] = useState<string | undefined>();
-  const [submittedBy, setSubmittedBy] = useState("Nick Andrei");
+  const [submittedBy, setSubmittedBy] = useState("Nick Aldea");
   const [note, setNote] = useState("");
 
   const totalHeadcount = crews.reduce((s, c) => s + (Number(c.headcount) || 0), 0);
