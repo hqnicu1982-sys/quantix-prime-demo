@@ -13,7 +13,7 @@ import { useCan } from "@/lib/permissions";
 import { Gated } from "@/components/auth/Gated";
 import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/team")({ component: GuardedTeam });
+export const Route = createFileRoute("/team/")({ component: GuardedTeam });
 
 function GuardedTeam() {
   const allowed = useCan("view.team");
