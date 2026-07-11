@@ -18,7 +18,7 @@ function baseInput(overrides: Partial<Parameters<typeof addAttachment>[2]> = {})
     mimeType: "application/pdf",
     dataUrl: "data:application/pdf;base64,AAAA",
     category: "datasheet" as const,
-    uploadedBy: "Nick Andrei",
+    uploadedBy: "Nick Aldea",
     ...overrides,
   };
 }

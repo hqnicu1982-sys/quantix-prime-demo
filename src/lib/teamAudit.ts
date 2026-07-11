@@ -56,21 +56,21 @@ function uid() {
 }
 
 const SEED: Omit<TeamAuditEntry, "id">[] = [
-  { ts: Date.now() - 1000 * 60 * 60 * 24 * 6, kind: "role.upserted", actor: "David Park", actorId: "dp",
+  { ts: Date.now() - 1000 * 60 * 60 * 24 * 6, kind: "role.upserted", actor: "David Andrei", actorId: "dp",
     detail: "Created role 'MF Fixer' with default rate £23.00/h" },
-  { ts: Date.now() - 1000 * 60 * 60 * 24 * 5, kind: "invite.sent", actor: "Sarah Mitchell", actorId: "sm",
+  { ts: Date.now() - 1000 * 60 * 60 * 24 * 5, kind: "invite.sent", actor: "Piu Piu Chick", actorId: "sm",
     subject: "ben@drywallcrew.co.uk", detail: "Invited as Operative · £24.50/h · assigned to Hotel Fitzrovia",
     projectId: "fitzrovia" },
-  { ts: Date.now() - 1000 * 60 * 60 * 24 * 4, kind: "assignment.added", actor: "Sarah Mitchell", actorId: "sm",
+  { ts: Date.now() - 1000 * 60 * 60 * 24 * 4, kind: "assignment.added", actor: "Piu Piu Chick", actorId: "sm",
     subject: "Marcin Kowalski", subjectId: "mk", projectId: "fitzrovia",
     detail: "Assigned as Drylining L4 (Marcin's Crew)" },
-  { ts: Date.now() - 1000 * 60 * 60 * 24 * 3, kind: "rate.changed", actor: "David Park", actorId: "dp",
+  { ts: Date.now() - 1000 * 60 * 60 * 24 * 3, kind: "rate.changed", actor: "David Andrei", actorId: "dp",
     subject: "Andy Jones", subjectId: "aj", before: "£22.00", after: "£24.00",
     detail: "Rate updated after Lead Taper promotion" },
-  { ts: Date.now() - 1000 * 60 * 60 * 24 * 2, kind: "assignment.added", actor: "Nick Andrei", actorId: "na",
+  { ts: Date.now() - 1000 * 60 * 60 * 24 * 2, kind: "assignment.added", actor: "Nick Aldea", actorId: "na",
     subject: "Paweł Wilkowski", subjectId: "pw", projectId: "fitzrovia",
     detail: "Assigned as Drylining L5 (Paweł's Crew)" },
-  { ts: Date.now() - 1000 * 60 * 60 * 26, kind: "tier.changed", actor: "David Park", actorId: "dp",
+  { ts: Date.now() - 1000 * 60 * 60 * 26, kind: "tier.changed", actor: "David Andrei", actorId: "dp",
     subject: "Rachel Okonkwo", subjectId: "ro", before: "Site User", after: "Pro",
     detail: "Promoted to Pro to unlock Calculator + BoQ read access" },
 ];
