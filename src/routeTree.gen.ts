@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VariationsRouteImport } from './routes/variations'
-import { Route as TeamRouteImport } from './routes/team'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ReadinessRouteImport } from './routes/readiness'
 import { Route as ProjectsRouteImport } from './routes/projects'
@@ -28,6 +27,7 @@ import { Route as CalloffsRouteImport } from './routes/calloffs'
 import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as AllInvoicesRouteImport } from './routes/all-invoices'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TeamIndexRouteImport } from './routes/team.index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as InvoicesIndexRouteImport } from './routes/invoices.index'
 import { Route as CalloffsIndexRouteImport } from './routes/calloffs.index'
@@ -68,11 +68,6 @@ import { Route as ProjectsProjectIdAllocationRouteImport } from './routes/projec
 const VariationsRoute = VariationsRouteImport.update({
   id: '/variations',
   path: '/variations',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TeamRoute = TeamRouteImport.update({
-  id: '/team',
-  path: '/team',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -160,6 +155,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TeamIndexRoute = TeamIndexRouteImport.update({
+  id: '/team/',
+  path: '/team/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -176,9 +176,9 @@ const CalloffsIndexRoute = CalloffsIndexRouteImport.update({
   getParentRoute: () => CalloffsRoute,
 } as any)
 const TeamAuditRoute = TeamAuditRouteImport.update({
-  id: '/audit',
-  path: '/audit',
-  getParentRoute: () => TeamRoute,
+  id: '/team/audit',
+  path: '/team/audit',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsLabourRoute = SettingsLabourRouteImport.update({
   id: '/settings/labour',
@@ -368,7 +368,6 @@ export interface FileRoutesByFullPath {
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/signup': typeof SignupRoute
-  '/team': typeof TeamRouteWithChildren
   '/variations': typeof VariationsRoute
   '/calloffs/$ref': typeof CalloffsRefRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
@@ -394,6 +393,7 @@ export interface FileRoutesByFullPath {
   '/calloffs/': typeof CalloffsIndexRoute
   '/invoices/': typeof InvoicesIndexRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/team/': typeof TeamIndexRoute
   '/projects/$projectId/allocation': typeof ProjectsProjectIdAllocationRoute
   '/projects/$projectId/calloffs': typeof ProjectsProjectIdCalloffsRoute
   '/projects/$projectId/costed-boq': typeof ProjectsProjectIdCostedBoqRoute
@@ -422,7 +422,6 @@ export interface FileRoutesByTo {
   '/price-intelligence': typeof PriceIntelligenceRoute
   '/readiness': typeof ReadinessRoute
   '/signup': typeof SignupRoute
-  '/team': typeof TeamRouteWithChildren
   '/variations': typeof VariationsRoute
   '/calloffs/$ref': typeof CalloffsRefRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
@@ -447,6 +446,7 @@ export interface FileRoutesByTo {
   '/calloffs': typeof CalloffsIndexRoute
   '/invoices': typeof InvoicesIndexRoute
   '/projects': typeof ProjectsIndexRoute
+  '/team': typeof TeamIndexRoute
   '/projects/$projectId/allocation': typeof ProjectsProjectIdAllocationRoute
   '/projects/$projectId/calloffs': typeof ProjectsProjectIdCalloffsRoute
   '/projects/$projectId/costed-boq': typeof ProjectsProjectIdCostedBoqRoute
@@ -479,7 +479,6 @@ export interface FileRoutesById {
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/signup': typeof SignupRoute
-  '/team': typeof TeamRouteWithChildren
   '/variations': typeof VariationsRoute
   '/calloffs/$ref': typeof CalloffsRefRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
@@ -505,6 +504,7 @@ export interface FileRoutesById {
   '/calloffs/': typeof CalloffsIndexRoute
   '/invoices/': typeof InvoicesIndexRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/team/': typeof TeamIndexRoute
   '/projects/$projectId/allocation': typeof ProjectsProjectIdAllocationRoute
   '/projects/$projectId/calloffs': typeof ProjectsProjectIdCalloffsRoute
   '/projects/$projectId/costed-boq': typeof ProjectsProjectIdCostedBoqRoute
@@ -538,7 +538,6 @@ export interface FileRouteTypes {
     | '/projects'
     | '/readiness'
     | '/signup'
-    | '/team'
     | '/variations'
     | '/calloffs/$ref'
     | '/calloffs/approvals'
@@ -564,6 +563,7 @@ export interface FileRouteTypes {
     | '/calloffs/'
     | '/invoices/'
     | '/projects/'
+    | '/team/'
     | '/projects/$projectId/allocation'
     | '/projects/$projectId/calloffs'
     | '/projects/$projectId/costed-boq'
@@ -592,7 +592,6 @@ export interface FileRouteTypes {
     | '/price-intelligence'
     | '/readiness'
     | '/signup'
-    | '/team'
     | '/variations'
     | '/calloffs/$ref'
     | '/calloffs/approvals'
@@ -617,6 +616,7 @@ export interface FileRouteTypes {
     | '/calloffs'
     | '/invoices'
     | '/projects'
+    | '/team'
     | '/projects/$projectId/allocation'
     | '/projects/$projectId/calloffs'
     | '/projects/$projectId/costed-boq'
@@ -648,7 +648,6 @@ export interface FileRouteTypes {
     | '/projects'
     | '/readiness'
     | '/signup'
-    | '/team'
     | '/variations'
     | '/calloffs/$ref'
     | '/calloffs/approvals'
@@ -674,6 +673,7 @@ export interface FileRouteTypes {
     | '/calloffs/'
     | '/invoices/'
     | '/projects/'
+    | '/team/'
     | '/projects/$projectId/allocation'
     | '/projects/$projectId/calloffs'
     | '/projects/$projectId/costed-boq'
@@ -706,7 +706,6 @@ export interface RootRouteChildren {
   ProjectsRoute: typeof ProjectsRouteWithChildren
   ReadinessRoute: typeof ReadinessRoute
   SignupRoute: typeof SignupRoute
-  TeamRoute: typeof TeamRouteWithChildren
   VariationsRoute: typeof VariationsRoute
   FormsDailyReportRoute: typeof FormsDailyReportRoute
   FormsGrnRoute: typeof FormsGrnRoute
@@ -715,6 +714,8 @@ export interface RootRouteChildren {
   PoPoRefRoute: typeof PoPoRefRoute
   PriceListsUploadRoute: typeof PriceListsUploadRoute
   SettingsLabourRoute: typeof SettingsLabourRoute
+  TeamAuditRoute: typeof TeamAuditRoute
+  TeamIndexRoute: typeof TeamIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -724,13 +725,6 @@ declare module '@tanstack/react-router' {
       path: '/variations'
       fullPath: '/variations'
       preLoaderRoute: typeof VariationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/team': {
-      id: '/team'
-      path: '/team'
-      fullPath: '/team'
-      preLoaderRoute: typeof TeamRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -852,6 +846,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/team/': {
+      id: '/team/'
+      path: '/team'
+      fullPath: '/team/'
+      preLoaderRoute: typeof TeamIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/projects/': {
       id: '/projects/'
       path: '/'
@@ -875,10 +876,10 @@ declare module '@tanstack/react-router' {
     }
     '/team/audit': {
       id: '/team/audit'
-      path: '/audit'
+      path: '/team/audit'
       fullPath: '/team/audit'
       preLoaderRoute: typeof TeamAuditRouteImport
-      parentRoute: typeof TeamRoute
+      parentRoute: typeof rootRouteImport
     }
     '/settings/labour': {
       id: '/settings/labour'
@@ -1202,16 +1203,6 @@ const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
   ProjectsRouteChildren,
 )
 
-interface TeamRouteChildren {
-  TeamAuditRoute: typeof TeamAuditRoute
-}
-
-const TeamRouteChildren: TeamRouteChildren = {
-  TeamAuditRoute: TeamAuditRoute,
-}
-
-const TeamRouteWithChildren = TeamRoute._addFileChildren(TeamRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AllInvoicesRoute: AllInvoicesRoute,
@@ -1230,7 +1221,6 @@ const rootRouteChildren: RootRouteChildren = {
   ProjectsRoute: ProjectsRouteWithChildren,
   ReadinessRoute: ReadinessRoute,
   SignupRoute: SignupRoute,
-  TeamRoute: TeamRouteWithChildren,
   VariationsRoute: VariationsRoute,
   FormsDailyReportRoute: FormsDailyReportRoute,
   FormsGrnRoute: FormsGrnRoute,
@@ -1239,16 +1229,9 @@ const rootRouteChildren: RootRouteChildren = {
   PoPoRefRoute: PoPoRefRoute,
   PriceListsUploadRoute: PriceListsUploadRoute,
   SettingsLabourRoute: SettingsLabourRoute,
+  TeamAuditRoute: TeamAuditRoute,
+  TeamIndexRoute: TeamIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
