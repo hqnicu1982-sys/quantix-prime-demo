@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { team, daysSince, type Project } from "./mockData";
 
 /** Deterministic non-negative hash of a string (for stable pseudo-random picks). */
@@ -74,7 +75,26 @@ export type FollowUpEntry = {
   channel: "email" | "call" | "meeting" | "system";
   by: string;                // team member name
   note: string;
+  outcome?: FollowUpOutcome;
+  manual?: boolean;          // true when user-logged via the drawer
 };
+
+export type FollowUpOutcome =
+  | "no-response"
+  | "acknowledged"
+  | "pricing-review"
+  | "decision-pending"
+  | "won"
+  | "lost";
+
+export const FOLLOW_UP_OUTCOMES: { code: FollowUpOutcome; label: string }[] = [
+  { code: "no-response",      label: "No response" },
+  { code: "acknowledged",     label: "Acknowledged" },
+  { code: "pricing-review",   label: "Pricing under review" },
+  { code: "decision-pending", label: "Decision pending" },
+  { code: "won",              label: "Won" },
+  { code: "lost",             label: "Lost" },
+];
 
 /**
  * Build a follow-up timeline from real project fields + deterministic filler.
@@ -138,11 +158,99 @@ export function getFollowUpHistory(p: Project): FollowUpEntry[] {
   }
 
   // Sort newest first
-  return entries.sort((a, b) => a.daysAgo - b.daysAgo);
+  const manual = readFollowUps().filter((r) => r.projectId === p.id).map((r) => ({
+    date: r.date,
+    daysAgo: Math.max(0, daysBetween(r.isoDate, new Date().toISOString())),
+    channel: r.channel,
+    by: r.by,
+    note: r.note,
+    outcome: r.outcome,
+    manual: true,
+  } satisfies FollowUpEntry));
+  return [...entries, ...manual].sort((a, b) => a.daysAgo - b.daysAgo);
 }
 
 function offsetToDisplay(offsetDays: number): string {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
+// ============================================================================
+// Manual follow-up registry — user-logged emails/calls/meetings appended from
+// the tender drawer. Persisted in localStorage; merged into getFollowUpHistory.
+// ============================================================================
+
+export type ManualFollowUp = {
+  id: string;
+  projectId: string;
+  isoDate: string;                       // ISO timestamp when it happened
+  date: string;                          // dd/mm/yyyy for display
+  channel: "email" | "call" | "meeting";
+  by: string;
+  note: string;
+  outcome?: FollowUpOutcome;
+  ts: string;                            // when logged
+};
+
+const KEY = "qp-tender-followups";
+const EVT = "qp-tender-followups-change";
+
+function readFollowUps(): ManualFollowUp[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(KEY);
+    return raw ? (JSON.parse(raw) as ManualFollowUp[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeFollowUps(rows: ManualFollowUp[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(KEY, JSON.stringify(rows));
+  window.dispatchEvent(new CustomEvent(EVT));
+}
+
+function subscribeFollowUps(cb: () => void) {
+  if (typeof window === "undefined") return () => {};
+  const h = () => cb();
+  window.addEventListener(EVT, h);
+  window.addEventListener("storage", h);
+  return () => {
+    window.removeEventListener(EVT, h);
+    window.removeEventListener("storage", h);
+  };
+}
+
+let _snap: ManualFollowUp[] = readFollowUps();
+function snapshotFollowUps(): ManualFollowUp[] {
+  const fresh = readFollowUps();
+  if (fresh.length !== _snap.length || fresh.some((r, i) => r.id !== _snap[i]?.id)) {
+    _snap = fresh;
+  }
+  return _snap;
+}
+
+export function useManualFollowUps(projectId: string): ManualFollowUp[] {
+  const all = useSyncExternalStore(subscribeFollowUps, snapshotFollowUps, snapshotFollowUps);
+  return all.filter((r) => r.projectId === projectId);
+}
+
+export function logFollowUp(input: Omit<ManualFollowUp, "id" | "ts" | "date">): ManualFollowUp {
+  const d = new Date(input.isoDate);
+  const date = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  const row: ManualFollowUp = {
+    ...input,
+    id: `fu-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    date,
+    ts: new Date().toISOString(),
+  };
+  writeFollowUps([row, ...readFollowUps()]);
+  return row;
+}
+
+function daysBetween(a: string, b: string): number {
+  const ms = new Date(b).getTime() - new Date(a).getTime();
+  return Math.floor(ms / 86_400_000);
 }
