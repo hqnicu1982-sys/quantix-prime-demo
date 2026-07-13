@@ -1,10 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardHead, Kpi, Section } from "@/components/Primitives";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useProject } from "@/lib/ProjectContext";
 import { fmtMoney, daysSince, type Project } from "@/lib/mockData";
 import { groupByStatus, isFollowUpOverdue } from "@/lib/projectLifecycle";
 import { SendQuoteButton, MarkActiveDialog, MarkLostDialog, CloneTenderButton } from "@/components/projects/LifecycleActionDialogs";
+import { TenderDetailSheet } from "@/components/projects/TenderDetailSheet";
 import { useMemo, useState } from "react";
 import { AlertTriangle, Briefcase, Clock, Flame } from "lucide-react";
 
@@ -262,20 +263,23 @@ function PipelineCard({ project: p }: { project: Project }) {
   const overdueDays = daysOverdue(p);
   const stale = p.status === "awaiting" && age !== null && age > 14;
   const flag = overdue || stale;
+  const [open, setOpen] = useState(false);
   return (
     <div className={"rounded-md border border-l-4 p-3 transition-shadow hover:shadow-[0_2px_10px_rgba(15,40,71,0.06)] " +
       (flag
         ? "border-[var(--ink-200)] border-l-[var(--red-500)] bg-[var(--red-500)]/[0.04]"
         : "border-[var(--ink-200)] border-l-[var(--ink-200)] bg-[var(--card)]")}>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-2 text-left"
+      >
         <div className="min-w-0">
-          <Link to="/projects/$projectId" params={{ projectId: p.id }} className="block">
-            <p className="truncate font-semibold text-[13px] text-[var(--ink-900)] hover:text-[var(--accent-500)]">{p.name}</p>
-            <p className="truncate text-[11px] text-[var(--ink-500)]">{p.mainContractor}</p>
-          </Link>
+          <p className="truncate font-semibold text-[13px] text-[var(--ink-900)] hover:text-[var(--accent-500)]">{p.name}</p>
+          <p className="truncate text-[11px] text-[var(--ink-500)]">{p.mainContractor}</p>
         </div>
         <p className="shrink-0 font-mono-num text-[13px] font-semibold text-[var(--ink-900)]">{fmtMoney(p.contractValue, { compact: true })}</p>
-      </div>
+      </button>
       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--ink-500)]">
         <span className="inline-flex items-center gap-1">
           <Clock className="h-3 w-3" />
@@ -297,6 +301,7 @@ function PipelineCard({ project: p }: { project: Project }) {
         <MarkLostDialog project={p} />
         <CloneTenderButton project={p} />
       </div>
+      <TenderDetailSheet project={p} open={open} onOpenChange={setOpen} />
     </div>
   );
 }
