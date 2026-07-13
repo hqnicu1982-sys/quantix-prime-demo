@@ -186,6 +186,11 @@ export function updateCallOffStatus(
   write(projectId, { ...data, callOffs });
 }
 
+/** Synchronous accessor — snapshot of a project's data layer. */
+export function getProjectData(projectId: string): ProjectData {
+  return read(projectId);
+}
+
 // ---------------------------------------------------------------------------
 // React hook
 // ---------------------------------------------------------------------------
