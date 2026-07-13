@@ -38,7 +38,7 @@ const navGroups: NavGroup[] = [
   { label: "Projects", items: [
     { to: "/projects", label: "All Projects", icon: FolderKanban, mobile: true },
     { to: "/tender-pipeline", label: "Tender Pipeline", icon: Briefcase, badge: "NEW" },
-    { to: "/follow-ups", label: "Follow-ups", icon: BellRing, badge: "NEW" },
+    { to: "/follow-ups", label: "Follow-ups", icon: CalendarClock, badge: "NEW" },
   ]},
   { label: "Commercial", persona: "commercial", items: [
     { to: "/costed-boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true, requires: "view.boq" },
