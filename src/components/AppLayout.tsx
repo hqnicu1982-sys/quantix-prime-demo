@@ -39,6 +39,7 @@ const navGroups: NavGroup[] = [
     { to: "/projects", label: "All Projects", icon: FolderKanban, mobile: true },
     { to: "/tender-pipeline", label: "Tender Pipeline", icon: Briefcase, badge: "NEW" },
     { to: "/follow-ups", label: "Follow-ups", icon: CalendarClock, badge: "NEW" },
+    { to: "/my-assignments", label: "My Assignments", icon: UserPlus, badge: "NEW" },
   ]},
   { label: "Commercial", persona: "commercial", items: [
     { to: "/costed-boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true, requires: "view.boq" },
@@ -227,6 +228,7 @@ function Breadcrumb() {
     "/projects": "All Projects",
     "/tender-pipeline": "Tender Pipeline",
     "/follow-ups": "Follow-ups",
+    "/my-assignments": "My Assignments",
     "/costed-boq": "Costed BoQ",
     "/price-intelligence": "Price Intelligence",
     "/price-lists/upload": "Price List Upload",

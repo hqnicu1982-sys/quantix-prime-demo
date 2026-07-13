@@ -1,86 +1,85 @@
 
-## Situația actuală
+# My Assignments — pagina dedicată
 
-Tender-ul e legat de restul aplicației **doar la nivel de status**. `markActive(projectId)` (în `src/lib/projectLifecycle.ts`) face literalmente:
+## Contextul actual
 
-```
-status = "active"
-startDate = today
-progress = 0
-health = "starting"
-```
+Există deja `HeaderAssignmentBell` (clopoțelul albastru `UserPlus` din navbar) care citește din `myAssignmentTasks` (localStorage, scris de `awardProject()`). Dropdown-ul e util pentru „un click rapid”, dar:
+- se pierde din vedere după ce închizi popover-ul,
+- nu se pot vedea cele deja acknowledge-uite,
+- nu se poate filtra pe rol / proiect,
+- nu are acțiuni în afară de „deschide proiectul”.
 
-Atât. Când un job e marcat câștigat:
-- **Costed BoQ** nu primește nimic (rămâne pe estimate-ul din tender, fără snapshot).
-- **Drawing baseline** nu se blochează — orice revizie post-award nu declanșează variații.
-- **Call-off / procurement** nu se pregătește (nu apar linii sugerate, nici reservation plan).
-- **Team & Roles** nu primește PM/QS default, deci audit log e gol pe kickoff.
-- **Follow-ups CRM** rămâne activ pe proiect chiar dacă e Live (ar trebui să treacă în modul "delivery reminders", nu "chase quote").
-- **Notificări**: nimeni din echipa de site nu află că a apărut un job nou (bell-urile nu urmăresc `status → active`).
-- **Recomandat action / dashboard KPI** nu se recalculează pe granița tender→active.
+## Ce construim
 
-Deci răspuns scurt la întrebarea ta: **nu, workflow-ul post-win nu e complet.**
+O rută nouă `/my-assignments` accesibilă din:
+1. sidebar (grup „Personal”, sub „Follow-ups”),
+2. link „See all” în footer-ul popover-ului `HeaderAssignmentBell`,
+3. click pe badge-ul de count.
 
-## Ce propun: "Award Handoff" — un singur pas care închide bucla
-
-O funcție nouă `awardProject(projectId, opts)` în `src/lib/projectLifecycle.ts` care înlocuiește `markActive` pentru tranziția `tender|awaiting → active` și execută atomic:
-
-### 1. Freeze baseline comercial
-- Snapshot al `contractValue`, `margin`, systems + BoQ lines în `src/lib/awardBaseline.ts` (registry nou, per project).
-- De aici încolo, orice modificare la scope = **Variation** (nu edit direct pe baseline).
-- Costed BoQ afișează două coloane: `Baseline @ Award` vs `Current`.
-
-### 2. Freeze drawing baseline
-- Toate reviziile marcate `isTender=true` devin **Contract Set (C0)** în `drawingRegistry`.
-- Orice upload ulterior intră direct în fluxul de revision approval + banner "Impact on Variations" (deja există).
-
-### 3. Seed procurement plan
-- Din BoQ-ul înghețat generăm o listă de **Suggested Call-offs** (grupate pe supplier + system), status `draft`.
-- Vizibile în tab-ul Materials cu badge "Kickoff suggestion".
-
-### 4. Assign core team
-- Dialog la award care cere PM + QS + Site Lead (default: estimatorul din tender + primii disponibili din `labour`).
-- Scrie în `teamAudit` un event `project.awarded` cu snapshot rol → user.
-
-### 5. Follow-ups: comută modul CRM
-- Follow-ups pre-award (chase quote) se arhivează automat cu outcome `won`.
-- Se creează 3 reminders standard: kickoff meeting (+3d), site setup review (+7d), first valuation (+30d).
-
-### 6. Notificări
-- `HeaderUrgentBell` primește un event `project.awarded` pentru PM/QS assigned.
-- Recent projects list bumps proiectul.
-
-### 7. Audit + lifecycle metadata
-- `awardedDate`, `awardedBy`, `baselineSnapshotId` pe Project.
-- `teamAudit` primește event `project.awarded` cu deltas.
-
-## Structură fișiere (tehnic)
+### Layout
 
 ```text
-src/lib/
-  awardBaseline.ts         NEW — snapshot store + selectors "baseline vs current"
-  projectLifecycle.ts      UPDATE — awardProject() orchestrator; markActive devine deprecated wrapper
-  procurementSeed.ts       NEW — BoQ → suggested call-offs
-src/components/projects/
-  AwardHandoffDialog.tsx   NEW — team assignment + review snapshot înainte de confirm
-  LifecycleActionDialogs.tsx  UPDATE — "Mark Active" deschide AwardHandoffDialog în loc de confirm simplu
-src/routes/
-  projects.$projectId.index.tsx     UPDATE — banner "Awarded on X — baseline frozen" pentru Active
-  costed-boq.tsx / projects.$projectId.materials.tsx  UPDATE — coloană Baseline vs Current
+┌─────────────────────────────────────────────────────────────┐
+│ Header: „My Assignments” + subtitle „Projects you have been │
+│ staffed on — accept, review the baseline, jump in.”         │
+├─────────────────────────────────────────────────────────────┤
+│ KPI strip: New (unacked) · This month · As PM · As QS ·     │
+│            As Site Lead · Total contract value assigned     │
+├─────────────────────────────────────────────────────────────┤
+│ Filter bar: [All roles ▾] [All projects ▾] [Show acked ⬜] │
+│             [Mark all read]                                 │
+├─────────────────────────────────────────────────────────────┤
+│ Grouped list:                                               │
+│  ── New (N) ───────────────────────────────                 │
+│   Card per task:                                            │
+│    · Project name + status pill (Active / Tender)           │
+│    · Role chip (PM / QS / Site Lead)                        │
+│    · Contract value · Awarded by · relativeTime             │
+│    · Baseline preview: BoQ lines · Draft call-offs · Team   │
+│    · Actions: [Open project] [Acknowledge] [Log first       │
+│      follow-up]                                             │
+│  ── Earlier this week ─────────────────────                 │
+│  ── Older ────────────────────────────────                  │
+├─────────────────────────────────────────────────────────────┤
+│ Empty state când nu ai nimic: ilustrație + „You'll be       │
+│ notified here the moment a bid you're staffed on is         │
+│ awarded.”                                                   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## Ce NU intră în acest pas
-- Migrare istorică a proiectelor Active deja existente (rămân fără baseline snapshot; afișăm badge "legacy").
-- Integrare cu programme (MSP) — rămâne separată, doar linkăm `awardedDate` ca anchor.
-- Payment schedule auto-generat — separat, după ce baseline există.
+## Fișiere
 
-## Livrabil demo
-După implementare, în UI:
-1. Click **Mark Active** pe un tender → se deschide `AwardHandoffDialog` cu review.
-2. Confirm → proiectul apare în tab-ul Active cu banner verde "Baseline frozen · 12 Jul 2026".
-3. Tab-ul Materials arată 6 call-offs draft pre-seeded.
-4. Tab-ul Variations e gol dar activ (orice edit pe scope declanșează VO).
-5. Follow-ups feed marchează entry-urile pre-award ca `won` și adaugă 3 delivery reminders.
-6. Bell-ul de urgent tasks arată "New project assigned: X" pentru PM.
+1. `src/routes/my-assignments.tsx` — ruta nouă, `head()` cu titlu propriu, folosește `useMyAssignmentTasks(me.id)` + citește și cele ack-uite dintr-un helper nou.
+2. `src/lib/myAssignmentTasks.ts` — extindem cu:
+   - `getAllAssignmentTasks(memberId, { includeAcked })` (nu doar unacked),
+   - `useAllMyAssignmentTasks(memberId, { includeAcked })`,
+   - păstrăm exact același model, doar exportăm o variantă care returnează și acked.
+3. `src/components/assignments/AssignmentCard.tsx` — cardul reutilizabil (folosit și dacă vrem în viitor pe dashboard).
+4. `src/components/assignments/AssignmentKpis.tsx` — strip-ul cu KPI-uri.
+5. `src/components/AppLayout.tsx` — intrare sidebar nouă „My Assignments” cu iconița `UserPlus` (același ca navbar-ul, pentru consistență), în același grup ca „Follow-ups”.
+6. `src/components/HeaderAssignmentBell.tsx` — adăugăm în footer un link „See all assignments →” către `/my-assignments`.
 
-Confirmi direcția și trecem la implementare, sau vrei să tăiem/adăugăm secțiuni (ex. skip procurement seed, sau adaugă payment schedule)?
+## Detalii de implementare
+
+- **Îmbogățirea cardului:** pentru fiecare task, hidratăm date live: proiectul (`useProjects`) pentru status/pill + contract value curent, `getAwardBaseline(projectId)` pentru baseline preview (BoQ count, seeded call-offs, team assignments), `useProjectFollowUps(projectId)` ca să afișăm „No follow-up yet — log kickoff”. Toate există deja.
+- **Grupare temporală:** New (unacked) → This week (acked în ultimele 7 zile) → Older, sortare descrescătoare după `createdAt`/`ackAt`.
+- **Log first follow-up:** deschide `LogFollowUpDialog` existent, cu `projectId` pre-selectat și tipul default „Call — kickoff”.
+- **Acknowledge inline:** buton pe card care apelează `ackAssignmentTask(id)` fără a naviga.
+- **Deep-link din notificări:** păstrăm click-pe-card = navighează + auto-ack (comportamentul de acum din bell).
+- **Permisiuni:** vizibilă pentru toți userii logați; ecranul e per-user (`me.id`), deci nu leagă informații ale altcuiva.
+- **Badge sidebar:** afișăm count-ul de unacked lângă intrarea „My Assignments” în sidebar, la fel cum face „Follow-ups”.
+
+## Ce NU facem în această iterație
+
+- Nu adăugăm reassign / decline (task-urile sunt informative, nu contracte de acceptare).
+- Nu adăugăm push/email real — rămâne strict in-app.
+- Nu construim pagină „firm-wide assignments overview” pentru admini — acest ecran e strict „ale mele”.
+
+## Livrabile
+
+- Rută nouă `/my-assignments` + 2 componente în `src/components/assignments/`.
+- Extindere minoră `myAssignmentTasks.ts`.
+- Sidebar entry + „See all” în bell.
+- Type check clean.
+
+După aprobare, execut într-un singur pas.
