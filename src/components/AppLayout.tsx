@@ -14,6 +14,7 @@ import { ProjectProvider, useProject } from "@/lib/ProjectContext";
 import { cn } from "@/lib/utils";
 import { CompareTray } from "@/components/CompareTray";
 import { HeaderUrgentBell } from "@/components/HeaderUrgentBell";
+import { HeaderFollowUpBell } from "@/components/HeaderFollowUpBell";
 import { HeaderUserMenu } from "@/components/auth/HeaderUserMenu";
 import { useCurrentTier, useCurrentUser } from "@/lib/currentUser";
 import { can, type Capability } from "@/lib/permissions";
@@ -482,6 +483,7 @@ function LayoutInner() {
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
               <HeaderUrgentBell />
+              <HeaderFollowUpBell />
             </div>
           </div>
         </header>
