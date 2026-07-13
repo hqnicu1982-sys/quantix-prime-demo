@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { GitCompare, AlertTriangle } from "lucide-react";
+import { GitCompare, AlertTriangle, ShieldAlert } from "lucide-react";
 import { Card, CardHead } from "@/components/Primitives";
 import { useDrawings } from "@/lib/drawingRegistry";
 import { useProjectData } from "@/lib/projectData";
+import { useAwardBaseline } from "@/lib/awardBaseline";
 
 const fmtMoney = (n: number) =>
   `£${Math.round(n).toLocaleString("en-GB")}`;
@@ -22,6 +23,17 @@ export function DrawingImpactCard({
 }) {
   const state = useDrawings(projectId);
   const data = useProjectData(projectId);
+  const baseline = useAwardBaseline(projectId);
+  // A drawing is "in the contract set (C0)" if any of its revisions were part
+  // of the frozen tender baseline. A pending revision against such a drawing
+  // is a post-award change and must be flagged as Superseded-vs-C0.
+  const contractDrawingNumbers = useMemo(() => {
+    if (!baseline) return new Set<string>();
+    const ids = new Set(baseline.drawingRevisionIds);
+    const numbers = new Set<string>();
+    for (const r of state.revisions) if (ids.has(r.id)) numbers.add(r.drawingNumber);
+    return numbers;
+  }, [baseline, state.revisions]);
 
   const rows = useMemo(() => {
     return state.revisions
@@ -42,6 +54,10 @@ export function DrawingImpactCard({
           const l = data.boqLines.find((x) => x.id === lid);
           return sum + (l ? l.qty * (l.ratePerUnit ?? 0) : 0);
         }, 0);
+        const postAward =
+          !!baseline &&
+          r.uploadedAt > baseline.frozenAt &&
+          contractDrawingNumbers.has(r.drawingNumber);
         return {
           id: r.id,
           drawingNumber: r.drawingNumber,
@@ -50,22 +66,27 @@ export function DrawingImpactCard({
           systemLabel: systems.map((s) => s.systemName).join(" · ") || "Linked BoQ lines",
           lineCount: lineIds.size,
           exposure,
+          postAward,
         };
       });
-  }, [state.revisions, data.systems, data.boqLines]);
+  }, [state.revisions, data.systems, data.boqLines, baseline, contractDrawingNumbers]);
 
   if (rows.length === 0) return null;
 
   const totalExposure = rows.reduce((s, r) => s + r.exposure, 0);
+  const postAwardCount = rows.filter((r) => r.postAward).length;
 
   return (
     <Card className="border-[var(--amber-500)]/40 bg-[var(--amber-500)]/[0.04]">
       <CardHead
         title={`${rows.length} pending drawing revision${rows.length === 1 ? "" : "s"} affect priced scope`}
         subtitle={
-          totalExposure > 0
-            ? `Estimated exposure ${fmtMoney(totalExposure)} across ${rows.reduce((s, r) => s + r.lineCount, 0)} BoQ line${rows.reduce((s, r) => s + r.lineCount, 0) === 1 ? "" : "s"}`
-            : "Linked systems carry no priced lines yet — exposure unknown"
+          [
+            totalExposure > 0
+              ? `Estimated exposure ${fmtMoney(totalExposure)} across ${rows.reduce((s, r) => s + r.lineCount, 0)} BoQ line${rows.reduce((s, r) => s + r.lineCount, 0) === 1 ? "" : "s"}`
+              : "Linked systems carry no priced lines yet — exposure unknown",
+            postAwardCount > 0 ? `${postAwardCount} supersede the C0 contract set` : null,
+          ].filter(Boolean).join(" · ")
         }
         right={
           <Link
@@ -84,6 +105,14 @@ export function DrawingImpactCard({
             <div className="min-w-0 flex-1">
               <p className="text-[12.5px] font-semibold">
                 {r.drawingNumber} · {r.revisionCode}
+                {r.postAward && (
+                  <span
+                    className="ml-2 inline-flex items-center gap-1 rounded bg-[var(--red-500)]/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--red-500)]"
+                    title="Uploaded after the tender was awarded — supersedes the C0 contract drawing"
+                  >
+                    <ShieldAlert className="h-3 w-3" /> Post-award vs C0
+                  </span>
+                )}
                 <span className="ml-2 font-normal text-[var(--ink-500)]">→ {r.systemLabel}</span>
               </p>
               {r.notes && (

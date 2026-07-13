@@ -7,6 +7,7 @@ import { getProjectData } from "./projectData";
 import { addAssignment, getAssignments } from "./labour";
 import { logTeamEvent } from "./teamAudit";
 import { logFollowUp } from "./tenderDetails";
+import { logAssignmentTask, type AssignmentTaskRole } from "./myAssignmentTasks";
 
 // ---------------------------------------------------------------------------
 // Basic status transitions
@@ -95,6 +96,14 @@ export function awardProject(project: Project, opts: AwardOptions = {}): AwardRe
     addAssignment({ projectId, memberId, projectRole: role });
     already.add(memberId);
     assignments += 1;
+    logAssignmentTask({
+      memberId,
+      projectId,
+      projectName: project.name,
+      role: role as AssignmentTaskRole,
+      assignedBy: actor,
+      contractValue: project.contractValue,
+    });
   }
 
   // 4) Flip status + record award metadata
