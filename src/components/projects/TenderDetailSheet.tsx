@@ -1,15 +1,33 @@
+import { useState } from "react";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Link } from "@tanstack/react-router";
 import { StatusBadge } from "@/components/StatusBadge";
 import { fmtMoney, daysSince, type Project } from "@/lib/mockData";
-import { getAssignedEstimator, getTenderScope, getFollowUpHistory } from "@/lib/tenderDetails";
+import {
+  getAssignedEstimator, getTenderScope, getFollowUpHistory,
+  logFollowUp, useManualFollowUps, FOLLOW_UP_OUTCOMES,
+  type FollowUpOutcome,
+} from "@/lib/tenderDetails";
+import { useCurrentUser } from "@/lib/currentUser";
 import { isFollowUpOverdue } from "@/lib/projectLifecycle";
 import {
   SendQuoteButton, MarkActiveDialog, MarkLostDialog, CloneTenderButton,
 } from "./LifecycleActionDialogs";
-import { Mail, Phone, Users, Cog, ArrowUpRight, User, Calendar, Layers } from "lucide-react";
+import {
+  Mail, Phone, Users, Cog, ArrowUpRight, User, Calendar, Layers, Plus,
+} from "lucide-react";
 
 function ChannelIcon({ c }: { c: "email" | "call" | "meeting" | "system" }) {
   const cls = "h-3.5 w-3.5";
@@ -28,10 +46,13 @@ export function TenderDetailSheet({
 }) {
   const est = getAssignedEstimator(project);
   const scope = getTenderScope(project);
+  // Subscribe to manual follow-ups so history re-renders on new entries.
+  useManualFollowUps(project.id);
   const history = getFollowUpHistory(project);
   const overdue = isFollowUpOverdue(project);
   const quoteAge = daysSince(project.quoteSentDate);
   const responseIn = project.expectedResponseDate ? -(daysSince(project.expectedResponseDate) ?? 0) : null;
+  const [logOpen, setLogOpen] = useState(false);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -144,9 +165,20 @@ export function TenderDetailSheet({
 
           {/* Follow-up history */}
           <section>
-            <h3 className="mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
-              Follow-up history
-            </h3>
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+                Follow-up history
+              </h3>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 gap-1 px-2 text-[11.5px]"
+                onClick={() => setLogOpen(true)}
+              >
+                <Plus className="h-3 w-3" /> Log follow-up
+              </Button>
+            </div>
             <ol className="relative space-y-3 border-l border-[var(--ink-200)] pl-4">
               {history.map((e, i) => (
                 <li key={i} className="relative">
@@ -154,10 +186,24 @@ export function TenderDetailSheet({
                     <ChannelIcon c={e.channel} />
                   </span>
                   <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-[12px] font-semibold text-[var(--ink-900)]">{e.by}</p>
+                    <p className="text-[12px] font-semibold text-[var(--ink-900)]">
+                      {e.by}
+                      {e.manual && (
+                        <span className="ml-1.5 rounded bg-[var(--accent-500)]/10 px-1 py-0.5 text-[10px] font-medium text-[var(--accent-500)]">
+                          logged
+                        </span>
+                      )}
+                    </p>
                     <p className="shrink-0 text-[11px] text-[var(--ink-500)]">{e.daysAgo}d ago · {e.date}</p>
                   </div>
                   <p className="mt-0.5 text-[12.5px] leading-snug text-[var(--ink-700)]">{e.note}</p>
+                  {e.outcome && (
+                    <p className="mt-1 text-[11px] text-[var(--ink-500)]">
+                      Outcome: <span className="font-medium text-[var(--ink-700)]">
+                        {FOLLOW_UP_OUTCOMES.find((o) => o.code === e.outcome)?.label ?? e.outcome}
+                      </span>
+                    </p>
+                  )}
                 </li>
               ))}
             </ol>
@@ -182,5 +228,116 @@ export function TenderDetailSheet({
         </div>
       </SheetContent>
     </Sheet>
+
+    <LogFollowUpDialog
+      projectId={project.id}
+      open={logOpen}
+      onOpenChange={setLogOpen}
+    />
+    </>
+  );
+}
+
+// Wrap return so we can render the dialog as a sibling of Sheet.
+// The Sheet root above must now share a fragment with the dialog below.
+
+function LogFollowUpDialog({
+  projectId, open, onOpenChange,
+}: {
+  projectId: string;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const me = useCurrentUser();
+  const today = new Date().toISOString().slice(0, 10);
+  const [channel, setChannel] = useState<"email" | "call" | "meeting">("email");
+  const [date, setDate] = useState(today);
+  const [note, setNote] = useState("");
+  const [outcome, setOutcome] = useState<FollowUpOutcome | "">("no-response");
+  const canSave = note.trim().length > 0 && date;
+
+  function reset() {
+    setChannel("email");
+    setDate(today);
+    setNote("");
+    setOutcome("no-response");
+  }
+  function handleSave() {
+    if (!canSave) return;
+    // Use noon so localised display matches the chosen date across TZs.
+    const iso = new Date(`${date}T12:00:00`).toISOString();
+    logFollowUp({
+      projectId,
+      isoDate: iso,
+      channel,
+      by: me.name,
+      note: note.trim(),
+      outcome: outcome || undefined,
+    });
+    reset();
+    onOpenChange(false);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Log follow-up</DialogTitle>
+          <DialogDescription>
+            Record an email, call or meeting. Added to the tender history immediately.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3 py-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="fu-channel">Channel</Label>
+              <Select value={channel} onValueChange={(v) => setChannel(v as typeof channel)}>
+                <SelectTrigger id="fu-channel"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="call">Call</SelectItem>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="fu-date">Date</Label>
+              <Input
+                id="fu-date"
+                type="date"
+                value={date}
+                max={today}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="fu-outcome">Outcome</Label>
+            <Select value={outcome} onValueChange={(v) => setOutcome(v as FollowUpOutcome)}>
+              <SelectTrigger id="fu-outcome"><SelectValue placeholder="Select outcome" /></SelectTrigger>
+              <SelectContent>
+                {FOLLOW_UP_OUTCOMES.map((o) => (
+                  <SelectItem key={o.code} value={o.code}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="fu-note">Notes</Label>
+            <Textarea
+              id="fu-note"
+              placeholder="e.g. Spoke with James, said pricing review by Friday."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={4}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleSave} disabled={!canSave}>Save follow-up</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
