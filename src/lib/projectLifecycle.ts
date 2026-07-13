@@ -57,8 +57,7 @@ export function awardProject(project: Project, opts: AwardOptions = {}): AwardRe
   const projectId = project.id;
   const actor = opts.actor ?? "System";
 
-  // 1) Freeze commercial baseline (import projectData lazily to avoid cycles)
-  const { getProjectData } = requireProjectData();
+  // 1) Freeze commercial baseline
   const data = getProjectData(projectId);
   const drawings = getDrawings(projectId);
   const tenderRevIds = drawings.revisions
@@ -142,11 +141,6 @@ function displayDate(daysFromToday: number): string {
   return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
-// Lazy indirect require to avoid a circular dep between projectData ↔ lifecycle.
-function requireProjectData(): typeof import("./projectData") {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require("./projectData");
-}
 
 /** Mark a bid as Lost — records reason and winning competitor. */
 export function markLost(projectId: string, reason: string, toCompetitor: string) {
