@@ -18,7 +18,7 @@ import { PaymentCycleKpiStrip } from "@/components/payments/PaymentCycleKpiStrip
 import { FollowUpsCard } from "@/components/projects/FollowUpsCard";
 import { useAwardBaseline } from "@/lib/awardBaseline";
 import { Lock } from "lucide-react";
-import { team, fmtMoney as _fmt } from "@/lib/mockData";
+import { team } from "@/lib/mockData";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
 
