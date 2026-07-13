@@ -429,3 +429,29 @@ function ProjectSetupChecklist({ projectId }: { projectId: string }) {
     </Card>
   );
 }
+
+function AwardBaselineBanner({ projectId }: { projectId: string }) {
+  const baseline = useAwardBaseline(projectId);
+  if (!baseline) return null;
+  const pmName = (id?: string) => team.find((t) => t.id === id)?.name;
+  const { all } = useProject();
+  const project = all.find((p) => p.id === projectId);
+  const parts = [
+    project?.assignedPm && `PM · ${pmName(project.assignedPm)}`,
+    project?.assignedQs && `QS · ${pmName(project.assignedQs)}`,
+    project?.assignedSiteLead && `Site · ${pmName(project.assignedSiteLead)}`,
+  ].filter(Boolean);
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[var(--green-600)]/25 bg-[var(--green-600)]/8 px-4 py-2.5 text-[12.5px]">
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-[var(--green-600)]/15 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--green-600)]">
+        <Lock className="h-3 w-3" /> Baseline frozen
+      </span>
+      <span className="text-[var(--ink-700)]">
+        Awarded {project?.awardedDate}{project?.awardedBy ? ` · by ${project.awardedBy}` : ""} · {baseline.boqLineCount} BoQ lines · {baseline.drawingRevisionIds.length} tender drawings @ C0
+      </span>
+      {parts.length > 0 && (
+        <span className="ml-auto text-[11.5px] text-[var(--ink-500)]">{parts.join(" · ")}</span>
+      )}
+    </div>
+  );
+}
