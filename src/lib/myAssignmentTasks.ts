@@ -72,6 +72,43 @@ export function getAssignmentTasks(memberId: string): AssignmentTask[] {
     .sort((a, b) => b.createdAt - a.createdAt);
 }
 
+export function getAllAssignmentTasks(
+  memberId: string,
+  opts: { includeAcked?: boolean } = { includeAcked: true },
+): AssignmentTask[] {
+  return read()
+    .filter((t) => t.memberId === memberId && (opts.includeAcked || !t.ackAt))
+    .sort((a, b) => {
+      // Unacked first, then most recent activity.
+      if (!a.ackAt && b.ackAt) return -1;
+      if (a.ackAt && !b.ackAt) return 1;
+      const aTs = a.ackAt ?? a.createdAt;
+      const bTs = b.ackAt ?? b.createdAt;
+      return bTs - aTs;
+    });
+}
+
+export function useAllMyAssignmentTasks(
+  memberId: string,
+  opts: { includeAcked?: boolean } = { includeAcked: true },
+): AssignmentTask[] {
+  const includeAcked = opts.includeAcked ?? true;
+  const [rows, setRows] = useState<AssignmentTask[]>(() =>
+    getAllAssignmentTasks(memberId, { includeAcked }),
+  );
+  useEffect(() => {
+    const refresh = () => setRows(getAllAssignmentTasks(memberId, { includeAcked }));
+    refresh();
+    window.addEventListener(EVT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(EVT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, [memberId, includeAcked]);
+  return rows;
+}
+
 export function useMyAssignmentTasks(memberId: string): AssignmentTask[] {
   const [rows, setRows] = useState<AssignmentTask[]>(() => getAssignmentTasks(memberId));
   useEffect(() => {
