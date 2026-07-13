@@ -55,6 +55,7 @@ export function TenderDetailSheet({
   const [logOpen, setLogOpen] = useState(false);
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
