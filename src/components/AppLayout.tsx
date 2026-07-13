@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { CompareTray } from "@/components/CompareTray";
 import { HeaderUrgentBell } from "@/components/HeaderUrgentBell";
 import { HeaderFollowUpBell } from "@/components/HeaderFollowUpBell";
+import { HeaderAssignmentBell } from "@/components/HeaderAssignmentBell";
 import { HeaderUserMenu } from "@/components/auth/HeaderUserMenu";
 import { useCurrentTier, useCurrentUser } from "@/lib/currentUser";
 import { can, type Capability } from "@/lib/permissions";
@@ -484,6 +485,7 @@ function LayoutInner() {
               </button>
               <HeaderUrgentBell />
               <HeaderFollowUpBell />
+              <HeaderAssignmentBell />
             </div>
           </div>
         </header>
