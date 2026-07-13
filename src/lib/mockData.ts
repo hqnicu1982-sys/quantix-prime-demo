@@ -44,6 +44,49 @@ export const team: TeamMember[] = [
 // ==================================================================
 export type Health = "healthy" | "watch" | "risk" | "starting";
 
+// ------------------------------------------------------------------
+// Lifecycle
+// ------------------------------------------------------------------
+export type ProjectStatus = "tender" | "awaiting" | "active" | "lost" | "complete";
+
+export const PROJECT_STAGES: {
+  id: ProjectStatus;
+  label: string;
+  tone: "info" | "warning" | "success" | "danger" | "neutral";
+}[] = [
+  { id: "tender",   label: "Tenders",  tone: "info" },
+  { id: "awaiting", label: "Awaiting", tone: "warning" },
+  { id: "active",   label: "Active",   tone: "success" },
+  { id: "lost",     label: "Lost",     tone: "danger" },
+  { id: "complete", label: "Complete", tone: "neutral" },
+];
+
+/** Compute "dd/mm/yyyy" offset from today (positive = future, negative = past). */
+export function dateOffset(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+/** Days between "dd/mm/yyyy" and today. Positive = date is in the past. */
+export function daysSince(displayDate?: string): number | null {
+  if (!displayDate) return null;
+  const m = displayDate.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) return null;
+  const then = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.floor((today.getTime() - then.getTime()) / 86400000);
+}
+
+/** Days until "dd/mm/yyyy" (negative when past). */
+export function daysUntil(displayDate?: string): number | null {
+  const s = daysSince(displayDate);
+  return s === null ? null : -s;
+}
+
 export type Project = {
   id: string;
   name: string;
@@ -56,6 +99,14 @@ export type Project = {
   startDate: string;
   endDate: string;
   hasFullData: boolean;
+  status?: ProjectStatus;             // undefined ≡ "active" for back-compat
+  quoteSentDate?: string;
+  expectedResponseDate?: string;
+  followUpReminderDate?: string;
+  lostReason?: string;
+  lostToCompetitor?: string;
+  lostDate?: string;
+  completedDate?: string;
   /**
    * Our role on this project. Drives the Payments tab UI:
    *  - "subcontractor": we submit Applications, receive Notices/Certs
@@ -66,12 +117,27 @@ export type Project = {
 };
 
 export const projects: Project[] = [
-  { id: "fitzrovia", name: "Hotel Fitzrovia", subtitle: "Drylining · W1T 4JQ · Lvl 4–6", mainContractor: "Kier Construction", contractValue: 2100000, margin: 23.8, progress: 67, health: "healthy", startDate: "04/02/2026", endDate: "19/12/2026", hasFullData: true, ourRole: "subcontractor" },
-  { id: "trafalgar", name: "Trafalgar Wharf — Blocks A & B", subtitle: "Fit-out · E16 · 148 units", mainContractor: "Wates Group", contractValue: 1840000, margin: 11.2, progress: 42, health: "risk", startDate: "12/11/2025", endDate: "30/10/2026", hasFullData: false },
-  { id: "bermondsey", name: "Bermondsey Lofts", subtitle: "Specialty partitions · SE1 · 9 lofts", mainContractor: "ISG plc", contractValue: 680000, margin: 14.8, progress: 88, health: "watch", startDate: "08/09/2025", endDate: "30/05/2026", hasFullData: false },
-  { id: "greenwich", name: "Greenwich Peninsula Phase 3", subtitle: "Drylining shell · SE10 · 212 units", mainContractor: "Multiplex Construction", contractValue: 1950000, margin: 26.4, progress: 31, health: "healthy", startDate: "06/01/2026", endDate: "15/01/2027", hasFullData: false },
-  { id: "stratford", name: "Stratford Commercial Tower", subtitle: "Office fit-out · E15 · 18 floors", mainContractor: "Mace Group", contractValue: 1120000, margin: 28.7, progress: 94, health: "healthy", startDate: "20/05/2025", endDate: "15/06/2026", hasFullData: false },
-  { id: "camden", name: "Camden Market Redevelopment", subtitle: "Acoustic partitions · NW1 · 28 units", mainContractor: "Kier Construction", contractValue: 495000, margin: 24.1, progress: 18, health: "starting", startDate: "10/03/2026", endDate: "30/09/2026", hasFullData: false },
+  // ---------- ACTIVE (existing 6) ----------
+  { id: "fitzrovia", name: "Hotel Fitzrovia", subtitle: "Drylining · W1T 4JQ · Lvl 4–6", mainContractor: "Kier Construction", contractValue: 2100000, margin: 23.8, progress: 67, health: "healthy", startDate: "04/02/2026", endDate: "19/12/2026", hasFullData: true, ourRole: "subcontractor", status: "active" },
+  { id: "trafalgar", name: "Trafalgar Wharf — Blocks A & B", subtitle: "Fit-out · E16 · 148 units", mainContractor: "Wates Group", contractValue: 1840000, margin: 11.2, progress: 42, health: "risk", startDate: "12/11/2025", endDate: "30/10/2026", hasFullData: false, status: "active" },
+  { id: "bermondsey", name: "Bermondsey Lofts", subtitle: "Specialty partitions · SE1 · 9 lofts", mainContractor: "ISG plc", contractValue: 680000, margin: 14.8, progress: 88, health: "watch", startDate: "08/09/2025", endDate: "30/05/2026", hasFullData: false, status: "active" },
+  { id: "greenwich", name: "Greenwich Peninsula Phase 3", subtitle: "Drylining shell · SE10 · 212 units", mainContractor: "Multiplex Construction", contractValue: 1950000, margin: 26.4, progress: 31, health: "healthy", startDate: "06/01/2026", endDate: "15/01/2027", hasFullData: false, status: "active" },
+  { id: "stratford", name: "Stratford Commercial Tower", subtitle: "Office fit-out · E15 · 18 floors", mainContractor: "Mace Group", contractValue: 1120000, margin: 28.7, progress: 94, health: "healthy", startDate: "20/05/2025", endDate: "15/06/2026", hasFullData: false, status: "active" },
+  { id: "camden", name: "Camden Market Redevelopment", subtitle: "Acoustic partitions · NW1 · 28 units", mainContractor: "Kier Construction", contractValue: 495000, margin: 24.1, progress: 18, health: "starting", startDate: "10/03/2026", endDate: "30/09/2026", hasFullData: false, status: "active" },
+
+  // ---------- TENDER ----------
+  { id: "battersea-ph3", name: "Battersea Ph3 Fit-out", subtitle: "Drylining · SW11 · Cat A + Cat B", mainContractor: "Sir Robert McAlpine", contractValue: 1800000, margin: 0, progress: 0, health: "starting", startDate: "—", endDate: "—", hasFullData: false, status: "tender", quoteSentDate: dateOffset(-5), expectedResponseDate: dateOffset(10) },
+  { id: "canary-l12-catb", name: "Canary Wharf L12 Cat B", subtitle: "Fit-out · E14 · Level 12 tenant", mainContractor: "Mace Group", contractValue: 920000, margin: 0, progress: 0, health: "starting", startDate: "—", endDate: "—", hasFullData: false, status: "tender", quoteSentDate: dateOffset(-2), expectedResponseDate: dateOffset(13) },
+
+  // ---------- AWAITING ----------
+  { id: "stratford-cross-c", name: "Stratford Cross Block C", subtitle: "Drylining · E20 · 94 units", mainContractor: "Skanska", contractValue: 1400000, margin: 0, progress: 0, health: "starting", startDate: "—", endDate: "—", hasFullData: false, status: "awaiting", quoteSentDate: dateOffset(-20), followUpReminderDate: dateOffset(-2) },
+  { id: "paddington-sq", name: "Paddington Sq Retail", subtitle: "Retail fit-out · W2 · 6 units", mainContractor: "Multiplex Construction", contractValue: 610000, margin: 0, progress: 0, health: "starting", startDate: "—", endDate: "—", hasFullData: false, status: "awaiting", quoteSentDate: dateOffset(-12), followUpReminderDate: dateOffset(2) },
+
+  // ---------- LOST ----------
+  { id: "nine-elms-b", name: "Nine Elms Tower B", subtitle: "Drylining shell · SW8 · 240 units", mainContractor: "Balfour Beatty", contractValue: 2100000, margin: 0, progress: 0, health: "starting", startDate: "—", endDate: "—", hasFullData: false, status: "lost", quoteSentDate: dateOffset(-45), lostDate: dateOffset(-30), lostReason: "Price — 8% above winning bid", lostToCompetitor: "Rival Drylining Ltd" },
+
+  // ---------- COMPLETE ----------
+  { id: "aldgate-ph1", name: "Aldgate Place Ph1", subtitle: "Drylining · E1 · 118 units", mainContractor: "Kier Construction", contractValue: 1250000, margin: 18.5, progress: 100, health: "healthy", startDate: dateOffset(-330), endDate: dateOffset(-35), hasFullData: false, status: "complete", completedDate: dateOffset(-35) },
 ];
 
 export const projectsKpi = {
