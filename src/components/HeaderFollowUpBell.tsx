@@ -122,7 +122,7 @@ export function HeaderFollowUpBell() {
             className="relative rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]"
             aria-label={`Overdue follow-ups · ${alerts.length}`}
           >
-            <BellRing className={cn("h-4 w-4", has && "text-[var(--red-500)]")} />
+            <CalendarClock className={cn("h-4 w-4", has && "text-[var(--red-500)]")} />
             {has && (
               <span
                 className={cn(
