@@ -16,7 +16,6 @@ import { Route as ReadinessRouteImport } from './routes/readiness'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as PriceIntelligenceRouteImport } from './routes/price-intelligence'
 import { Route as PlannerRouteImport } from './routes/planner'
-import { Route as MyAssignmentsRouteImport } from './routes/my-assignments'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as IntegrationsRouteImport } from './routes/integrations'
@@ -101,11 +100,6 @@ const PriceIntelligenceRoute = PriceIntelligenceRouteImport.update({
 const PlannerRoute = PlannerRouteImport.update({
   id: '/planner',
   path: '/planner',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MyAssignmentsRoute = MyAssignmentsRouteImport.update({
-  id: '/my-assignments',
-  path: '/my-assignments',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -382,7 +376,6 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRouteWithChildren
   '/login': typeof LoginRoute
-  '/my-assignments': typeof MyAssignmentsRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
   '/projects': typeof ProjectsRouteWithChildren
@@ -440,7 +433,6 @@ export interface FileRoutesByTo {
   '/how-to': typeof HowToRoute
   '/integrations': typeof IntegrationsRoute
   '/login': typeof LoginRoute
-  '/my-assignments': typeof MyAssignmentsRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
   '/readiness': typeof ReadinessRoute
@@ -499,7 +491,6 @@ export interface FileRoutesById {
   '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRouteWithChildren
   '/login': typeof LoginRoute
-  '/my-assignments': typeof MyAssignmentsRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
   '/projects': typeof ProjectsRouteWithChildren
@@ -561,7 +552,6 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/invoices'
     | '/login'
-    | '/my-assignments'
     | '/planner'
     | '/price-intelligence'
     | '/projects'
@@ -619,7 +609,6 @@ export interface FileRouteTypes {
     | '/how-to'
     | '/integrations'
     | '/login'
-    | '/my-assignments'
     | '/planner'
     | '/price-intelligence'
     | '/readiness'
@@ -677,7 +666,6 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/invoices'
     | '/login'
-    | '/my-assignments'
     | '/planner'
     | '/price-intelligence'
     | '/projects'
@@ -738,7 +726,6 @@ export interface RootRouteChildren {
   IntegrationsRoute: typeof IntegrationsRoute
   InvoicesRoute: typeof InvoicesRouteWithChildren
   LoginRoute: typeof LoginRoute
-  MyAssignmentsRoute: typeof MyAssignmentsRoute
   PlannerRoute: typeof PlannerRoute
   PriceIntelligenceRoute: typeof PriceIntelligenceRoute
   ProjectsRoute: typeof ProjectsRouteWithChildren
@@ -806,13 +793,6 @@ declare module '@tanstack/react-router' {
       path: '/planner'
       fullPath: '/planner'
       preLoaderRoute: typeof PlannerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-assignments': {
-      id: '/my-assignments'
-      path: '/my-assignments'
-      fullPath: '/my-assignments'
-      preLoaderRoute: typeof MyAssignmentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1277,7 +1257,6 @@ const rootRouteChildren: RootRouteChildren = {
   IntegrationsRoute: IntegrationsRoute,
   InvoicesRoute: InvoicesRouteWithChildren,
   LoginRoute: LoginRoute,
-  MyAssignmentsRoute: MyAssignmentsRoute,
   PlannerRoute: PlannerRoute,
   PriceIntelligenceRoute: PriceIntelligenceRoute,
   ProjectsRoute: ProjectsRouteWithChildren,
