@@ -107,6 +107,13 @@ export type Project = {
   lostToCompetitor?: string;
   lostDate?: string;
   completedDate?: string;
+  // ---------- Award handoff metadata (set by awardProject) ----------
+  awardedDate?: string;
+  awardedBy?: string;          // display name of user who confirmed the award
+  assignedPm?: string;         // team member id
+  assignedQs?: string;         // team member id
+  assignedSiteLead?: string;   // team member id
+  baselineFrozen?: boolean;    // true once contract baseline snapshot is stored
   /**
    * Our role on this project. Drives the Payments tab UI:
    *  - "subcontractor": we submit Applications, receive Notices/Certs

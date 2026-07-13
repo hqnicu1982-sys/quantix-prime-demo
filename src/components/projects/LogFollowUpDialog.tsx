@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/select";
 import { useCurrentUser } from "@/lib/currentUser";
 import { updateProject } from "@/lib/customProjects";
-import { markActive, markLost } from "@/lib/projectLifecycle";
+import { awardProject, markLost } from "@/lib/projectLifecycle";
+import { team } from "@/lib/mockData";
 import {
   logFollowUp, updateFollowUp, outcomesForStatus,
   computeNextReminderOffset, inputDateToDisplay, displayToInputDate,
@@ -117,8 +118,19 @@ export function LogFollowUpDialog({
     // Optional lifecycle transition when the tender outcome is decisive.
     if (!isEdit && applyLifecycle) {
       if (showLifecycleWon) {
-        markActive(project.id);
-        toast.success(`${project.name} moved to Active`);
+        // Award = frozen baseline + procurement seed + default team.
+        // User can re-assign later on Team & Roles. Defaults mirror the
+        // active seed team so the demo shows a full handoff immediately.
+        const active = team.filter((t) => t.status === "active");
+        const result = awardProject(project, {
+          assignedPm: active.find((t) => t.tier === "Admin")?.id,
+          assignedQs: active.find((t) => t.tier === "Pro Control")?.id,
+          assignedSiteLead: active.find((t) => t.role.toLowerCase().includes("site"))?.id,
+          actor: me.name,
+        });
+        toast.success(`${project.name} awarded & handed off`, {
+          description: `Baseline frozen · ${result.seededCallOffs} draft call-offs · ${result.assignments} team assignments.`,
+        });
       } else if (showLifecycleLost) {
         markLost(project.id, note.trim() || "Follow-up outcome", competitor.trim() || "Unknown");
         toast.success(`${project.name} marked as Lost`);
