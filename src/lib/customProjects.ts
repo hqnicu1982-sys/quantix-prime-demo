@@ -95,7 +95,9 @@ export type ProjectPatch = Partial<Pick<Project,
   "margin" | "progress" | "health" | "startDate" | "endDate" |
   "status" | "quoteSentDate" | "expectedResponseDate" |
   "followUpReminderDate" | "lostReason" | "lostToCompetitor" |
-  "lostDate" | "completedDate"
+  "lostDate" | "completedDate" |
+  "awardedDate" | "awardedBy" | "assignedPm" | "assignedQs" |
+  "assignedSiteLead" | "baselineFrozen"
 >>;
 
 function readOverrides(): Record<string, ProjectPatch> {
