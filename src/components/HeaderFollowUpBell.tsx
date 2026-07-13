@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { BellRing, ArrowUpRight, Mail, Phone, Users, Flame } from "lucide-react";
+import { CalendarClock, ArrowUpRight, Mail, Phone, Users, Flame } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProject } from "@/lib/ProjectContext";
 import { useAllManualFollowUps } from "@/lib/tenderDetails";
@@ -122,7 +122,7 @@ export function HeaderFollowUpBell() {
             className="relative rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]"
             aria-label={`Overdue follow-ups · ${alerts.length}`}
           >
-            <BellRing className={cn("h-4 w-4", has && "text-[var(--red-500)]")} />
+            <CalendarClock className={cn("h-4 w-4", has && "text-[var(--red-500)]")} />
             {has && (
               <span
                 className={cn(
