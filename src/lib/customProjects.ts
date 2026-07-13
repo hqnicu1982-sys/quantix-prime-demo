@@ -92,7 +92,10 @@ export function isCustomProject(id: string): boolean {
 
 export type ProjectPatch = Partial<Pick<Project,
   "name" | "subtitle" | "mainContractor" | "contractValue" |
-  "margin" | "progress" | "health" | "startDate" | "endDate"
+  "margin" | "progress" | "health" | "startDate" | "endDate" |
+  "status" | "quoteSentDate" | "expectedResponseDate" |
+  "followUpReminderDate" | "lostReason" | "lostToCompetitor" |
+  "lostDate" | "completedDate"
 >>;
 
 function readOverrides(): Record<string, ProjectPatch> {

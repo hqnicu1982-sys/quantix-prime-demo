@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VariationsRouteImport } from './routes/variations'
+import { Route as TenderPipelineRouteImport } from './routes/tender-pipeline'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ReadinessRouteImport } from './routes/readiness'
 import { Route as ProjectsRouteImport } from './routes/projects'
@@ -68,6 +69,11 @@ import { Route as ProjectsProjectIdAllocationRouteImport } from './routes/projec
 const VariationsRoute = VariationsRouteImport.update({
   id: '/variations',
   path: '/variations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TenderPipelineRoute = TenderPipelineRouteImport.update({
+  id: '/tender-pipeline',
+  path: '/tender-pipeline',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -368,6 +374,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/signup': typeof SignupRoute
+  '/tender-pipeline': typeof TenderPipelineRoute
   '/variations': typeof VariationsRoute
   '/calloffs/$ref': typeof CalloffsRefRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
@@ -422,6 +429,7 @@ export interface FileRoutesByTo {
   '/price-intelligence': typeof PriceIntelligenceRoute
   '/readiness': typeof ReadinessRoute
   '/signup': typeof SignupRoute
+  '/tender-pipeline': typeof TenderPipelineRoute
   '/variations': typeof VariationsRoute
   '/calloffs/$ref': typeof CalloffsRefRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
@@ -479,6 +487,7 @@ export interface FileRoutesById {
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/signup': typeof SignupRoute
+  '/tender-pipeline': typeof TenderPipelineRoute
   '/variations': typeof VariationsRoute
   '/calloffs/$ref': typeof CalloffsRefRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
@@ -538,6 +547,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/readiness'
     | '/signup'
+    | '/tender-pipeline'
     | '/variations'
     | '/calloffs/$ref'
     | '/calloffs/approvals'
@@ -592,6 +602,7 @@ export interface FileRouteTypes {
     | '/price-intelligence'
     | '/readiness'
     | '/signup'
+    | '/tender-pipeline'
     | '/variations'
     | '/calloffs/$ref'
     | '/calloffs/approvals'
@@ -648,6 +659,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/readiness'
     | '/signup'
+    | '/tender-pipeline'
     | '/variations'
     | '/calloffs/$ref'
     | '/calloffs/approvals'
@@ -706,6 +718,7 @@ export interface RootRouteChildren {
   ProjectsRoute: typeof ProjectsRouteWithChildren
   ReadinessRoute: typeof ReadinessRoute
   SignupRoute: typeof SignupRoute
+  TenderPipelineRoute: typeof TenderPipelineRoute
   VariationsRoute: typeof VariationsRoute
   FormsDailyReportRoute: typeof FormsDailyReportRoute
   FormsGrnRoute: typeof FormsGrnRoute
@@ -725,6 +738,13 @@ declare module '@tanstack/react-router' {
       path: '/variations'
       fullPath: '/variations'
       preLoaderRoute: typeof VariationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tender-pipeline': {
+      id: '/tender-pipeline'
+      path: '/tender-pipeline'
+      fullPath: '/tender-pipeline'
+      preLoaderRoute: typeof TenderPipelineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -1221,6 +1241,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProjectsRoute: ProjectsRouteWithChildren,
   ReadinessRoute: ReadinessRoute,
   SignupRoute: SignupRoute,
+  TenderPipelineRoute: TenderPipelineRoute,
   VariationsRoute: VariationsRoute,
   FormsDailyReportRoute: FormsDailyReportRoute,
   FormsGrnRoute: FormsGrnRoute,
