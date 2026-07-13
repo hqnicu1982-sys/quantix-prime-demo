@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { BellRing, ArrowUpRight, Mail, Phone, Users, Flame } from "lucide-react";
+import { CalendarClock, ArrowUpRight, Mail, Phone, Users, Flame } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProject } from "@/lib/ProjectContext";
 import { useAllManualFollowUps } from "@/lib/tenderDetails";
