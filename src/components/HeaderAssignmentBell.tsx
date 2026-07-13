@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { UserPlus, ArrowUpRight, CheckCheck, Briefcase } from "lucide-react";
+import { UserPlus, ArrowUpRight, CheckCheck, Briefcase, Inbox } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCurrentUser } from "@/lib/currentUser";
 import { useMyAssignmentTasks, ackAssignmentTask, ackAllForMember } from "@/lib/myAssignmentTasks";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 function relativeTime(ts: number): string {
@@ -106,6 +106,19 @@ export function HeaderAssignmentBell() {
             ))}
           </div>
         )}
+
+        <div className="mt-2 border-t border-white/10 pt-2">
+          <Link
+            to="/my-assignments"
+            onClick={() => setOpen(false)}
+            className="flex items-center justify-between rounded px-2 py-1.5 text-[11.5px] text-white/75 hover:bg-white/5 hover:text-white"
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Inbox className="h-3.5 w-3.5" /> See all assignments
+            </span>
+            <ArrowUpRight className="h-3.5 w-3.5 opacity-60" />
+          </Link>
+        </div>
       </PopoverContent>
     </Popover>
   );
