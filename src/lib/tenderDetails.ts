@@ -70,6 +70,7 @@ export function getTenderScope(p: Project): {
 }
 
 export type FollowUpEntry = {
+  id: string;               // stable id: "derived-*" for filler, ManualFollowUp.id otherwise
   date: string;              // dd/mm/yyyy
   daysAgo: number;
   channel: "email" | "call" | "meeting" | "system";
@@ -77,24 +78,57 @@ export type FollowUpEntry = {
   note: string;
   outcome?: FollowUpOutcome;
   manual?: boolean;          // true when user-logged via the drawer
+  isoDate?: string;          // ISO for manual entries (used to prefill edit)
+  nextReminderDate?: string; // dd/mm/yyyy — auto-computed follow-up target
 };
 
 export type FollowUpOutcome =
-  | "no-response"
-  | "acknowledged"
-  | "pricing-review"
-  | "decision-pending"
-  | "won"
-  | "lost";
+  | "no-response" | "acknowledged" | "pricing-review" | "decision-pending"
+  | "won" | "lost"
+  | "informed" | "waiting-approval" | "escalated" | "resolved";
 
-export const FOLLOW_UP_OUTCOMES: { code: FollowUpOutcome; label: string }[] = [
-  { code: "no-response",      label: "No response" },
-  { code: "acknowledged",     label: "Acknowledged" },
-  { code: "pricing-review",   label: "Pricing under review" },
-  { code: "decision-pending", label: "Decision pending" },
-  { code: "won",              label: "Won" },
-  { code: "lost",             label: "Lost" },
+/** Stage where an outcome makes sense — filters the dialog dropdown per project. */
+export type OutcomeStage = "pre" | "post" | "any";
+
+export const FOLLOW_UP_OUTCOMES: {
+  code: FollowUpOutcome; label: string; stage: OutcomeStage;
+}[] = [
+  { code: "no-response",      label: "No response",           stage: "pre"  },
+  { code: "acknowledged",     label: "Acknowledged",          stage: "any"  },
+  { code: "pricing-review",   label: "Pricing under review",  stage: "pre"  },
+  { code: "decision-pending", label: "Decision pending",      stage: "pre"  },
+  { code: "won",              label: "Won",                   stage: "pre"  },
+  { code: "lost",             label: "Lost",                  stage: "pre"  },
+  { code: "informed",         label: "Informed",              stage: "post" },
+  { code: "waiting-approval", label: "Waiting approval",      stage: "post" },
+  { code: "escalated",        label: "Escalated",             stage: "post" },
+  { code: "resolved",         label: "Resolved",              stage: "post" },
 ];
+
+/** Auto-suggested days until the next follow-up, keyed by outcome. */
+const REMINDER_OFFSETS: Record<FollowUpOutcome, number | null> = {
+  "no-response":      3,
+  "acknowledged":     5,
+  "pricing-review":   7,
+  "decision-pending": 2,
+  "won":              null,
+  "lost":             null,
+  "informed":         7,
+  "waiting-approval": 3,
+  "escalated":        1,
+  "resolved":         null,
+};
+
+export function computeNextReminderOffset(outcome?: FollowUpOutcome): number | null {
+  if (!outcome) return 3;
+  return REMINDER_OFFSETS[outcome] ?? null;
+}
+
+/** Whether a given outcome is available for a project in the given lifecycle status. */
+export function outcomesForStatus(status: Project["status"]): typeof FOLLOW_UP_OUTCOMES {
+  const stage: OutcomeStage = (status === "tender" || status === "awaiting") ? "pre" : "post";
+  return FOLLOW_UP_OUTCOMES.filter((o) => o.stage === "any" || o.stage === stage);
+}
 
 /**
  * Build a follow-up timeline from real project fields + deterministic filler.
@@ -110,6 +144,7 @@ export function getFollowUpHistory(p: Project): FollowUpEntry[] {
     ? (daysSince(p.quoteSentDate) ?? 0) + 7 + (h % 7)
     : 14 + (h % 10);
   entries.push({
+    id: `derived-invite-${p.id}`,
     date: offsetToDisplay(-inviteDays),
     daysAgo: inviteDays,
     channel: "email",
@@ -119,6 +154,7 @@ export function getFollowUpHistory(p: Project): FollowUpEntry[] {
 
   // 2) Kick-off / pricing note
   entries.push({
+    id: `derived-kickoff-${p.id}`,
     date: offsetToDisplay(-Math.max(1, inviteDays - 3 - (h % 3))),
     daysAgo: Math.max(1, inviteDays - 3 - (h % 3)),
     channel: "system",
@@ -130,6 +166,7 @@ export function getFollowUpHistory(p: Project): FollowUpEntry[] {
   if (p.quoteSentDate) {
     const days = daysSince(p.quoteSentDate) ?? 0;
     entries.push({
+      id: `derived-quote-${p.id}`,
       date: p.quoteSentDate,
       daysAgo: days,
       channel: "email",
@@ -139,6 +176,7 @@ export function getFollowUpHistory(p: Project): FollowUpEntry[] {
 
     if (p.status === "awaiting" && days >= 5) {
       entries.push({
+        id: `derived-chase-${p.id}`,
         date: offsetToDisplay(-Math.max(1, days - 5)),
         daysAgo: Math.max(1, days - 5),
         channel: "call",
@@ -148,6 +186,7 @@ export function getFollowUpHistory(p: Project): FollowUpEntry[] {
     }
     if (p.status === "awaiting" && days >= 10) {
       entries.push({
+        id: `derived-chase2-${p.id}`,
         date: offsetToDisplay(-Math.max(1, days - 10)),
         daysAgo: Math.max(1, days - 10),
         channel: "email",
@@ -159,6 +198,7 @@ export function getFollowUpHistory(p: Project): FollowUpEntry[] {
 
   // Sort newest first
   const manual = readFollowUps().filter((r) => r.projectId === p.id).map((r) => ({
+    id: r.id,
     date: r.date,
     daysAgo: Math.max(0, daysBetween(r.isoDate, new Date().toISOString())),
     channel: r.channel,
@@ -166,6 +206,8 @@ export function getFollowUpHistory(p: Project): FollowUpEntry[] {
     note: r.note,
     outcome: r.outcome,
     manual: true,
+    isoDate: r.isoDate,
+    nextReminderDate: r.nextReminderDate,
   } satisfies FollowUpEntry));
   return [...entries, ...manual].sort((a, b) => a.daysAgo - b.daysAgo);
 }
@@ -190,6 +232,7 @@ export type ManualFollowUp = {
   by: string;
   note: string;
   outcome?: FollowUpOutcome;
+  nextReminderDate?: string;             // dd/mm/yyyy — auto or user-set
   ts: string;                            // when logged
 };
 
@@ -237,20 +280,68 @@ export function useManualFollowUps(projectId: string): ManualFollowUp[] {
   return all.filter((r) => r.projectId === projectId);
 }
 
+/** Cross-project subscription for the /follow-ups feed. */
+export function useAllManualFollowUps(): ManualFollowUp[] {
+  return useSyncExternalStore(subscribeFollowUps, snapshotFollowUps, snapshotFollowUps);
+}
+
 export function logFollowUp(input: Omit<ManualFollowUp, "id" | "ts" | "date">): ManualFollowUp {
   const d = new Date(input.isoDate);
-  const date = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  const date = isoToDisplay(input.isoDate);
   const row: ManualFollowUp = {
     ...input,
     id: `fu-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
     date,
     ts: new Date().toISOString(),
   };
+  void d; // date-only helper; keeps signature stable
   writeFollowUps([row, ...readFollowUps()]);
   return row;
+}
+
+export function updateFollowUp(
+  id: string,
+  patch: Partial<Omit<ManualFollowUp, "id" | "ts" | "projectId">>,
+): ManualFollowUp | undefined {
+  const rows = readFollowUps();
+  const idx = rows.findIndex((r) => r.id === id);
+  if (idx < 0) return undefined;
+  const merged: ManualFollowUp = { ...rows[idx], ...patch };
+  if (patch.isoDate) merged.date = isoToDisplay(patch.isoDate);
+  const next = [...rows];
+  next[idx] = merged;
+  writeFollowUps(next);
+  return merged;
+}
+
+export function deleteFollowUp(id: string): boolean {
+  const rows = readFollowUps();
+  const next = rows.filter((r) => r.id !== id);
+  if (next.length === rows.length) return false;
+  writeFollowUps(next);
+  return true;
 }
 
 function daysBetween(a: string, b: string): number {
   const ms = new Date(b).getTime() - new Date(a).getTime();
   return Math.floor(ms / 86_400_000);
+}
+
+/** Convert an ISO date to the app's dd/mm/yyyy display format. */
+export function isoToDisplay(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
+/** Convert a yyyy-mm-dd `<input type="date">` value to dd/mm/yyyy. */
+export function inputDateToDisplay(v: string): string {
+  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : v;
+}
+
+/** Convert dd/mm/yyyy back to yyyy-mm-dd (for `<input type="date">`). */
+export function displayToInputDate(v?: string): string {
+  if (!v) return "";
+  const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
 }

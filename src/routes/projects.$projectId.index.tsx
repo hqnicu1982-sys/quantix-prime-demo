@@ -15,6 +15,7 @@ import { ApprovalInboxCard } from "@/components/dashboard/ApprovalInboxCard";
 import { LiveLabourCostCard } from "@/components/financial/LiveLabourCostCard";
 import { ProfitForecastCard } from "@/components/financial/ProfitForecastCard";
 import { PaymentCycleKpiStrip } from "@/components/payments/PaymentCycleKpiStrip";
+import { FollowUpsCard } from "@/components/projects/FollowUpsCard";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
 
@@ -58,6 +59,11 @@ function Overview() {
         {isOnProject && <MyScopeCard projectId={projectId} />}
         <ApprovalInboxCard />
         {canSeePayments && <PaymentCycleKpiStrip projectId={projectId} />}
+        {(project.status ?? "active") === "active" && (
+          <Card className="p-5">
+            <FollowUpsCard project={project} title="Client follow-ups" />
+          </Card>
+        )}
         <ProjectSetupChecklist projectId={projectId} />
       </div>
     );
@@ -94,6 +100,15 @@ function Overview() {
       {(canSeeFinancials || canSeeFinancialsLite) && <LiveLabourCostCard projectId={projectId} />}
 
       {canSeeFinancials && <ProfitForecastCard projectId={projectId} />}
+
+      {(() => {
+        const p = all.find((x) => x.id === projectId);
+        return p ? (
+          <Card className="p-5">
+            <FollowUpsCard project={p} title="Client follow-ups" />
+          </Card>
+        ) : null;
+      })()}
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">

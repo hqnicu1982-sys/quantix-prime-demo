@@ -20,6 +20,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as IntegrationsRouteImport } from './routes/integrations'
 import { Route as HowToRouteImport } from './routes/how-to'
+import { Route as FollowUpsRouteImport } from './routes/follow-ups'
 import { Route as FinancialRouteImport } from './routes/financial'
 import { Route as DailyReportRouteImport } from './routes/daily-report'
 import { Route as CostedBoqRouteImport } from './routes/costed-boq'
@@ -119,6 +120,11 @@ const IntegrationsRoute = IntegrationsRouteImport.update({
 const HowToRoute = HowToRouteImport.update({
   id: '/how-to',
   path: '/how-to',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FollowUpsRoute = FollowUpsRouteImport.update({
+  id: '/follow-ups',
+  path: '/follow-ups',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FinancialRoute = FinancialRouteImport.update({
@@ -365,6 +371,7 @@ export interface FileRoutesByFullPath {
   '/costed-boq': typeof CostedBoqRoute
   '/daily-report': typeof DailyReportRoute
   '/financial': typeof FinancialRoute
+  '/follow-ups': typeof FollowUpsRoute
   '/how-to': typeof HowToRoute
   '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRouteWithChildren
@@ -422,6 +429,7 @@ export interface FileRoutesByTo {
   '/costed-boq': typeof CostedBoqRoute
   '/daily-report': typeof DailyReportRoute
   '/financial': typeof FinancialRoute
+  '/follow-ups': typeof FollowUpsRoute
   '/how-to': typeof HowToRoute
   '/integrations': typeof IntegrationsRoute
   '/login': typeof LoginRoute
@@ -478,6 +486,7 @@ export interface FileRoutesById {
   '/costed-boq': typeof CostedBoqRoute
   '/daily-report': typeof DailyReportRoute
   '/financial': typeof FinancialRoute
+  '/follow-ups': typeof FollowUpsRoute
   '/how-to': typeof HowToRoute
   '/integrations': typeof IntegrationsRoute
   '/invoices': typeof InvoicesRouteWithChildren
@@ -538,6 +547,7 @@ export interface FileRouteTypes {
     | '/costed-boq'
     | '/daily-report'
     | '/financial'
+    | '/follow-ups'
     | '/how-to'
     | '/integrations'
     | '/invoices'
@@ -595,6 +605,7 @@ export interface FileRouteTypes {
     | '/costed-boq'
     | '/daily-report'
     | '/financial'
+    | '/follow-ups'
     | '/how-to'
     | '/integrations'
     | '/login'
@@ -650,6 +661,7 @@ export interface FileRouteTypes {
     | '/costed-boq'
     | '/daily-report'
     | '/financial'
+    | '/follow-ups'
     | '/how-to'
     | '/integrations'
     | '/invoices'
@@ -709,6 +721,7 @@ export interface RootRouteChildren {
   CostedBoqRoute: typeof CostedBoqRoute
   DailyReportRoute: typeof DailyReportRoute
   FinancialRoute: typeof FinancialRoute
+  FollowUpsRoute: typeof FollowUpsRoute
   HowToRoute: typeof HowToRoute
   IntegrationsRoute: typeof IntegrationsRoute
   InvoicesRoute: typeof InvoicesRouteWithChildren
@@ -808,6 +821,13 @@ declare module '@tanstack/react-router' {
       path: '/how-to'
       fullPath: '/how-to'
       preLoaderRoute: typeof HowToRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/follow-ups': {
+      id: '/follow-ups'
+      path: '/follow-ups'
+      fullPath: '/follow-ups'
+      preLoaderRoute: typeof FollowUpsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/financial': {
@@ -1232,6 +1252,7 @@ const rootRouteChildren: RootRouteChildren = {
   CostedBoqRoute: CostedBoqRoute,
   DailyReportRoute: DailyReportRoute,
   FinancialRoute: FinancialRoute,
+  FollowUpsRoute: FollowUpsRoute,
   HowToRoute: HowToRoute,
   IntegrationsRoute: IntegrationsRoute,
   InvoicesRoute: InvoicesRouteWithChildren,
