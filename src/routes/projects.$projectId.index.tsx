@@ -16,6 +16,9 @@ import { LiveLabourCostCard } from "@/components/financial/LiveLabourCostCard";
 import { ProfitForecastCard } from "@/components/financial/ProfitForecastCard";
 import { PaymentCycleKpiStrip } from "@/components/payments/PaymentCycleKpiStrip";
 import { FollowUpsCard } from "@/components/projects/FollowUpsCard";
+import { useAwardBaseline } from "@/lib/awardBaseline";
+import { Lock } from "lucide-react";
+import { team, fmtMoney as _fmt } from "@/lib/mockData";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
 
@@ -37,6 +40,7 @@ function Overview() {
     const spent = project.contractValue * (project.progress / 100) * 0.85;
     return (
       <div className="space-y-5">
+        <AwardBaselineBanner projectId={projectId} />
         {canSeeFinancials ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Kpi label="Contract" value={fmtMoney(project.contractValue, { compact: true })} />
