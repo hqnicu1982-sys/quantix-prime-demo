@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { Project } from "@/lib/mockData";
-import { fmtMoney } from "@/lib/mockData";
 import { sendQuote, markLost, cloneAsTender } from "@/lib/projectLifecycle";
 import { AwardHandoffDialog } from "./AwardHandoffDialog";
 import { toast } from "sonner";
