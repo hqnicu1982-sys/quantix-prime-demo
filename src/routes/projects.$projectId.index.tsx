@@ -16,7 +16,6 @@ import { LiveLabourCostCard } from "@/components/financial/LiveLabourCostCard";
 import { ProfitForecastCard } from "@/components/financial/ProfitForecastCard";
 import { PaymentCycleKpiStrip } from "@/components/payments/PaymentCycleKpiStrip";
 import { FollowUpsCard } from "@/components/projects/FollowUpsCard";
-import { Card } from "@/components/Primitives";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
 
@@ -102,9 +101,14 @@ function Overview() {
 
       {canSeeFinancials && <ProfitForecastCard projectId={projectId} />}
 
-      <Card className="p-5">
-        <FollowUpsCard project={fitzroviaProjectStub} title="Client follow-ups" />
-      </Card>
+      {(() => {
+        const p = all.find((x) => x.id === projectId);
+        return p ? (
+          <Card className="p-5">
+            <FollowUpsCard project={p} title="Client follow-ups" />
+          </Card>
+        ) : null;
+      })()}
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
