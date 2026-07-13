@@ -3,6 +3,7 @@ import { dateOffset, type Project, type ProjectStatus } from "./mockData";
 import { freezeBaseline, getBaseline, type AwardBaseline } from "./awardBaseline";
 import { getDrawings } from "./drawingRegistry";
 import { seedSuggestedCallOffs } from "./procurementSeed";
+import { getProjectData } from "./projectData";
 import { addAssignment, getAssignments } from "./labour";
 import { logTeamEvent } from "./teamAudit";
 import { logFollowUp } from "./tenderDetails";
