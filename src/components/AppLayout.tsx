@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Calendar, Package, ClipboardList, FileSpreadsheet, Plug, Users2,
   Menu, X, Search, Settings, HardHat, LineChart, Check, FolderKanban, Library,
   Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Hammer, Sun, Moon,
-  ChevronDown, GitBranch, BookOpen, HelpCircle, LogIn, UserPlus, Layers, Briefcase, BellRing,
+  ChevronDown, GitBranch, BookOpen, HelpCircle, LogIn, UserPlus, Layers, Briefcase, BellRing, CalendarClock,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -38,7 +38,7 @@ const navGroups: NavGroup[] = [
   { label: "Projects", items: [
     { to: "/projects", label: "All Projects", icon: FolderKanban, mobile: true },
     { to: "/tender-pipeline", label: "Tender Pipeline", icon: Briefcase, badge: "NEW" },
-    { to: "/follow-ups", label: "Follow-ups", icon: BellRing, badge: "NEW" },
+    { to: "/follow-ups", label: "Follow-ups", icon: CalendarClock, badge: "NEW" },
   ]},
   { label: "Commercial", persona: "commercial", items: [
     { to: "/costed-boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true, requires: "view.boq" },
