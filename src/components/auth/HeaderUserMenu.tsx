@@ -98,7 +98,7 @@ export function HeaderUserMenu() {
 
           <div className="border-t border-[var(--ink-200)]" />
 
-          {/* View as (demo personas) */}
+          {/* View as (demo users) */}
           <div className="max-h-[260px] overflow-y-auto py-1">
             <p className="px-4 pb-1 pt-2 text-[9.5px] font-bold uppercase tracking-[0.12em] text-[var(--ink-500)]">
               View as <span className="font-normal normal-case tracking-normal text-[var(--ink-500)]/70">(demo)</span>

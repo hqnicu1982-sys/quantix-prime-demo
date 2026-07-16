@@ -12,7 +12,7 @@ import { ArrowRight, Hammer, Calendar, Coins, ClipboardCheck } from "lucide-reac
 import { cn } from "@/lib/utils";
 
 /**
- * Personal "what's on my plate today" card for Operative / Site User / Pro
+ * "What's on my plate today" card for Operative / Pro
  * users. Shows my crew, my active tasks, my PW rates, today's logged work.
  */
 export function MyScopeCard({ projectId }: { projectId: string }) {

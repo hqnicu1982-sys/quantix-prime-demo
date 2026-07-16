@@ -12,7 +12,6 @@ export const currentUser = {
   initials: "NA",
 };
 
-export type Persona = "site" | "commercial";
 
 export type TeamMember = {
   id: string;
