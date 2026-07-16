@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard, Calendar, Package, ClipboardList, FileSpreadsheet, Plug, Users2,
   Menu, X, Search, Settings, HardHat, Check, FolderKanban, Library,
-  Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Hammer, Sun, Moon,
+  Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Sun, Moon,
   ChevronDown, GitBranch, BookOpen, HelpCircle, LogIn, UserPlus, Layers, Briefcase, BellRing, CalendarClock,
 } from "lucide-react";
 import { Logo } from "./Logo";
@@ -288,7 +288,7 @@ function WelcomeModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
             This is a real project — <strong className="text-[var(--ink-900)]">Hotel Fitzrovia</strong>, a £2.1m drylining package for Kier Construction — populated with realistic UK construction data.
           </p>
           <p>
-            Your role determines what you see. Switch personas from the top-right user menu to preview the experience from another perspective.
+            Your role determines what you see. Use the top-right user menu to switch views and preview the experience from another perspective.
           </p>
         </div>
         <DialogFooter className="flex-col gap-2 sm:flex-col">
@@ -490,7 +490,7 @@ function MobileTabBar() {
 
 export function AppLayout() {
   // Defer rendering to after mount to avoid SSR/CSR hydration mismatches.
-  // Several pieces of state (current user, persona, theme, custom projects)
+  // Several pieces of state (current user, theme, custom projects)
   // depend on localStorage, which only exists on the client. Rendering a
   // matching shell on the server and switching to the real UI after mount
   // keeps React's hydration check happy without sacrificing SSR for routing.
