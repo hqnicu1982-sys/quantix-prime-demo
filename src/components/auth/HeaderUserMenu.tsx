@@ -13,10 +13,10 @@ import { cn } from "@/lib/utils";
 const TIER_ORDER: Tier[] = ["Admin", "Pro Control", "Pro", "Operative"];
 
 const TIER_TONE: Record<Tier, string> = {
-  Admin: "bg-[var(--accent-500)]/15 text-[var(--accent-500)] border-[var(--accent-500)]/25",
-  "Pro Control": "bg-purple-500/15 text-purple-700 border-purple-500/25",
-  Pro: "bg-emerald-500/15 text-emerald-700 border-emerald-500/25",
-  Operative: "bg-[var(--ink-100)] text-[var(--ink-700)] border-[var(--ink-200)]",
+  Admin: "bg-[var(--accent-500)] text-white border-transparent",
+  "Pro Control": "bg-purple-600 text-white border-transparent",
+  Pro: "bg-emerald-600 text-white border-transparent",
+  Operative: "bg-[var(--ink-700)] text-white border-transparent",
 };
 
 export function HeaderUserMenu() {
