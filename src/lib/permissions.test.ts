@@ -28,7 +28,7 @@ const ACTIONS: Array<{ name: string; cap: Capability }> = [
   { name: "Specification · Upload docs / edit notes", cap: "edit.specification" },
 ];
 
-const TIERS: Tier[] = ["Admin", "Pro Control", "Pro", "Site User", "Operative"];
+const TIERS: Tier[] = ["Admin", "Pro Control", "Pro", "Operative"];
 
 describe("RBAC capability matrix", () => {
   it("each tier has a defined capability set", () => {
@@ -52,17 +52,6 @@ describe("RBAC capability matrix", () => {
     ];
     for (const cap of approvalCaps) {
       expect(can("Operative", cap), `Operative must NOT have ${cap}`).toBe(false);
-    }
-  });
-
-  it("Site User cannot approve labour, sign invoices, or edit financial data", () => {
-    const forbidden: Capability[] = [
-      "approve.labour", "sign.invoices", "edit.variations",
-      "edit.boq", "view.financials", "view.financials.lite",
-      "create.calloffs", "approve.calloffs",
-    ];
-    for (const cap of forbidden) {
-      expect(can("Site User", cap), `Site User must NOT have ${cap}`).toBe(false);
     }
   });
 
