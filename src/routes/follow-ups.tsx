@@ -14,6 +14,8 @@ import { TenderDetailSheet } from "@/components/projects/TenderDetailSheet";
 import { useNavigate } from "@tanstack/react-router";
 import { Mail, Phone, Users, Cog, Download, BellRing, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
 export const Route = createFileRoute("/follow-ups")({
   head: () => ({
@@ -24,8 +26,14 @@ export const Route = createFileRoute("/follow-ups")({
       { property: "og:description", content: "Cross-project follow-up feed for the commercial team." },
     ],
   }),
-  component: FollowUpsPage,
+  component: GuardedFollowUpsPage,
 });
+
+function GuardedFollowUpsPage() {
+  const allowed = useCan("view.followUps");
+  if (!allowed) return <NoAccess cap="view.followUps" title="Follow-ups restricted" />;
+  return <FollowUpsPage />;
+}
 
 type Row = FollowUpEntry & { project: Project };
 type StageFilter = "all" | "pre" | "active";
