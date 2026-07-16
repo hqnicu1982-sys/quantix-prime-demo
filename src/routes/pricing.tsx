@@ -616,23 +616,34 @@ function MetricTile({
   label,
   value,
   accent,
+  valueKey,
+  pulseKey,
 }: {
   label: string;
   value: string;
   accent?: boolean;
+  valueKey?: string | number;
+  pulseKey?: number;
 }) {
   return (
     <div
+      key={pulseKey !== undefined ? `pulse-${pulseKey}` : undefined}
       className={cn(
-        "rounded-[8px] border border-[var(--ink-200)] px-4 py-3",
+        "rounded-[8px] border border-[var(--ink-200)] px-4 py-3 transition-shadow duration-300",
         accent ? "bg-[var(--accent-500)]/5" : "bg-card",
+        pulseKey !== undefined && "animate-[roi-pulse_600ms_ease-out]",
       )}
     >
       <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--ink-500)]">
         {label}
       </p>
       <p className="font-display mt-1 text-[22px] font-semibold text-[var(--ink-900)]">
-        {value}
+        <span
+          key={valueKey ?? value}
+          className="inline-block animate-[roi-fade_250ms_ease-out]"
+        >
+          {value}
+        </span>
       </p>
     </div>
   );
