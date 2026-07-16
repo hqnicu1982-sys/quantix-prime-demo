@@ -17,7 +17,6 @@ const userByTier: Record<Tier, string> = {
   Admin: team.find((t) => t.tier === "Admin")!.id,
   "Pro Control": team.find((t) => t.tier === "Pro Control")!.id,
   Pro: team.find((t) => t.tier === "Pro")!.id,
-  : team.find((t) => t.tier ===  && t.status === "active")!.id,
   Operative: team.find((t) => t.tier === "Operative")!.id,
 };
 
