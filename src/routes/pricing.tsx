@@ -68,6 +68,9 @@ const PER_SEAT_ANNUAL = {
 
 function PricingPage() {
   const [commit, setCommit] = useState<Commit>("annual");
+  const [recommendedTier, setRecommendedTier] = useState<
+    "Starter" | "Growth" | "Scale" | "Enterprise" | null
+  >(null);
 
   const founderScale = useMemo(
     () => Math.round(PRICES.scale.annual * 0.7),
@@ -161,6 +164,7 @@ function PricingPage() {
         />
         <TierCard
           name="Starter"
+          recommended={recommendedTier === "Starter"}
           price={fmt(PRICES.starter[commit])}
           per="/mo"
           listPrice={commit !== "monthly" ? fmt(PRICES.starter.monthly) : undefined}
@@ -178,6 +182,7 @@ function PricingPage() {
         />
         <TierCard
           name="Growth"
+          recommended={recommendedTier === "Growth"}
           price={fmt(PRICES.growth[commit])}
           per="/mo"
           listPrice={commit !== "monthly" ? fmt(PRICES.growth.monthly) : undefined}
@@ -196,6 +201,7 @@ function PricingPage() {
         />
         <TierCard
           name="Scale"
+          recommended={recommendedTier === "Scale"}
           price={fmt(PRICES.scale[commit])}
           per="/mo"
           listPrice={commit !== "monthly" ? fmt(PRICES.scale.monthly) : undefined}
@@ -213,6 +219,7 @@ function PricingPage() {
         />
         <TierCard
           name="Enterprise"
+          recommended={recommendedTier === "Enterprise"}
           price="Custom"
           per=""
           blurb="For £50M+ contractors and multi-region operations."
@@ -227,7 +234,7 @@ function PricingPage() {
       </div>
 
       {/* ROI CALCULATOR */}
-      <RoiCalculator />
+      <RoiCalculator onTierChange={setRecommendedTier} />
 
       {/* SEAT ADD-ONS */}
       <Card>
