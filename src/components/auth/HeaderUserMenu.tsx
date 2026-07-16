@@ -13,10 +13,17 @@ import { cn } from "@/lib/utils";
 const TIER_ORDER: Tier[] = ["Admin", "Pro Control", "Pro", "Operative"];
 
 const TIER_TONE: Record<Tier, string> = {
-  Admin: "bg-[var(--accent-500)] text-white border-transparent",
-  "Pro Control": "bg-purple-600 text-white border-transparent",
-  Pro: "bg-emerald-600 text-white border-transparent",
-  Operative: "bg-[var(--ink-700)] text-white border-transparent",
+  Admin: "bg-[var(--accent-500)]/15 text-[var(--accent-500)] border-[var(--accent-500)]/25",
+  "Pro Control": "bg-purple-500/15 text-purple-700 border-purple-500/25",
+  Pro: "bg-emerald-500/15 text-emerald-700 border-emerald-500/25",
+  Operative: "bg-[var(--ink-100)] text-[var(--ink-700)] border-[var(--ink-200)]",
+};
+
+const AVATAR_TONE: Record<Tier, string> = {
+  Admin: "bg-gradient-to-br from-[var(--accent-500)] to-[var(--teal-500)] text-white",
+  "Pro Control": "bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white",
+  Pro: "bg-gradient-to-br from-emerald-500 to-teal-600 text-white",
+  Operative: "bg-gradient-to-br from-slate-500 to-slate-700 text-white",
 };
 
 export function HeaderUserMenu() {
@@ -116,7 +123,7 @@ export function HeaderUserMenu() {
                         active && "bg-[var(--ink-50)]",
                       )}
                     >
-                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--ink-100)] text-[9.5px] font-bold text-[var(--ink-700)]">
+                      <div className={cn("flex h-5 w-5 items-center justify-center rounded-full text-[9.5px] font-bold", AVATAR_TONE[m.tier])}>
                         {m.initials}
                       </div>
                       <div className="min-w-0 flex-1">
