@@ -372,6 +372,7 @@ function TierCard({
   features,
   cta,
   highlight,
+  recommended,
   listPrice,
   saving,
   foundingLine,
@@ -384,6 +385,7 @@ function TierCard({
   features: string[];
   cta: string;
   highlight?: boolean;
+  recommended?: boolean;
   listPrice?: string;
   saving?: string;
   foundingLine?: string;
@@ -392,9 +394,11 @@ function TierCard({
   return (
     <Card
       className={cn(
-        "flex flex-col",
+        "flex flex-col transition-shadow duration-300",
         highlight &&
           "border-[var(--accent-500)] shadow-[0_4px_24px_rgba(15,40,71,0.08)] ring-1 ring-[var(--accent-500)]/30",
+        recommended &&
+          "border-[var(--accent-500)] shadow-[0_0_0_3px_rgba(37,99,235,0.18),0_10px_30px_-10px_rgba(37,99,235,0.45)] ring-2 ring-[var(--accent-500)]/50",
       )}
     >
       <div className="flex items-center justify-between px-5 pt-5">
