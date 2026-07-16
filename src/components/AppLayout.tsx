@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard, Calendar, Package, ClipboardList, FileSpreadsheet, Plug, Users2,
-  Menu, X, Search, Settings, HardHat, LineChart, Check, FolderKanban, Library,
+  Menu, X, Search, Settings, HardHat, Check, FolderKanban, Library,
   Calculator, BarChart3, Upload, ShoppingCart, Receipt, TrendingUp, Hammer, Sun, Moon,
   ChevronDown, GitBranch, BookOpen, HelpCircle, LogIn, UserPlus, Layers, Briefcase, BellRing, CalendarClock,
 } from "lucide-react";
@@ -24,7 +24,7 @@ import { useRecentProjects } from "@/lib/recentProjects";
 import { useSession, useSessionReady, isPublicPath } from "@/lib/authSession";
 
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean; params?: Record<string, string>; requires?: Capability };
-type NavGroup = { label: string; persona?: "site" | "commercial"; items: NavItem[] };
+type NavGroup = { label: string; items: NavItem[] };
 
 const navGroups: NavGroup[] = [
   { label: "Top", items: [
@@ -39,7 +39,7 @@ const navGroups: NavGroup[] = [
     { to: "/tender-pipeline", label: "Tender Pipeline", icon: Briefcase, badge: "NEW" },
     { to: "/follow-ups", label: "Follow-ups", icon: CalendarClock, badge: "NEW" },
   ]},
-  { label: "Commercial", persona: "commercial", items: [
+  { label: "Commercial", items: [
     { to: "/costed-boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true, requires: "view.boq" },
     { to: "/price-intelligence", label: "Price Intelligence", icon: BarChart3, requires: "view.priceIntel" },
     { to: "/price-lists/upload", label: "Price List Upload", icon: Upload, requires: "upload.prices" },
@@ -49,7 +49,7 @@ const navGroups: NavGroup[] = [
     { to: "/all-invoices", label: "All Invoices", icon: Layers, requires: "view.invoices" },
     { to: "/financial", label: "Financial", icon: TrendingUp, requires: "view.financials" },
   ]},
-  { label: "Execution", persona: "site", items: [
+  { label: "Execution", items: [
     { to: "/planner", label: "Planner", icon: Calendar, mobile: true, requires: "view.planner" },
     { to: "/readiness", label: "Material Readiness", icon: Package, requires: "view.planner" },
     { to: "/daily-report", label: "Daily Site Report", icon: ClipboardList, mobile: true, requires: "view.dailyReport" },
@@ -62,33 +62,6 @@ const navGroups: NavGroup[] = [
   ]},
 ];
 
-
-function PersonaToggle() {
-  // (kept above SidebarContent — see below for the dynamic project items hook)
-  const { persona, setPersona } = useProject();
-  return (
-    <div className="mx-3 mb-2 mt-1 grid grid-cols-2 rounded-md border border-white/10 bg-white/5 p-0.5 text-[11px] font-medium">
-      <button
-        onClick={() => setPersona("site")}
-        className={cn(
-          "flex items-center justify-center gap-1.5 rounded px-2 py-1.5 transition-colors",
-          persona === "site" ? "bg-white text-[var(--navy-950)]" : "text-white/60 hover:text-white/90",
-        )}
-      >
-        <Hammer className="h-3 w-3" /> Site
-      </button>
-      <button
-        onClick={() => setPersona("commercial")}
-        className={cn(
-          "flex items-center justify-center gap-1.5 rounded px-2 py-1.5 transition-colors",
-          persona === "commercial" ? "bg-white text-[var(--navy-950)]" : "text-white/60 hover:text-white/90",
-        )}
-      >
-        <LineChart className="h-3 w-3" /> Commercial
-      </button>
-    </div>
-  );
-}
 
 // Build the dynamic list of project links rendered inside the "Projects"
 // sidebar group. Pro/Admin users get up to 4 most-recently-visited projects
@@ -165,7 +138,6 @@ function NavLinkItem({ item, onClick }: { item: NavItem; onClick?: () => void })
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const { persona } = useProject();
   const tier = useCurrentTier();
   const projectItems = useDynamicProjectNavItems();
   const visibleGroups = navGroups
@@ -181,35 +153,23 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     .filter((g) => g.items.length > 0);
   return (
     <>
-      <PersonaToggle />
       <div className="flex-1 overflow-y-auto py-1">
-        {visibleGroups.map((group) => {
-          const emphasised = group.persona === persona;
-          const dimmed = group.persona && group.persona !== persona;
-          return (
-            <div
-              key={group.label}
-              className={cn(
-                "px-3 py-2 transition-opacity",
-                dimmed && "opacity-55",
-              )}
-            >
-              {group.label !== "Top" && (
-                <div className="mb-1 flex items-center gap-2 px-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">
-                    {group.label}
-                  </p>
-                  {emphasised && <span className="h-1 w-1 rounded-full bg-[var(--accent-500)]" />}
-                </div>
-              )}
-              <nav className="space-y-0.5">
-                {group.items.map((item) => (
-                  <NavLinkItem key={item.to} item={item} onClick={onNavigate} />
-                ))}
-              </nav>
-            </div>
-          );
-        })}
+        {visibleGroups.map((group) => (
+          <div key={group.label} className="px-3 py-2">
+            {group.label !== "Top" && (
+              <div className="mb-1 flex items-center gap-2 px-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">
+                  {group.label}
+                </p>
+              </div>
+            )}
+            <nav className="space-y-0.5">
+              {group.items.map((item) => (
+                <NavLinkItem key={item.to} item={item} onClick={onNavigate} />
+              ))}
+            </nav>
+          </div>
+        ))}
       </div>
     </>
   );
@@ -307,10 +267,8 @@ function ProjectSwitcher() {
 
 function WelcomeModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const navigate = useNavigate();
-  const { setPersona } = useProject();
-  const dismiss = (to?: string, p?: "site" | "commercial") => {
+  const dismiss = (to?: string) => {
     if (typeof window !== "undefined") localStorage.setItem("qp-welcome-seen-v3", "1");
-    if (p) setPersona(p);
     onOpenChange(false);
     if (to) navigate({ to });
   };
@@ -330,18 +288,10 @@ function WelcomeModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
             This is a real project — <strong className="text-[var(--ink-900)]">Hotel Fitzrovia</strong>, a £2.1m drylining package for Kier Construction — populated with realistic UK construction data.
           </p>
           <p>
-            Toggle between <strong className="text-[var(--ink-900)]">Site Manager</strong> and <strong className="text-[var(--ink-900)]">Commercial Manager</strong> in the sidebar to see different personas.
+            Your role determines what you see. Switch personas from the top-right user menu to preview the experience from another perspective.
           </p>
         </div>
         <DialogFooter className="flex-col gap-2 sm:flex-col">
-          <div className="grid w-full gap-2 sm:grid-cols-2">
-            <Button variant="outline" className="w-full" onClick={() => dismiss("/daily-report", "site")}>
-              <HardHat className="mr-2 h-4 w-4" /> Start as Site Manager
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => dismiss("/financial", "commercial")}>
-              <LineChart className="mr-2 h-4 w-4" /> Start as Commercial Manager
-            </Button>
-          </div>
           <Button className="w-full" onClick={() => dismiss("/how-to")}>
             <BookOpen className="mr-2 h-4 w-4" /> Take the 8-step tour
           </Button>
