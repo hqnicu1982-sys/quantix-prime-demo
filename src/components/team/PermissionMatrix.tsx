@@ -1,12 +1,11 @@
 import { Card, CardHead } from "@/components/Primitives";
 
-type Tier = "Admin" | "Pro Control" | "Pro" | "Site User" | "Operative";
+type Tier = "Admin" | "Pro Control" | "Pro" | "Operative";
 
 const ROWS: Array<[Tier, boolean, boolean, boolean, boolean, boolean, boolean, boolean]> = [
   ["Admin", true, true, true, true, true, true, true],
   ["Pro Control", true, true, true, true, true, false, false],
   ["Pro", true, true, true, false, false, false, false],
-  ["Site User", true, false, false, false, false, false, false],
   ["Operative", true, false, false, false, false, false, false],
 ];
 

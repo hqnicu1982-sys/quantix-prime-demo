@@ -28,7 +28,7 @@ const ACTIONS: Array<{ name: string; cap: Capability }> = [
   { name: "Specification · Upload docs / edit notes", cap: "edit.specification" },
 ];
 
-const TIERS: Tier[] = ["Admin", "Pro Control", "Pro", "Site User", "Operative"];
+const TIERS: Tier[] = ["Admin", "Pro Control", "Pro", "Operative"];
 
 describe("RBAC capability matrix", () => {
   it("each tier has a defined capability set", () => {
@@ -52,17 +52,6 @@ describe("RBAC capability matrix", () => {
     ];
     for (const cap of approvalCaps) {
       expect(can("Operative", cap), `Operative must NOT have ${cap}`).toBe(false);
-    }
-  });
-
-  it("Site User cannot approve labour, sign invoices, or edit financial data", () => {
-    const forbidden: Capability[] = [
-      "approve.labour", "sign.invoices", "edit.variations",
-      "edit.boq", "view.financials", "view.financials.lite",
-      "create.calloffs", "approve.calloffs",
-    ];
-    for (const cap of forbidden) {
-      expect(can("Site User", cap), `Site User must NOT have ${cap}`).toBe(false);
     }
   });
 
@@ -92,7 +81,6 @@ describe("RBAC capability matrix", () => {
         Admin: can("Admin", action.cap),
         "Pro Control": can("Pro Control", action.cap),
         Pro: can("Pro", action.cap),
-        "Site User": can("Site User", action.cap),
         Operative: can("Operative", action.cap),
       };
     }
@@ -103,119 +91,102 @@ describe("RBAC capability matrix", () => {
           "Operative": false,
           "Pro": false,
           "Pro Control": true,
-          "Site User": false,
         },
         "Call-offs · Approve": {
           "Admin": true,
           "Operative": false,
           "Pro": false,
           "Pro Control": true,
-          "Site User": false,
         },
         "Call-offs · New call-off": {
           "Admin": true,
           "Operative": false,
           "Pro": true,
           "Pro Control": true,
-          "Site User": false,
         },
         "Daily Report · Approve labour": {
           "Admin": true,
           "Operative": false,
           "Pro": false,
           "Pro Control": true,
-          "Site User": false,
         },
         "Daily Report · Delete entry (others)": {
           "Admin": true,
           "Operative": false,
           "Pro": true,
           "Pro Control": true,
-          "Site User": true,
         },
         "Daily Report · Reject labour": {
           "Admin": true,
           "Operative": false,
           "Pro": false,
           "Pro Control": true,
-          "Site User": false,
         },
         "Daily Report · Submit to Kier": {
           "Admin": true,
           "Operative": false,
           "Pro": false,
           "Pro Control": true,
-          "Site User": false,
         },
         "Invoices · Accept / Dispute / Credit": {
           "Admin": true,
           "Operative": false,
           "Pro": false,
           "Pro Control": true,
-          "Site User": false,
         },
         "Invoices · Mark paid": {
           "Admin": true,
           "Operative": false,
           "Pro": false,
           "Pro Control": true,
-          "Site User": false,
         },
         "Invoices · Upload / Reconcile": {
           "Admin": true,
           "Operative": false,
           "Pro": false,
           "Pro Control": true,
-          "Site User": false,
         },
         "Planner · Edit task": {
           "Admin": true,
           "Operative": false,
           "Pro": true,
           "Pro Control": true,
-          "Site User": false,
         },
         "Price lists · Upload": {
           "Admin": true,
           "Operative": false,
           "Pro": false,
           "Pro Control": true,
-          "Site User": false,
         },
         "Settings · Labour rates": {
           "Admin": true,
           "Operative": false,
           "Pro": false,
           "Pro Control": true,
-          "Site User": false,
         },
         "Specification · Upload docs / edit notes": {
           "Admin": true,
           "Operative": false,
           "Pro": true,
           "Pro Control": true,
-          "Site User": false,
         },
         "Team · Edit PW rates": {
           "Admin": true,
           "Operative": false,
           "Pro": false,
           "Pro Control": true,
-          "Site User": false,
         },
         "Team · Invite / remove / assign": {
           "Admin": true,
           "Operative": false,
           "Pro": false,
           "Pro Control": false,
-          "Site User": false,
         },
         "Variations · Submit/Approve/Reject/Reopen/Delete": {
           "Admin": true,
           "Operative": false,
           "Pro": false,
           "Pro Control": true,
-          "Site User": false,
         },
       }
     `);

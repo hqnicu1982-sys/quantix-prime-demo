@@ -96,16 +96,6 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "edit.specification",
     "upload.drawings",
     "withdraw.drawings.own", "bulk.upload.drawings", "export.drawings.register",
-    "view.payments",
-  ],
-  "Site User": [
-    "view.planner",
-    "view.dailyReport", "log.labour", "log.labour.others",
-    "view.team",
-    "view.pwRates",
-    "view.calloffs",
-    "export.drawings.register",
-    "view.payments",
   ],
   Operative: [
     "view.planner",
@@ -124,7 +114,7 @@ export function useCan(cap: Capability): boolean {
 }
 
 // Tier ordering — for "highest required" copy in NoAccess fallback.
-export const TIER_ORDER: Tier[] = ["Operative", "Site User", "Pro", "Pro Control", "Admin"];
+export const TIER_ORDER: Tier[] = ["Operative", "Pro", "Pro Control", "Admin"];
 
 export function tiersWithCap(cap: Capability): Tier[] {
   return TIER_ORDER.filter((t) => can(t, cap));

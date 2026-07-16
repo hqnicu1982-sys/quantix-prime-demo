@@ -74,36 +74,6 @@ const ROLES: RoleGuide[] = [
     ],
   },
   {
-    tier: "Site User",
-    tagline: "Foreman / supervisor — keep the day moving",
-    icon: Wrench,
-    accent: "sky",
-    demoUserId: "pw",
-    mission:
-      "You run the gang on site. Quantix Prime is where you log the daily report for everyone, track planner progress, and check call-offs are arriving.",
-    canSee: [
-      "Planner & today's tasks across your trades",
-      "Daily reports + the team list",
-      "Call-offs status (incoming materials)",
-      "PW rates for the crew",
-      "Payments status (read-only)",
-    ],
-    canDo: [
-      "Submit the Daily Site Report (manpower, weather, photos)",
-      "Log labour hours for yourself and your crew",
-    ],
-    cantDo: [
-      "Approve labour (that's Pro Control / Admin)",
-      "Sign invoices, edit BoQ, raise variations",
-      "See full P&L / margins",
-    ],
-    daily: [
-      { title: "Morning briefing", body: "Open Planner — confirm today's sequence with the gang.", icon: ClipboardList, to: "/planner" },
-      { title: "Mid-day: log deliveries", body: "Check Call-offs — flag anything that didn't turn up.", icon: FolderKanban, to: "/calloffs" },
-      { title: "End of day: Daily Report", body: "Submit manpower + photos + progress in Daily Report.", icon: ClipboardList, to: "/daily-report" },
-    ],
-  },
-  {
     tier: "Pro",
     tagline: "Site Manager / Estimator — run the project",
     icon: Briefcase,

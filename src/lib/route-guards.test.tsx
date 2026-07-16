@@ -17,11 +17,10 @@ const userByTier: Record<Tier, string> = {
   Admin: team.find((t) => t.tier === "Admin")!.id,
   "Pro Control": team.find((t) => t.tier === "Pro Control")!.id,
   Pro: team.find((t) => t.tier === "Pro")!.id,
-  "Site User": team.find((t) => t.tier === "Site User" && t.status === "active")!.id,
   Operative: team.find((t) => t.tier === "Operative")!.id,
 };
 
-const TIERS: Tier[] = ["Admin", "Pro Control", "Pro", "Site User", "Operative"];
+const TIERS: Tier[] = ["Admin", "Pro Control", "Pro", "Operative"];
 
 // Mirrors scripts/audit-rbac.mjs ROUTE_GUARDS — single source of intent.
 const ROUTE_CAPS: Array<{ route: string; cap: Capability }> = [
@@ -52,20 +51,20 @@ const EXPECTED_ALLOWED: Record<Capability, Tier[]> = {
   "edit.boq":             ["Admin", "Pro Control"],
   "upload.prices":        ["Admin", "Pro Control"],
   "view.priceIntel":      ["Admin", "Pro Control", "Pro"],
-  "view.calloffs":        ["Admin", "Pro Control", "Pro", "Site User"],
+  "view.calloffs":        ["Admin", "Pro Control", "Pro"],
   "create.calloffs":      ["Admin", "Pro Control", "Pro"],
   "approve.calloffs":     ["Admin", "Pro Control"],
   "view.invoices":        ["Admin", "Pro Control", "Pro"],
   "sign.invoices":        ["Admin", "Pro Control"],
-  "view.planner":         ["Admin", "Pro Control", "Pro", "Site User", "Operative"],
+  "view.planner":         ["Admin", "Pro Control", "Pro", "Operative"],
   "edit.planner":         ["Admin", "Pro Control", "Pro"],
-  "view.dailyReport":     ["Admin", "Pro Control", "Pro", "Site User", "Operative"],
-  "log.labour":           ["Admin", "Pro Control", "Pro", "Site User", "Operative"],
-  "log.labour.others":    ["Admin", "Pro Control", "Pro", "Site User"],
+  "view.dailyReport":     ["Admin", "Pro Control", "Pro", "Operative"],
+  "log.labour":           ["Admin", "Pro Control", "Pro", "Operative"],
+  "log.labour.others":    ["Admin", "Pro Control", "Pro"],
   "approve.labour":       ["Admin", "Pro Control"],
-  "view.team":            ["Admin", "Pro Control", "Pro", "Site User"],
+  "view.team":            ["Admin", "Pro Control", "Pro"],
   "edit.team":            ["Admin"],
-  "view.pwRates":         ["Admin", "Pro Control", "Pro", "Site User", "Operative"],
+  "view.pwRates":         ["Admin", "Pro Control", "Pro", "Operative"],
   "edit.pwRates":         ["Admin", "Pro Control"],
   "manage.users":         ["Admin"],
   "view.variations":      ["Admin", "Pro Control", "Pro"],
@@ -79,8 +78,8 @@ const EXPECTED_ALLOWED: Record<Capability, Tier[]> = {
   "unlock.tender":            ["Admin"],
   "withdraw.drawings.own":    ["Admin", "Pro Control", "Pro"],
   "bulk.upload.drawings":     ["Admin", "Pro Control", "Pro"],
-  "export.drawings.register": ["Admin", "Pro Control", "Pro", "Site User"],
-  "view.payments":              ["Admin", "Pro Control", "Pro", "Site User"],
+  "export.drawings.register": ["Admin", "Pro Control", "Pro"],
+  "view.payments":              ["Admin", "Pro Control", "Pro"],
   "create.payment.application": ["Admin", "Pro Control"],
   "issue.payment.notice":       ["Admin", "Pro Control"],
   "record.payment":             ["Admin"],

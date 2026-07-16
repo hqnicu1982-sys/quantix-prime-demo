@@ -71,8 +71,8 @@ const SEED: Omit<TeamAuditEntry, "id">[] = [
     subject: "Paweł Wilkowski", subjectId: "pw", projectId: "fitzrovia",
     detail: "Assigned as Drylining L5 (Paweł's Crew)" },
   { ts: Date.now() - 1000 * 60 * 60 * 26, kind: "tier.changed", actor: "David Andrei", actorId: "dp",
-    subject: "Rachel Okonkwo", subjectId: "ro", before: "Site User", after: "Pro",
-    detail: "Promoted to Pro to unlock Calculator + BoQ read access" },
+    subject: "Rachel Okonkwo", subjectId: "ro", before: "Pro", after: "Admin",
+    detail: "Promoted to Admin to unlock full commercial access" },
 ];
 
 function ensureSeed() {

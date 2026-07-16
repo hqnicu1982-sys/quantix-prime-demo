@@ -9,7 +9,6 @@ const userByTier = {
   Admin: team.find((t) => t.tier === "Admin")!.id,
   "Pro Control": team.find((t) => t.tier === "Pro Control")!.id,
   Pro: team.find((t) => t.tier === "Pro")!.id,
-  "Site User": team.find((t) => t.tier === "Site User" && t.status === "active")!.id,
   Operative: team.find((t) => t.tier === "Operative")!.id,
 };
 
@@ -36,11 +35,11 @@ describe("<Gated /> per-role rendering", () => {
     { cap: "edit.team", label: "Invite member", allowedTiers: ["Admin"] },
     { cap: "edit.pwRates", label: "Edit PW rate", allowedTiers: ["Admin", "Pro Control"] },
     { cap: "upload.prices", label: "Upload prices", allowedTiers: ["Admin", "Pro Control"] },
-    { cap: "log.labour.others", label: "Delete other's entry", allowedTiers: ["Admin", "Pro Control", "Pro", "Site User"] },
+    { cap: "log.labour.others", label: "Delete other's entry", allowedTiers: ["Admin", "Pro Control", "Pro"] },
   ];
 
   for (const c of cases) {
-    for (const tier of ["Admin", "Pro Control", "Pro", "Site User", "Operative"] as const) {
+    for (const tier of ["Admin", "Pro Control", "Pro", "Operative"] as const) {
       const shouldRender = c.allowedTiers.includes(tier);
       it(`${tier} ${shouldRender ? "sees" : "does NOT see"} "${c.label}" (cap: ${c.cap})`, () => {
         asTier(tier);

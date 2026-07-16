@@ -28,7 +28,7 @@ function Dashboard() {
   const canViewFinancials = useCan("view.financials");
   const canViewFinancialsLite = useCan("view.financials.lite");
   const canSeeFinancials = canViewFinancials || canViewFinancialsLite;
-  const isOperative = me.tier === "Operative" || me.tier === "Site User";
+  const isOperative = me.tier === "Operative";
 
   // Operative / Site User get a focused dashboard: their scope + nothing else.
   if (isOperative) {

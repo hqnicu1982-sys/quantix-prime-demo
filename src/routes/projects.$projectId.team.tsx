@@ -33,7 +33,6 @@ const tierTone = {
   Admin: "bg-purple-500/10 text-purple-600",
   "Pro Control": "bg-[var(--accent-500)]/10 text-[var(--accent-500)]",
   Pro: "bg-[var(--green-600)]/10 text-[var(--green-600)]",
-  "Site User": "bg-[var(--ink-50)] text-[var(--ink-500)]",
   Operative: "bg-[var(--amber-500)]/10 text-[var(--amber-500)]",
 } as const;
 

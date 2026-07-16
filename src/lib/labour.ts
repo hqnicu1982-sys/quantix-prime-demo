@@ -35,7 +35,7 @@ export type Invite = {
   name?: string;
   roleId?: string;
   rate: number;
-  tier: "Admin" | "Pro Control" | "Pro" | "Site User" | "Operative";
+  tier: "Admin" | "Pro Control" | "Pro" | "Operative";
   projectId?: string;
   status: "pending" | "accepted";
   createdAt: number;

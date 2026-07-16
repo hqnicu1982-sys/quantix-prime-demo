@@ -18,7 +18,7 @@ export type TeamMember = {
   id: string;
   name: string;
   role: string;
-  tier: "Admin" | "Pro Control" | "Pro" | "Site User" | "Operative";
+  tier: "Admin" | "Pro Control" | "Pro" | "Operative";
   initials: string;
   email?: string;
   joined: string;
@@ -29,14 +29,14 @@ export type TeamMember = {
 };
 
 export const team: TeamMember[] = [
-  { id: "na", name: "Nick Aldea", role: "Site Manager", tier: "Pro", initials: "NA", joined: "Jan 2026", projects: 6, capability: "Upload price lists, create call-offs, log deliveries, raise dayworks", lastActive: "now", status: "active" },
-  { id: "sm", name: "Piu Piu Chick", role: "Commercial QS", tier: "Pro Control", initials: "SM", joined: "Feb 2026", projects: 11, capability: "Approves call-offs, manages BoQ, signs invoices, owns financials", lastActive: "2h ago", status: "active" },
+  { id: "na", name: "Nick Aldea", role: "Site Manager", tier: "Pro Control", initials: "NA", joined: "Jan 2026", projects: 6, capability: "Upload price lists, create call-offs, log deliveries, raise dayworks", lastActive: "now", status: "active" },
+  { id: "sm", name: "Piu Piu Chick", role: "Commercial QS", tier: "Admin", initials: "SM", joined: "Feb 2026", projects: 11, capability: "Approves call-offs, manages BoQ, signs invoices, owns financials", lastActive: "2h ago", status: "active" },
   { id: "dp", name: "David Andrei", role: "Managing Director", tier: "Admin", initials: "DP", joined: "Jan 2026", projects: 11, capability: "Full access, billing, user management", lastActive: "yesterday", status: "active" },
   { id: "mk", name: "Marcin Kowalski", role: "Lead Dryliner", tier: "Operative", initials: "MK", joined: "Mar 2026", projects: 2, capability: "View tasks, confirm labour hours", lastActive: "3h ago", status: "active" },
-  { id: "ro", name: "Rachel Okonkwo", role: "Estimator", tier: "Pro", initials: "RO", joined: "Feb 2026", projects: 5, capability: "Builds BoQ, uses Calculator, read-only financials", lastActive: "yesterday", status: "active" },
+  { id: "ro", name: "Rachel Okonkwo", role: "Estimator", tier: "Admin", initials: "RO", joined: "Feb 2026", projects: 5, capability: "Builds BoQ, uses Calculator, read-only financials", lastActive: "yesterday", status: "active" },
   { id: "aj", name: "Andy Jones", role: "Lead Taper", tier: "Operative", initials: "AJ", joined: "Mar 2026", projects: 1, capability: "View tasks, confirm labour", lastActive: "1d ago", status: "active" },
-  { id: "pw", name: "Paweł Wilkowski", role: "Foreman", tier: "Site User", initials: "PW", joined: "Mar 2026", projects: 3, capability: "View + log daily reports", lastActive: "4h ago", status: "active" },
-  { id: "bd", name: "ben@drywallcrew.co.uk", role: "Pending invite", tier: "Site User", initials: "B", joined: "invited 18 Apr", projects: 0, capability: "—", lastActive: "—", status: "pending" },
+  { id: "pw", name: "Paweł Wilkowski", role: "Foreman", tier: "Pro", initials: "PW", joined: "Mar 2026", projects: 3, capability: "View + log daily reports", lastActive: "4h ago", status: "active" },
+  { id: "bd", name: "ben@drywallcrew.co.uk", role: "Pending invite", tier: "Pro", initials: "B", joined: "invited 18 Apr", projects: 0, capability: "—", lastActive: "—", status: "pending" },
 ];
 
 // ==================================================================
