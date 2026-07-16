@@ -11,7 +11,7 @@ import { addInvite, useRoles } from "@/lib/labour";
 import { useProject } from "@/lib/ProjectContext";
 import { toast } from "sonner";
 
-type Tier = "Admin" | "Pro Control" | "Pro" | "Site User" | "Operative";
+type Tier = "Admin" | "Pro Control" | "Pro" | "Operative";
 
 export function InviteMemberDialog({
   defaultProjectId,
@@ -108,7 +108,7 @@ export function InviteMemberDialog({
             <Select value={tier} onValueChange={(v) => setTier(v as Tier)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(["Operative", "Site User", "Pro", "Pro Control", "Admin"] as Tier[]).map((t) => (
+                {(["Operative", "Pro", "Pro Control", "Admin"] as Tier[]).map((t) => (
                   <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
               </SelectContent>
