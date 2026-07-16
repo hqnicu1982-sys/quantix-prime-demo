@@ -19,13 +19,6 @@ const TIER_TONE: Record<Tier, string> = {
   Operative: "bg-[var(--ink-100)] text-[var(--ink-700)] border-[var(--ink-200)]",
 };
 
-const AVATAR_TONE: Record<Tier, string> = {
-  Admin: "bg-gradient-to-br from-[var(--accent-500)] to-[var(--teal-500)] text-white",
-  "Pro Control": "bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white",
-  Pro: "bg-gradient-to-br from-emerald-500 to-teal-600 text-white",
-  Operative: "bg-gradient-to-br from-slate-500 to-slate-700 text-white",
-};
-
 export function HeaderUserMenu() {
   const me = useCurrentUser();
   const session = useSession();
@@ -123,7 +116,7 @@ export function HeaderUserMenu() {
                         active && "bg-[var(--ink-50)]",
                       )}
                     >
-                      <div className={cn("flex h-5 w-5 items-center justify-center rounded-full text-[9.5px] font-bold", AVATAR_TONE[m.tier])}>
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--ink-100)] text-[9.5px] font-bold text-[var(--ink-700)]">
                         {m.initials}
                       </div>
                       <div className="min-w-0 flex-1">
