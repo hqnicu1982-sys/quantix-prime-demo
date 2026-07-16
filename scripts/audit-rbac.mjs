@@ -270,6 +270,11 @@ const ROUTE_GUARDS = {
   "src/routes/projects.$projectId.reports.tsx": "view.financials.lite",
   "src/routes/projects.$projectId.calloffs.tsx": "view.calloffs",
   "src/routes/projects.$projectId.team.tsx": "view.team",
+  "src/routes/tender-pipeline.tsx": "view.tenderPipeline",
+  "src/routes/follow-ups.tsx": "view.followUps",
+  "src/routes/grn.$ref.tsx": "view.calloffs",
+  "src/routes/po.$poRef.tsx": "view.calloffs",
+  "src/routes/projects.$projectId.payments.tsx": "view.payments",
 };
 
 const guardFailures = [];
