@@ -14,6 +14,7 @@ import { Route as TenderPipelineRouteImport } from './routes/tender-pipeline'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ReadinessRouteImport } from './routes/readiness'
 import { Route as ProjectsRouteImport } from './routes/projects'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PriceIntelligenceRouteImport } from './routes/price-intelligence'
 import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as LoginRouteImport } from './routes/login'
@@ -90,6 +91,11 @@ const ReadinessRoute = ReadinessRouteImport.update({
 const ProjectsRoute = ProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PriceIntelligenceRoute = PriceIntelligenceRouteImport.update({
@@ -378,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
+  '/pricing': typeof PricingRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/signup': typeof SignupRoute
@@ -435,6 +442,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
+  '/pricing': typeof PricingRoute
   '/readiness': typeof ReadinessRoute
   '/signup': typeof SignupRoute
   '/tender-pipeline': typeof TenderPipelineRoute
@@ -493,6 +501,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/planner': typeof PlannerRoute
   '/price-intelligence': typeof PriceIntelligenceRoute
+  '/pricing': typeof PricingRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/readiness': typeof ReadinessRoute
   '/signup': typeof SignupRoute
@@ -554,6 +563,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/planner'
     | '/price-intelligence'
+    | '/pricing'
     | '/projects'
     | '/readiness'
     | '/signup'
@@ -611,6 +621,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/planner'
     | '/price-intelligence'
+    | '/pricing'
     | '/readiness'
     | '/signup'
     | '/tender-pipeline'
@@ -668,6 +679,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/planner'
     | '/price-intelligence'
+    | '/pricing'
     | '/projects'
     | '/readiness'
     | '/signup'
@@ -728,6 +740,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PlannerRoute: typeof PlannerRoute
   PriceIntelligenceRoute: typeof PriceIntelligenceRoute
+  PricingRoute: typeof PricingRoute
   ProjectsRoute: typeof ProjectsRouteWithChildren
   ReadinessRoute: typeof ReadinessRoute
   SignupRoute: typeof SignupRoute
@@ -779,6 +792,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof ProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/price-intelligence': {
@@ -1259,6 +1279,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PlannerRoute: PlannerRoute,
   PriceIntelligenceRoute: PriceIntelligenceRoute,
+  PricingRoute: PricingRoute,
   ProjectsRoute: ProjectsRouteWithChildren,
   ReadinessRoute: ReadinessRoute,
   SignupRoute: SignupRoute,
