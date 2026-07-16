@@ -36,8 +36,8 @@ const navGroups: NavGroup[] = [
   ]},
   { label: "Projects", items: [
     { to: "/projects", label: "All Projects", icon: FolderKanban, mobile: true },
-    { to: "/tender-pipeline", label: "Tender Pipeline", icon: Briefcase, badge: "NEW" },
-    { to: "/follow-ups", label: "Follow-ups", icon: CalendarClock, badge: "NEW" },
+    { to: "/tender-pipeline", label: "Tender Pipeline", icon: Briefcase, badge: "NEW", requires: "view.tenderPipeline" },
+    { to: "/follow-ups", label: "Follow-ups", icon: CalendarClock, badge: "NEW", requires: "view.followUps" },
   ]},
   { label: "Commercial", items: [
     { to: "/costed-boq", label: "Costed BoQ", icon: FileSpreadsheet, mobile: true, requires: "view.boq" },
