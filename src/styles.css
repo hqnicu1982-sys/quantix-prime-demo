@@ -376,6 +376,14 @@
     50%      { box-shadow: 0 0 0 8px color-mix(in oklab, var(--accent-500)  0%, transparent); }
   }
   .glow-pulse { animation: glow-pulse 2.4s ease-in-out infinite; }
+  @keyframes roi-fade {
+    0%   { opacity: 0; transform: translateY(2px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes roi-pulse {
+    0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent-500) 55%, transparent); }
+    100% { box-shadow: 0 0 0 8px color-mix(in oklab, var(--accent-500) 0%, transparent); }
+  }
 
   /* Hero gradient text used on big titles */
   .hero-gradient-text {

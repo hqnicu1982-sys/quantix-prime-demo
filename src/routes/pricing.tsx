@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Check, X, Sparkles, Star } from "lucide-react";
 import { Card, CardHead, Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
@@ -68,6 +68,9 @@ const PER_SEAT_ANNUAL = {
 
 function PricingPage() {
   const [commit, setCommit] = useState<Commit>("annual");
+  const [recommendedTier, setRecommendedTier] = useState<
+    "Starter" | "Growth" | "Scale" | "Enterprise" | null
+  >(null);
 
   const founderScale = useMemo(
     () => Math.round(PRICES.scale.annual * 0.7),
@@ -85,7 +88,7 @@ function PricingPage() {
       {/* TRUST STRIP */}
       <div className="rounded-[10px] border border-[var(--ink-200)] bg-[var(--ink-50)] px-5 py-3 text-center text-[13px] text-[var(--ink-700)]">
         Every rate in Quantix is verified against the British Gypsum White Book and Knauf, Siniat and Fermacell technical data —
-        <span className="font-semibold text-[var(--ink-900)]"> 1,547 systems, zero guesswork.</span>
+        <span className="font-semibold text-[var(--ink-900)]"> 3,054 systems, zero guesswork.</span>
       </div>
 
       {/* COMMITMENT TOGGLE */}
@@ -153,7 +156,7 @@ function PricingPage() {
           per=""
           blurb="Try the estimator"
           features={[
-            "Calculator only (1,547 manufacturer-verified systems)",
+            "Calculator only (3,054 manufacturer-verified systems)",
             "50 takeoffs per month · 1 project · 2 users",
             "“Powered by Quantix Prime” footer on PDF/XLSX exports",
           ]}
@@ -161,6 +164,7 @@ function PricingPage() {
         />
         <TierCard
           name="Starter"
+          recommended={recommendedTier === "Starter"}
           price={fmt(PRICES.starter[commit])}
           per="/mo"
           listPrice={commit !== "monthly" ? fmt(PRICES.starter.monthly) : undefined}
@@ -178,6 +182,7 @@ function PricingPage() {
         />
         <TierCard
           name="Growth"
+          recommended={recommendedTier === "Growth"}
           price={fmt(PRICES.growth[commit])}
           per="/mo"
           listPrice={commit !== "monthly" ? fmt(PRICES.growth.monthly) : undefined}
@@ -196,6 +201,7 @@ function PricingPage() {
         />
         <TierCard
           name="Scale"
+          recommended={recommendedTier === "Scale"}
           price={fmt(PRICES.scale[commit])}
           per="/mo"
           listPrice={commit !== "monthly" ? fmt(PRICES.scale.monthly) : undefined}
@@ -213,6 +219,7 @@ function PricingPage() {
         />
         <TierCard
           name="Enterprise"
+          recommended={recommendedTier === "Enterprise"}
           price="Custom"
           per=""
           blurb="For £50M+ contractors and multi-region operations."
@@ -227,7 +234,7 @@ function PricingPage() {
       </div>
 
       {/* ROI CALCULATOR */}
-      <RoiCalculator />
+      <RoiCalculator onTierChange={setRecommendedTier} />
 
       {/* SEAT ADD-ONS */}
       <Card>
@@ -365,6 +372,7 @@ function TierCard({
   features,
   cta,
   highlight,
+  recommended,
   listPrice,
   saving,
   foundingLine,
@@ -377,6 +385,7 @@ function TierCard({
   features: string[];
   cta: string;
   highlight?: boolean;
+  recommended?: boolean;
   listPrice?: string;
   saving?: string;
   foundingLine?: string;
@@ -385,9 +394,11 @@ function TierCard({
   return (
     <Card
       className={cn(
-        "flex flex-col",
+        "flex flex-col transition-shadow duration-300",
         highlight &&
           "border-[var(--accent-500)] shadow-[0_4px_24px_rgba(15,40,71,0.08)] ring-1 ring-[var(--accent-500)]/30",
+        recommended &&
+          "border-[var(--accent-500)] shadow-[0_0_0_3px_rgba(37,99,235,0.18),0_10px_30px_-10px_rgba(37,99,235,0.45)] ring-2 ring-[var(--accent-500)]/50",
       )}
     >
       <div className="flex items-center justify-between px-5 pt-5">
@@ -457,11 +468,43 @@ function TierCard({
   );
 }
 
-function RoiCalculator() {
+type TierName = "Starter" | "Growth" | "Scale" | "Enterprise";
+
+function useAnimatedNumber(target: number, duration = 250) {
+  const [value, setValue] = useState(target);
+  const fromRef = useRef(target);
+  const rafRef = useRef<number | null>(null);
+  useEffect(() => {
+    const from = fromRef.current;
+    const to = target;
+    if (from === to) return;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const v = from + (to - from) * eased;
+      setValue(v);
+      if (t < 1) rafRef.current = requestAnimationFrame(tick);
+      else fromRef.current = to;
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      fromRef.current = target;
+    };
+  }, [target, duration]);
+  return value;
+}
+
+function RoiCalculator({
+  onTierChange,
+}: {
+  onTierChange?: (tier: TierName) => void;
+}) {
   const [revenue, setRevenue] = useState(15_000_000);
   const leak = Math.round(revenue * 0.01);
 
-  let tier: "Starter" | "Growth" | "Scale" | "Enterprise";
+  let tier: TierName;
   let cost: number | null;
   if (revenue < 2_000_000) {
     tier = "Starter";
@@ -469,7 +512,7 @@ function RoiCalculator() {
   } else if (revenue < 10_000_000) {
     tier = "Growth";
     cost = 9588;
-  } else if (revenue < 50_000_000) {
+  } else if (revenue <= 50_000_000) {
     tier = "Scale";
     cost = 23988;
   } else {
@@ -479,6 +522,21 @@ function RoiCalculator() {
 
   const ratio = cost ? Math.round(leak / cost) : null;
   const pct = cost ? ((cost / revenue) * 100).toFixed(2) : null;
+
+  useEffect(() => {
+    onTierChange?.(tier);
+  }, [tier, onTierChange]);
+
+  const animatedLeak = useAnimatedNumber(leak);
+  const animatedCost = useAnimatedNumber(cost ?? 0);
+  const [tierPulseKey, setTierPulseKey] = useState(0);
+  const prevTierRef = useRef(tier);
+  useEffect(() => {
+    if (prevTierRef.current !== tier) {
+      setTierPulseKey((k) => k + 1);
+      prevTierRef.current = tier;
+    }
+  }, [tier]);
 
   return (
     <section className="space-y-5">
@@ -514,13 +572,19 @@ function RoiCalculator() {
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <MetricTile
               label="Conservative margin leak (1% of revenue)"
-              value={fmt(leak)}
+              value={fmt(Math.round(animatedLeak))}
               accent
             />
-            <MetricTile label="Recommended tier" value={tier} />
+            <MetricTile
+              label="Recommended tier"
+              value={tier}
+              valueKey={tier}
+              pulseKey={tierPulseKey}
+            />
             <MetricTile
               label="Quantix annual cost (annual commitment)"
-              value={cost ? fmt(cost) : "Custom"}
+              value={cost ? fmt(Math.round(animatedCost)) : "Custom"}
+              valueKey={cost ? "num" : "custom"}
             />
           </div>
           <div className="rounded-[8px] border border-[var(--ink-200)] bg-[var(--ink-50)] px-4 py-3 text-[13px] text-[var(--ink-900)]">
@@ -552,23 +616,34 @@ function MetricTile({
   label,
   value,
   accent,
+  valueKey,
+  pulseKey,
 }: {
   label: string;
   value: string;
   accent?: boolean;
+  valueKey?: string | number;
+  pulseKey?: number;
 }) {
   return (
     <div
+      key={pulseKey !== undefined ? `pulse-${pulseKey}` : undefined}
       className={cn(
-        "rounded-[8px] border border-[var(--ink-200)] px-4 py-3",
+        "rounded-[8px] border border-[var(--ink-200)] px-4 py-3 transition-shadow duration-300",
         accent ? "bg-[var(--accent-500)]/5" : "bg-card",
+        pulseKey !== undefined && "animate-[roi-pulse_600ms_ease-out]",
       )}
     >
       <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--ink-500)]">
         {label}
       </p>
       <p className="font-display mt-1 text-[22px] font-semibold text-[var(--ink-900)]">
-        {value}
+        <span
+          key={valueKey ?? value}
+          className="inline-block animate-[roi-fade_250ms_ease-out]"
+        >
+          {value}
+        </span>
       </p>
     </div>
   );
