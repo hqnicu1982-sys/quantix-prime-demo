@@ -25,7 +25,6 @@ const tierTone = {
   Admin: "warning" as const,
   "Pro Control": "info" as const,
   Pro: "success" as const,
-  "Site User": "neutral" as const,
   Operative: "neutral" as const,
 };
 
