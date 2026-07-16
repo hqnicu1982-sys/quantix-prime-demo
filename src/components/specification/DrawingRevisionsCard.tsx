@@ -59,7 +59,7 @@ export function DrawingRevisionsCard({ projectId }: { projectId: string }) {
   const [compareFor, setCompareFor]   = useState<{ tender?: DrawingRevision; current?: DrawingRevision } | null>(null);
   const [filterPending, setFilterPending] = useState(false);
   const [disciplineFilter, setDisciplineFilter] = useState<DrawingDiscipline | "All">("All");
-  const isOperative = me.tier === "Operative" || me.tier === "Site User";
+  const isOperative = me.tier === "Operative";
   const [latestOnly, setLatestOnly] = useState(isOperative);
 
   const pendingCount = state.revisions.filter((r) => r.status === "pending").length;

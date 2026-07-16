@@ -32,7 +32,7 @@ function Overview() {
   const canSeePayments = useCan("view.payments");
   const myAssignments = useAssignments(projectId);
   const isOnProject = myAssignments.some((a) => a.memberId === me.id);
-  const isOperative = me.tier === "Operative" || me.tier === "Site User";
+  const isOperative = me.tier === "Operative";
 
   // Fitzrovia uses curated mock data; other projects show generic project KPIs derived from the project record.
   if (projectId !== "fitzrovia") {
