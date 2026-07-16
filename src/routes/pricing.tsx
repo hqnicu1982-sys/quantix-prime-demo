@@ -468,11 +468,43 @@ function TierCard({
   );
 }
 
-function RoiCalculator() {
+type TierName = "Starter" | "Growth" | "Scale" | "Enterprise";
+
+function useAnimatedNumber(target: number, duration = 250) {
+  const [value, setValue] = useState(target);
+  const fromRef = useRef(target);
+  const rafRef = useRef<number | null>(null);
+  useEffect(() => {
+    const from = fromRef.current;
+    const to = target;
+    if (from === to) return;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const v = from + (to - from) * eased;
+      setValue(v);
+      if (t < 1) rafRef.current = requestAnimationFrame(tick);
+      else fromRef.current = to;
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      fromRef.current = target;
+    };
+  }, [target, duration]);
+  return value;
+}
+
+function RoiCalculator({
+  onTierChange,
+}: {
+  onTierChange?: (tier: TierName) => void;
+}) {
   const [revenue, setRevenue] = useState(15_000_000);
   const leak = Math.round(revenue * 0.01);
 
-  let tier: "Starter" | "Growth" | "Scale" | "Enterprise";
+  let tier: TierName;
   let cost: number | null;
   if (revenue < 2_000_000) {
     tier = "Starter";
@@ -480,7 +512,7 @@ function RoiCalculator() {
   } else if (revenue < 10_000_000) {
     tier = "Growth";
     cost = 9588;
-  } else if (revenue < 50_000_000) {
+  } else if (revenue <= 50_000_000) {
     tier = "Scale";
     cost = 23988;
   } else {
@@ -490,6 +522,21 @@ function RoiCalculator() {
 
   const ratio = cost ? Math.round(leak / cost) : null;
   const pct = cost ? ((cost / revenue) * 100).toFixed(2) : null;
+
+  useEffect(() => {
+    onTierChange?.(tier);
+  }, [tier, onTierChange]);
+
+  const animatedLeak = useAnimatedNumber(leak);
+  const animatedCost = useAnimatedNumber(cost ?? 0);
+  const [tierPulseKey, setTierPulseKey] = useState(0);
+  const prevTierRef = useRef(tier);
+  useEffect(() => {
+    if (prevTierRef.current !== tier) {
+      setTierPulseKey((k) => k + 1);
+      prevTierRef.current = tier;
+    }
+  }, [tier]);
 
   return (
     <section className="space-y-5">
@@ -525,13 +572,19 @@ function RoiCalculator() {
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <MetricTile
               label="Conservative margin leak (1% of revenue)"
-              value={fmt(leak)}
+              value={fmt(Math.round(animatedLeak))}
               accent
             />
-            <MetricTile label="Recommended tier" value={tier} />
+            <MetricTile
+              label="Recommended tier"
+              value={tier}
+              valueKey={tier}
+              pulseKey={tierPulseKey}
+            />
             <MetricTile
               label="Quantix annual cost (annual commitment)"
-              value={cost ? fmt(cost) : "Custom"}
+              value={cost ? fmt(Math.round(animatedCost)) : "Custom"}
+              valueKey={cost ? "num" : "custom"}
             />
           </div>
           <div className="rounded-[8px] border border-[var(--ink-200)] bg-[var(--ink-50)] px-4 py-3 text-[13px] text-[var(--ink-900)]">
