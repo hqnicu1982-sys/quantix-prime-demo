@@ -83,6 +83,8 @@ const EXPECTED_ALLOWED: Record<Capability, Tier[]> = {
   "create.payment.application": ["Admin", "Pro Control"],
   "issue.payment.notice":       ["Admin", "Pro Control"],
   "record.payment":             ["Admin"],
+  "view.tenderPipeline":        ["Admin"],
+  "view.followUps":             ["Admin"],
 };
 
 function GuardedProbe({ cap }: { cap: Capability }) {
