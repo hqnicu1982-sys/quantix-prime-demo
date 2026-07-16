@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Check, X, Sparkles, Star } from "lucide-react";
 import { Card, CardHead, Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
@@ -446,8 +446,8 @@ function ComparisonTable() {
           </thead>
           <tbody>
             {GROUPS.map((g) => (
-              <>
-                <tr key={g.title} className="bg-[var(--ink-50)]/50">
+              <Fragment key={g.title}>
+                <tr className="bg-[var(--ink-50)]/50">
                   <td
                     colSpan={6}
                     className="px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-500)]"
@@ -476,7 +476,7 @@ function ComparisonTable() {
                     ))}
                   </tr>
                 ))}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>
