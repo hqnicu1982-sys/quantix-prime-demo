@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Check, X, Sparkles, Star } from "lucide-react";
 import { Card, CardHead, Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
@@ -85,7 +85,7 @@ function PricingPage() {
       {/* TRUST STRIP */}
       <div className="rounded-[10px] border border-[var(--ink-200)] bg-[var(--ink-50)] px-5 py-3 text-center text-[13px] text-[var(--ink-700)]">
         Every rate in Quantix is verified against the British Gypsum White Book and Knauf, Siniat and Fermacell technical data —
-        <span className="font-semibold text-[var(--ink-900)]"> 1,547 systems, zero guesswork.</span>
+        <span className="font-semibold text-[var(--ink-900)]"> 3,054 systems, zero guesswork.</span>
       </div>
 
       {/* COMMITMENT TOGGLE */}
@@ -153,7 +153,7 @@ function PricingPage() {
           per=""
           blurb="Try the estimator"
           features={[
-            "Calculator only (1,547 manufacturer-verified systems)",
+            "Calculator only (3,054 manufacturer-verified systems)",
             "50 takeoffs per month · 1 project · 2 users",
             "“Powered by Quantix Prime” footer on PDF/XLSX exports",
           ]}
