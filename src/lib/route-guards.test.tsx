@@ -40,6 +40,11 @@ const ROUTE_CAPS: Array<{ route: string; cap: Capability }> = [
   { route: "/projects/$id/reports", cap: "view.financials.lite" },
   { route: "/projects/$id/calloffs", cap: "view.calloffs" },
   { route: "/projects/$id/team", cap: "view.team" },
+  { route: "/tender-pipeline", cap: "view.tenderPipeline" },
+  { route: "/follow-ups", cap: "view.followUps" },
+  { route: "/grn/$ref", cap: "view.calloffs" },
+  { route: "/po/$poRef", cap: "view.calloffs" },
+  { route: "/projects/$id/payments", cap: "view.payments" },
 ];
 
 // TIER_CAPS lookup re-implemented locally so the test asserts intent
@@ -79,7 +84,7 @@ const EXPECTED_ALLOWED: Record<Capability, Tier[]> = {
   "withdraw.drawings.own":    ["Admin", "Pro Control", "Pro"],
   "bulk.upload.drawings":     ["Admin", "Pro Control", "Pro"],
   "export.drawings.register": ["Admin", "Pro Control", "Pro"],
-  "view.payments":              ["Admin", "Pro Control", "Pro"],
+  "view.payments":              ["Admin", "Pro Control"],
   "create.payment.application": ["Admin", "Pro Control"],
   "issue.payment.notice":       ["Admin", "Pro Control"],
   "record.payment":             ["Admin"],
