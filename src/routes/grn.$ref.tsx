@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { useGrn } from "@/lib/grnRegistry";
 import { invoices } from "@/lib/mockData";
 import { Image as ImageIcon, PenLine } from "lucide-react";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
 const STATUS_TONE = {
   scheduled:    "neutral" as const,
@@ -22,7 +24,7 @@ const STATUS_LABEL = {
 };
 
 export const Route = createFileRoute("/grn/$ref")({
-  component: GrnDetail,
+  component: GuardedGrnDetail,
   notFoundComponent: () => (
     <Card><div className="p-6 text-center text-[13px]">
       <p className="font-semibold">GRN not found</p>
@@ -30,6 +32,12 @@ export const Route = createFileRoute("/grn/$ref")({
     </div></Card>
   ),
 });
+
+function GuardedGrnDetail() {
+  const allowed = useCan("view.calloffs");
+  if (!allowed) return <NoAccess cap="view.calloffs" title="Call-offs restricted" />;
+  return <GrnDetail />;
+}
 
 function GrnDetail() {
   const { ref } = Route.useParams();

@@ -105,6 +105,8 @@ function ProjectLayout() {
     "create.payment.application": useCan("create.payment.application"),
     "issue.payment.notice": useCan("issue.payment.notice"),
     "record.payment": useCan("record.payment"),
+    "view.tenderPipeline": useCan("view.tenderPipeline"),
+    "view.followUps": useCan("view.followUps"),
   };
   const visibleTabs = TABS.filter((t) => !t.requires || capChecks[t.requires]);
   // Count of fresh draft VOs sourced from the Daily Report — surfaced as a

@@ -8,6 +8,8 @@ import { SendQuoteButton, MarkActiveDialog, MarkLostDialog, CloneTenderButton } 
 import { TenderDetailSheet } from "@/components/projects/TenderDetailSheet";
 import { useMemo, useState } from "react";
 import { AlertTriangle, Briefcase, Clock, Flame } from "lucide-react";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
 /** Days past the follow-up reminder (or past 14d from quote sent). 0 if not overdue. */
 function daysOverdue(p: Project): number {
@@ -31,7 +33,13 @@ function daysOverdue(p: Project): number {
   return 0;
 }
 
-export const Route = createFileRoute("/tender-pipeline")({ component: TenderPipeline });
+export const Route = createFileRoute("/tender-pipeline")({ component: GuardedTenderPipeline });
+
+function GuardedTenderPipeline() {
+  const allowed = useCan("view.tenderPipeline");
+  if (!allowed) return <NoAccess cap="view.tenderPipeline" title="Tender Pipeline restricted" />;
+  return <TenderPipeline />;
+}
 
 type ValueBand = "all" | "sub500" | "500to1m" | "1to2m" | "over2m";
 const BANDS: { id: ValueBand; label: string; test: (v: number) => boolean }[] = [

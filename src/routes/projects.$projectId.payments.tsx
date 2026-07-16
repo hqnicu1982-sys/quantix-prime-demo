@@ -21,8 +21,15 @@ import {
   PaymentNoticeDialog, PayLessNoticeDialog, CertificateDialog, RecordPaymentDialog,
 } from "@/components/payments/IssueNoticeDialogs";
 import { CashflowForecastCard } from "@/components/payments/CashflowForecastCard";
+import { NoAccess } from "@/components/auth/NoAccess";
 
-export const Route = createFileRoute("/projects/$projectId/payments")({ component: PaymentsPage });
+export const Route = createFileRoute("/projects/$projectId/payments")({ component: GuardedPaymentsPage });
+
+function GuardedPaymentsPage() {
+  const allowed = useCan("view.payments");
+  if (!allowed) return <NoAccess cap="view.payments" title="Payments restricted" />;
+  return <PaymentsPage />;
+}
 
 function PaymentsPage() {
   const { projectId } = Route.useParams();
