@@ -6,9 +6,11 @@ import { invoices } from "@/lib/mockData";
 import { matchLines } from "@/lib/invoiceWorkflow";
 import { ArrowLeft, FileText, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCan } from "@/lib/permissions";
+import { NoAccess } from "@/components/auth/NoAccess";
 
 export const Route = createFileRoute("/po/$poRef")({
-  component: PoDetail,
+  component: GuardedPoDetail,
   notFoundComponent: () => (
     <Card><div className="p-6 text-center text-[13px]">
       <p className="font-semibold">Purchase order not found</p>
@@ -16,6 +18,12 @@ export const Route = createFileRoute("/po/$poRef")({
     </div></Card>
   ),
 });
+
+function GuardedPoDetail() {
+  const allowed = useCan("view.calloffs");
+  if (!allowed) return <NoAccess cap="view.calloffs" title="Call-offs restricted" />;
+  return <PoDetail />;
+}
 
 function PoDetail() {
   const { poRef } = Route.useParams();
