@@ -76,6 +76,7 @@ const EVT = "qp-drawings-change";
 
 // --- Seed: only project "camden" gets a populated set so demo shows lock + approval flow.
 function seedFor(projectId: string): DrawingsState {
+  if (projectId === "fitzrovia") return seedFitzrovia();
   if (projectId !== "camden") return { tenderLocked: false, revisions: [] };
   const t = Date.parse("2026-04-18");
   const mk = (i: number, dn: string, rev: string, title: string, discipline: DrawingDiscipline, isTender: boolean, status: DrawingRevisionStatus, extra: Partial<DrawingRevision> = {}): DrawingRevision => ({
@@ -135,6 +136,48 @@ function seedFor(projectId: string): DrawingsState {
       { id: "aud-seed-2", ts: Date.parse("2026-06-02"), actor: "Marco Reyes", kind: "upload", drawingNumber: "A-201", revisionCode: "C1", detail: "Awaiting review" },
       { id: "aud-seed-3", ts: Date.parse("2026-06-08"), actor: "Priya Shah",  kind: "upload", drawingNumber: "M-110", revisionCode: "C2", detail: "Awaiting review" },
       { id: "aud-seed-4", ts: Date.parse("2026-06-10") + 3600_000, actor: "Marco Reyes", kind: "withdraw", drawingNumber: "A-410", revisionCode: "C1", detail: "Wrong sheet" },
+    ],
+  };
+}
+
+// Fitzrovia demo: 2 drawings, tender locked at P14, one pending post-tender
+// revision (P18) that the QS Review workflow can be exercised against.
+function seedFitzrovia(): DrawingsState {
+  const tender = Date.parse("2026-03-12");
+  const rev    = Date.parse("2026-06-05");
+  const mk = (
+    id: string, dn: string, code: string, title: string,
+    isTender: boolean, status: DrawingRevisionStatus, uploadedAt: number,
+    extra: Partial<DrawingRevision> = {},
+  ): DrawingRevision => ({
+    id, drawingNumber: dn, revisionCode: code, isTender, status,
+    fileName: `${dn}-${code}.pdf`,
+    fileSize: 1_450_000,
+    mimeType: "application/pdf",
+    dataUrl: "",
+    title,
+    discipline: "Architect",
+    uploadedBy: isTender ? "Architect team" : "Marco Reyes",
+    uploadedAt,
+    seed: true,
+    ...(isTender ? { approvedBy: "Piu Piu Chick", approvedAt: tender } : {}),
+    ...extra,
+  });
+  return {
+    tenderLocked: true,
+    tenderIssuedAt: tender,
+    tenderIssuedBy: "Piu Piu Chick",
+    revisions: [
+      mk("seed-fz-1", "A-201", "P14", "Level 04 GA",     true,  "current", tender),
+      mk("seed-fz-2", "A-410", "P14", "Bedroom typical", true,  "current", tender),
+      mk("seed-fz-3", "A-201", "P18", "Level 04 GA",     false, "pending", rev, {
+        changeNotes: "",
+        affectedAreas: ["Cinema — internal linings", "Dry room — specialist partitions", "Lounge 3 — ceiling"],
+      }),
+    ],
+    auditLog: [
+      { id: "aud-fz-1", ts: tender, actor: "Piu Piu Chick", kind: "lock-tender", detail: "2 drawings frozen" },
+      { id: "aud-fz-2", ts: rev, actor: "Marco Reyes",     kind: "upload",     drawingNumber: "A-201", revisionCode: "P18", detail: "Awaiting QS review" },
     ],
   };
 }

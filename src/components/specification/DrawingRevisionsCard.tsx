@@ -363,6 +363,7 @@ export function DrawingRevisionsCard({ projectId }: { projectId: string }) {
         onOpenChange={(v) => { if (!v) setCompareFor(null); }}
         tender={compareFor?.tender}
         current={compareFor?.current}
+        projectId={projectId}
       />
     </Card>
   );
