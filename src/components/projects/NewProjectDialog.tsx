@@ -76,6 +76,7 @@ export function NewProjectDialog() {
       health: inferHealth(mg, pg),
       startDate: formatDate(startDate),
       endDate: formatDate(endDate),
+      status: stage,
     });
     saveProjectExtras(created.id, {
       specsFileName: specsFileName || undefined,
@@ -106,6 +107,28 @@ export function NewProjectDialog() {
             <Label htmlFor="np-name">Project name *</Label>
             <Input id="np-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Kings Cross Tower" />
           </div>
+
+          <div className="grid gap-1.5">
+            <Label>Stage</Label>
+            <div className="grid grid-cols-3 gap-1.5">
+              {STAGES.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setStage(s.id)}
+                  className={`rounded border px-2 py-1.5 text-[12px] transition-colors ${
+                    stage === s.id ? s.activeClass : "border-[var(--ink-200)] hover:bg-[var(--ink-50)]"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-[var(--ink-500)]">
+              Tender and Awaiting projects can be re-costed freely. Active projects have a committed BoQ — changes go through variations.
+            </p>
+          </div>
+
           <div className="grid gap-1.5">
             <Label htmlFor="np-sub">Subtitle</Label>
             <Input id="np-sub" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="Drylining · N1C · 24 floors" />
