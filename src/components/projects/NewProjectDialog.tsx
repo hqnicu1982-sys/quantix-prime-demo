@@ -14,10 +14,18 @@ import { Label } from "@/components/ui/label";
 import { Plus, Upload, FileText, Calendar as CalIcon } from "lucide-react";
 import { addCustomProject, inferHealth, saveProjectExtras } from "@/lib/customProjects";
 import { toast } from "sonner";
+import type { ProjectStatus } from "@/lib/mockData";
+
+const STAGES: { id: ProjectStatus; label: string; activeClass: string }[] = [
+  { id: "tender", label: "Tender", activeClass: "border-[var(--accent-500)] bg-[var(--accent-500)]/10 font-semibold text-[var(--accent-500)]" },
+  { id: "awaiting", label: "Awaiting", activeClass: "border-[var(--amber-500)] bg-[var(--amber-500)]/10 font-semibold text-[var(--amber-500)]" },
+  { id: "active", label: "Active", activeClass: "border-[var(--green-600)] bg-[var(--green-600)]/10 font-semibold text-[var(--green-600)]" },
+];
 
 export function NewProjectDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [stage, setStage] = useState<ProjectStatus>("tender");
   const [subtitle, setSubtitle] = useState("");
   const [mainContractor, setMainContractor] = useState("");
   const [contractValue, setContractValue] = useState<string>("");
@@ -32,6 +40,7 @@ export function NewProjectDialog() {
 
   const reset = () => {
     setName("");
+    setStage("tender");
     setSubtitle("");
     setMainContractor("");
     setContractValue("");
@@ -67,6 +76,7 @@ export function NewProjectDialog() {
       health: inferHealth(mg, pg),
       startDate: formatDate(startDate),
       endDate: formatDate(endDate),
+      status: stage,
     });
     saveProjectExtras(created.id, {
       specsFileName: specsFileName || undefined,
@@ -97,6 +107,28 @@ export function NewProjectDialog() {
             <Label htmlFor="np-name">Project name *</Label>
             <Input id="np-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Kings Cross Tower" />
           </div>
+
+          <div className="grid gap-1.5">
+            <Label>Stage</Label>
+            <div className="grid grid-cols-3 gap-1.5">
+              {STAGES.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setStage(s.id)}
+                  className={`rounded border px-2 py-1.5 text-[12px] transition-colors ${
+                    stage === s.id ? s.activeClass : "border-[var(--ink-200)] hover:bg-[var(--ink-50)]"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-[var(--ink-500)]">
+              Tender and Awaiting projects can be re-costed freely. Active projects have a committed BoQ — changes go through variations.
+            </p>
+          </div>
+
           <div className="grid gap-1.5">
             <Label htmlFor="np-sub">Subtitle</Label>
             <Input id="np-sub" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="Drylining · N1C · 24 floors" />
