@@ -14,10 +14,18 @@ import { Label } from "@/components/ui/label";
 import { Plus, Upload, FileText, Calendar as CalIcon } from "lucide-react";
 import { addCustomProject, inferHealth, saveProjectExtras } from "@/lib/customProjects";
 import { toast } from "sonner";
+import type { ProjectStatus } from "@/lib/mockData";
+
+const STAGES: { id: ProjectStatus; label: string; activeClass: string }[] = [
+  { id: "tender", label: "Tender", activeClass: "border-[var(--accent-500)] bg-[var(--accent-500)]/10 font-semibold text-[var(--accent-500)]" },
+  { id: "awaiting", label: "Awaiting", activeClass: "border-[var(--amber-500)] bg-[var(--amber-500)]/10 font-semibold text-[var(--amber-500)]" },
+  { id: "active", label: "Active", activeClass: "border-[var(--green-600)] bg-[var(--green-600)]/10 font-semibold text-[var(--green-600)]" },
+];
 
 export function NewProjectDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [stage, setStage] = useState<ProjectStatus>("tender");
   const [subtitle, setSubtitle] = useState("");
   const [mainContractor, setMainContractor] = useState("");
   const [contractValue, setContractValue] = useState<string>("");
@@ -32,6 +40,7 @@ export function NewProjectDialog() {
 
   const reset = () => {
     setName("");
+    setStage("tender");
     setSubtitle("");
     setMainContractor("");
     setContractValue("");
