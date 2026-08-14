@@ -73,6 +73,11 @@ function Planner() {
           >
             <Calendar className="mr-1.5 h-3.5 w-3.5" /> Today
           </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/projects/$projectId/progress-log" params={{ projectId: PID }}>
+              <ClipboardList className="mr-1.5 h-3.5 w-3.5" /> Progress log
+            </Link>
+          </Button>
           <Button
             variant="outline"
             size="sm"
