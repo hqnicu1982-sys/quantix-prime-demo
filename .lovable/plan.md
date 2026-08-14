@@ -72,4 +72,4 @@ it is instant, offline and always consistent with the data.
 - XLSX needs one new dependency (`exceljs`, browser-safe) in `src/lib/progressReportXlsx.ts`.
 - Logging hooks added inside the existing `updateTask` / drag-resize paths in
   `src/lib/planner.ts` so nothing else has to change.
-- Permissions: report visible to Admin / Pro Control / Pro; Operative sees no export.
+- Permissions: report visible to Admin / Pro Control only; other roles get the no-access fallback.
