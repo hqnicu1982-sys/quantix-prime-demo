@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Card, CardHead, Kpi, Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { Calendar, Download } from "lucide-react";
+import { Calendar, ClipboardList, Download } from "lucide-react";
 import { toast } from "sonner";
 import { ProjectBanner } from "@/components/ProjectBanner";
 import {
