@@ -89,6 +89,7 @@ const EXPECTED_ALLOWED: Record<Capability, Tier[]> = {
   "issue.payment.notice":       ["Admin", "Pro Control"],
   "record.payment":             ["Admin"],
   "view.tenderPipeline":        ["Admin"],
+  "view.progressLog":     ["Admin", "Pro Control"],
   "view.followUps":             ["Admin"],
 };
 

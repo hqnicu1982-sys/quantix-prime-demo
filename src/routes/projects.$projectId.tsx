@@ -106,6 +106,7 @@ function ProjectLayout() {
     "issue.payment.notice": useCan("issue.payment.notice"),
     "record.payment": useCan("record.payment"),
     "view.tenderPipeline": useCan("view.tenderPipeline"),
+    "view.progressLog": useCan("view.progressLog"),
     "view.followUps": useCan("view.followUps"),
   };
   const visibleTabs = TABS.filter((t) => !t.requires || capChecks[t.requires]);

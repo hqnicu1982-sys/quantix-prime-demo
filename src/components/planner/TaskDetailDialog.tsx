@@ -29,6 +29,7 @@ import {
   type TaskStatus,
 } from "@/lib/planner";
 import { useCan } from "@/lib/permissions";
+import { DELAY_CAUSE_LABEL, type DelayCause } from "@/lib/progressLog";
 import { useProjectCrews } from "@/lib/labour";
 import { getActualHoursForTask, getActualCostForTask } from "@/lib/laborLog";
 import { AlertTriangle, CheckCircle2, Trash2, Link as LinkIcon } from "lucide-react";
@@ -64,10 +65,16 @@ export function TaskDetailDialog({
   approvedVariationIds,
 }: Props) {
   const [draft, setDraft] = useState<PlannerTask | null>(task);
+  const [reason, setReason] = useState("");
+  const [cause, setCause] = useState<DelayCause>("other");
   const crews = useProjectCrews(projectId);
   const canEditPlanner = useCan("edit.planner");
 
-  useEffect(() => setDraft(task), [task?.id]);
+  useEffect(() => {
+    setDraft(task);
+    setReason("");
+    setCause("other");
+  }, [task?.id]);
 
   if (!draft) return null;
 
@@ -85,7 +92,10 @@ export function TaskDetailDialog({
   const variance = plannedCost > 0 ? ((actualCost - plannedCost) / plannedCost) * 100 : 0;
 
   const save = () => {
-    updateTask(projectId, draft.id, {
+    updateTask(
+      projectId,
+      draft.id,
+      {
       title: draft.title,
       level: draft.level,
       area: draft.area,
@@ -96,7 +106,9 @@ export function TaskDetailDialog({
       status: draft.status,
       notes: draft.notes,
       plannedHours: draft.plannedHours,
-    });
+      },
+      { reason: reason.trim() || undefined, cause: reason.trim() ? cause : undefined },
+    );
     onOpenChange(false);
   };
 
@@ -267,6 +279,44 @@ export function TaskDetailDialog({
               onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
               rows={2}
             />
+          </div>
+        </div>
+
+        {/* Progress log entry — captured against the task history and the
+            main-contractor progress report. */}
+        <div className="rounded-md border border-[var(--ink-200)] bg-[var(--ink-50)]/40 p-3">
+          <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-500)]">
+            Progress log entry
+          </p>
+          <p className="mt-0.5 text-[11px] text-[var(--ink-500)]">
+            If you moved the dates or want to record a site comment, explain why — it appears in
+            the progress &amp; delay report issued to the main contractor.
+          </p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-[180px_1fr]">
+            <div>
+              <Label className="text-[11px]">Cause</Label>
+              <Select value={cause} onValueChange={(v) => setCause(v as DelayCause)}>
+                <SelectTrigger className="h-8 text-[12px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(DELAY_CAUSE_LABEL) as DelayCause[]).map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {DELAY_CAUSE_LABEL[c]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[11px]">Reason / comment</Label>
+              <Textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                rows={2}
+                placeholder="e.g. Board delivery slipped — CO-248 still in draft; crew redeployed to L4."
+              />
+            </div>
           </div>
         </div>
 

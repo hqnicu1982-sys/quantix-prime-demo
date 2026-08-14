@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { effectiveRate } from "./labour";
+import { logTaskDiff, type DelayCause } from "./progressLog";
 
 // ============================================================================
 // Planner — schedule of works per project.
@@ -127,8 +128,11 @@ export function updateTask(
   pid: string,
   id: string,
   patch: Partial<Omit<PlannerTask, "id" | "createdAt" | "projectId">>,
+  meta?: { reason?: string; cause?: DelayCause },
 ) {
   const list = read(pid);
+  const before = list.find((t) => t.id === id);
+  if (before) logTaskDiff(pid, before, patch, meta);
   write(
     pid,
     list.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: Date.now() } : t)),

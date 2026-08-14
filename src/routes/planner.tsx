@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Card, CardHead, Kpi, Section } from "@/components/Primitives";
 import { Button } from "@/components/ui/button";
-import { Calendar, Download } from "lucide-react";
+import { Calendar, ClipboardList, Download } from "lucide-react";
 import { toast } from "sonner";
 import { ProjectBanner } from "@/components/ProjectBanner";
 import {
@@ -72,6 +72,11 @@ function Planner() {
             onClick={() => toast("Today line follows real date · scroll horizontally to centre")}
           >
             <Calendar className="mr-1.5 h-3.5 w-3.5" /> Today
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/projects/$projectId/progress-log" params={{ projectId: PID }}>
+              <ClipboardList className="mr-1.5 h-3.5 w-3.5" /> Progress log
+            </Link>
           </Button>
           <Button
             variant="outline"
