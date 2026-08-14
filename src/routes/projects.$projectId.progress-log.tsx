@@ -142,7 +142,7 @@ function ProgressLogPage() {
 
   const payload = (): ReportPayload => ({
     projectName: project?.name ?? PID,
-    projectClient: project?.client,
+    projectClient: project?.subtitle,
     periodLabel: PERIOD_LABEL[period],
     preparedBy: me.name,
     generatedAt: new Date(),
