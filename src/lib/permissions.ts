@@ -44,7 +44,8 @@ export type Capability =
   | "issue.payment.notice"       // MC side: issue Payment Notice / Pay Less / Certificate
   | "record.payment"             // mark certificate as paid / record receipt
   | "view.tenderPipeline"        // firm-wide tender pipeline board
-  | "view.followUps";            // firm-wide CRM follow-up feed
+  | "view.followUps"           // firm-wide CRM follow-up feed
+  | "view.progressLog";        // progress & delay report for main contractor
 
 export const TIER_CAPS: Record<Tier, Capability[]> = {
   Admin: [
@@ -65,7 +66,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "upload.drawings", "approve.drawings", "lock.tender", "unlock.tender",
     "withdraw.drawings.own", "bulk.upload.drawings", "export.drawings.register",
     "view.payments", "create.payment.application", "issue.payment.notice", "record.payment",
-    "view.tenderPipeline", "view.followUps",
+    "view.tenderPipeline", "view.followUps", "view.progressLog",
   ],
   "Pro Control": [
     "view.financials", "view.financials.lite",
@@ -84,6 +85,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "upload.drawings", "approve.drawings",
     "withdraw.drawings.own", "bulk.upload.drawings", "export.drawings.register",
     "view.payments", "create.payment.application", "issue.payment.notice",
+    "view.progressLog",
   ],
   Pro: [
     "view.financials.lite",

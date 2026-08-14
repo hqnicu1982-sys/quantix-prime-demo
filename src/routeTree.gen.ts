@@ -60,6 +60,7 @@ import { Route as ProjectsProjectIdVariationsRouteImport } from './routes/projec
 import { Route as ProjectsProjectIdTeamRouteImport } from './routes/projects.$projectId.team'
 import { Route as ProjectsProjectIdSpecificationRouteImport } from './routes/projects.$projectId.specification'
 import { Route as ProjectsProjectIdReportsRouteImport } from './routes/projects.$projectId.reports'
+import { Route as ProjectsProjectIdProgressLogRouteImport } from './routes/projects.$projectId.progress-log'
 import { Route as ProjectsProjectIdPlannerRouteImport } from './routes/projects.$projectId.planner'
 import { Route as ProjectsProjectIdPaymentsRouteImport } from './routes/projects.$projectId.payments'
 import { Route as ProjectsProjectIdLabourRouteImport } from './routes/projects.$projectId.labour'
@@ -326,6 +327,12 @@ const ProjectsProjectIdReportsRoute =
     path: '/reports',
     getParentRoute: () => ProjectsProjectIdRoute,
   } as any)
+const ProjectsProjectIdProgressLogRoute =
+  ProjectsProjectIdProgressLogRouteImport.update({
+    id: '/progress-log',
+    path: '/progress-log',
+    getParentRoute: () => ProjectsProjectIdRoute,
+  } as any)
 const ProjectsProjectIdPlannerRoute =
   ProjectsProjectIdPlannerRouteImport.update({
     id: '/planner',
@@ -422,6 +429,7 @@ export interface FileRoutesByFullPath {
   '/projects/$projectId/labour': typeof ProjectsProjectIdLabourRoute
   '/projects/$projectId/payments': typeof ProjectsProjectIdPaymentsRoute
   '/projects/$projectId/planner': typeof ProjectsProjectIdPlannerRoute
+  '/projects/$projectId/progress-log': typeof ProjectsProjectIdProgressLogRoute
   '/projects/$projectId/reports': typeof ProjectsProjectIdReportsRoute
   '/projects/$projectId/specification': typeof ProjectsProjectIdSpecificationRoute
   '/projects/$projectId/team': typeof ProjectsProjectIdTeamRoute
@@ -478,6 +486,7 @@ export interface FileRoutesByTo {
   '/projects/$projectId/labour': typeof ProjectsProjectIdLabourRoute
   '/projects/$projectId/payments': typeof ProjectsProjectIdPaymentsRoute
   '/projects/$projectId/planner': typeof ProjectsProjectIdPlannerRoute
+  '/projects/$projectId/progress-log': typeof ProjectsProjectIdProgressLogRoute
   '/projects/$projectId/reports': typeof ProjectsProjectIdReportsRoute
   '/projects/$projectId/specification': typeof ProjectsProjectIdSpecificationRoute
   '/projects/$projectId/team': typeof ProjectsProjectIdTeamRoute
@@ -539,6 +548,7 @@ export interface FileRoutesById {
   '/projects/$projectId/labour': typeof ProjectsProjectIdLabourRoute
   '/projects/$projectId/payments': typeof ProjectsProjectIdPaymentsRoute
   '/projects/$projectId/planner': typeof ProjectsProjectIdPlannerRoute
+  '/projects/$projectId/progress-log': typeof ProjectsProjectIdProgressLogRoute
   '/projects/$projectId/reports': typeof ProjectsProjectIdReportsRoute
   '/projects/$projectId/specification': typeof ProjectsProjectIdSpecificationRoute
   '/projects/$projectId/team': typeof ProjectsProjectIdTeamRoute
@@ -601,6 +611,7 @@ export interface FileRouteTypes {
     | '/projects/$projectId/labour'
     | '/projects/$projectId/payments'
     | '/projects/$projectId/planner'
+    | '/projects/$projectId/progress-log'
     | '/projects/$projectId/reports'
     | '/projects/$projectId/specification'
     | '/projects/$projectId/team'
@@ -657,6 +668,7 @@ export interface FileRouteTypes {
     | '/projects/$projectId/labour'
     | '/projects/$projectId/payments'
     | '/projects/$projectId/planner'
+    | '/projects/$projectId/progress-log'
     | '/projects/$projectId/reports'
     | '/projects/$projectId/specification'
     | '/projects/$projectId/team'
@@ -717,6 +729,7 @@ export interface FileRouteTypes {
     | '/projects/$projectId/labour'
     | '/projects/$projectId/payments'
     | '/projects/$projectId/planner'
+    | '/projects/$projectId/progress-log'
     | '/projects/$projectId/reports'
     | '/projects/$projectId/specification'
     | '/projects/$projectId/team'
@@ -1116,6 +1129,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsProjectIdReportsRouteImport
       parentRoute: typeof ProjectsProjectIdRoute
     }
+    '/projects/$projectId/progress-log': {
+      id: '/projects/$projectId/progress-log'
+      path: '/progress-log'
+      fullPath: '/projects/$projectId/progress-log'
+      preLoaderRoute: typeof ProjectsProjectIdProgressLogRouteImport
+      parentRoute: typeof ProjectsProjectIdRoute
+    }
     '/projects/$projectId/planner': {
       id: '/projects/$projectId/planner'
       path: '/planner'
@@ -1224,6 +1244,7 @@ interface ProjectsProjectIdRouteChildren {
   ProjectsProjectIdLabourRoute: typeof ProjectsProjectIdLabourRoute
   ProjectsProjectIdPaymentsRoute: typeof ProjectsProjectIdPaymentsRoute
   ProjectsProjectIdPlannerRoute: typeof ProjectsProjectIdPlannerRoute
+  ProjectsProjectIdProgressLogRoute: typeof ProjectsProjectIdProgressLogRoute
   ProjectsProjectIdReportsRoute: typeof ProjectsProjectIdReportsRoute
   ProjectsProjectIdSpecificationRoute: typeof ProjectsProjectIdSpecificationRoute
   ProjectsProjectIdTeamRoute: typeof ProjectsProjectIdTeamRoute
@@ -1239,6 +1260,7 @@ const ProjectsProjectIdRouteChildren: ProjectsProjectIdRouteChildren = {
   ProjectsProjectIdLabourRoute: ProjectsProjectIdLabourRoute,
   ProjectsProjectIdPaymentsRoute: ProjectsProjectIdPaymentsRoute,
   ProjectsProjectIdPlannerRoute: ProjectsProjectIdPlannerRoute,
+  ProjectsProjectIdProgressLogRoute: ProjectsProjectIdProgressLogRoute,
   ProjectsProjectIdReportsRoute: ProjectsProjectIdReportsRoute,
   ProjectsProjectIdSpecificationRoute: ProjectsProjectIdSpecificationRoute,
   ProjectsProjectIdTeamRoute: ProjectsProjectIdTeamRoute,
