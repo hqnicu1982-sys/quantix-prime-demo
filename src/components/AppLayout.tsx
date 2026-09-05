@@ -7,6 +7,7 @@ import {
   ChevronDown, GitBranch, BookOpen, HelpCircle, LogIn, UserPlus, Layers, Briefcase, BellRing, CalendarClock,
 } from "lucide-react";
 import { Logo } from "./Logo";
+import { PlanBadge } from "@/components/PlanBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
@@ -333,8 +334,10 @@ function LayoutInner() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (session && !localStorage.getItem("qp-welcome-seen-v3")) setWelcomeOpen(true);
-    const stored = localStorage.getItem("qp-theme") as "light" | "dark" | null;
-    const initial = stored ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const stored = localStorage.getItem("qp-theme") as "light" | "dark" | "system" | null;
+    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const initial: "light" | "dark" =
+      stored === "light" || stored === "dark" ? stored : systemDark ? "dark" : "light";
     setTheme(initial);
     document.documentElement.classList.toggle("dark", initial === "dark");
   }, [session]);

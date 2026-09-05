@@ -89,7 +89,7 @@ export function HeaderUserMenu() {
 
           {/* Account settings */}
           <button
-            onClick={() => { setOpen(false); navigate({ to: "/settings/labour" }); }}
+            onClick={() => { setOpen(false); navigate({ to: "/account" }); }}
             className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[12.5px] font-medium text-[var(--ink-700)] hover:bg-[var(--ink-50)]"
           >
             <Settings className="h-3.5 w-3.5 text-[var(--ink-500)]" />
