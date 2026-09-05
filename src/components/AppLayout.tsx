@@ -171,8 +171,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         ))}
       </div>
+      <Link
+        to="/account"
+        onClick={onNavigate}
+        className="flex items-center justify-between gap-2 border-t border-white/10 px-5 py-3 text-[11.5px] text-white/60 hover:bg-white/5"
+      >
+        <span className="font-medium">Plan</span>
+        <PlanBadge light />
+      </Link>
     </>
   );
+
 }
 
 function Breadcrumb() {
