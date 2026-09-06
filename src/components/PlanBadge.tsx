@@ -10,7 +10,15 @@ export const WORKSPACE_PLAN = {
   foundingCustomer: true,
 };
 
-export function PlanBadge({ className, light = false }: { className?: string; light?: boolean }) {
+export function PlanBadge({
+  className,
+  light = false,
+  plan,
+}: {
+  className?: string;
+  light?: boolean;
+  plan?: string;
+}) {
   return (
     <span
       className={cn(
@@ -21,7 +29,7 @@ export function PlanBadge({ className, light = false }: { className?: string; li
         className,
       )}
     >
-      {WORKSPACE_PLAN.name}
+      {plan ?? WORKSPACE_PLAN.name}
     </span>
   );
 }
