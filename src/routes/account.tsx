@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Download, ExternalLink, FileText, LogOut, Trash2 } from "lucide-react";
 import { Card, CardHead, Section } from "@/components/Primitives";
 import { StatusBadge } from "@/components/StatusBadge";
-import { PlanBadge, WORKSPACE_PLAN } from "@/components/PlanBadge";
+import { PlanCard, PlanStateSwitcher, usePlanPreset } from "@/components/account/PlanCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCurrentUser } from "@/lib/currentUser";
@@ -52,6 +52,7 @@ function AccountPage() {
   const session = useSession();
   const navigate = useNavigate();
   const canEditOrg = useCan("manage.users");
+  const planPreset = usePlanPreset();
 
   const [name, setName] = useState(me.name);
   const [jobTitle, setJobTitle] = useState(me.role);
