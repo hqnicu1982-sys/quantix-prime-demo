@@ -158,7 +158,7 @@ function PricingPage() {
           features={[
             "Calculator only (3,054 manufacturer-verified systems)",
             "50 takeoffs per month · 1 project · 2 users",
-            "“Powered by Quantix Prime” footer on PDF/XLSX exports",
+            "“Powered by FixMargin” footer on PDF/XLSX exports",
           ]}
           cta="Start free"
         />
