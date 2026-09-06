@@ -157,34 +157,14 @@ function AccountPage() {
             </div>
           </Card>
 
-          {/* Plan & seats */}
-          <Card>
-            <CardHead title="Plan & seats" subtitle="What your workspace includes today" />
-            <div className="space-y-5 p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <PlanBadge />
-                    {WORKSPACE_PLAN.foundingCustomer && (
-                      <StatusBadge tone="success">Founding customer</StatusBadge>
-                    )}
-                    <StatusBadge tone="neutral">{WORKSPACE_PLAN.commitment}</StatusBadge>
-                  </div>
-                  <p className="mt-2 text-[13px] text-[var(--ink-700)]">{WORKSPACE_PLAN.priceLine}</p>
-                  <p className="mt-0.5 text-[12px] text-[var(--ink-500)]">
-                    Renews {WORKSPACE_PLAN.renewalDate}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" asChild>
-                    <Link to="/pricing">View plans</Link>
-                  </Button>
-                  <Button size="sm" variant="outline" asChild>
-                    <a href="mailto:support@fixmargin.com?subject=Plan%20enquiry">Talk to us about your plan</a>
-                  </Button>
-                </div>
-              </div>
+          {/* Plan */}
+          <PlanStateSwitcher activeKey={planPreset.key} onSelect={planPreset.setKey} />
+          <PlanCard workspacePlan={planPreset.value} />
 
+          {/* Seats */}
+          <Card>
+            <CardHead title="Seats" subtitle="What your workspace includes today" />
+            <div className="space-y-5 p-5">
               <div className="space-y-3">
                 {SEATS.map((s) => (
                   <SeatRow key={s.label} label={s.label} used={s.used} total={s.total} />
