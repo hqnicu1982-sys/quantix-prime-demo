@@ -70,6 +70,11 @@ export const PLAN_PRESETS: { key: string; label: string; value: WorkspacePlan }[
     label: "G · Starter no billing",
     value: { plan: "STARTER", billingSource: "NONE", commitment: null, billedPrice: null, foundingCustomer: false, renewalDate: "12 Mar 2027", endsAt: null, isAdmin: true },
   },
+  {
+    key: "H",
+    label: "H · Growth annual add-ons",
+    value: { plan: "GROWTH", billingSource: "STRIPE", commitment: "ANNUAL", billedPrice: 559.3, foundingCustomer: true, renewalDate: "12 Mar 2027", endsAt: null, isAdmin: true },
+  },
 ];
 
 export function PlanCard({ workspacePlan }: { workspacePlan: WorkspacePlan }) {
