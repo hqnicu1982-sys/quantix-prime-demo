@@ -196,7 +196,7 @@ function AccountPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {INVOICES.map((inv) => (
+                  {invoices.map((inv) => (
                     <tr key={inv.date + inv.desc} className="border-b border-[var(--ink-200)] last:border-0">
                       <td className="whitespace-nowrap px-5 py-3 text-[var(--ink-700)]">{inv.date}</td>
                       <td className="px-5 py-3 text-[var(--ink-900)]">{inv.desc}</td>
