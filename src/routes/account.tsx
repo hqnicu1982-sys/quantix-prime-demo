@@ -306,23 +306,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function SeatRow({ label, used, total }: { label: string; used: number; total: number }) {
-  const pct = Math.min(100, Math.round((used / total) * 100));
-  return (
-    <div>
-      <div className="flex items-center justify-between text-[12.5px]">
-        <span className="text-[var(--ink-700)]">{label}</span>
-        <span className="font-medium text-[var(--ink-900)]">{used} of {total}</span>
-      </div>
-      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--ink-100)]">
-        <div
-          className={cn("h-full rounded-full", pct >= 100 ? "bg-[var(--amber-500)]" : "bg-[var(--accent-500)]")}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
 
 function OrgRow({ label, value }: { label: string; value: string }) {
   return (
