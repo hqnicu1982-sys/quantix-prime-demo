@@ -175,21 +175,11 @@ function AccountPage() {
           <PlanCard workspacePlan={planPreset.value} />
 
           {/* Seats */}
-          <Card>
-            <CardHead title="Seats" subtitle="What your workspace includes today" />
-            <div className="space-y-5 p-5">
-              <div className="space-y-3">
-                {SEATS.map((s) => (
-                  <SeatRow key={s.label} label={s.label} used={s.used} total={s.total} />
-                ))}
-                <SeatRow label="Active projects" used={2} total={3} />
-              </div>
-
-              <p className="text-[11.5px] text-[var(--ink-500)]">
-                Plan changes are handled by the FixMargin team and invoiced manually.
-              </p>
-            </div>
-          </Card>
+          <SeatsCard
+            workspacePlan={planPreset.value}
+            seats={seats}
+            onSeatsAdded={handleSeatsAdded}
+          />
 
           {/* Invoices */}
           <Card>
