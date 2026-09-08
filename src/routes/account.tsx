@@ -5,6 +5,14 @@ import { Download, ExternalLink, FileText, LogOut, Trash2 } from "lucide-react";
 import { Card, CardHead, Section } from "@/components/Primitives";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PlanCard, PlanStateSwitcher, usePlanPreset } from "@/components/account/PlanCard";
+import {
+  SeatsCard,
+  SEATS_PRESET,
+  SEATS_PRESET_WITH_ADDONS,
+  cloneSeats,
+  type SeatInvoiceRow,
+  type WorkspaceSeats,
+} from "@/components/account/SeatsCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCurrentUser } from "@/lib/currentUser";
