@@ -43,16 +43,10 @@ const TIER_TONE = {
 
 type ThemePref = "light" | "dark" | "system";
 
-const INVOICES = [
-  { date: "12 Mar 2026", desc: "Starter — annual subscription", amount: "£3,828.00", status: "Paid" as const },
-  { date: "12 Mar 2025", desc: "Starter — annual subscription", amount: "£3,828.00", status: "Paid" as const },
-  { date: "02 Apr 2026", desc: "Additional Operative seat (pro-rata)", amount: "£214.00", status: "Due" as const },
-];
-
-const SEATS = [
-  { label: "Admin", used: 1, total: 1 },
-  { label: "Pro Control", used: 1, total: 2 },
-  { label: "Operative", used: 3, total: 5 },
+const INVOICES: SeatInvoiceRow[] = [
+  { date: "12 Mar 2026", desc: "Starter — annual subscription", amount: "£3,828.00", status: "Paid" },
+  { date: "12 Mar 2025", desc: "Starter — annual subscription", amount: "£3,828.00", status: "Paid" },
+  { date: "02 Apr 2026", desc: "Additional Operative seat (pro-rata)", amount: "£214.00", status: "Due" },
 ];
 
 function AccountPage() {
@@ -65,6 +59,16 @@ function AccountPage() {
   const [name, setName] = useState(me.name);
   const [jobTitle, setJobTitle] = useState(me.role);
   const [theme, setTheme] = useState<ThemePref>("system");
+  const [seatOverride, setSeatOverride] = useState<Record<string, WorkspaceSeats>>({});
+  const [invoices, setInvoices] = useState<SeatInvoiceRow[]>(INVOICES);
+
+  const baseSeats = planPreset.key === "H" ? SEATS_PRESET_WITH_ADDONS : SEATS_PRESET;
+  const seats = seatOverride[planPreset.key] ?? baseSeats;
+
+  const handleSeatsAdded = (next: WorkspaceSeats, rows: SeatInvoiceRow[]) => {
+    setSeatOverride((prev) => ({ ...prev, [planPreset.key]: cloneSeats(next) }));
+    setInvoices((prev) => [...rows, ...prev]);
+  };
 
   useEffect(() => {
     setName(me.name);
