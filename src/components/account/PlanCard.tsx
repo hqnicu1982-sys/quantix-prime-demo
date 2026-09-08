@@ -26,7 +26,7 @@ const PLAN_LABEL: Record<WorkspacePlan["plan"], string> = {
   ENTERPRISE: "Enterprise",
 };
 
-function formatPrice(value: number) {
+export function formatPrice(value: number) {
   const hasPence = Math.round(value * 100) % 100 !== 0;
   return value.toLocaleString("en-GB", {
     minimumFractionDigits: hasPence ? 2 : 0,
