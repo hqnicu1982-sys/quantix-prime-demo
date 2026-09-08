@@ -5,6 +5,14 @@ import { Download, ExternalLink, FileText, LogOut, Trash2 } from "lucide-react";
 import { Card, CardHead, Section } from "@/components/Primitives";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PlanCard, PlanStateSwitcher, usePlanPreset } from "@/components/account/PlanCard";
+import {
+  SeatsCard,
+  SEATS_PRESET,
+  SEATS_PRESET_WITH_ADDONS,
+  cloneSeats,
+  type SeatInvoiceRow,
+  type WorkspaceSeats,
+} from "@/components/account/SeatsCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCurrentUser } from "@/lib/currentUser";
@@ -35,16 +43,10 @@ const TIER_TONE = {
 
 type ThemePref = "light" | "dark" | "system";
 
-const INVOICES = [
-  { date: "12 Mar 2026", desc: "Starter — annual subscription", amount: "£3,828.00", status: "Paid" as const },
-  { date: "12 Mar 2025", desc: "Starter — annual subscription", amount: "£3,828.00", status: "Paid" as const },
-  { date: "02 Apr 2026", desc: "Additional Operative seat (pro-rata)", amount: "£214.00", status: "Due" as const },
-];
-
-const SEATS = [
-  { label: "Admin", used: 1, total: 1 },
-  { label: "Pro Control", used: 1, total: 2 },
-  { label: "Operative", used: 3, total: 5 },
+const INVOICES: SeatInvoiceRow[] = [
+  { date: "12 Mar 2026", desc: "Starter — annual subscription", amount: "£3,828.00", status: "Paid" },
+  { date: "12 Mar 2025", desc: "Starter — annual subscription", amount: "£3,828.00", status: "Paid" },
+  { date: "02 Apr 2026", desc: "Additional Operative seat (pro-rata)", amount: "£214.00", status: "Due" },
 ];
 
 function AccountPage() {
@@ -57,6 +59,16 @@ function AccountPage() {
   const [name, setName] = useState(me.name);
   const [jobTitle, setJobTitle] = useState(me.role);
   const [theme, setTheme] = useState<ThemePref>("system");
+  const [seatOverride, setSeatOverride] = useState<Record<string, WorkspaceSeats>>({});
+  const [invoices, setInvoices] = useState<SeatInvoiceRow[]>(INVOICES);
+
+  const baseSeats = planPreset.key === "H" ? SEATS_PRESET_WITH_ADDONS : SEATS_PRESET;
+  const seats = seatOverride[planPreset.key] ?? baseSeats;
+
+  const handleSeatsAdded = (next: WorkspaceSeats, rows: SeatInvoiceRow[]) => {
+    setSeatOverride((prev) => ({ ...prev, [planPreset.key]: cloneSeats(next) }));
+    setInvoices((prev) => [...rows, ...prev]);
+  };
 
   useEffect(() => {
     setName(me.name);
@@ -163,21 +175,11 @@ function AccountPage() {
           <PlanCard workspacePlan={planPreset.value} />
 
           {/* Seats */}
-          <Card>
-            <CardHead title="Seats" subtitle="What your workspace includes today" />
-            <div className="space-y-5 p-5">
-              <div className="space-y-3">
-                {SEATS.map((s) => (
-                  <SeatRow key={s.label} label={s.label} used={s.used} total={s.total} />
-                ))}
-                <SeatRow label="Active projects" used={2} total={3} />
-              </div>
-
-              <p className="text-[11.5px] text-[var(--ink-500)]">
-                Plan changes are handled by the FixMargin team and invoiced manually.
-              </p>
-            </div>
-          </Card>
+          <SeatsCard
+            workspacePlan={planPreset.value}
+            seats={seats}
+            onSeatsAdded={handleSeatsAdded}
+          />
 
           {/* Invoices */}
           <Card>
@@ -194,7 +196,7 @@ function AccountPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {INVOICES.map((inv) => (
+                  {invoices.map((inv) => (
                     <tr key={inv.date + inv.desc} className="border-b border-[var(--ink-200)] last:border-0">
                       <td className="whitespace-nowrap px-5 py-3 text-[var(--ink-700)]">{inv.date}</td>
                       <td className="px-5 py-3 text-[var(--ink-900)]">{inv.desc}</td>
@@ -304,23 +306,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function SeatRow({ label, used, total }: { label: string; used: number; total: number }) {
-  const pct = Math.min(100, Math.round((used / total) * 100));
-  return (
-    <div>
-      <div className="flex items-center justify-between text-[12.5px]">
-        <span className="text-[var(--ink-700)]">{label}</span>
-        <span className="font-medium text-[var(--ink-900)]">{used} of {total}</span>
-      </div>
-      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--ink-100)]">
-        <div
-          className={cn("h-full rounded-full", pct >= 100 ? "bg-[var(--amber-500)]" : "bg-[var(--accent-500)]")}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
 
 function OrgRow({ label, value }: { label: string; value: string }) {
   return (
