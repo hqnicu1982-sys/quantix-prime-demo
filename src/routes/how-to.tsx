@@ -101,7 +101,7 @@ const ROLES: RoleGuide[] = [
     daily: [
       { title: "Morning: Dashboard", body: "Check today's 3 priority actions.", icon: BookOpen, to: "/" },
       { title: "Plan the day", body: "Adjust sequencing in Planner, push tasks to crews.", icon: ClipboardList, to: "/planner" },
-      { title: "Order materials", body: "Raise any Call-offs needed for tomorrow.", icon: FolderKanban, to: "/calloffs" },
+      { title: "Order materials", body: "Raise any Call-offs needed for tomorrow. Pick a supplier from your list or add your own — manage the list under Admin → Suppliers.", icon: FolderKanban, to: "/calloffs" },
       { title: "Close out site", body: "Verify the Daily Report submitted by the foreman.", icon: ClipboardList, to: "/daily-report" },
     ],
   },

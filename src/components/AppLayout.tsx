@@ -58,6 +58,7 @@ const navGroups: NavGroup[] = [
   { label: "Admin", items: [
     { to: "/team", label: "Team & Roles", icon: Users2, requires: "view.team" },
     { to: "/settings/labour", label: "Labour Rates", icon: Settings, requires: "view.settings.labour" },
+    { to: "/settings/suppliers", label: "Suppliers", icon: Settings, requires: "manage.suppliers" },
     { to: "/integrations", label: "Integrations", icon: Plug, requires: "view.integrations" },
     { to: "/how-to", label: "How to use", icon: BookOpen, badge: "TOUR" },
   ]},
@@ -209,6 +210,7 @@ function Breadcrumb() {
     "/daily-report": "Daily Site Report",
     "/team": "Team & Roles",
     "/team/audit": "Team Audit Log",
+    "/settings/suppliers": "Suppliers",
     "/integrations": "Integrations",
     "/how-to": "How to use",
   };
