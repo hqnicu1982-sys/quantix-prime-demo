@@ -88,6 +88,7 @@ function ProjectLayout() {
     "edit.team": useCan("edit.team"),
     "view.pwRates": useCan("view.pwRates"),
     "edit.pwRates": useCan("edit.pwRates"),
+    "manage.suppliers": useCan("manage.suppliers"),
     "manage.users": useCan("manage.users"),
     "view.variations": useCan("view.variations"),
     "edit.variations": useCan("edit.variations"),

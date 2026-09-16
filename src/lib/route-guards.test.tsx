@@ -71,6 +71,7 @@ const EXPECTED_ALLOWED: Record<Capability, Tier[]> = {
   "edit.team":            ["Admin"],
   "view.pwRates":         ["Admin", "Pro Control", "Pro", "Operative"],
   "edit.pwRates":         ["Admin", "Pro Control"],
+  "manage.suppliers":     ["Admin", "Pro Control"],
   "manage.users":         ["Admin"],
   "view.variations":      ["Admin", "Pro Control", "Pro"],
   "edit.variations":      ["Admin", "Pro Control"],
