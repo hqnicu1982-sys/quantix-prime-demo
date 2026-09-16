@@ -165,6 +165,12 @@ describe("RBAC capability matrix", () => {
           "Pro": false,
           "Pro Control": true,
         },
+        "Settings · Manage suppliers": {
+          "Admin": true,
+          "Operative": false,
+          "Pro": false,
+          "Pro Control": true,
+        },
         "Specification · Upload docs / edit notes": {
           "Admin": true,
           "Operative": false,
