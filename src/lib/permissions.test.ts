@@ -24,6 +24,7 @@ const ACTIONS: Array<{ name: string; cap: Capability }> = [
   { name: "Team · Invite / remove / assign", cap: "edit.team" },
   { name: "Team · Edit PW rates", cap: "edit.pwRates" },
   { name: "Settings · Labour rates", cap: "view.settings.labour" },
+  { name: "Settings · Manage suppliers", cap: "manage.suppliers" },
   { name: "Planner · Edit task", cap: "edit.planner" },
   { name: "Specification · Upload docs / edit notes", cap: "edit.specification" },
 ];
@@ -48,7 +49,7 @@ describe("RBAC capability matrix", () => {
     const approvalCaps: Capability[] = [
       "approve.labour", "edit.variations", "sign.invoices",
       "approve.calloffs", "edit.boq", "edit.team", "edit.pwRates",
-      "upload.prices",
+      "upload.prices", "manage.suppliers",
     ];
     for (const cap of approvalCaps) {
       expect(can("Operative", cap), `Operative must NOT have ${cap}`).toBe(false);
@@ -164,6 +165,12 @@ describe("RBAC capability matrix", () => {
           "Pro": false,
           "Pro Control": true,
         },
+        "Settings · Manage suppliers": {
+          "Admin": true,
+          "Operative": false,
+          "Pro": false,
+          "Pro Control": true,
+        },
         "Specification · Upload docs / edit notes": {
           "Admin": true,
           "Operative": false,
@@ -190,5 +197,14 @@ describe("RBAC capability matrix", () => {
         },
       }
     `);
+  });
+});
+
+describe("manage.suppliers", () => {
+  it("is granted to Admin and Pro Control only", () => {
+    expect(can("Admin", "manage.suppliers")).toBe(true);
+    expect(can("Pro Control", "manage.suppliers")).toBe(true);
+    expect(can("Pro", "manage.suppliers")).toBe(false);
+    expect(can("Operative", "manage.suppliers")).toBe(false);
   });
 });

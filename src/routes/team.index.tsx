@@ -43,6 +43,7 @@ function Team() {
             <Link to="/team/audit"><FileText className="mr-1.5 h-3.5 w-3.5" /> Audit log</Link>
           </Button>
           <Button variant="outline" size="sm" asChild><Link to="/settings/labour"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> Labour rates</Link></Button>
+          <Button variant="outline" size="sm" asChild><Link to="/settings/suppliers"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> Suppliers</Link></Button>
           <InviteMemberDialog />
         </>
       }

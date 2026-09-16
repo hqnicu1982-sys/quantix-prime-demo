@@ -8,6 +8,10 @@ import { useCurrentUser } from "@/lib/currentUser";
 import { CloudUpload, ArrowRight, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useCan } from "@/lib/permissions";
+import { SupplierSelect } from "@/components/suppliers/SupplierSelect";
+import { getActiveSuppliers } from "@/lib/suppliers";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
 import { NoAccess } from "@/components/auth/NoAccess";
 
 export const Route = createFileRoute("/price-lists/upload")({ component: GuardedUpload });
@@ -21,6 +25,7 @@ function GuardedUpload() {
 function Upload() {
   const uploads = usePriceListUploads();
   const user = useCurrentUser();
+  const [supplier, setSupplier] = useState<string>(getActiveSuppliers()[0]?.name ?? "");
 
   function simulateUpload() {
     const samples = [
@@ -30,7 +35,7 @@ function Upload() {
       { name: "Wolseley Plumbing Q2 2026.xlsx", items: 64, matched: 60, review: 4 },
     ];
     const pick = samples[Math.floor(Math.random() * samples.length)];
-    const rec = logPriceListUpload({ ...pick, uploadedBy: user.name });
+    const rec = logPriceListUpload({ ...pick, supplier: supplier || undefined, uploadedBy: user.name });
     toast.success("Upload indexed", {
       description: `${rec.items} items extracted · ${rec.matched} matched · ${rec.review} need review`,
     });
@@ -42,6 +47,11 @@ function Upload() {
       subtitle="Drop a supplier PDF or Excel. We extract items, match against your BoQ, flag ambiguous rows for review."
     >
       <Card>
+        <div className="max-w-sm space-y-1.5 px-5 pt-5">
+          <Label>Supplier</Label>
+          <SupplierSelect value={supplier} onChange={setSupplier} placeholder="Select supplier" />
+          <p className="text-[10.5px] text-[var(--ink-500)]">Uploads are indexed against this supplier.</p>
+        </div>
         <div onClick={simulateUpload} className="m-5 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--ink-200)] bg-[var(--ink-50)]/50 p-12 text-center transition-colors hover:border-[var(--accent-500)] hover:bg-[var(--accent-500)]/5">
           <CloudUpload className="h-10 w-10 text-[var(--accent-500)]" />
           <p className="mt-3 text-[14px] font-semibold">Drop files or click to upload</p>

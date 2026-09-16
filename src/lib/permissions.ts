@@ -26,6 +26,7 @@ export type Capability =
   | "edit.team"              // invite, change rates, assign
   | "view.pwRates"
   | "edit.pwRates"
+  | "manage.suppliers"
   | "manage.users"
   | "view.variations"
   | "edit.variations"
@@ -58,6 +59,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.dailyReport", "log.labour", "log.labour.others", "approve.labour",
     "view.team", "edit.team",
     "view.pwRates", "edit.pwRates",
+    "manage.suppliers",
     "manage.users",
     "view.variations", "edit.variations",
     "view.integrations",
@@ -78,6 +80,7 @@ export const TIER_CAPS: Record<Tier, Capability[]> = {
     "view.dailyReport", "log.labour", "log.labour.others", "approve.labour",
     "view.team",
     "view.pwRates", "edit.pwRates",
+    "manage.suppliers",
     "view.variations", "edit.variations",
     "view.integrations",
     "view.settings.labour",

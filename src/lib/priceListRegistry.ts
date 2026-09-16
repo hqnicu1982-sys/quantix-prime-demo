@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getSuppliers } from "./suppliers";
 import { priceListUploads as seedUploads } from "./mockData";
 
 // ============================================================================
@@ -140,19 +141,9 @@ export function usePriceListUploads(): PriceListUpload[] {
 
 // ---------- Derived: supplier-level stats ----------
 
-const KNOWN_SUPPLIERS = [
-  "CCF",
-  "Minster",
-  "Travis Perkins",
-  "Wolseley",
-  "Jewson",
-  "Wickes",
-  "Selco",
-];
-
 export function extractSupplier(name: string): string {
   const lower = name.toLowerCase();
-  return KNOWN_SUPPLIERS.find((s) => lower.includes(s.toLowerCase())) ?? "Other";
+  return getSuppliers().find((s) => lower.includes(s.name.toLowerCase()))?.name ?? "Other";
 }
 
 /**

@@ -15,6 +15,8 @@ import { recordCallOffAction } from "@/lib/callOffActions";
 import { FormWizard } from "@/components/forms/FormWizard";
 import { useDrawings } from "@/lib/drawingRegistry";
 import { GitCompare } from "lucide-react";
+import { SupplierSelect } from "@/components/suppliers/SupplierSelect";
+import { getActiveSuppliers } from "@/lib/suppliers";
 
 export const Route = createFileRoute("/calloffs/new")({ component: Guarded });
 
@@ -54,12 +56,7 @@ function NewCallOff() {
   const [selectedLineId, setSelectedLineId] = useState<string>(firstAvailable?.id ?? "");
   const selected = lineOptions.find((o) => o.id === selectedLineId) ?? firstAvailable;
   const [qty, setQty] = useState<number>(selected?.remaining ?? 0);
-  const SUPPLIERS = [
-    "Minster",
-    "CCF",
-    "Knauf Direct",
-  ];
-  const [supplier, setSupplier] = useState<string>(SUPPLIERS[0]);
+  const [supplier, setSupplier] = useState<string>(getActiveSuppliers()[0]?.name ?? "");
 
   const remaining = selected?.remaining ?? 0;
   const exceed = qty > remaining;
@@ -149,15 +146,7 @@ function NewCallOff() {
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Supplier</Label>
-                <select
-                  className="h-9 w-full rounded-md border border-[var(--ink-200)] bg-background px-3 text-[13px]"
-                  value={supplier}
-                  onChange={(e) => setSupplier(e.target.value)}
-                >
-                  {SUPPLIERS.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
+                <SupplierSelect value={supplier} onChange={setSupplier} />
               </div>
               <div className="space-y-1.5">
                 <Label>Quantity {selected ? `(${selected.unit})` : ""}</Label>

@@ -8,6 +8,7 @@ import { useProjectData } from "@/lib/projectData";
 import { useBoqAllocation } from "@/lib/boqAllocation";
 import { Button } from "@/components/ui/button";
 import { Layers, ExternalLink, Sparkles } from "lucide-react";
+import { useSuppliers } from "@/lib/suppliers";
 
 export const Route = createFileRoute("/calloffs/")({ component: Inbox });
 
@@ -15,7 +16,10 @@ function Inbox() {
   const { current } = useProject();
   const data = useProjectData(current.id);
   const alloc = useBoqAllocation(current.id);
-  const supplierPicks = Object.entries(data.supplierChoices);
+  const activeSuppliers = useSuppliers().filter((s) => s.isActive);
+  const supplierPicks = Object.entries(data.supplierChoices).filter(([, sup]) =>
+    activeSuppliers.some((s) => s.name === sup),
+  );
   const open = callOffs.filter((c) => c.state !== "closed").length;
   const reviewNeeded = callOffs.filter((c) => c.state === "review-needed").length;
   const mtdValue = callOffs.reduce((s, c) => s + c.value, 0);
