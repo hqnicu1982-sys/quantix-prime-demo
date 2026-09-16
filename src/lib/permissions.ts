@@ -26,6 +26,7 @@ export type Capability =
   | "edit.team"              // invite, change rates, assign
   | "view.pwRates"
   | "edit.pwRates"
+  | "manage.suppliers"
   | "manage.users"
   | "view.variations"
   | "edit.variations"

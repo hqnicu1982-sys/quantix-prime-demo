@@ -36,6 +36,7 @@ import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as InvoicesIndexRouteImport } from './routes/invoices.index'
 import { Route as CalloffsIndexRouteImport } from './routes/calloffs.index'
 import { Route as TeamAuditRouteImport } from './routes/team.audit'
+import { Route as SettingsSuppliersRouteImport } from './routes/settings.suppliers'
 import { Route as SettingsLabourRouteImport } from './routes/settings.labour'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects.$projectId'
 import { Route as PriceListsUploadRouteImport } from './routes/price-lists.upload'
@@ -203,6 +204,11 @@ const CalloffsIndexRoute = CalloffsIndexRouteImport.update({
 const TeamAuditRoute = TeamAuditRouteImport.update({
   id: '/team/audit',
   path: '/team/audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsSuppliersRoute = SettingsSuppliersRouteImport.update({
+  id: '/settings/suppliers',
+  path: '/settings/suppliers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsLabourRoute = SettingsLabourRouteImport.update({
@@ -424,6 +430,7 @@ export interface FileRoutesByFullPath {
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
+  '/settings/suppliers': typeof SettingsSuppliersRoute
   '/team/audit': typeof TeamAuditRoute
   '/calloffs/': typeof CalloffsIndexRoute
   '/invoices/': typeof InvoicesIndexRoute
@@ -482,6 +489,7 @@ export interface FileRoutesByTo {
   '/po/$poRef': typeof PoPoRefRoute
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/settings/labour': typeof SettingsLabourRoute
+  '/settings/suppliers': typeof SettingsSuppliersRoute
   '/team/audit': typeof TeamAuditRoute
   '/calloffs': typeof CalloffsIndexRoute
   '/invoices': typeof InvoicesIndexRoute
@@ -545,6 +553,7 @@ export interface FileRoutesById {
   '/price-lists/upload': typeof PriceListsUploadRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/settings/labour': typeof SettingsLabourRoute
+  '/settings/suppliers': typeof SettingsSuppliersRoute
   '/team/audit': typeof TeamAuditRoute
   '/calloffs/': typeof CalloffsIndexRoute
   '/invoices/': typeof InvoicesIndexRoute
@@ -609,6 +618,7 @@ export interface FileRouteTypes {
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
+    | '/settings/suppliers'
     | '/team/audit'
     | '/calloffs/'
     | '/invoices/'
@@ -667,6 +677,7 @@ export interface FileRouteTypes {
     | '/po/$poRef'
     | '/price-lists/upload'
     | '/settings/labour'
+    | '/settings/suppliers'
     | '/team/audit'
     | '/calloffs'
     | '/invoices'
@@ -729,6 +740,7 @@ export interface FileRouteTypes {
     | '/price-lists/upload'
     | '/projects/$projectId'
     | '/settings/labour'
+    | '/settings/suppliers'
     | '/team/audit'
     | '/calloffs/'
     | '/invoices/'
@@ -779,6 +791,7 @@ export interface RootRouteChildren {
   PoPoRefRoute: typeof PoPoRefRoute
   PriceListsUploadRoute: typeof PriceListsUploadRoute
   SettingsLabourRoute: typeof SettingsLabourRoute
+  SettingsSuppliersRoute: typeof SettingsSuppliersRoute
   TeamAuditRoute: typeof TeamAuditRoute
   TeamIndexRoute: typeof TeamIndexRoute
 }
@@ -972,6 +985,13 @@ declare module '@tanstack/react-router' {
       path: '/team/audit'
       fullPath: '/team/audit'
       preLoaderRoute: typeof TeamAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/suppliers': {
+      id: '/settings/suppliers'
+      path: '/settings/suppliers'
+      fullPath: '/settings/suppliers'
+      preLoaderRoute: typeof SettingsSuppliersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/labour': {
@@ -1335,6 +1355,7 @@ const rootRouteChildren: RootRouteChildren = {
   PoPoRefRoute: PoPoRefRoute,
   PriceListsUploadRoute: PriceListsUploadRoute,
   SettingsLabourRoute: SettingsLabourRoute,
+  SettingsSuppliersRoute: SettingsSuppliersRoute,
   TeamAuditRoute: TeamAuditRoute,
   TeamIndexRoute: TeamIndexRoute,
 }
