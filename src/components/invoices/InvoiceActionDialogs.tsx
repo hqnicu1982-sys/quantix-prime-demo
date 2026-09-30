@@ -112,7 +112,7 @@ export function DisputeDialog({ inv, open, onOpenChange, onDone }: Props) {
       note,
       amount: inv.variance,
     });
-    toast.error(`${inv.id} disputed`, { description: notify ? `${inv.supplier} notified by email` : "Dispute logged internally" });
+    supplierActionToast(current.id, () => toast.error(`${inv.id} disputed`, { description: notify ? `${inv.supplier} notified by email` : "Dispute logged internally" }));
     onOpenChange(false);
     onDone?.();
   };
