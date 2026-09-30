@@ -1,5 +1,6 @@
 import { useProject } from "@/lib/ProjectContext";
-import { supplierActionToast } from "@/lib/sampleProject";
+import { isSampleId, supplierActionToast } from "@/lib/sampleProject";
+import { SampleRefusedAction } from "@/components/sample/SampleUI";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -98,6 +99,7 @@ export function ChaseDialog({ row, open, onOpenChange }: Props) {
 
 // ── Resolve dispute ─────────────────────────────────────────────────────────
 export function ResolveDisputeDialog({ row, open, onOpenChange }: Props) {
+  const { current } = useProject();
   const [outcome, setOutcome] = useState("credit-received");
   const [credit, setCredit] = useState(String(row.amount));
   const [note, setNote] = useState("");
@@ -146,7 +148,9 @@ export function ResolveDisputeDialog({ row, open, onOpenChange }: Props) {
         </div>
         <DialogFooter>
           <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={submit}><CheckCircle2 className="mr-1 h-3 w-3" /> Close dispute</Button>
+          {isSampleId(current.id) && outcome === "credit-received" ? (
+            <SampleRefusedAction><Button size="sm"><CheckCircle2 className="mr-1 h-3 w-3" /> Verify credit note</Button></SampleRefusedAction>
+          ) : <Button size="sm" onClick={submit}><CheckCircle2 className="mr-1 h-3 w-3" /> Close dispute</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { matchLines } from "@/lib/invoiceWorkflow";
+import { isSampleId } from "@/lib/sampleProject";
+import { SampleInvoiceIssue } from "@/components/sample/SampleInvoiceIssue";
 
 export const Route = createFileRoute("/projects/$projectId/invoices")({ component: GuardedInvoicesPage });
 
@@ -46,6 +48,7 @@ function InvoicesPage() {
     });
   return (
     <div className="space-y-5">
+      {isSampleId(projectId) && <SampleInvoiceIssue />}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Receivables" value={`£${(totals.receivables / 1000).toFixed(0)}k`} delta={totals.overdueReceivable > 0 ? `£${(totals.overdueReceivable / 1000).toFixed(0)}k overdue` : "all current"} tone={totals.overdueReceivable > 0 ? "warning" : "success"} />
         <Kpi label="Payables" value={`£${(totals.payables / 1000).toFixed(0)}k`} delta={totals.overduePayable > 0 ? `£${(totals.overduePayable / 1000).toFixed(0)}k overdue` : "all current"} tone={totals.overduePayable > 0 ? "danger" : "neutral"} />

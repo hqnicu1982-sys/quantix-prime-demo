@@ -94,6 +94,9 @@ export type MatchLine = {
 };
 
 export const matchLines: Record<string, MatchLine[]> = {
+  "MER-2048": [
+    { material: "Gyproc FireLine 15 TE 2400×1200", unit: "sheet", poQty: 240, grnQty: 180, invQty: 240, poRate: 14.10, invRate: 14.90, poValue: 3384, invValue: 3576, status: "both" },
+  ],
   "CCF-10821": [
     { material: "Gyproc WallBoard 12.5mm", unit: "m²", poQty: 1850, grnQty: 1850, invQty: 1850, poRate: 3.92, invRate: 3.92, poValue: 7252, invValue: 7252, status: "match" },
   ],

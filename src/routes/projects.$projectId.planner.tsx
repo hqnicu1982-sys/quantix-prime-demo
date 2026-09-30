@@ -31,6 +31,7 @@ import { useProjectVariations } from "@/lib/variations";
 import { useDrawings } from "@/lib/drawingRegistry";
 import { Link } from "@tanstack/react-router";
 import { GitCompare } from "lucide-react";
+import { useProjectData } from "@/lib/projectData";
 
 export const Route = createFileRoute("/projects/$projectId/planner")({
   component: PlannerPage,
@@ -48,6 +49,9 @@ const CALL_OFFS: { id: string; status: "draft" | "pending" | "approved" | "deliv
 function PlannerPage() {
   const { projectId: PID } = Route.useParams();
   const tasks = useProjectTasks(PID);
+  const projectData = useProjectData(PID);
+  const callOffStatuses = projectData.callOffs.map((c) => ({ id: c.id, status: c.status === "sent" ? "approved" as const : c.status }));
+  const readinessCallOffs = callOffStatuses.length ? callOffStatuses : CALL_OFFS;
   const variations = useProjectVariations(PID);
   const drawings = useDrawings(PID);
   const approvedVariationIds = variations
@@ -80,22 +84,22 @@ function PlannerPage() {
       tasks.filter((t) => {
         if (t.status === "done") return false;
         const r = computeReadiness(t, tasks, {
-          callOffs: CALL_OFFS,
+          callOffs: readinessCallOffs,
           approvedVariationIds,
         });
         return r.ready;
       }).length,
-    [tasks, approvedVariationIds],
+     [tasks, approvedVariationIds, readinessCallOffs],
   );
 
   const blockedIds = useMemo(() => {
     const s = new Set<string>();
     for (const t of tasks) {
-      const r = computeReadiness(t, tasks, { callOffs: CALL_OFFS, approvedVariationIds });
+      const r = computeReadiness(t, tasks, { callOffs: readinessCallOffs, approvedVariationIds });
       if (!r.ready) s.add(t.id);
     }
     return s;
-  }, [tasks, approvedVariationIds]);
+  }, [tasks, approvedVariationIds, readinessCallOffs]);
 
   const selected: PlannerTask | null = selectedId
     ? tasks.find((t) => t.id === selectedId) ?? null
@@ -210,7 +214,7 @@ function PlannerPage() {
       <BlockersPanel
         projectId={PID}
         tasks={tasks}
-        callOffs={CALL_OFFS}
+        callOffs={readinessCallOffs}
         approvedVariationIds={approvedVariationIds}
         onSelectTask={setSelectedId}
       />
@@ -221,7 +225,7 @@ function PlannerPage() {
         allTasks={tasks}
         open={!!selected}
         onOpenChange={(o) => !o && setSelectedId(null)}
-        callOffs={CALL_OFFS}
+        callOffs={readinessCallOffs}
         approvedVariationIds={approvedVariationIds}
       />
     </div>

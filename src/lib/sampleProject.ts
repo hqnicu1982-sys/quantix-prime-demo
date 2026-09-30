@@ -1,22 +1,23 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { Project } from "./mockData";
+import { dateOffset, type Project } from "./mockData";
 
 /** The one fictional sample project every organisation gets. Never counts in portfolio numbers. */
 export const SAMPLE_PROJECT_ID = "sample-harbour-yard";
 
 export const SAMPLE_PROJECT: Project = {
   id: SAMPLE_PROJECT_ID,
-  name: "Harbour Yard Offices — Level 2 fit-out",
-  subtitle: "Drylining · Harbour Yard, Bristol · Level 2",
+  name: "Harbour Yard Offices — Levels 2–3 fit-out",
+  subtitle: "Drylining · Harbour Yard, Bristol · Levels 2–3",
   mainContractor: "Northgate Construction Ltd",
-  contractValue: 385000,
-  margin: 19.5,
-  progress: 46,
+  contractValue: 104800,
+  margin: 18.4,
+  progress: 42,
   health: "healthy",
-  startDate: "06/04/2026",
-  endDate: "27/11/2026",
-  hasFullData: false,
+  startDate: dateOffset(-42),
+  endDate: dateOffset(56),
+  hasFullData: true,
+  retentionPct: 3,
   status: "active",
   isSample: true,
 };

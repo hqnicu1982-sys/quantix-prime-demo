@@ -12,6 +12,8 @@ import { useSupplierStats } from "@/lib/priceListRegistry";
 import { DrawingImpactCard } from "@/components/specification/DrawingImpactCard";
 import { useDrawings } from "@/lib/drawingRegistry";
 import { GitCompare } from "lucide-react";
+import { isSampleId } from "@/lib/sampleProject";
+import { SampleCostedBoq } from "@/components/sample/SampleCostedBoq";
 
 export const Route = createFileRoute("/projects/$projectId/costed-boq")({ component: GuardedBoQPage });
 
@@ -23,6 +25,7 @@ function GuardedBoQPage() {
 
 function BoQPage() {
   const { projectId } = Route.useParams();
+  if (isSampleId(projectId)) return <SampleCostedBoq />;
   const data = useProjectData(projectId);
   const hasLive = data.boqLines.length > 0;
   if (hasLive) return <LiveBoQ projectId={projectId} />;

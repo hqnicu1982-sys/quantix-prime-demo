@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { currentUser } from "./mockData";
+import { SAMPLE_ID, SAMPLE_REPORTS } from "./sampleProjectData";
 
 // Per-project, per-date daily-report submission registry. Backs the
 // "Submit to Kier" button so once submitted, the report is locked.
@@ -58,8 +59,10 @@ export function useDailyReportSubmission(projectId: string, date: string): Daily
 
 export function useProjectDailyReports(projectId: string): DailyReportSubmission[] {
   const all = useSyncExternalStore(subscribe, () => snapshot(), () => snapshot());
+  const sample = projectId === SAMPLE_ID ? SAMPLE_REPORTS.map((r) => ({ id: r.id, projectId: SAMPLE_ID, date: r.date, mainContractor: "Northgate Construction Ltd", ts: `${r.date}T16:30:00.000Z`, actor: r.supervisor, note: `${r.note} · crew ${r.crew} · ${r.photos} placeholder photos` })) : [];
   return all
     .filter((s) => s.projectId === projectId)
+    .concat(sample.filter((s) => !all.some((a) => a.id === s.id)))
     .sort((a, b) => b.ts.localeCompare(a.ts));
 }
 

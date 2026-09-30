@@ -6,6 +6,8 @@ import { Gated } from "@/components/auth/Gated";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { useProjectData } from "@/lib/projectData";
+import { isSampleId } from "@/lib/sampleProject";
+import { SampleDeliveryStory } from "@/components/sample/SampleDeliveryStory";
 
 export const Route = createFileRoute("/projects/$projectId/calloffs")({ component: GuardedCallOffsPage });
 
@@ -33,6 +35,7 @@ function CallOffsPage() {
 
   return (
     <div className="space-y-5">
+      {isSampleId(projectId) && <SampleDeliveryStory />}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Open call-offs" value={String(open)} delta={`${drafts} draft · ${sent} sent`} tone={drafts > 0 ? "warning" : "neutral"} />
         <Kpi label="Delivered" value={String(callOffs.filter((c) => c.status === "delivered").length)} />

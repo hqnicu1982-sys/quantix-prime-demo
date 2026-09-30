@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { effectiveRate } from "./labour";
 import { logTaskDiff, type DelayCause } from "./progressLog";
+import { SAMPLE_ID, samplePlannerTasks } from "./sampleProjectData";
 
 // ============================================================================
 // Planner — schedule of works per project.
@@ -410,10 +411,12 @@ function addDaysDate(d: Date, days: number): Date {
 export function useProjectTasks(pid: string): PlannerTask[] {
   const [list, setList] = useState<PlannerTask[]>(() => {
     if (pid === "fitzrovia") seedFitzroviaIfEmpty();
+    if (pid === SAMPLE_ID) seedSampleIfEmpty();
     return read(pid);
   });
   useEffect(() => {
     if (pid === "fitzrovia") seedFitzroviaIfEmpty();
+    if (pid === SAMPLE_ID) seedSampleIfEmpty();
     setList(read(pid));
     const onChange = (e: Event) => {
       const detail = (e as CustomEvent).detail as { projectId?: string } | undefined;
@@ -427,6 +430,13 @@ export function useProjectTasks(pid: string): PlannerTask[] {
     };
   }, [pid]);
   return list;
+}
+
+function seedSampleIfEmpty() {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem(SEED_KEY(SAMPLE_ID))) return;
+  if (read(SAMPLE_ID).length === 0) write(SAMPLE_ID, samplePlannerTasks());
+  localStorage.setItem(SEED_KEY(SAMPLE_ID), "1");
 }
 
 export const STATUS_LABEL: Record<TaskStatus, string> = {

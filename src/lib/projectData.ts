@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SAMPLE_ID, SAMPLE_PROJECT_DATA } from "./sampleProjectData";
 
 // ============================================================================
 // Shared project-scoped data layer (localStorage-backed, mock).
@@ -188,6 +189,7 @@ export function updateCallOffStatus(
 
 /** Synchronous accessor — snapshot of a project's data layer. */
 export function getProjectData(projectId: string): ProjectData {
+  if (projectId === SAMPLE_ID) seedSampleIfEmpty();
   return read(projectId);
 }
 
@@ -198,10 +200,12 @@ export function getProjectData(projectId: string): ProjectData {
 export function useProjectData(projectId: string): ProjectData {
   const [data, setData] = useState<ProjectData>(() => {
     if (projectId === "fitzrovia") seedFitzroviaIfEmpty();
+    if (projectId === SAMPLE_ID) seedSampleIfEmpty();
     return read(projectId);
   });
   useEffect(() => {
     if (projectId === "fitzrovia") seedFitzroviaIfEmpty();
+    if (projectId === SAMPLE_ID) seedSampleIfEmpty();
     setData(read(projectId));
     const onChange = (e: Event) => {
       const detail = (e as CustomEvent).detail as { projectId?: string } | undefined;
@@ -215,6 +219,13 @@ export function useProjectData(projectId: string): ProjectData {
     };
   }, [projectId]);
   return data;
+}
+
+function seedSampleIfEmpty() {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem(SEED_KEY(SAMPLE_ID))) return;
+  if (read(SAMPLE_ID).systems.length === 0) write(SAMPLE_ID, SAMPLE_PROJECT_DATA);
+  localStorage.setItem(SEED_KEY(SAMPLE_ID), "1");
 }
 
 // ---------------------------------------------------------------------------
