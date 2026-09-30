@@ -9,6 +9,8 @@ import { reconFlow, fmtMoney } from "@/lib/mockData";
 import { useCan } from "@/lib/permissions";
 import { NoAccess } from "@/components/auth/NoAccess";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SampleBadge } from "@/components/sample/SampleUI";
 
 export const Route = createFileRoute("/all-invoices")({
   head: () => ({ meta: [{ title: "All Invoices — Quantix Prime" }] }),
@@ -25,12 +27,13 @@ type StatusFilter = "all" | "outstanding" | "overdue" | "paid" | "disputed";
 
 function AllInvoicesPage() {
   const invoices = useInvoices();
-  const { all: projectList } = useProject();
+  const { all: projectList, sample } = useProject();
   const projectNameById = useMemo(() => {
     const m = new Map<string, string>();
     for (const p of projectList) m.set(p.id, p.name);
+    if (sample) m.set(sample.id, sample.name);
     return m;
-  }, [projectList]);
+  }, [projectList, sample]);
 
   const today = new Date().toISOString().slice(0, 10);
   const monthPrefix = today.slice(0, 7);
@@ -146,16 +149,18 @@ function AllInvoicesPage() {
           subtitle={`${rows.length} of ${invoices.length} invoices · click a row to open`}
           right={
             <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={projectFilter}
-                onChange={(e) => setProjectFilter(e.target.value)}
-                className="h-8 rounded-md border border-[var(--ink-200)] bg-background px-2 text-[12px]"
-              >
-                <option value="all">All projects</option>
-                {projectList.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
+              <Select value={projectFilter} onValueChange={setProjectFilter}>
+                <SelectTrigger className="h-8 w-[220px] text-[12px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All projects</SelectItem>
+                  {projectList.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                  {sample && (
+                    <SelectItem value={sample.id}><span className="inline-flex items-center gap-2">{sample.name}<SampleBadge /></span></SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}

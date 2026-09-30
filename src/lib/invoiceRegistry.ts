@@ -238,3 +238,9 @@ export function useInvoices(projectId?: string) {
 export function useInvoiceTotals(projectId?: string) {
   return useStore(() => getInvoiceTotals(projectId));
 }
+/** Reset support: drop sample-scoped rows from the shared list and re-seed the baseline. */
+export function resetSampleInvoices() {
+  if (typeof window === "undefined") return;
+  write(read().filter((r) => r.projectId !== SAMPLE_ID));
+  ensureSampleInvoice();
+}

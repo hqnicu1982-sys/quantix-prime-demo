@@ -25,7 +25,11 @@ function GuardedBoQPage() {
 
 function BoQPage() {
   const { projectId } = Route.useParams();
-  if (isSampleId(projectId)) return <SampleCostedBoq />;
+  return isSampleId(projectId) ? <SampleCostedBoq /> : <BoQPageReal key={projectId} />;
+}
+
+function BoQPageReal() {
+  const { projectId } = Route.useParams();
   const data = useProjectData(projectId);
   const hasLive = data.boqLines.length > 0;
   if (hasLive) return <LiveBoQ projectId={projectId} />;
