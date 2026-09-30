@@ -51,6 +51,7 @@ function AllInvoicesPage() {
     let disputedCount = 0;
     let disputedAmt = 0;
     for (const inv of invoices) {
+      if (sample && inv.projectId === sample.id) continue; // sample never counts in portfolio views
       const isOutstanding = inv.status === "outstanding" || inv.status === "overdue";
       const isOverdue = isOutstanding && inv.due < today;
       if (isOutstanding) outstandingAmt += inv.amount;
@@ -68,7 +69,7 @@ function AllInvoicesPage() {
   // Filter + sort: overdue first, then by due ascending
   const rows = useMemo(() => {
     const filtered = invoices.filter((inv) => {
-      if (projectFilter !== "all" && inv.projectId !== projectFilter) return false;
+      if (projectFilter === "all" ? sample && inv.projectId === sample.id : inv.projectId !== projectFilter) return false;
       const isOutstanding = inv.status === "outstanding" || inv.status === "overdue";
       const isOverdue = isOutstanding && inv.due < today;
       if (statusFilter === "outstanding" && !isOutstanding) return false;
