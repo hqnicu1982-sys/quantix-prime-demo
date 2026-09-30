@@ -98,7 +98,7 @@ function AllInvoicesPage() {
       if (aOverdue !== bOverdue) return bOverdue - aOverdue;
       return a.due.localeCompare(b.due);
     });
-  }, [invoices, projectFilter, statusFilter, q, today, projectNameById]);
+  }, [invoices, projectFilter, statusFilter, q, today, projectNameById, sample]);
 
   return (
     <Section
