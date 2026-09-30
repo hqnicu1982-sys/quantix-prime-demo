@@ -294,3 +294,8 @@ export function SampleSettingsRow() {
     </div>
   );
 }
+
+/** Wraps an upload surface; when refused, applies the sample refused-action pattern. */
+export function MaybeRefused({ refused, children }: { refused?: boolean; children: React.ReactNode }) {
+  return refused ? <SampleRefusedAction className="m-5">{children}</SampleRefusedAction> : <>{children}</>;
+}
