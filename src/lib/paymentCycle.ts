@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { deleteByReference, markPaidByReference } from "./invoiceRegistry";
 import { getProjectVariations } from "./variations";
+import { SAMPLE_ID, samplePaymentCycle } from "./sampleProjectData";
 
 // ============================================================================
 // Payment Cycle — interim payment workflow per JCT/NEC contracts.
@@ -557,10 +558,12 @@ function seedFitzroviaIfEmpty() {
 export function usePaymentCycle(pid: string): PaymentCycleStore {
   const [data, setData] = useState<PaymentCycleStore>(() => {
     if (pid === "fitzrovia") seedFitzroviaIfEmpty();
+    if (pid === SAMPLE_ID) seedSampleIfEmpty();
     return read(pid);
   });
   useEffect(() => {
     if (pid === "fitzrovia") seedFitzroviaIfEmpty();
+    if (pid === SAMPLE_ID) seedSampleIfEmpty();
     setData(read(pid));
     const onChange = (e: Event) => {
       const detail = (e as CustomEvent).detail as { projectId?: string } | undefined;
@@ -574,6 +577,13 @@ export function usePaymentCycle(pid: string): PaymentCycleStore {
     };
   }, [pid]);
   return data;
+}
+
+function seedSampleIfEmpty() {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem(SEED_KEY(SAMPLE_ID))) return;
+  if (read(SAMPLE_ID).applications.length === 0) write(SAMPLE_ID, samplePaymentCycle());
+  localStorage.setItem(SEED_KEY(SAMPLE_ID), "1");
 }
 
 export function usePaymentTotals(pid: string): PaymentTotals {

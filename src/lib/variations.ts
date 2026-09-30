@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SAMPLE_ID, sampleVariations } from "./sampleProjectData";
 
 // ============================================================================
 // Project variations (VOs) — client/contractor-driven changes against baseline.
@@ -326,10 +327,12 @@ function seedFitzroviaIfEmpty() {
 export function useProjectVariations(pid: string): ProjectVariation[] {
   const [list, setList] = useState<ProjectVariation[]>(() => {
     if (pid === "fitzrovia") seedFitzroviaIfEmpty();
+    if (pid === SAMPLE_ID) seedSampleIfEmpty();
     return read(pid);
   });
   useEffect(() => {
     if (pid === "fitzrovia") seedFitzroviaIfEmpty();
+    if (pid === SAMPLE_ID) seedSampleIfEmpty();
     setList(read(pid));
     const onChange = (e: Event) => {
       const detail = (e as CustomEvent).detail as { projectId?: string } | undefined;
@@ -343,6 +346,13 @@ export function useProjectVariations(pid: string): ProjectVariation[] {
     };
   }, [pid]);
   return list;
+}
+
+function seedSampleIfEmpty() {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem(SEED_KEY(SAMPLE_ID))) return;
+  if (read(SAMPLE_ID).length === 0) write(SAMPLE_ID, sampleVariations());
+  localStorage.setItem(SEED_KEY(SAMPLE_ID), "1");
 }
 
 export function newChange(partial?: Partial<VariationChange>): VariationChange {

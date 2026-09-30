@@ -122,6 +122,8 @@ export type Project = {
   ourRole?: "subcontractor" | "main_contractor";
   /** True only for the fictional sample project. Excluded from portfolio numbers. */
   isSample?: boolean;
+  /** Contract retention percentage when explicitly set. */
+  retentionPct?: number;
 };
 
 export const projects: Project[] = [
