@@ -10,6 +10,8 @@ import { PaymentCycleKpiStrip } from "@/components/payments/PaymentCycleKpiStrip
 import { useProjectDailyReports } from "@/lib/dailyReportSubmissions";
 import { useProjectVariations } from "@/lib/variations";
 import { Link } from "@tanstack/react-router";
+import { isSampleId } from "@/lib/sampleProject";
+import { SampleReports } from "@/components/sample/SampleReports";
 
 export const Route = createFileRoute("/projects/$projectId/reports")({ component: GuardedReportsPage });
 
@@ -41,6 +43,7 @@ function formatWhen(iso: string): string {
 
 function ReportsPage() {
   const { projectId } = Route.useParams();
+  if (isSampleId(projectId)) return <SampleReports />;
   const { current } = useProject();
   const canSeePayments = useCan("view.payments");
   const ourRole = current.ourRole ?? "subcontractor";

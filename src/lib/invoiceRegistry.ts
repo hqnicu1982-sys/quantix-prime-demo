@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SAMPLE_ID, SAMPLE_INVOICE, sampleIso } from "./sampleProjectData";
 
 // ============================================================================
 // Invoice Registry — lightweight persistent ledger of receivables/payables.
@@ -51,7 +52,10 @@ function uid() {
 
 function ensureSeed() {
   if (typeof window === "undefined") return;
-  if (localStorage.getItem(SEED_KEY)) return;
+  if (localStorage.getItem(SEED_KEY)) {
+    ensureSampleInvoice();
+    return;
+  }
   const today = new Date();
   const iso = (offset: number) => {
     const d = new Date(today);
@@ -97,6 +101,24 @@ function ensureSeed() {
   }));
   write(list);
   localStorage.setItem(SEED_KEY, "1");
+  ensureSampleInvoice();
+}
+
+function ensureSampleInvoice() {
+  const list = read();
+  if (list.some((i) => i.projectId === SAMPLE_ID && i.reference === SAMPLE_INVOICE.id)) return;
+  write([...list, {
+    id: "sample-invoice-meridian",
+    projectId: SAMPLE_ID,
+    direction: "payable",
+    counterparty: SAMPLE_INVOICE.supplier,
+    reference: SAMPLE_INVOICE.id,
+    issued: sampleIso(-4),
+    due: sampleIso(26),
+    amount: SAMPLE_INVOICE.invoiced,
+    status: "outstanding",
+    createdAt: Date.now() - 4 * 864e5,
+  }]);
 }
 
 // ---------- queries ----------

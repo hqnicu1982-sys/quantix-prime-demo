@@ -13,6 +13,8 @@ import { DrawingRevisionsCard } from "@/components/specification/DrawingRevision
 import { DrawingAuditLog } from "@/components/specification/DrawingAuditLog";
 import { useDrawings, groupByDrawing } from "@/lib/drawingRegistry";
 import { toast } from "sonner";
+import { isSampleId } from "@/lib/sampleProject";
+import { SampleSpecification } from "@/components/sample/SampleSpecification";
 
 export const Route = createFileRoute("/projects/$projectId/specification")({ component: SpecificationPage });
 
@@ -26,6 +28,7 @@ const requirements = [
 
 function SpecificationPage() {
   const { projectId } = Route.useParams();
+  if (isSampleId(projectId)) return <SampleSpecification />;
   const canSeeMoney = useCan("view.financials.lite");
   const canEdit = useCan("edit.specification");
   const allDetails = useAllSystemDetails(projectId);

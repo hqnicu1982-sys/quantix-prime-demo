@@ -80,7 +80,7 @@ function ProjectVariations() {
 }
 
 function useBaseline(projectId: string): number {
-  const { all } = useProject();
-  const p = all.find((x) => x.id === projectId);
+  const { all, sample } = useProject();
+  const p = all.find((x) => x.id === projectId) ?? (sample?.id === projectId ? sample : undefined);
   return p?.contractValue ?? 0;
 }

@@ -189,6 +189,7 @@ export function updateCallOffStatus(
 
 /** Synchronous accessor — snapshot of a project's data layer. */
 export function getProjectData(projectId: string): ProjectData {
+  if (projectId === SAMPLE_ID) seedSampleIfEmpty();
   return read(projectId);
 }
 

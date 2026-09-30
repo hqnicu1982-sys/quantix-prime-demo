@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { deliveries as mockDeliveries } from "./callOffWorkflow";
 import { invoices as mockInvoices } from "./mockData";
 import { matchLines } from "./invoiceWorkflow";
+import { SAMPLE_ID, sampleIso } from "./sampleProjectData";
 
 // ============================================================================
 // GRN Registry — persistent ledger of Goods Received Notes.
@@ -73,7 +74,10 @@ function uid(callOffRef: string) {
 
 function ensureSeed() {
   if (typeof window === "undefined") return;
-  if (localStorage.getItem(SEED_KEY)) return;
+  if (localStorage.getItem(SEED_KEY)) {
+    ensureSampleGrns();
+    return;
+  }
 
   const seeds: GrnRecord[] = [];
 
@@ -119,6 +123,17 @@ function ensureSeed() {
 
   write(seeds);
   localStorage.setItem(SEED_KEY, "1");
+  ensureSampleGrns();
+}
+
+function ensureSampleGrns() {
+  const list = read();
+  if (list.some((g) => g.projectId === SAMPLE_ID)) return;
+  const rows: GrnRecord[] = [
+    { id: "GRN-CO-0001", callOffRef: "CO-0001", projectId: SAMPLE_ID, supplier: "Castlegate Drylining Supplies", status: "received", qty: "W2 boards + studs · delivered in full", signedBy: "Dan Mercer", signedAt: sampleIso(-21), partial: false, note: "North zone · invoice approved", lines: [{ material: "Gyproc SoundBloc 12.5 TE 2400×1200", unit: "sheet", orderedQty: 596, receivedQty: 596 }, { material: "Gypframe 70 S 50 C stud 3000", unit: "length", orderedQty: 829, receivedQty: 829 }], createdAt: Date.now() - 21 * 864e5 },
+    { id: "GRN-CO-0002", callOffRef: "CO-0002", projectId: SAMPLE_ID, supplier: "Meridian Building Materials", status: "partial", qty: "180 / 240 FireLine sheets received", signedBy: "Dan Mercer", signedAt: sampleIso(-7), partial: true, note: "Shortfall: 60 FireLine sheets. W3 corridors affected.", lines: [{ material: "Gyproc FireLine 15 TE 2400×1200", unit: "sheet", orderedQty: 240, receivedQty: 180 }], createdAt: Date.now() - 7 * 864e5 },
+  ];
+  write([...rows, ...list]);
 }
 
 // ---------- queries ----------
