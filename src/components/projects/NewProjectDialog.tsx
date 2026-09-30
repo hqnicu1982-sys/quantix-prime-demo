@@ -91,7 +91,7 @@ export function NewProjectDialog() {
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5">
+        <Button size="sm" className="gap-1.5" data-new-project-trigger>
           <Plus className="h-4 w-4" />
           New project
         </Button>

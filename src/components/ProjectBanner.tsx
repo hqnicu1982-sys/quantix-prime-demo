@@ -1,5 +1,6 @@
 import { useProject } from "@/lib/ProjectContext";
 import { useProjectData } from "@/lib/projectData";
+import { SampleBanner } from "@/components/sample/SampleUI";
 import { Briefcase, Layers, ShoppingCart } from "lucide-react";
 
 /**
@@ -9,6 +10,7 @@ import { Briefcase, Layers, ShoppingCart } from "lucide-react";
 export function ProjectBanner({ scope }: { scope?: string }) {
   const { current } = useProject();
   const data = useProjectData(current.id);
+  if (current.isSample) return <SampleBanner />;
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--ink-200)] bg-[var(--ink-50)]/60 px-3 py-2 text-[12px]">
       <div className="flex items-center gap-2">

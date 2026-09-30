@@ -18,6 +18,8 @@ import { exportProjectPack } from "@/lib/exportProjectPack";
 import { useProjectData } from "@/lib/projectData";
 import { removeProject, isCustomProject } from "@/lib/customProjects";
 import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
+import { SampleBanner, SampleBadge } from "@/components/sample/SampleUI";
+import { SAMPLE_NOT_AVAILABLE } from "@/lib/sampleProject";
 import { pushRecentProject } from "@/lib/recentProjects";
 import {
   AlertDialog,
@@ -52,9 +54,9 @@ const TABS: { key: SubTab; label: string; requires?: Capability }[] = [
 function ProjectLayout() {
   const { projectId } = Route.useParams();
   const location = useLocation();
-  const { all, current, setCurrent } = useProject();
+  const { all, current, setCurrent, sample } = useProject();
   const navigate = useNavigate();
-  const project = all.find((p) => p.id === projectId);
+  const project = all.find((p) => p.id === projectId) ?? (sample?.id === projectId ? sample : undefined);
   const canSeeMoney = useCan("view.financials.lite");
   const projectData = useProjectData(projectId);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -135,7 +137,7 @@ function ProjectLayout() {
     throw notFound();
   }
 
-  if (!portfolioWide && !isAssigned) {
+  if (!portfolioWide && !isAssigned && !project.isSample) {
     return (
       <NoAccess
         cap="view.financials.lite"
@@ -196,9 +198,12 @@ function ProjectLayout() {
           <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
             <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
           </Button>
+          {project.isSample ? <SampleBadge className="self-center" /> : null}
           <Button
             variant="outline"
             size="sm"
+            disabled={project.isSample}
+            title={project.isSample ? SAMPLE_NOT_AVAILABLE : undefined}
             onClick={() => setConfirmDeleteOpen(true)}
             className="text-[var(--red-500)] hover:text-[var(--red-500)]"
           >
@@ -212,6 +217,7 @@ function ProjectLayout() {
         </>
       }
     >
+      {project.isSample && <SampleBanner />}
       <div className="border-b border-[var(--ink-200)]">
         <nav className="flex gap-6 overflow-x-auto text-[13px] font-medium [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {visibleTabs.map((t) => {

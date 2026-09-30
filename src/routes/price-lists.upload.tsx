@@ -1,3 +1,5 @@
+import { useProject } from "@/lib/ProjectContext";
+import { MaybeRefused } from "@/components/sample/SampleUI";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardHead, Section } from "@/components/Primitives";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -25,6 +27,7 @@ function GuardedUpload() {
 function Upload() {
   const uploads = usePriceListUploads();
   const user = useCurrentUser();
+  const { current } = useProject();
   const [supplier, setSupplier] = useState<string>(getActiveSuppliers()[0]?.name ?? "");
 
   function simulateUpload() {
@@ -52,6 +55,7 @@ function Upload() {
           <SupplierSelect value={supplier} onChange={setSupplier} placeholder="Select supplier" />
           <p className="text-[10.5px] text-[var(--ink-500)]">Uploads are indexed against this supplier.</p>
         </div>
+        <MaybeRefused refused={current.isSample}>
         <div onClick={simulateUpload} className="m-5 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--ink-200)] bg-[var(--ink-50)]/50 p-12 text-center transition-colors hover:border-[var(--accent-500)] hover:bg-[var(--accent-500)]/5">
           <CloudUpload className="h-10 w-10 text-[var(--accent-500)]" />
           <p className="mt-3 text-[14px] font-semibold">Drop files or click to upload</p>
@@ -61,6 +65,7 @@ function Upload() {
             Example: CCF full catalogue April 2026.pdf — 82 items extracted in 18 seconds
           </p>
         </div>
+        </MaybeRefused>
       </Card>
 
       <Card>

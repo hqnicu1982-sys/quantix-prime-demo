@@ -1,3 +1,4 @@
+import { SampleSettingsRow } from "@/components/sample/SampleUI";
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -249,6 +250,7 @@ function AccountPage() {
               <OrgRow label="VAT number" value="GB 384 9210 55" />
               <OrgRow label="Primary contact" value="David Andrei · david@quantix.dev" />
             </dl>
+            <div className="mt-3"><SampleSettingsRow /></div>
           </Card>
 
           {/* Your data */}

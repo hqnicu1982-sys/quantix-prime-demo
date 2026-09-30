@@ -1,3 +1,5 @@
+import { useProject } from "@/lib/ProjectContext";
+import { MaybeRefused } from "@/components/sample/SampleUI";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +25,7 @@ function NewInvoice() {
   const [supplier, setSupplier] = useState("CCF");
   const [ref, setRef] = useState("CCF-10825");
   const [amount, setAmount] = useState<number>(0);
+  const { current } = useProject();
   const [po, setPo] = useState("PO-00248");
 
   const handleSubmit = () => {
@@ -47,6 +50,7 @@ function NewInvoice() {
           canAdvance: () => !!fileName,
           render: () => (
             <div className="space-y-3">
+              <MaybeRefused refused={current.isSample}>
               <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-[var(--ink-200)] bg-[var(--ink-50)] p-8 text-center hover:border-[var(--accent-500)]">
                 <UploadCloud className="h-6 w-6 text-[var(--ink-500)]" />
                 <p className="text-[12.5px] font-semibold">Drop PDF / XLSX or click to browse</p>
@@ -56,6 +60,7 @@ function NewInvoice() {
                   if (f) { setFileName(f.name); toast.success(`Parsed ${f.name}`, { description: "1 supplier · 1 line · £8,340" }); setAmount(8340); }
                 }} />
               </label>
+              </MaybeRefused>
               {fileName && (
                 <div className="flex items-center justify-between rounded-md border border-[var(--green-600)]/30 bg-[var(--green-600)]/5 px-3 py-2 text-[12px]">
                   <span className="font-semibold text-[var(--green-600)]"><Sparkles className="mr-1 inline h-3 w-3" /> {fileName}</span>

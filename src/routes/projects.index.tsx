@@ -15,6 +15,7 @@ import { useCurrentUser } from "@/lib/currentUser";
 import { useCan } from "@/lib/permissions";
 import { useAssignments } from "@/lib/labour";
 import { useProject } from "@/lib/ProjectContext";
+import { PinnedSampleCard } from "@/components/sample/SampleUI";
 
 const searchSchema = z.object({
   stage: fallback(z.string(), "active").default("active"),
@@ -64,6 +65,12 @@ function ProjectsList() {
       }
       right={canSeeAllProjects ? <NewProjectDialog /> : null}
     >
+      {canSeeAllProjects && (
+        <PinnedSampleCard
+          hasRealProjects={visibleProjects.length > 0}
+          onCreate={() => document.querySelector<HTMLButtonElement>("[data-new-project-trigger]")?.click()}
+        />
+      )}
       {/* Lifecycle tabs */}
       <div className="flex flex-wrap gap-1 border-b border-[var(--ink-200)]">
         {PROJECT_STAGES.map((s) => {

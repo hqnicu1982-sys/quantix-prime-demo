@@ -1,3 +1,4 @@
+import { SampleBadge } from "@/components/sample/SampleUI";
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import {
@@ -230,7 +231,7 @@ function Breadcrumb() {
 }
 
 function ProjectSwitcher() {
-  const { current, all, setCurrent } = useProject();
+  const { current, all, setCurrent, sample } = useProject();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -245,6 +246,7 @@ function ProjectSwitcher() {
         className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12.5px] font-medium text-[var(--ink-700)] hover:bg-[var(--ink-50)]"
       >
         {current.name}
+        {current.isSample && <SampleBadge />}
         <ChevronDown className="h-3 w-3 opacity-60" />
       </button>
       {open && (
@@ -271,6 +273,24 @@ function ProjectSwitcher() {
               {p.id === current.id && <Check className="h-3.5 w-3.5 shrink-0 text-[var(--accent-500)]" />}
             </button>
           ))}
+          {sample && (
+            <>
+              <div className="my-1 border-t border-[var(--ink-200)]" />
+              <button
+                onClick={() => { setCurrent(sample.id); setOpen(false); }}
+                className={cn(
+                  "flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-[12.5px] hover:bg-[var(--ink-50)]",
+                  sample.id === current.id && "bg-[var(--accent-500)]/10",
+                )}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-[var(--ink-900)]">{sample.name}</p>
+                  <p className="truncate text-[10.5px] text-[var(--ink-500)]">Fictional · not in portfolio</p>
+                </div>
+                <SampleBadge />
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

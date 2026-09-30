@@ -1,3 +1,5 @@
+import { useProject } from "@/lib/ProjectContext";
+import { SampleWelcomePanel } from "@/components/sample/SampleUI";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardHead, Kpi } from "@/components/Primitives";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -29,6 +31,8 @@ function Dashboard() {
   const canViewFinancialsLite = useCan("view.financials.lite");
   const canSeeFinancials = canViewFinancials || canViewFinancialsLite;
   const isOperative = me.tier === "Operative";
+  const { all } = useProject();
+  if (!isOperative && all.length === 0) return <SampleWelcomePanel />;
 
   // Operative / Site User get a focused dashboard: their scope + nothing else.
   if (isOperative) {
