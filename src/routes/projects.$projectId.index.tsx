@@ -19,6 +19,8 @@ import { FollowUpsCard } from "@/components/projects/FollowUpsCard";
 import { useAwardBaseline } from "@/lib/awardBaseline";
 import { Lock } from "lucide-react";
 import { team } from "@/lib/mockData";
+import { isSampleId } from "@/lib/sampleProject";
+import { SampleOverview } from "@/components/sample/SampleOverview";
 
 export const Route = createFileRoute("/projects/$projectId/")({ component: Overview });
 
@@ -33,6 +35,10 @@ function Overview() {
   const myAssignments = useAssignments(projectId);
   const isOnProject = myAssignments.some((a) => a.memberId === me.id);
   const isOperative = me.tier === "Operative";
+
+  if (isSampleId(projectId)) {
+    return <div className="space-y-5"><SampleOverview /><ProjectSetupChecklist projectId={projectId} /></div>;
+  }
 
   // Fitzrovia uses curated mock data; other projects show generic project KPIs derived from the project record.
   if (projectId !== "fitzrovia") {
@@ -324,7 +330,8 @@ function ProjectSetupChecklist({ projectId }: { projectId: string }) {
 
   const steps: SetupStep[] = auto.map((s) => ({
     ...s,
-    done: s.autoDone || overrides[s.key] === true,
+    done: isSampleId(projectId) || s.autoDone || overrides[s.key] === true,
+    detail: isSampleId(projectId) && !s.detail ? "Included in sample" : s.detail,
   }));
 
   const doneCount = steps.filter((s) => s.done).length;

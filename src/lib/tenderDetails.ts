@@ -135,6 +135,10 @@ export function outcomesForStatus(status: Project["status"]): typeof FOLLOW_UP_O
  * Tenders show 1–2 entries (invite + pricing kick-off); awaiting show 3–5.
  */
 export function getFollowUpHistory(p: Project): FollowUpEntry[] {
+  if (p.isSample) {
+    const manual = readFollowUps().filter((r) => r.projectId === p.id).map((r) => ({ id: r.id, date: r.date, daysAgo: Math.max(0, daysBetween(r.isoDate, new Date().toISOString())), channel: r.channel, by: r.by, note: r.note, outcome: r.outcome, manual: true, isoDate: r.isoDate, nextReminderDate: r.nextReminderDate } satisfies FollowUpEntry));
+    return [{ id: `sample-progress-${p.id}`, date: offsetToDisplay(-3), daysAgo: 3, channel: "meeting", by: "Northgate Construction Ltd", note: "Progress review completed — W3 corridor shortfall recorded; completion forecast remains achievable." }, ...manual];
+  }
   const est = getAssignedEstimator(p);
   const entries: FollowUpEntry[] = [];
   const h = hash(p.id);

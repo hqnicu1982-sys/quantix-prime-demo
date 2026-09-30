@@ -10,6 +10,7 @@ import { UserPlus } from "lucide-react";
 import { addInvite, useRoles } from "@/lib/labour";
 import { useProject } from "@/lib/ProjectContext";
 import { toast } from "sonner";
+import { SampleBadge } from "@/components/sample/SampleUI";
 
 type Tier = "Admin" | "Pro Control" | "Pro" | "Operative";
 
@@ -21,7 +22,8 @@ export function InviteMemberDialog({
   trigger?: React.ReactNode;
 }) {
   const roles = useRoles();
-  const { all: projects } = useProject();
+  const { all, sample } = useProject();
+  const projects = sample ? [...all, sample] : all;
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -120,7 +122,7 @@ export function InviteMemberDialog({
               <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">— None —</SelectItem>
-                {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                {projects.map((p) => <SelectItem key={p.id} value={p.id}><span className="inline-flex items-center gap-2">{p.name}{p.isSample && <SampleBadge />}</span></SelectItem>)}
               </SelectContent>
             </Select>
           </div>
