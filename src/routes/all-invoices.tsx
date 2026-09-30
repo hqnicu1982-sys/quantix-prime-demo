@@ -51,6 +51,7 @@ function AllInvoicesPage() {
     let disputedCount = 0;
     let disputedAmt = 0;
     for (const inv of invoices) {
+      if (sample && inv.projectId === sample.id) continue; // sample never counts in portfolio views
       const isOutstanding = inv.status === "outstanding" || inv.status === "overdue";
       const isOverdue = isOutstanding && inv.due < today;
       if (isOutstanding) outstandingAmt += inv.amount;
@@ -63,12 +64,17 @@ function AllInvoicesPage() {
       }
     }
     return { total, outstandingAmt, overdueCount, thisMonth, disputedCount, disputedAmt };
-  }, [invoices, today, monthPrefix]);
+  }, [invoices, today, monthPrefix, sample]);
+
+  const portfolioCount = useMemo(
+    () => invoices.filter((inv) => !sample || inv.projectId !== sample.id).length,
+    [invoices, sample],
+  );
 
   // Filter + sort: overdue first, then by due ascending
   const rows = useMemo(() => {
     const filtered = invoices.filter((inv) => {
-      if (projectFilter !== "all" && inv.projectId !== projectFilter) return false;
+      if (projectFilter === "all" ? sample && inv.projectId === sample.id : inv.projectId !== projectFilter) return false;
       const isOutstanding = inv.status === "outstanding" || inv.status === "overdue";
       const isOverdue = isOutstanding && inv.due < today;
       if (statusFilter === "outstanding" && !isOutstanding) return false;
@@ -92,7 +98,7 @@ function AllInvoicesPage() {
       if (aOverdue !== bOverdue) return bOverdue - aOverdue;
       return a.due.localeCompare(b.due);
     });
-  }, [invoices, projectFilter, statusFilter, q, today, projectNameById]);
+  }, [invoices, projectFilter, statusFilter, q, today, projectNameById, sample]);
 
   return (
     <Section
@@ -146,7 +152,7 @@ function AllInvoicesPage() {
       <Card>
         <CardHead
           title="All invoices · firm-wide"
-          subtitle={`${rows.length} of ${invoices.length} invoices · click a row to open`}
+          subtitle={`${rows.length} of ${projectFilter === "all" ? portfolioCount : invoices.length} invoices · click a row to open`}
           right={
             <div className="flex flex-wrap items-center gap-2">
               <Select value={projectFilter} onValueChange={setProjectFilter}>
