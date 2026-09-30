@@ -24,8 +24,8 @@ export const Route = createFileRoute("/projects/$projectId/")({ component: Overv
 
 function Overview() {
   const { projectId } = Route.useParams();
-  const { all } = useProject();
-  const project = all.find((p) => p.id === projectId);
+  const { all, sample } = useProject();
+  const project = all.find((p) => p.id === projectId) ?? (sample?.id === projectId ? sample : undefined);
   const me = useCurrentUser();
   const canSeeFinancials = useCan("view.financials");
   const canSeeFinancialsLite = useCan("view.financials.lite");
