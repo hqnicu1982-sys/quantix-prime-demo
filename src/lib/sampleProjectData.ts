@@ -104,3 +104,27 @@ export function samplePaymentCycle(): PaymentCycleStore {
   const app2: PaymentApplication = { id: "sample-app-2", projectId: SAMPLE_ID, appNumber: "App 2", periodEnd: sampleIso(-2), submittedAt: sampleIso(-2), dueDateForNotice: sampleIso(3), finalDateForPayment: sampleIso(12), lines: lines2, retentionPct: 3, previouslyCertified: 28600, grossTotal: gross2, retentionHeld: held2, netCumulative: net2, netThisApplication: +(net2 - 28600).toFixed(2), status: "submitted", notes: "Submitted — awaiting certificate.", createdAt: now - 2 * DAY, updatedAt: now - 2 * DAY };
   return { applications: [app2, app1], notices: [{ id: "sample-pn-1", applicationId: app1.id, issuedAt: sampleIso(-23), certifiedAmount: 28600 }], payLess: [], certificates: [{ id: "sample-cert-1", applicationId: app1.id, certificateNumber: "CERT-001", finalAmount: 28600, issuedAt: sampleIso(-21) }] };
 }
+
+export const SAMPLE_INVOICE = {
+  id: "MER-2048",
+  supplier: "Meridian Building Materials",
+  state: "disputed" as const,
+  received: sampleIso(-4),
+  matchedAt: `Disputed ${sampleIso(-3)}`,
+  poRef: "PO-0002",
+  callOffRef: "CO-0002",
+  invoiced: 3576,
+  expected: 2538,
+  variance: 1038,
+  variancePct: 40.9,
+  lineDetail: "Gyproc FireLine 15: 240 sheets billed, 180 delivered; £14.90 invoiced vs £14.10 quoted.",
+  alert: "Open dispute — quantity and rate both exceed the signed GRN and quote.",
+};
+
+export const SAMPLE_REPORTS = [
+  { id: "DR-005", offset: -1, crew: 6, note: "W2 North boarding progressed; placeholder photos attached." },
+  { id: "DR-004", offset: -3, crew: 5, note: "W3 corridor framing and FireLine set-out; placeholder photos attached." },
+  { id: "DR-003", offset: -6, crew: 4, note: "2-hour access delay — hoist booked by M&E; placeholder photos attached." },
+  { id: "DR-002", offset: -9, crew: 5, note: "W1 stores completed and checked; placeholder photos attached." },
+  { id: "DR-001", offset: -12, crew: 4, note: "W2 North studwork commenced; placeholder photos attached." },
+].map((r) => ({ ...r, date: sampleIso(r.offset), supervisor: "Dan Mercer", photos: 2 }));
