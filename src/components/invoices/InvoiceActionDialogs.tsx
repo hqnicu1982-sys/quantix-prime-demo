@@ -1,3 +1,5 @@
+import { useProject } from "@/lib/ProjectContext";
+import { supplierActionToast } from "@/lib/sampleProject";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -95,6 +97,7 @@ export function AcceptVarianceDialog({ inv, open, onOpenChange, onDone }: Props)
 
 // ── Dispute ─────────────────────────────────────────────────────────────────
 export function DisputeDialog({ inv, open, onOpenChange, onDone }: Props) {
+  const { current } = useProject();
   const [reason, setReason] = useState("over-delivery");
   const [note, setNote] = useState("");
   const [notify, setNotify] = useState(true);
@@ -109,7 +112,7 @@ export function DisputeDialog({ inv, open, onOpenChange, onDone }: Props) {
       note,
       amount: inv.variance,
     });
-    toast.error(`${inv.id} disputed`, { description: notify ? `${inv.supplier} notified by email` : "Dispute logged internally" });
+    supplierActionToast(current.id, () => toast.error(`${inv.id} disputed`, { description: notify ? `${inv.supplier} notified by email` : "Dispute logged internally" }));
     onOpenChange(false);
     onDone?.();
   };
@@ -151,6 +154,7 @@ export function DisputeDialog({ inv, open, onOpenChange, onDone }: Props) {
 
 // ── Request credit note ─────────────────────────────────────────────────────
 export function RequestCreditDialog({ inv, open, onOpenChange, onDone }: Props) {
+  const { current } = useProject();
   const [reason, setReason] = useState("rate-correction");
   const [amount, setAmount] = useState(String(inv.variance || 0));
   const [note, setNote] = useState("");
@@ -166,7 +170,7 @@ export function RequestCreditDialog({ inv, open, onOpenChange, onDone }: Props) 
       note,
       creditAmount: num,
     });
-    toast.success("Credit note requested", { description: `${inv.supplier} asked for £${num.toLocaleString()} credit` });
+    supplierActionToast(current.id, () => toast.success("Credit note requested", { description: `${inv.supplier} asked for £${num.toLocaleString()} credit` }));
     onOpenChange(false);
     onDone?.();
   };
