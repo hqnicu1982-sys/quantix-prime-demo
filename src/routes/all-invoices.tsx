@@ -64,7 +64,12 @@ function AllInvoicesPage() {
       }
     }
     return { total, outstandingAmt, overdueCount, thisMonth, disputedCount, disputedAmt };
-  }, [invoices, today, monthPrefix]);
+  }, [invoices, today, monthPrefix, sample]);
+
+  const portfolioCount = useMemo(
+    () => invoices.filter((inv) => !sample || inv.projectId !== sample.id).length,
+    [invoices, sample],
+  );
 
   // Filter + sort: overdue first, then by due ascending
   const rows = useMemo(() => {
@@ -147,7 +152,7 @@ function AllInvoicesPage() {
       <Card>
         <CardHead
           title="All invoices · firm-wide"
-          subtitle={`${rows.length} of ${invoices.length} invoices · click a row to open`}
+          subtitle={`${rows.length} of ${projectFilter === "all" ? portfolioCount : invoices.length} invoices · click a row to open`}
           right={
             <div className="flex flex-wrap items-center gap-2">
               <Select value={projectFilter} onValueChange={setProjectFilter}>
