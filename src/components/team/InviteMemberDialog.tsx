@@ -22,8 +22,8 @@ export function InviteMemberDialog({
   trigger?: React.ReactNode;
 }) {
   const roles = useRoles();
-  const { all, sample } = useProject();
-  const projects = sample ? [...all, sample] : all;
+  const { all } = useProject();
+  const projects = all; // invites assign people to real projects only — never the sample
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
