@@ -120,6 +120,8 @@ export type Project = {
    * Defaults to "subcontractor" when undefined.
    */
   ourRole?: "subcontractor" | "main_contractor";
+  /** True only for the fictional sample project. Excluded from portfolio numbers. */
+  isSample?: boolean;
 };
 
 export const projects: Project[] = [
