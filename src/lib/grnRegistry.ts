@@ -245,3 +245,10 @@ export function useGrns(filter?: { projectId?: string; callOffRef?: string }) {
 export function useGrn(ref: string | undefined) {
   return useStore(() => (ref ? findGrn(ref) : undefined));
 }
+
+/** Reset support: drop sample-scoped rows from the shared list and re-seed the baseline. */
+export function resetSampleGrns() {
+  if (typeof window === "undefined") return;
+  write(read().filter((r) => r.projectId !== SAMPLE_ID));
+  ensureSampleGrns();
+}

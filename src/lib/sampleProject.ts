@@ -83,6 +83,9 @@ export async function resetSampleProject(): Promise<void> {
     if (k && k.includes(SAMPLE_PROJECT_ID)) keys.push(k);
   }
   keys.forEach((k) => localStorage.removeItem(k));
+  const [{ resetSampleGrns }, { resetSampleInvoices }] = await Promise.all([import("./grnRegistry"), import("./invoiceRegistry")]);
+  resetSampleGrns();
+  resetSampleInvoices();
   localStorage.removeItem(MISSING_KEY);
   window.dispatchEvent(new CustomEvent(EVT));
 }

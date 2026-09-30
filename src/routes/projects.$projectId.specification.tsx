@@ -28,7 +28,11 @@ const requirements = [
 
 function SpecificationPage() {
   const { projectId } = Route.useParams();
-  if (isSampleId(projectId)) return <SampleSpecification />;
+  return isSampleId(projectId) ? <SampleSpecification /> : <SpecificationPageReal key={projectId} />;
+}
+
+function SpecificationPageReal() {
+  const { projectId } = Route.useParams();
   const canSeeMoney = useCan("view.financials.lite");
   const canEdit = useCan("edit.specification");
   const allDetails = useAllSystemDetails(projectId);

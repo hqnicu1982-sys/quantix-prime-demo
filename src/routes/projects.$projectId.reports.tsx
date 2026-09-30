@@ -43,7 +43,11 @@ function formatWhen(iso: string): string {
 
 function ReportsPage() {
   const { projectId } = Route.useParams();
-  if (isSampleId(projectId)) return <SampleReports />;
+  return isSampleId(projectId) ? <SampleReports /> : <ReportsPageReal key={projectId} />;
+}
+
+function ReportsPageReal() {
+  const { projectId } = Route.useParams();
   const { current } = useProject();
   const canSeePayments = useCan("view.payments");
   const ourRole = current.ourRole ?? "subcontractor";
