@@ -1,11 +1,15 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { projects, type Project } from "./mockData";
+import { SAMPLE_PROJECT, useSampleState } from "./sampleProject";
 import { useCustomProjects, useProjectOverrides, useHiddenProjectIds } from "./customProjects";
 
 type Ctx = {
   current: Project;
   setCurrent: (id: string) => void;
+  /** Real projects only — the sample never appears here. */
   all: Project[];
+  /** The fictional sample project (null if it failed to create). */
+  sample: Project | null;
 };
 
 const ProjectContext = createContext<Ctx | null>(null);
@@ -20,6 +24,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const custom = useCustomProjects();
   const overrides = useProjectOverrides();
   const hidden = useHiddenProjectIds();
+  const { missing } = useSampleState();
+  const sample = missing ? null : SAMPLE_PROJECT;
 
   const setCurrent = (id: string) => {
     setCurrentId(id);
@@ -34,9 +40,12 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     .filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)))
     .map((p) => (overrides[p.id] ? { ...p, ...overrides[p.id] } : p));
   const all = merged;
-  const current = all.find((p) => p.id === currentId) ?? all[0] ?? projects[0];
+  const current =
+    all.find((p) => p.id === currentId) ??
+    (sample && sample.id === currentId ? sample : undefined) ??
+    all[0] ?? sample ?? projects[0];
   return (
-    <ProjectContext.Provider value={{ current, setCurrent, all }}>
+    <ProjectContext.Provider value={{ current, setCurrent, all, sample }}>
       {children}
     </ProjectContext.Provider>
   );

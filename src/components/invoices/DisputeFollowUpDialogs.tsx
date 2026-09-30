@@ -1,3 +1,5 @@
+import { useProject } from "@/lib/ProjectContext";
+import { supplierActionToast } from "@/lib/sampleProject";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -39,6 +41,7 @@ function Summary({ row }: { row: DisputeRecord }) {
 
 // ── Chase supplier ──────────────────────────────────────────────────────────
 export function ChaseDialog({ row, open, onOpenChange }: Props) {
+  const { current } = useProject();
   const [channel, setChannel] = useState("email");
   const [contact, setContact] = useState(`accounts@${row.supplier.toLowerCase().replace(/\s+/g, "")}.co.uk`);
   const [msg, setMsg] = useState(`Following up on dispute for ${row.ref} (£${row.amount.toLocaleString()}). Please confirm credit note ETA.`);
@@ -53,7 +56,9 @@ export function ChaseDialog({ row, open, onOpenChange }: Props) {
       note: msg,
       amount: row.amount,
     });
-    toast.success(`Chaser sent to ${row.supplier}`, { description: channel === "phone" ? "Call logged on dispute" : `Sent to ${contact}` });
+    supplierActionToast(current.id, () =>
+      toast.success(`Chaser sent to ${row.supplier}`, { description: channel === "phone" ? "Call logged on dispute" : `Sent to ${contact}` }),
+    );
     onOpenChange(false);
   };
   return (
