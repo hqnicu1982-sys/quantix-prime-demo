@@ -306,8 +306,8 @@ function Showcase() {
                       <div className="mt-3 ml-8 h-0.5 overflow-hidden rounded bg-[var(--th-line)]">
                         <div
                           key={`${active}-${running}`}
-                          className="th-progress h-full bg-[var(--th-accent)]"
-                          style={{ animationDuration: `${DURATION}ms`, animationPlayState: running ? "running" : "paused", transform: running ? undefined : "scaleX(1)" }}
+                          className={`h-full bg-[var(--th-accent)] ${running ? "th-progress" : "opacity-40"}`}
+                          style={running ? { animationDuration: `${DURATION}ms` } : undefined}
                         />
                       </div>
                     </>
