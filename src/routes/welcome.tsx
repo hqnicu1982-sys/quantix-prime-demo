@@ -398,7 +398,7 @@ function BoqMock() {
           Sample data
         </span>
       </div>
-      <div className="mt-4 w-full max-w-full overflow-x-auto rounded-lg border border-slate-700 bg-white">
+      <div className="relative mt-4 w-full max-w-full overflow-x-auto rounded-lg border border-slate-700 bg-white">
         <table className="w-full min-w-[460px] text-[11.5px]">
           <thead className="bg-[#F1F5F9] text-[10px] uppercase tracking-wider text-slate-500">
             <tr>
@@ -496,7 +496,7 @@ function TakeoffMock() {
 function ComparisonMock() {
   return (
     <MockFrame label="Same lines, three price lists">
-      <div className="w-full overflow-x-auto">
+      <div className="relative w-full overflow-x-auto">
         <table className="w-full min-w-[340px] text-[11.5px]">
           <thead className="text-[10px] uppercase tracking-wider text-slate-500">
             <tr>
