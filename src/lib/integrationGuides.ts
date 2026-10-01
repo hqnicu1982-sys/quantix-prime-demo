@@ -12,7 +12,7 @@ export const INTEGRATION_GUIDES: Record<string, IntegrationGuide> = {
     urlLabel: "Xero Developer portal",
     steps: [
       "Open Xero Developer portal and sign in with your Xero admin account.",
-      "Click New app → choose Custom connection, name it 'Quantix Prime'.",
+      "Click New app → choose Custom connection, name it 'FixMargin'.",
       "Select the Accounting scope (read & write invoices, POs, contacts).",
       "On the app page click Generate a secret and copy the value shown once.",
     ],
@@ -46,7 +46,7 @@ export const INTEGRATION_GUIDES: Record<string, IntegrationGuide> = {
     steps: [
       "Open Asta Powerproject → File → Options → Integrations.",
       "Click Enable web API and sign in with your Elecosoft account.",
-      "Press Generate API key, give it the name 'Quantix Prime'.",
+      "Press Generate API key, give it the name 'FixMargin'.",
       "Copy the key — it disappears as soon as you close the dialog.",
     ],
   },
@@ -56,7 +56,7 @@ export const INTEGRATION_GUIDES: Record<string, IntegrationGuide> = {
     urlLabel: "Azure App registrations",
     steps: [
       "In Azure Portal go to App registrations → New registration.",
-      "Name it 'Quantix Prime' and add the Project.Read.All API permission.",
+      "Name it 'FixMargin' and add the Project.Read.All API permission.",
       "Open Certificates & secrets → New client secret, set expiry to 24 months.",
       "Copy the Value (not the Secret ID) immediately after saving.",
     ],
@@ -90,7 +90,7 @@ export const INTEGRATION_GUIDES: Record<string, IntegrationGuide> = {
     steps: [
       "In Teams, open the channel you want notifications in.",
       "Click ··· → Connectors → Incoming Webhook → Configure.",
-      "Name it 'Quantix Prime' and click Create, then copy the webhook URL.",
+      "Name it 'FixMargin' and click Create, then copy the webhook URL.",
       "Paste the full URL as the API key. Account = the channel name.",
     ],
   },

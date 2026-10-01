@@ -1,4 +1,4 @@
-// Quantix Prime — comprehensive mock data (v2)
+// FixMargin — comprehensive mock data (v2)
 // All data is hardcoded for the demo. Active project = Hotel Fitzrovia.
 
 // ==================================================================

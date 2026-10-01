@@ -29,7 +29,7 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/costed-boq")({
-  head: () => ({ meta: [{ title: "Costed BoQ — Quantix Prime" }] }),
+  head: () => ({ meta: [{ title: "Costed BoQ — FixMargin" }] }),
   validateSearch: zodValidator(searchSchema),
   component: GuardedCostedBoq,
 });

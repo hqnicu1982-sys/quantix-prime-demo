@@ -24,7 +24,7 @@ import { CashflowForecastCard } from "@/components/payments/CashflowForecastCard
 import { usePaymentTotals } from "@/lib/paymentCycle";
 
 export const Route = createFileRoute("/financial")({
-  head: () => ({ meta: [{ title: "Financial Dashboard — Quantix Prime" }] }),
+  head: () => ({ meta: [{ title: "Financial Dashboard — FixMargin" }] }),
   component: GuardedFinancial,
 });
 

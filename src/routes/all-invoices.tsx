@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SampleBadge } from "@/components/sample/SampleUI";
 
 export const Route = createFileRoute("/all-invoices")({
-  head: () => ({ meta: [{ title: "All Invoices — Quantix Prime" }] }),
+  head: () => ({ meta: [{ title: "All Invoices — FixMargin" }] }),
   component: Guarded,
 });
 

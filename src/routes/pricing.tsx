@@ -16,17 +16,17 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing — Quantix Prime" },
+      { title: "Pricing — FixMargin" },
       {
         name: "description",
         content:
-          "Quantix Prime pricing for specialty contractors. Free calculator, Starter, Growth, Scale and Enterprise tiers with monthly, annual, 2-year and 3-year commitments.",
+          "FixMargin pricing for specialty contractors. Free calculator, Starter, Growth, Scale and Enterprise tiers with monthly, annual, 2-year and 3-year commitments.",
       },
-      { property: "og:title", content: "Pricing — Quantix Prime" },
+      { property: "og:title", content: "Pricing — FixMargin" },
       {
         property: "og:description",
         content:
-          "Pricing that pays for itself. Recover 1 point of margin and Quantix pays back many times over.",
+          "Pricing that pays for itself. Recover 1 point of margin and FixMargin pays back many times over.",
       },
     ],
   }),
@@ -82,12 +82,12 @@ function PricingPage() {
       {/* HERO */}
       <Section
         title="Pricing that pays for itself"
-        subtitle="A typical £15M specialty contractor loses 2–4 points of margin a year to estimating, buying and site inefficiency. Quantix recovering even 1 point is worth £150k."
+        subtitle="A typical £15M specialty contractor loses 2–4 points of margin a year to estimating, buying and site inefficiency. FixMargin recovering even 1 point is worth £150k."
       />
 
       {/* TRUST STRIP */}
       <div className="rounded-[10px] border border-[var(--ink-200)] bg-[var(--ink-50)] px-5 py-3 text-center text-[13px] text-[var(--ink-700)]">
-        Every rate in Quantix is verified against the British Gypsum White Book and Knauf, Siniat and Fermacell technical data —
+        Every rate in FixMargin is verified against the British Gypsum White Book and Knauf, Siniat and Fermacell technical data —
         <span className="font-semibold text-[var(--ink-900)]"> 3,054 systems, zero guesswork.</span>
       </div>
 
@@ -582,7 +582,7 @@ function RoiCalculator({
               pulseKey={tierPulseKey}
             />
             <MetricTile
-              label="Quantix annual cost (annual commitment)"
+              label="FixMargin annual cost (annual commitment)"
               value={cost ? fmt(Math.round(animatedCost)) : "Custom"}
               valueKey={cost ? "num" : "custom"}
             />
@@ -594,7 +594,7 @@ function RoiCalculator({
                 <span className="font-semibold text-[var(--green-600)]">
                   {ratio}× return
                 </span>{" "}
-                — Quantix costs{" "}
+                — FixMargin costs{" "}
                 <span className="font-semibold">{pct}%</span> of your revenue.
               </>
             ) : (
@@ -654,7 +654,7 @@ function CompetitiveAnchor() {
     { name: "Procore", price: "£75–120k", note: "enterprise-generic, not drylining-specific" },
     { name: "Causeway / Eque2", price: "£60–100k", note: "per-user pricing, commercial modules only" },
     { name: "Re-flow / field tools", price: "£42–91k", note: "timesheets and planning only" },
-    { name: "Quantix Scale", price: "£23,988", note: "drylining-native: calculator + procurement + cost control", highlight: true },
+    { name: "FixMargin Scale", price: "£23,988", note: "drylining-native: calculator + procurement + cost control", highlight: true },
   ];
   return (
     <section className="space-y-3">
@@ -829,6 +829,6 @@ const FAQS = [
   },
   {
     q: "Do Operatives really count as users?",
-    a: "Yes, and they're deliberately cheap — bundled in every tier so putting your whole site workforce on Quantix is a yes/no decision, not a spreadsheet exercise.",
+    a: "Yes, and they're deliberately cheap — bundled in every tier so putting your whole site workforce on FixMargin is a yes/no decision, not a spreadsheet exercise.",
   },
 ];

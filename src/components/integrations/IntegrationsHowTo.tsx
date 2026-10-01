@@ -72,7 +72,7 @@ const STEPS = [
     icon: ListChecks,
     title: "6. Manage in Execution Planner",
     body:
-      "Open Planner → Gantt to reschedule (drag/resize), assign crews, or mark progress. Edits stay in Quantix; on the next sync we push date changes back to the source app (e.g. Asta) and flag conflicts in the Blockers panel.",
+      "Open Planner → Gantt to reschedule (drag/resize), assign crews, or mark progress. Edits stay in FixMargin; on the next sync we push date changes back to the source app (e.g. Asta) and flag conflicts in the Blockers panel.",
   },
 ];
 
@@ -120,7 +120,7 @@ export function IntegrationsHowTo() {
           </div>
           <div>
             <h3 className="font-display text-[15px] font-semibold text-[var(--ink-900)]">
-              How to connect an app to Quantix
+              How to connect an app to FixMargin
             </h3>
             <p className="mt-0.5 text-[12px] text-[var(--ink-500)]">
               A 4-step walkthrough — takes about a minute per integration.

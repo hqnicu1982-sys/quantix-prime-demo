@@ -217,7 +217,7 @@ function Breadcrumb() {
   };
   return (
     <nav className="hidden items-center gap-1.5 text-[12.5px] text-[var(--ink-500)] md:flex" aria-label="Breadcrumb">
-      <span className="font-semibold text-[var(--ink-700)]">Quantix Prime</span>
+      <span className="font-semibold text-[var(--ink-700)]">FixMargin</span>
       <span className="text-[var(--ink-200)]">/</span>
       <ProjectSwitcher />
       {labelMap[path] && labelMap[path] !== current.name && (
@@ -309,7 +309,7 @@ function WelcomeModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="font-display text-[22px] font-semibold tracking-tight">
-            Welcome to <span className="italic font-normal text-[var(--accent-500)]">Quantix Prime</span>
+            Welcome to <span className="italic font-normal text-[var(--accent-500)]">FixMargin</span>
           </DialogTitle>
           <DialogDescription className="pt-1 text-[13px]">
             A business preview of UK construction intelligence
@@ -455,7 +455,7 @@ function LayoutInner() {
                 to="/how-to"
                 className="rounded-md p-2 text-[var(--ink-500)] hover:bg-[var(--ink-50)]"
                 aria-label="How to use"
-                title="How to use Quantix Prime"
+                title="How to use FixMargin"
               >
                 <HelpCircle className="h-4 w-4" />
               </Link>

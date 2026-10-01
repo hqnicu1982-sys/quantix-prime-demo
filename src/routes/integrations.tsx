@@ -21,7 +21,7 @@ import {
 import { IntegrationsHowTo } from "@/components/integrations/IntegrationsHowTo";
 
 export const Route = createFileRoute("/integrations")({
-  head: () => ({ meta: [{ title: "Integrations — Quantix Prime" }] }),
+  head: () => ({ meta: [{ title: "Integrations — FixMargin" }] }),
   component: GuardedIntegrations,
 });
 
@@ -38,7 +38,7 @@ function Integrations() {
   const [settingsFor, setSettingsFor] = useState<{ id: string; name: string } | null>(null);
 
   return (
-    <Section title="Integrations" subtitle="Connect Quantix Prime to the tools your business already uses">
+    <Section title="Integrations" subtitle="Connect FixMargin to the tools your business already uses">
       <IntegrationsHowTo />
       {cats.map((cat) => {
         const items = integrations.filter((i) => i.category === cat);

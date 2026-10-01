@@ -15,10 +15,10 @@ import { team } from "@/lib/mockData";
 export const Route = createFileRoute("/how-to")({
   head: () => ({
     meta: [
-      { title: "Tour by role — Quantix Prime" },
-      { name: "description", content: "Pick your role and see exactly what you can view, do, and the daily steps you should follow inside Quantix Prime." },
-      { property: "og:title", content: "Tour by role — Quantix Prime" },
-      { property: "og:description", content: "Role-based onboarding tour for Quantix Prime." },
+      { title: "Tour by role — FixMargin" },
+      { name: "description", content: "Pick your role and see exactly what you can view, do, and the daily steps you should follow inside FixMargin." },
+      { property: "og:title", content: "Tour by role — FixMargin" },
+      { property: "og:description", content: "Role-based onboarding tour for FixMargin." },
     ],
   }),
   component: HowToPage,
@@ -53,7 +53,7 @@ const ROLES: RoleGuide[] = [
     accent: "amber",
     demoUserId: "mk",
     mission:
-      "You're on site doing the work. Your job in Quantix Prime is to confirm your hours and see today's tasks — that's it. No paperwork, no commercials.",
+      "You're on site doing the work. Your job in FixMargin is to confirm your hours and see today's tasks — that's it. No paperwork, no commercials.",
     canSee: [
       "Today's planner tasks assigned to your trade",
       "Your own PW (price-work) rates",
@@ -234,7 +234,7 @@ function HowToPage() {
             Pick your role. See exactly what you do here.
           </h1>
           <p className="mt-1 text-[13.5px] text-[var(--ink-500)]">
-            Five roles, five different views of Quantix Prime. Switch between them to compare — or "try as" the role to feel it live.
+            Five roles, five different views of FixMargin. Switch between them to compare — or "try as" the role to feel it live.
           </p>
         </div>
         <div className="text-right text-[12px] text-[var(--ink-500)]">

@@ -24,10 +24,10 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Quantix Prime — UK construction intelligence platform" },
+      { title: "FixMargin — Cost control for UK drylining and interiors subcontractors" },
       { name: "description", content: "Real-time profit visibility from site to books for UK specialty contractors. Drylining, fit-out, ceilings." },
-      { property: "og:title", content: "Quantix Prime — UK construction intelligence platform" },
-      { name: "twitter:title", content: "Quantix Prime — UK construction intelligence platform" },
+      { property: "og:title", content: "FixMargin — Cost control for UK drylining and interiors subcontractors" },
+      { name: "twitter:title", content: "FixMargin — Cost control for UK drylining and interiors subcontractors" },
       { property: "og:description", content: "Real-time profit visibility from site to books for UK specialty contractors. Drylining, fit-out, ceilings." },
       { name: "twitter:description", content: "Real-time profit visibility from site to books for UK specialty contractors. Drylining, fit-out, ceilings." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ce4c103a-a940-405e-ad0f-2f9e9ee9d7af/id-preview-2dcdfd9f--f5726ef4-d2b8-40b5-bd29-43670cde168d.lovable.app-1777296668572.png" },

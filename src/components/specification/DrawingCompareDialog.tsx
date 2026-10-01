@@ -123,7 +123,7 @@ export function DrawingCompareDialog({
           <div className="mt-2 flex items-start gap-2 rounded-md border border-[var(--ink-200)] bg-[var(--ink-50)] px-3 py-2 text-[11.5px] text-[var(--ink-700)]">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent-500)]" />
             <span>
-              Quantix shows both drawings and every fact it has. Measuring the change is the QS's to make — it does not invent the quantity.
+              FixMargin shows both drawings and every fact it has. Measuring the change is the QS's to make — it does not invent the quantity.
             </span>
           </div>
         </DialogHeader>
