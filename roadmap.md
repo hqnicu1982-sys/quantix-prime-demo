@@ -2,4 +2,4 @@
 
 - [x] Define a new premium welcome-page direction rooted in the real FixMargin product and brand; reject the three generic SaaS concepts.
 - [x] Present new visual options before implementation.
-- [ ] Rebuild `/welcome` in the approved Autodesk-inspired Architectural Technical Editorial direction
+- [x] Rebuild `/welcome` in the approved Autodesk-inspired Architectural Technical Editorial direction
