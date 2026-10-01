@@ -353,14 +353,46 @@ function StageCommercial() {
 }
 
 const STAGES = [
-  { n: "01", title: "Take-off & specification", copy: "Wall systems from British Gypsum, Siniat or Knauf build-ups, with drawing revisions tracked.", view: StageSpec },
-  { n: "02", title: "System Catalog", copy: "Filter tested build-ups by system family, fire, acoustic and height requirements, then inspect every layer.", view: StageCatalog },
-  { n: "03", title: "System Calculator", copy: "Size the wall, optimise board lengths and turn the selected build-up into a complete material and labour schedule.", view: StageCalculator },
-  { n: "04", title: "Costed BoQ", copy: "One BoQ priced against every merchant list. Missing prices exposed, best mix calculated.", view: StageBoq },
-  { n: "05", title: "Planner & auto call-offs", copy: "Programme with linked tasks. Lead times turn into suggested call-offs before crews run dry.", view: StagePlanner },
-  { n: "06", title: "Deliveries & site", copy: "GRNs record what actually arrived. Daily reports log crews and delays.", view: StageDelivery },
-  { n: "07", title: "Invoice checks", copy: "Order, delivery and invoice matched before you pay. Variances become disputes.", view: StageInvoice },
-  { n: "08", title: "Variations & final account", copy: "Signed and unsigned variations, applications, retention and a live margin forecast.", view: StageCommercial },
+  {
+    n: "01", title: "Take-off & specification", copy: "Wall systems from British Gypsum, Siniat or Knauf build-ups, with drawing revisions tracked.", view: StageSpec,
+    details: [["Project scope", "Levels 2–3"], ["Wall types", "W1–W5"], ["Latest issue", "A-201 C2"], ["Change detected", "+18 m² W2"]],
+    trail: "Tender C0 retained · C1 superseded · C2 current · impact review open",
+  },
+  {
+    n: "02", title: "System Catalog", copy: "Filter tested build-ups by system family, fire, acoustic and height requirements, then inspect every layer.", view: StageCatalog,
+    details: [["Selected family", "Partitions"], ["Fire target", "60 min"], ["Acoustic target", "48 dB"], ["Stud centres", "600 mm"]],
+    trail: "Tested build-up selected · performance criteria retained with the project specification",
+  },
+  {
+    n: "03", title: "System Calculator", copy: "Size the wall, optimise board lengths and turn the selected build-up into a complete material and labour schedule.", view: StageCalculator,
+    details: [["Wall reference", "W2"], ["Net area", "57.6 m²"], ["Waste allowance", "5%"], ["Cost per m²", "£54.76"]],
+    trail: "Board length optimised · material schedule calculated · ready to add to Harbour Yard BoQ",
+  },
+  {
+    n: "04", title: "Costed BoQ", copy: "One BoQ priced against every merchant list. Missing prices exposed, best mix calculated.", view: StageBoq,
+    details: [["Suppliers", "3 compared"], ["Best mix", "£34,736.90"], ["Missing prices", "1 line"], ["Pricing status", "Reviewed"]],
+    trail: "Castlegate · Meridian · Northway lists retained with comparison date and selected source",
+  },
+  {
+    n: "05", title: "Planner & auto call-offs", copy: "Programme with linked tasks. Lead times turn into suggested call-offs before crews run dry.", view: StagePlanner,
+    details: [["Progress", "42%"], ["Linked tasks", "FS + SS"], ["Suggested orders", "2"], ["Open blockers", "1"]],
+    trail: "L2 handover milestone · W3 material blocker · MS Project programme available for sync",
+  },
+  {
+    n: "06", title: "Deliveries & site", copy: "GRNs record what actually arrived. Daily reports log crews and delays.", view: StageDelivery,
+    details: [["Call-off", "CO-0002"], ["Received", "180 / 240"], ["Crew today", "8"], ["Delay logged", "2 hours"]],
+    trail: "GRN quantity · delivery evidence · labour return · hoist delay linked in one site record",
+  },
+  {
+    n: "07", title: "Invoice checks", copy: "Order, delivery and invoice matched before you pay. Variances become disputes.", view: StageInvoice,
+    details: [["Invoice", "MER-2048"], ["Quantity variance", "+60 sheets"], ["Rate variance", "+£0.80"], ["Action", "Hold & dispute"]],
+    trail: "PO rate £14.10 · GRN 180 sheets · invoice 240 at £14.90 · dispute evidence assembled",
+  },
+  {
+    n: "08", title: "Variations & final account", copy: "Signed and unsigned variations, applications, retention and a live margin forecast.", view: StageCommercial,
+    details: [["Contract", "£104,800"], ["Certified", "£28,600"], ["Variations", "£1,680"], ["Forecast margin", "18.4%"]],
+    trail: "VAR-001 signed · VAR-002 awaiting signature · Application 1 certified · 3% retention",
+  },
 ];
 
 const DURATION = 6000;
@@ -430,12 +462,31 @@ function Showcase() {
         </div>
       </div>
       <div
-        className="min-w-0 rounded-[26px] border border-[var(--th-line)] bg-[var(--th-panel)]/40 p-3 sm:p-6"
+        className="min-w-0 rounded-[26px] border border-[var(--th-line)] bg-[var(--th-panel)]/40 p-3 sm:p-6 lg:min-h-[690px]"
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >
-        <div key={active} className="th-enter">
+        <div key={active} className="th-enter flex h-full flex-col">
           <View />
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            {STAGES[active].details.map(([label, value], i) => (
+              <div key={label} className="th-enter rounded-xl border border-[var(--th-line)] bg-[var(--th-panel-2)] p-3" style={{ animationDelay: `${120 + i * 70}ms` }}>
+                <p className="text-[10px] uppercase text-[var(--th-dim)]">{label}</p>
+                <p className="th-mono mt-1.5 text-xs text-[var(--th-text)]">{value}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-1 items-end">
+            <div className="w-full rounded-xl border border-[var(--th-line)] bg-[var(--th-bg)]/25 px-4 py-3">
+              <div className="flex items-start gap-3">
+                <FileText className="mt-0.5 h-4 w-4 shrink-0 text-[var(--th-accent)]" />
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase text-[var(--th-dim)]">Linked record & evidence trail</p>
+                  <p className="mt-1 text-xs leading-relaxed text-[var(--th-muted)]">{STAGES[active].trail}</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
