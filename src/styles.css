@@ -449,3 +449,60 @@
   from { background-position: 0 0, 0 0, 0 0; }
   to { background-position: 2rem -1rem, -1rem 1rem, 0 0; }
 }
+
+/* FixMargin welcome — neo-industrial editorial direction */
+.welcome-industrial {
+  --welcome-bg: oklch(0.965 0.006 95);
+  --welcome-paper: oklch(0.995 0.002 95);
+  --welcome-panel: oklch(0.985 0.004 95);
+  --welcome-ink: oklch(0.145 0.012 255);
+  --welcome-blue: oklch(0.56 0.21 258);
+  --welcome-blue-bright: oklch(0.62 0.2 247);
+  --welcome-cyan: oklch(0.55 0.21 258);
+  font-feature-settings: "ss01", "ss02";
+}
+.welcome-industrial h1,
+.welcome-industrial h2,
+.welcome-industrial h3 { letter-spacing: -0.02em; }
+.welcome-industrial .font-mono-num,
+.welcome-industrial [class*="uppercase"] { font-family: "Space Mono", ui-monospace, monospace; }
+.welcome-industrial .welcome-blueprint {
+  background-color: var(--welcome-bg);
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--welcome-ink) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--welcome-ink) 6%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.welcome-industrial .welcome-blueprint::after {
+  content: "FM / COMMERCIAL CONTROL / 01";
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1rem;
+  font: 9px "Space Mono", monospace;
+  letter-spacing: .16em;
+  color: color-mix(in oklab, var(--welcome-ink) 35%, transparent);
+}
+.welcome-industrial .welcome-glass {
+  border: 1px solid color-mix(in oklab, var(--welcome-ink) 36%, transparent);
+  background: color-mix(in oklab, var(--welcome-paper) 95%, transparent);
+  box-shadow: 5px 5px 0 color-mix(in oklab, var(--welcome-ink) 92%, transparent);
+  backdrop-filter: none;
+}
+.welcome-industrial .welcome-gradient-text {
+  background: none;
+  color: var(--welcome-blue);
+  -webkit-text-fill-color: currentColor;
+}
+.welcome-industrial .welcome-cta {
+  background: var(--welcome-ink);
+  color: var(--welcome-paper);
+  box-shadow: 10px 10px 0 var(--welcome-blue);
+}
+.welcome-industrial .welcome-cta h2,
+.welcome-industrial .welcome-cta p { color: var(--welcome-paper); }
+.welcome-industrial a,
+.welcome-industrial article,
+.welcome-industrial .welcome-glass { transition-duration: 150ms; }
+@media (prefers-reduced-motion: no-preference) {
+  .welcome-industrial .welcome-glass:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 color-mix(in oklab, var(--welcome-ink) 92%, transparent); }
+}
