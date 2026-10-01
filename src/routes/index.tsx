@@ -20,7 +20,7 @@ import { SnoozeDialog } from "@/components/dashboard/SnoozeDialog";
 import { useFocusSnoozes, activeSnooze, clearSnooze, formatSnoozeRemaining } from "@/lib/focusSnooze";
 
 export const Route = createFileRoute("/")({
-  head: () => ({ meta: [{ title: "Dashboard — Quantix Prime" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — FixMargin" }] }),
   component: Dashboard,
 });
 

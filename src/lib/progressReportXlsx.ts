@@ -33,7 +33,7 @@ function addSheet(
 
 export async function exportProgressReportXlsx(p: ReportPayload) {
   const wb = new ExcelJS.Workbook();
-  wb.creator = "Quantix Prime";
+  wb.creator = "FixMargin";
   wb.created = p.generatedAt;
 
   // ---- Summary

@@ -9,7 +9,7 @@ export function Logo({ light = false, compact = false }: { light?: boolean; comp
       </div>
       {!compact && (
         <span className={`font-display text-[17px] font-semibold tracking-tight ${light ? "text-white" : "text-[var(--navy-900)]"}`}>
-          Quantix<span className={`italic font-normal ml-1 ${light ? "text-[var(--accent-100)]" : "text-[var(--accent-500)]"}`}>Prime</span>
+          FixMargin<span className={`italic font-normal ml-1 ${light ? "text-[var(--accent-100)]" : "text-[var(--accent-500)]"}`}>Prime</span>
         </span>
       )}
     </div>

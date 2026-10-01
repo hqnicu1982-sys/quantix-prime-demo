@@ -4,7 +4,7 @@ import { setCurrentUserId } from "./currentUser";
 
 // ============================================================================
 // Mock auth session — demo only. Persists "signed in" state to localStorage.
-// Sign-in: any team member email (e.g. "nick@quantix.dev") matches by initials/name.
+// Sign-in: any team member email (e.g. "nick@fixmargin.dev") matches by initials/name.
 // Sign-up: registers a new TeamMember at runtime under "Pro" tier.
 // ============================================================================
 
@@ -15,13 +15,13 @@ const EVT = "qp-auth-change";
 type Session = { userId: string; email: string; signedInAt: string };
 type Registry = Record<string, { password: string; userId: string }>;
 
-// Seed: every team member can sign in with email `<id>@quantix.dev` / password `demo`.
+// Seed: every team member can sign in with email `<id>@fixmargin.dev` / password `demo`.
 function seedRegistry(): Registry {
   const existing = readRegistry();
   if (Object.keys(existing).length > 0) return existing;
   const reg: Registry = {};
   for (const m of team) {
-    const email = (m.email ?? `${m.id}@quantix.dev`).toLowerCase();
+    const email = (m.email ?? `${m.id}@fixmargin.dev`).toLowerCase();
     reg[email] = { password: "demo", userId: m.id };
   }
   writeRegistry(reg);

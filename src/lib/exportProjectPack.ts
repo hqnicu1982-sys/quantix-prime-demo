@@ -23,7 +23,7 @@ export function exportProjectPack(project: Project, data: ProjectData) {
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("Quantix Prime — Project Pack", margin, 32);
+  doc.text("FixMargin — Project Pack", margin, 32);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text(
@@ -232,7 +232,7 @@ export function exportProjectPack(project: Project, data: ProjectData) {
     doc.setFontSize(8);
     doc.setTextColor(140);
     doc.text(
-      `Quantix Prime · ${project.name} · Page ${i} of ${pageCount}`,
+      `FixMargin · ${project.name} · Page ${i} of ${pageCount}`,
       margin,
       doc.internal.pageSize.getHeight() - 20,
     );

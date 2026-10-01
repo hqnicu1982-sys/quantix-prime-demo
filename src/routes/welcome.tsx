@@ -235,10 +235,10 @@ function WelcomePage() {
             </nav>
           </div>
           <p className="mt-6 text-[12px] leading-relaxed text-[var(--ink-500)]">
-            FixMargin is a trading name of Quantix Prime Ltd. Registered in England and Wales, company number
+            FixMargin is a trading name of FixMargin Ltd. Registered in England and Wales, company number
             16680674.
           </p>
-          <p className="mt-1 text-[12px] text-[var(--ink-500)]">© 2026 Quantix Prime Ltd.</p>
+          <p className="mt-1 text-[12px] text-[var(--ink-500)]">© 2026 FixMargin Ltd.</p>
         </div>
       </footer>
     </div>

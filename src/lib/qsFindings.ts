@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 // ============================================================================
 // QS Findings — per (project, target-revision) list of QS-recorded changes
 // observed when comparing a revision against the tender baseline. The QS
-// types the findings; Quantix never invents quantities.
+// types the findings; FixMargin never invents quantities.
 // ============================================================================
 
 export type FindingType = "added" | "removed" | "substituted" | "extent" | "note";

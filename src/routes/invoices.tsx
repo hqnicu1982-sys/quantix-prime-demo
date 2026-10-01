@@ -9,7 +9,7 @@ import { NoAccess } from "@/components/auth/NoAccess";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/invoices")({
-  head: () => ({ meta: [{ title: "Invoice Reconciliation — Quantix Prime" }] }),
+  head: () => ({ meta: [{ title: "Invoice Reconciliation — FixMargin" }] }),
   component: GuardedLayout,
 });
 

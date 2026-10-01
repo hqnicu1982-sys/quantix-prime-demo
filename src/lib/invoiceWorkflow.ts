@@ -69,7 +69,7 @@ export type InvoiceAuditEvent = {
 export const invoiceAuditLog: InvoiceAuditEvent[] = [
   { ts: "today 11:08", ref: "CCF-10824", actor: "System",  action: "Flagged review",  detail: "+£1,247 (+17.6%) above PO — Q2 framework rate not applied" },
   { ts: "today 09:42", ref: "CCF-10824", actor: "System",  action: "Parsed",          detail: "1 supplier line, qty 840 m² Rockwool" },
-  { ts: "today 09:41", ref: "CCF-10824", actor: "ap@ccf",  action: "Received",        detail: "Email → ap@quantix.uk · 1 PDF attached" },
+  { ts: "today 09:41", ref: "CCF-10824", actor: "ap@ccf",  action: "Received",        detail: "Email → ap@fixmargin.uk · 1 PDF attached" },
   { ts: "yest 15:32",  ref: "CCF-10821", actor: "Sarah M", action: "Approved",        detail: "Variance 0% — cleared for payment run 26 Apr" },
   { ts: "yest 15:20",  ref: "CCF-10821", actor: "System",  action: "3-way matched",   detail: "PO-00247 ↔ DEL-9918 ↔ CCF-10821 (perfect)" },
   { ts: "yest 15:14",  ref: "CCF-10821", actor: "System",  action: "Parsed",          detail: "1,850 m² WallBoard @ £3.92" },

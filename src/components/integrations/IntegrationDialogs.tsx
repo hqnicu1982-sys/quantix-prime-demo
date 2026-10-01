@@ -105,7 +105,7 @@ export function ConnectIntegrationDialog({
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Plug className="h-4 w-4 text-[var(--accent-500)]" /> Connect {name}</DialogTitle>
-          <DialogDescription>Quantix Prime will use these credentials to sync {category.toLowerCase()} data. You can disconnect any time from settings.</DialogDescription>
+          <DialogDescription>FixMargin will use these credentials to sync {category.toLowerCase()} data. You can disconnect any time from settings.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <Field label="Account / workspace" hint="e.g. company name on the provider side">
@@ -261,7 +261,7 @@ export function IntegrationSettingsDialog({
               <AlertTriangle className="mt-0.5 h-4 w-4 text-[var(--red-500)]" />
               <div className="flex-1">
                 <p className="font-semibold">Disconnect {name}?</p>
-                <p className="text-[var(--ink-700)]">Sync stops immediately. Historical data stays in Quantix Prime.</p>
+                <p className="text-[var(--ink-700)]">Sync stops immediately. Historical data stays in FixMargin.</p>
                 <div className="mt-2 flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => setConfirmDisconnect(false)}>Cancel</Button>
                   <Button size="sm" variant="destructive" onClick={disconnect}>Yes, disconnect</Button>

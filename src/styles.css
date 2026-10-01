@@ -73,7 +73,7 @@
 :root {
   --radius: 0.625rem;
 
-  /* Quantix Prime brand palette */
+  /* FixMargin brand palette */
   --navy-950: oklch(0.21 0.04 254);     /* #0A1D33 */
   --navy-900: oklch(0.25 0.05 254);     /* #0F2847 */
   --navy-800: oklch(0.30 0.06 254);     /* #13325A */

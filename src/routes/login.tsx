@@ -14,8 +14,8 @@ export const Route = createFileRoute("/login")({
   }),
   head: () => ({
     meta: [
-      { title: "Sign in — Quantix Prime" },
-      { name: "description", content: "Sign in to your Quantix Prime account." },
+      { title: "Sign in — FixMargin" },
+      { name: "description", content: "Sign in to your FixMargin account." },
     ],
   }),
   component: LoginPage,
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/login" });
-  const [email, setEmail] = useState("na@quantix.dev");
+  const [email, setEmail] = useState("na@fixmargin.dev");
   const [password, setPassword] = useState("demo");
   const [busy, setBusy] = useState(false);
 
@@ -48,7 +48,7 @@ function LoginPage() {
         <div className="mb-8 flex justify-center"><Logo light /></div>
         <div className="rounded-xl border border-white/10 bg-white/5 p-7 backdrop-blur">
           <h1 className="font-display text-2xl font-semibold text-white">Sign in</h1>
-          <p className="mt-1 text-[13px] text-white/60">Welcome back to Quantix Prime.</p>
+          <p className="mt-1 text-[13px] text-white/60">Welcome back to FixMargin.</p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div>
@@ -74,9 +74,9 @@ function LoginPage() {
 
           <div className="mt-5 rounded-md border border-white/10 bg-white/5 p-3 text-[11.5px] text-white/55">
             <strong className="text-white/80">Demo credentials:</strong> any team member email
-            (e.g. <code className="text-[var(--accent-100)]">na@quantix.dev</code>,{" "}
-            <code className="text-[var(--accent-100)]">sm@quantix.dev</code>,{" "}
-            <code className="text-[var(--accent-100)]">dp@quantix.dev</code>) with password{" "}
+            (e.g. <code className="text-[var(--accent-100)]">na@fixmargin.dev</code>,{" "}
+            <code className="text-[var(--accent-100)]">sm@fixmargin.dev</code>,{" "}
+            <code className="text-[var(--accent-100)]">dp@fixmargin.dev</code>) with password{" "}
             <code className="text-[var(--accent-100)]">demo</code>.
           </div>
 

@@ -11,8 +11,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
-      { title: "Create account — Quantix Prime" },
-      { name: "description", content: "Create your Quantix Prime account." },
+      { title: "Create account — FixMargin" },
+      { name: "description", content: "Create your FixMargin account." },
     ],
   }),
   component: SignupPage,
@@ -45,7 +45,7 @@ function SignupPage() {
         <div className="mb-8 flex justify-center"><Logo light /></div>
         <div className="rounded-xl border border-white/10 bg-white/5 p-7 backdrop-blur">
           <h1 className="font-display text-2xl font-semibold text-white">Create your account</h1>
-          <p className="mt-1 text-[13px] text-white/60">Start exploring Quantix Prime in seconds.</p>
+          <p className="mt-1 text-[13px] text-white/60">Start exploring FixMargin in seconds.</p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div>

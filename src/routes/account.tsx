@@ -24,9 +24,9 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/account")({
   head: () => ({
     meta: [
-      { title: "Account — Quantix Prime" },
+      { title: "Account — FixMargin" },
       { name: "description", content: "Manage your profile, workspace plan and seats, invoices, organisation details and data requests." },
-      { property: "og:title", content: "Account — Quantix Prime" },
+      { property: "og:title", content: "Account — FixMargin" },
       { property: "og:description", content: "Manage your profile, workspace plan and seats, invoices, organisation details and data requests." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -244,11 +244,11 @@ function AccountPage() {
               }
             />
             <dl className="divide-y divide-[var(--ink-200)] text-[13px]">
-              <OrgRow label="Company name" value="Quantix Drylining Ltd" />
+              <OrgRow label="Company name" value="FixMargin Drylining Ltd" />
               <OrgRow label="Company number" value="09482731" />
               <OrgRow label="Registered address" value="Unit 4, Bermondsey Works, London SE16 4DG" />
               <OrgRow label="VAT number" value="GB 384 9210 55" />
-              <OrgRow label="Primary contact" value="David Andrei · david@quantix.dev" />
+              <OrgRow label="Primary contact" value="David Andrei · david@fixmargin.dev" />
             </dl>
             <div className="mt-3"><SampleSettingsRow /></div>
           </Card>

@@ -20,9 +20,9 @@ import { NoAccess } from "@/components/auth/NoAccess";
 export const Route = createFileRoute("/follow-ups")({
   head: () => ({
     meta: [
-      { title: "Follow-ups — Quantix Prime" },
+      { title: "Follow-ups — FixMargin" },
       { name: "description", content: "Cross-project feed of every tender and client follow-up logged across the pipeline." },
-      { property: "og:title", content: "Follow-ups — Quantix Prime" },
+      { property: "og:title", content: "Follow-ups — FixMargin" },
       { property: "og:description", content: "Cross-project follow-up feed for the commercial team." },
     ],
   }),

@@ -76,7 +76,7 @@ export function AutoCallOffReviewDialog({
           <DialogTitle>Auto-generated call-offs</DialogTitle>
           <DialogDescription>
             Suggested from planner tasks that have material requirements not yet covered by an
-            existing call-off. Nothing leaves Quantix — these are saved as drafts.
+            existing call-off. Nothing leaves FixMargin — these are saved as drafts.
           </DialogDescription>
         </DialogHeader>
 

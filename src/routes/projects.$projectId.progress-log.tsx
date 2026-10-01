@@ -60,8 +60,8 @@ const CALL_OFFS: { id: string; status: "draft" | "pending" | "approved" | "deliv
 ];
 
 const BLOCKER_OWNER: Record<string, { owner: string; action: string }> = {
-  material: { owner: "Quantix procurement", action: "Confirm call-off and obtain delivery date from supplier." },
-  labour: { owner: "Quantix site management", action: "Re-sequence crews or mobilise additional operatives." },
+  material: { owner: "FixMargin procurement", action: "Confirm call-off and obtain delivery date from supplier." },
+  labour: { owner: "FixMargin site management", action: "Re-sequence crews or mobilise additional operatives." },
   design: { owner: "Main contractor / design team", action: "Issue revised information or approve the RFI response." },
   predecessor: { owner: "Main contractor", action: "Complete or hand over the preceding activity." },
   variation: { owner: "Main contractor / QS", action: "Instruct and approve the variation so works can be resourced." },
@@ -106,7 +106,7 @@ function ProgressLogPage() {
       if (t.status === "done") continue;
       const r = computeReadiness(t, tasks, { callOffs: CALL_OFFS, approvedVariationIds });
       for (const b of r.blockers) {
-        const map = BLOCKER_OWNER[b.type] ?? { owner: "Quantix", action: "Resolve before mobilisation." };
+        const map = BLOCKER_OWNER[b.type] ?? { owner: "FixMargin", action: "Resolve before mobilisation." };
         out.push({ taskId: t.id, taskTitle: t.title, type: b.type, note: b.note, ...map });
       }
     }

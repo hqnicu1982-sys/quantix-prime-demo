@@ -21,7 +21,7 @@ import { ArrowUpRight } from "lucide-react";
 import { Gated } from "@/components/auth/Gated";
 
 export const Route = createFileRoute("/daily-report")({
-  head: () => ({ meta: [{ title: "Daily Site Report — Quantix Prime" }] }),
+  head: () => ({ meta: [{ title: "Daily Site Report — FixMargin" }] }),
   component: DailyReport,
 });
 

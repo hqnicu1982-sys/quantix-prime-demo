@@ -197,7 +197,7 @@ export function MsProjectImportDialog({ projectId }: { projectId: string }) {
         <DialogHeader>
           <DialogTitle>Import MSProject programme</DialogTitle>
           <DialogDescription>
-            Mapează task-urile din baseline-ul MSProject la planner-ul Quantix și actualizează automat
+            Mapează task-urile din baseline-ul MSProject la planner-ul FixMargin și actualizează automat
             forecast-ul de profitabilitate.
           </DialogDescription>
         </DialogHeader>
