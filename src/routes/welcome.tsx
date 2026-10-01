@@ -86,18 +86,18 @@ function WelcomePage() {
     <div className="welcome-industrial min-h-screen overflow-hidden bg-[var(--welcome-bg)] text-[var(--welcome-ink)] antialiased [font-family:'Space_Grotesk',ui-sans-serif,system-ui,sans-serif]">
       <header className="sticky top-0 z-50 border-b border-[color:var(--welcome-ink)]/15 bg-[color:var(--welcome-paper)]/95 ">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-7">
-          <Link to="/welcome" aria-label="FixMargin home"><Logo light /></Link>
-          <nav className="flex items-center gap-1 sm:gap-2" aria-label="Main">
-            <Link to="/pricing" className="rounded-none px-3 py-2 text-[13px] font-bold text-[color:var(--welcome-ink)]/60 transition-colors hover:text-[var(--welcome-ink)]">Pricing</Link>
-            <Link to="/login" className="rounded-none px-3 py-2 text-[13px] font-bold text-[color:var(--welcome-ink)]/60 transition-colors hover:text-[var(--welcome-ink)]">Sign in</Link>
-            <Link to="/signup" className="ml-1 inline-flex items-center rounded-none border border-[color:var(--welcome-ink)]/20 bg-[color:var(--welcome-paper)] px-4 py-2 text-[13px] font-bold text-[var(--welcome-ink)] transition-colors hover:bg-white/10 sm:px-5">Start free</Link>
+          <Link to="/welcome" aria-label="FixMargin home"><Logo /></Link>
+          <nav className="flex items-center gap-0 sm:gap-2" aria-label="Main">
+            <Link to="/pricing" className="rounded-none px-2 py-2 text-[12px] font-bold text-[color:var(--welcome-ink)]/60 transition-colors hover:text-[var(--welcome-ink)] sm:px-3 sm:text-[13px]">Pricing</Link>
+            <Link to="/login" className="rounded-none px-2 py-2 text-[12px] font-bold text-[color:var(--welcome-ink)]/60 transition-colors hover:text-[var(--welcome-ink)] sm:px-3 sm:text-[13px]">Sign in</Link>
+            <Link to="/signup" className="ml-1 inline-flex items-center rounded-none border border-[color:var(--welcome-ink)]/20 bg-[color:var(--welcome-paper)] px-3 py-2 text-[12px] font-bold text-[var(--welcome-ink)] transition-colors hover:bg-[color:var(--welcome-ink)] hover:text-[var(--welcome-paper)] sm:px-5 sm:text-[13px]">Start free</Link>
           </nav>
         </div>
       </header>
 
       <main>
         <section className="welcome-blueprint relative text-[var(--welcome-ink)]">
-          <div className="relative z-10 mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl gap-12 px-5 pb-20 pt-16 sm:px-7 lg:grid-cols-12 lg:gap-8 lg:pb-24 lg:pt-20">
+          <div className="relative z-10 mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center gap-12 px-5 py-16 sm:px-7 lg:grid-cols-12 lg:gap-8 lg:py-20">
             <div className="min-w-0 lg:col-span-7">
               <p className="inline-flex items-center gap-2 rounded-none border border-[color:var(--welcome-blue)]/30 bg-[color:var(--welcome-blue)]/10 px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--welcome-cyan)]">
                 <span className="h-2 w-2 rounded-none bg-[var(--welcome-cyan)] shadow-[0_0_12px_var(--welcome-cyan)] motion-safe:animate-pulse" aria-hidden />
