@@ -68,7 +68,7 @@ export async function signUp(name: string, email: string, password: string): Pro
   if (password.length < 4) throw new Error("Password must be at least 4 characters");
   // Mint a new mock team member (lives in-memory for the session).
   const id = `u_${Date.now().toString(36)}`;
-  const initials = name.split(/\s+/).map((p) => p[0]?.toUpperCase()).join("").slice(0, 2) || "QP";
+  const initials = name.split(/\s+/).map((p) => p[0]?.toUpperCase()).join("").slice(0, 2) || "FM";
   const member: TeamMember = {
     id,
     name: name.trim() || key.split("@")[0],
