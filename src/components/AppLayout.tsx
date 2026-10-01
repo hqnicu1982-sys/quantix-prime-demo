@@ -372,8 +372,11 @@ function LayoutInner() {
   };
 
   // Public pages (/login, /signup, /welcome) render without the app chrome.
+  if (location.pathname === "/welcome") {
+    return <Outlet />;
+  }
   if (!session && isPublicPath(location.pathname) &&
-      (location.pathname === "/login" || location.pathname === "/signup" || location.pathname === "/welcome")) {
+      (location.pathname === "/login" || location.pathname === "/signup")) {
     return <Outlet />;
   }
 
