@@ -9,7 +9,6 @@ import {
   FileWarning,
   Percent,
   PenLine,
-  ShoppingCart,
   Table2,
   TrendingDown,
   TrendingUp,
@@ -367,7 +366,6 @@ function RoleCard({ role, line }: { role: string; line: string }) {
   return (
     <div className="rounded-[10px] border border-[var(--ink-200)] bg-card p-5">
       <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[var(--navy-950)] text-white" aria-hidden>
-        <ShoppingCart className="hidden" />
         <Users className="h-4 w-4" />
       </span>
       <h3 className="mt-3 text-[13.5px] font-semibold tracking-tight">{role}</h3>
