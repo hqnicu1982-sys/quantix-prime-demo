@@ -436,7 +436,7 @@ function WelcomePage() {
             </ul>
           </div>
 
-          <div className="relative mx-auto w-full max-w-[560px] min-w-0 pb-16 pt-10 sm:pt-6">
+          <div className="relative mx-auto w-full max-w-[560px] min-w-0 pb-16 pt-14">
             <Window title="Harbour Yard Offices · L2–3 fit-out">
               <div className="grid grid-cols-3 gap-3">
                 {[["Contract", "£104,800"], ["Progress", "42%"], ["Forecast", "18.4%"]].map(([k, v]) => (
@@ -455,7 +455,7 @@ function WelcomePage() {
                 ))}
               </div>
             </Window>
-            <div className="th-float-a th-card absolute -top-2 right-0 w-56 p-3.5 sm:-right-6">
+            <div className="th-float-a th-card absolute -top-8 right-0 w-56 p-3.5 sm:-right-6">
               <div className="flex items-center gap-2 text-xs text-[var(--th-warn)]"><Truck className="h-3.5 w-3.5" /> GRN · CO-0002</div>
               <p className="mt-1.5 text-sm">180 of 240 sheets received</p>
             </div>
