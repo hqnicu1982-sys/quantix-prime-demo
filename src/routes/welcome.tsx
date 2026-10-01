@@ -70,7 +70,7 @@ function WelcomePage() {
         </header>
 
         <section className="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-16 pt-10 sm:px-7 lg:grid-cols-2 lg:pb-24 lg:pt-16">
-          <div>
+          <div className="min-w-0">
             <h1 className="font-display text-[32px] font-semibold leading-[1.15] tracking-tight sm:text-[42px] lg:text-[46px]">
               Protect your margin on every drylining job — from estimate to final account.
             </h1>
