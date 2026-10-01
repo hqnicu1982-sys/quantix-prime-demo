@@ -337,7 +337,7 @@ function ZigRow({
 }) {
   return (
     <div
-      className={`flex flex-col items-center gap-10 lg:gap-16 ${
+      className={`flex flex-col gap-10 lg:gap-16 ${
         reverse ? "lg:flex-row-reverse" : "lg:flex-row"
       }`}
     >
