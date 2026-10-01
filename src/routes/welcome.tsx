@@ -3,12 +3,14 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   ArrowRight,
+  Calculator,
   CalendarClock,
   Check,
   FileDiff,
   FileText,
   FileSpreadsheet,
   GitBranch,
+  LibraryBig,
   Pause,
   Play,
   ReceiptText,
@@ -107,6 +109,101 @@ function StageSpec() {
         <Row k="A-201 rev C1" v="Issued" />
         <Row k="A-201 rev C2" v="+18 m² W2" tone="warn" />
         <p className="mt-3 text-xs text-[var(--th-muted)]">Post-award change flagged for a variation.</p>
+      </Window>
+    </div>
+  );
+}
+
+function StageCatalog() {
+  const families = ["Partitions & walls", "Wall linings", "Shaftwalls", "Ceilings"];
+  return (
+    <div className="grid gap-4 md:grid-cols-[.75fr_1.25fr]">
+      <Window title="System Catalog · families">
+        <div className="space-y-1.5">
+          {families.map((family, i) => (
+            <div
+              key={family}
+              className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-xs ${i === 0 ? "border border-[var(--th-accent)]/35 bg-[var(--th-accent)]/10 text-[var(--th-text)]" : "text-[var(--th-muted)]"}`}
+            >
+              <span className="flex items-center gap-2"><span className={`h-1.5 w-1.5 rounded-full ${i === 0 ? "bg-[var(--th-accent)]" : "bg-[var(--th-line-strong)]"}`} />{family}</span>
+              <span className="th-mono text-[10px]">{i < 3 ? "LIVE" : "BETA"}</span>
+            </div>
+          ))}
+        </div>
+      </Window>
+      <Window title="Find a tested build-up">
+        <div className="flex flex-wrap gap-2 border-b border-[var(--th-line)] pb-3 text-[10px]">
+          {["60 min fire", "48+ dB", "4.0+ m", "British Gypsum"].map((filter) => (
+            <span key={filter} className="rounded-full border border-[var(--th-accent)]/35 bg-[var(--th-accent)]/10 px-2.5 py-1 text-[var(--th-accent)]">{filter}</span>
+          ))}
+        </div>
+        <div className="mt-3 rounded-xl border border-[var(--th-accent)]/40 bg-[var(--th-panel-2)] p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="th-mono text-[10px] text-[var(--th-accent)]">C-48/70-2L-FL15</p>
+              <p className="mt-1 text-sm font-medium">GypWall CLASSIC · FireLine 15</p>
+            </div>
+            <span className="rounded-full bg-[var(--th-accent)] px-2.5 py-1 text-[10px] font-medium text-[var(--th-bg)]">Best match</span>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {[["Fire", "60 min"], ["Acoustic", "48 dB"], ["Height", "4.2 m"]].map(([k, v]) => (
+              <div key={k} className="rounded-lg bg-[var(--th-bg)]/35 p-2.5">
+                <p className="text-[9px] text-[var(--th-dim)]">{k}</p><p className="th-mono mt-1 text-xs">{v}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex h-12 items-stretch gap-1 overflow-hidden rounded-lg" aria-label="Wall build-up preview">
+            <span className="w-3 bg-[var(--th-accent)]" /><span className="w-3 bg-[var(--th-accent)]/70" />
+            <span className="flex-1 border-x border-[var(--th-line-strong)] bg-[var(--th-bg)]/50" />
+            <span className="w-3 bg-[var(--th-accent)]/70" /><span className="w-3 bg-[var(--th-accent)]" />
+          </div>
+          <p className="mt-2 text-[10px] text-[var(--th-dim)]">2 × FireLine 15 · Gypframe 70 S 50 C @ 600 centres · 2 × FireLine 15</p>
+        </div>
+      </Window>
+    </div>
+  );
+}
+
+function StageCalculator() {
+  const materials = [
+    ["Gyproc FireLine 15", "72 sheets"],
+    ["Gypframe 70 S 50 C", "37 lengths"],
+    ["Gypframe 72 DC", "12 lengths"],
+    ["Jointing & fixings", "1 allowance"],
+  ];
+  return (
+    <div className="grid gap-4 md:grid-cols-[.9fr_1.1fr]">
+      <Window title="System Calculator · wall W2">
+        <div className="grid grid-cols-3 gap-2">
+          {[["Length", "18.0 m"], ["Height", "3.2 m"], ["Waste", "5%"]].map(([k, v]) => (
+            <div key={k} className="rounded-lg bg-[var(--th-panel-2)] p-3">
+              <p className="text-[10px] text-[var(--th-dim)]">{k}</p><p className="th-mono mt-1 text-xs">{v}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 rounded-xl border border-[var(--th-line)] p-3">
+          <div className="flex items-center justify-between text-xs"><span className="text-[var(--th-muted)]">Calculated area</span><span className="th-mono">57.6 m²</span></div>
+          <div className="mt-3 flex items-center justify-between text-xs"><span className="text-[var(--th-muted)]">Recommended board</span><span className="th-mono text-[var(--th-accent)]">1200 × 3200</span></div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--th-line)]"><div className="th-progress h-full w-[92%] rounded-full bg-[var(--th-accent)]" style={{ animationDuration: "1100ms" }} /></div>
+          <p className="mt-2 text-[10px] text-[var(--th-dim)]">Board length matched to wall height to reduce offcuts.</p>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="rounded-lg bg-[var(--th-panel-2)] p-3"><p className="text-[10px] text-[var(--th-dim)]">Materials</p><p className="th-mono mt-1 text-sm">£2,146.40</p></div>
+          <div className="rounded-lg bg-[var(--th-panel-2)] p-3"><p className="text-[10px] text-[var(--th-dim)]">Labour</p><p className="th-mono mt-1 text-sm">£1,008.00</p></div>
+        </div>
+      </Window>
+      <Window title="Calculated material schedule">
+        <div>
+          {materials.map(([item, qty], i) => (
+            <div key={item} className="th-enter flex items-center justify-between gap-3 border-b border-[var(--th-line)] py-2.5 text-xs last:border-0" style={{ animationDelay: `${i * 80}ms` }}>
+              <span className="text-[var(--th-muted)]">{item}</span><span className="th-mono shrink-0">{qty}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 rounded-xl border border-[var(--th-accent)]/35 bg-[var(--th-accent)]/10 p-3">
+          <div className="flex items-center justify-between gap-3"><span className="text-xs">Total installed cost</span><span className="th-mono text-base text-[var(--th-accent)]">£3,154.40</span></div>
+          <div className="mt-3 flex items-center justify-between border-t border-[var(--th-accent)]/20 pt-3 text-xs"><span className="text-[var(--th-muted)]">Ready for Harbour Yard BoQ</span><span className="flex items-center gap-1 text-[var(--th-accent)]">Add system <ArrowRight className="h-3 w-3" /></span></div>
+        </div>
       </Window>
     </div>
   );
@@ -257,11 +354,13 @@ function StageCommercial() {
 
 const STAGES = [
   { n: "01", title: "Take-off & specification", copy: "Wall systems from British Gypsum, Siniat or Knauf build-ups, with drawing revisions tracked.", view: StageSpec },
-  { n: "02", title: "Costed BoQ", copy: "One BoQ priced against every merchant list. Missing prices exposed, best mix calculated.", view: StageBoq },
-  { n: "03", title: "Planner & auto call-offs", copy: "Programme with linked tasks. Lead times turn into suggested call-offs before crews run dry.", view: StagePlanner },
-  { n: "04", title: "Deliveries & site", copy: "GRNs record what actually arrived. Daily reports log crews and delays.", view: StageDelivery },
-  { n: "05", title: "Invoice checks", copy: "Order, delivery and invoice matched before you pay. Variances become disputes.", view: StageInvoice },
-  { n: "06", title: "Variations & final account", copy: "Signed and unsigned variations, applications, retention and a live margin forecast.", view: StageCommercial },
+  { n: "02", title: "System Catalog", copy: "Filter tested build-ups by system family, fire, acoustic and height requirements, then inspect every layer.", view: StageCatalog },
+  { n: "03", title: "System Calculator", copy: "Size the wall, optimise board lengths and turn the selected build-up into a complete material and labour schedule.", view: StageCalculator },
+  { n: "04", title: "Costed BoQ", copy: "One BoQ priced against every merchant list. Missing prices exposed, best mix calculated.", view: StageBoq },
+  { n: "05", title: "Planner & auto call-offs", copy: "Programme with linked tasks. Lead times turn into suggested call-offs before crews run dry.", view: StagePlanner },
+  { n: "06", title: "Deliveries & site", copy: "GRNs record what actually arrived. Daily reports log crews and delays.", view: StageDelivery },
+  { n: "07", title: "Invoice checks", copy: "Order, delivery and invoice matched before you pay. Variances become disputes.", view: StageInvoice },
+  { n: "08", title: "Variations & final account", copy: "Signed and unsigned variations, applications, retention and a live margin forecast.", view: StageCommercial },
 ];
 
 const DURATION = 6000;
@@ -477,6 +576,8 @@ function Roles() {
 /* ---------- page ---------- */
 
 const BENTO = [
+  { icon: LibraryBig, title: "System Catalog", copy: "Find tested partitions, linings, shaftwalls and ceilings by performance requirement." },
+  { icon: Calculator, title: "System Calculator", copy: "Turn dimensions and a selected build-up into optimised quantities, labour and cost." },
   { icon: CalendarClock, title: "MS Project import & sync", copy: "Bring the main contractor's programme in and keep it aligned." },
   { icon: Users, title: "Four roles, clear permissions", copy: "Admin, Pro Control, Pro and Operative — with an audit log." },
   { icon: ShieldCheck, title: "Payment notices", copy: "Applications, payment and pay less notice dates tracked per cycle." },
