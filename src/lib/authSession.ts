@@ -122,7 +122,7 @@ export function useSessionReady(): boolean {
   return ready;
 }
 
-export const PUBLIC_PATHS = ["/login", "/signup", "/how-to"];
+export const PUBLIC_PATHS = ["/login", "/signup", "/how-to", "/welcome"];
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));

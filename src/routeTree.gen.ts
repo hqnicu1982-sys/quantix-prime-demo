@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as VariationsRouteImport } from './routes/variations'
 import { Route as TenderPipelineRouteImport } from './routes/tender-pipeline'
 import { Route as SignupRouteImport } from './routes/signup'
@@ -71,6 +72,11 @@ import { Route as ProjectsProjectIdCostedBoqRouteImport } from './routes/project
 import { Route as ProjectsProjectIdCalloffsRouteImport } from './routes/projects.$projectId.calloffs'
 import { Route as ProjectsProjectIdAllocationRouteImport } from './routes/projects.$projectId.allocation'
 
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VariationsRoute = VariationsRouteImport.update({
   id: '/variations',
   path: '/variations',
@@ -410,6 +416,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/tender-pipeline': typeof TenderPipelineRoute
   '/variations': typeof VariationsRoute
+  '/welcome': typeof WelcomeRoute
   '/calloffs/$ref': typeof CalloffsRefRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
   '/calloffs/audit': typeof CalloffsAuditRoute
@@ -470,6 +477,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/tender-pipeline': typeof TenderPipelineRoute
   '/variations': typeof VariationsRoute
+  '/welcome': typeof WelcomeRoute
   '/calloffs/$ref': typeof CalloffsRefRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
   '/calloffs/audit': typeof CalloffsAuditRoute
@@ -533,6 +541,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/tender-pipeline': typeof TenderPipelineRoute
   '/variations': typeof VariationsRoute
+  '/welcome': typeof WelcomeRoute
   '/calloffs/$ref': typeof CalloffsRefRoute
   '/calloffs/approvals': typeof CalloffsApprovalsRoute
   '/calloffs/audit': typeof CalloffsAuditRoute
@@ -598,6 +607,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/tender-pipeline'
     | '/variations'
+    | '/welcome'
     | '/calloffs/$ref'
     | '/calloffs/approvals'
     | '/calloffs/audit'
@@ -658,6 +668,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/tender-pipeline'
     | '/variations'
+    | '/welcome'
     | '/calloffs/$ref'
     | '/calloffs/approvals'
     | '/calloffs/audit'
@@ -720,6 +731,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/tender-pipeline'
     | '/variations'
+    | '/welcome'
     | '/calloffs/$ref'
     | '/calloffs/approvals'
     | '/calloffs/audit'
@@ -784,6 +796,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   TenderPipelineRoute: typeof TenderPipelineRoute
   VariationsRoute: typeof VariationsRoute
+  WelcomeRoute: typeof WelcomeRoute
   FormsDailyReportRoute: typeof FormsDailyReportRoute
   FormsGrnRoute: typeof FormsGrnRoute
   FormsVariationRoute: typeof FormsVariationRoute
@@ -798,6 +811,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/variations': {
       id: '/variations'
       path: '/variations'
@@ -1348,6 +1368,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   TenderPipelineRoute: TenderPipelineRoute,
   VariationsRoute: VariationsRoute,
+  WelcomeRoute: WelcomeRoute,
   FormsDailyReportRoute: FormsDailyReportRoute,
   FormsGrnRoute: FormsGrnRoute,
   FormsVariationRoute: FormsVariationRoute,

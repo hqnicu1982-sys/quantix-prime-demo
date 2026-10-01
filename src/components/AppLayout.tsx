@@ -371,9 +371,9 @@ function LayoutInner() {
     if (typeof window !== "undefined") localStorage.setItem("qp-theme", next);
   };
 
-  // Public pages (/login, /signup) render without the app chrome.
+  // Public pages (/login, /signup, /welcome) render without the app chrome.
   if (!session && isPublicPath(location.pathname) &&
-      (location.pathname === "/login" || location.pathname === "/signup")) {
+      (location.pathname === "/login" || location.pathname === "/signup" || location.pathname === "/welcome")) {
     return <Outlet />;
   }
 
