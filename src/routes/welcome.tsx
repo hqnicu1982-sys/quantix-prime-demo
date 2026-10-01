@@ -94,7 +94,7 @@ function WelcomePage() {
             </div>
           </div>
 
-          <div className="lg:justify-self-end">
+          <div className="min-w-0 max-w-full lg:justify-self-end lg:max-w-[560px]">
             <BoqMock />
           </div>
         </section>
