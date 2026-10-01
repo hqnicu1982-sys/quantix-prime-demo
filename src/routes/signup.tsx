@@ -40,39 +40,42 @@ function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--navy-950)] sidebar-dot-pattern flex items-center justify-center p-6">
+    <div className="min-h-screen bg-background dark:bg-[var(--navy-950)] dark:sidebar-dot-pattern flex items-center justify-center p-6">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex justify-center"><Logo light /></div>
-        <div className="rounded-xl border border-white/10 bg-white/5 p-7 backdrop-blur">
-          <h1 className="font-display text-2xl font-semibold text-white">Create your account</h1>
-          <p className="mt-1 text-[13px] text-white/60">Start exploring FixMargin in seconds.</p>
+        <div className="mb-8 flex justify-center">
+          <span className="dark:hidden"><Logo /></span>
+          <span className="hidden dark:block"><Logo light /></span>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-7 shadow-sm dark:border-white/10 dark:bg-white/5 dark:shadow-none dark:backdrop-blur">
+          <h1 className="font-display text-2xl font-semibold text-foreground dark:text-white">Create your account</h1>
+          <p className="mt-1 text-[13px] text-muted-foreground dark:text-white/60">Start exploring FixMargin in seconds.</p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div>
-              <Label htmlFor="name" className="text-white/80">Full name</Label>
+              <Label htmlFor="name" className="dark:text-white/80">Full name</Label>
               <div className="relative mt-1">
-                <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground dark:text-white/40" />
                 <Input id="name" required value={name} onChange={(e) => setName(e.target.value)}
                   placeholder="Jane Builder"
-                  className="pl-9 bg-white/5 border-white/15 text-white placeholder:text-white/30" />
+                  className="pl-9 dark:bg-white/5 dark:border-white/15 dark:text-white dark:placeholder:text-white/30" />
               </div>
             </div>
             <div>
-              <Label htmlFor="email" className="text-white/80">Email</Label>
+              <Label htmlFor="email" className="dark:text-white/80">Email</Label>
               <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground dark:text-white/40" />
                 <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
                   placeholder="jane@example.com"
-                  className="pl-9 bg-white/5 border-white/15 text-white placeholder:text-white/30" />
+                  className="pl-9 dark:bg-white/5 dark:border-white/15 dark:text-white dark:placeholder:text-white/30" />
               </div>
             </div>
             <div>
-              <Label htmlFor="pw" className="text-white/80">Password</Label>
+              <Label htmlFor="pw" className="dark:text-white/80">Password</Label>
               <div className="relative mt-1">
-                <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground dark:text-white/40" />
                 <Input id="pw" type="password" required minLength={4} value={password} onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 4 characters"
-                  className="pl-9 bg-white/5 border-white/15 text-white placeholder:text-white/30" />
+                  className="pl-9 dark:bg-white/5 dark:border-white/15 dark:text-white dark:placeholder:text-white/30" />
               </div>
             </div>
             <Button type="submit" disabled={busy} className="w-full">
@@ -80,12 +83,12 @@ function SignupPage() {
             </Button>
           </form>
 
-          <p className="mt-5 text-center text-[12.5px] text-white/60">
+          <p className="mt-5 text-center text-[12.5px] text-muted-foreground dark:text-white/60">
             Already have an account?{" "}
-            <Link to="/login" search={{ redirect: undefined }} className="font-semibold text-white hover:text-[var(--accent-500)]">Sign in</Link>
+            <Link to="/login" search={{ redirect: undefined }} className="font-semibold text-foreground hover:text-[var(--accent-500)] dark:text-white">Sign in</Link>
           </p>
         </div>
-        <p className="mt-4 text-center text-[11.5px] text-white/40">
+        <p className="mt-4 text-center text-[11.5px] text-muted-foreground dark:text-white/40">
           Demo only — accounts live in your browser's localStorage.
         </p>
       </div>
