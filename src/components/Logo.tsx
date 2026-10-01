@@ -5,11 +5,11 @@ export function Logo({ light = false, compact = false }: { light?: boolean; comp
         className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--accent-500)] text-[10px] font-bold tracking-tight text-white shadow-sm"
         aria-hidden
       >
-        QP
+        FM
       </div>
       {!compact && (
         <span className={`font-display text-[17px] font-semibold tracking-tight ${light ? "text-white" : "text-[var(--navy-900)]"}`}>
-          FixMargin<span className={`italic font-normal ml-1 ${light ? "text-[var(--accent-100)]" : "text-[var(--accent-500)]"}`}>Prime</span>
+          Fix<span className={`italic font-normal ml-0.5 ${light ? "text-[var(--accent-100)]" : "text-[var(--accent-500)]"}`}>Margin</span>
         </span>
       )}
     </div>
