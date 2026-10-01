@@ -643,7 +643,7 @@ function WelcomePage() {
       {/* nav */}
       <header className="sticky top-0 z-40 px-4 pt-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-          <Link to="/welcome" aria-label="FixMargin home"><Logo light /></Link>
+          <Link to="/welcome" aria-label="FixMargin home"><span className="dark:hidden"><Logo /></span><span className="hidden dark:inline"><Logo light /></span></Link>
           <nav className="hidden items-center gap-1 rounded-full border border-[var(--th-line)] bg-[var(--th-panel)]/80 px-2 py-1.5 backdrop-blur md:flex">
             {[["Platform", "#platform"], ["Workflow", "#workflow"], ["Roles", "#roles"]].map(([l, h]) => (
               <a key={h} href={h} className="rounded-full px-4 py-1.5 text-sm text-[var(--th-muted)] hover:text-[var(--th-text)]">{l}</a>
@@ -767,7 +767,7 @@ function WelcomePage() {
       <footer className="border-t border-[var(--th-line)]">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-10 text-sm text-[var(--th-dim)] md:flex-row md:items-center md:justify-between">
           <div>
-            <Logo light />
+            <span className="dark:hidden"><Logo /></span><span className="hidden dark:inline"><Logo light /></span>
             <p className="mt-3 max-w-md">FixMargin is a trading name of Quantix Prime Ltd. Registered in England and Wales, company number 16680674.</p>
           </div>
           <div className="flex flex-wrap gap-5">
