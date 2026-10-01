@@ -584,7 +584,7 @@ function CalloffMock() {
           </li>
         ))}
       </ul>
-lt      <p className="mt-3 text-[11px] text-slate-500">
+<p className="mt-3 text-[11px] text-slate-500">
         Shortfall flagged to the buyer the same day, before the invoice arrives.
       </p>
     </MockFrame>
