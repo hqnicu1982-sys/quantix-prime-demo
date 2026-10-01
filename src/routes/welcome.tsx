@@ -557,7 +557,7 @@ function CalloffMock() {
       status: "240 ordered · 180 delivered",
       ok: false,
     },
-vt    ];
+  ];
   return (
     <MockFrame label="Call-offs against the priced BoQ">
       <ul className="space-y-3">
