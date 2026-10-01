@@ -397,112 +397,75 @@
   }
 }
 
-
-/* FixMargin public welcome — futuristic dark visual system */
-.welcome-dark {
-  --welcome-bg: oklch(0.105 0.025 270);
-  --welcome-bg-soft: oklch(0.135 0.035 264);
-  --welcome-panel: oklch(0.18 0.045 260);
-  --welcome-text: oklch(0.97 0.01 245);
-  --welcome-blue: oklch(0.61 0.22 262);
-  --welcome-blue-bright: oklch(0.67 0.2 250);
-  --welcome-cyan: oklch(0.78 0.15 210);
+/* FixMargin public welcome — architectural technical editorial */
+.welcome-architectural {
+  --wm-paper: oklch(0.992 0.002 250);
+  --wm-panel: oklch(0.965 0.006 250);
+  --wm-ink: oklch(0.135 0.012 255);
+  --wm-dark-soft: oklch(0.18 0.014 255);
+  --wm-product: oklch(0.155 0.016 255);
+  --wm-blue: oklch(0.57 0.21 258);
+  --wm-blue-strong: oklch(0.51 0.22 258);
+  --wm-blue-bright: oklch(0.72 0.16 248);
+  --wm-blue-soft: oklch(0.93 0.04 255);
+  --wm-blue-pale: oklch(0.97 0.025 255);
+  --wm-blue-bg: oklch(0.57 0.21 258 / .12);
+  --wm-blue-line: oklch(0.72 0.16 248 / .45);
+  --wm-blue-text-muted: oklch(0.93 0.035 255);
+  --wm-muted: oklch(0.47 0.018 255);
+  --wm-muted-light: oklch(0.72 0.012 255);
+  --wm-line: oklch(0.88 0.008 250);
+  --wm-line-strong: oklch(0.76 0.012 250);
+  --wm-line-dark: oklch(1 0 0 / .1);
+  --wm-line-dark-strong: oklch(1 0 0 / .22);
+  --wm-text-on-dark-muted: oklch(0.78 0.012 250);
+  --wm-text-on-dark-faint: oklch(0.62 0.012 250);
+  --wm-shadow: oklch(0.04 0.01 255 / .55);
+  --wm-light-shadow: oklch(0.18 0.02 255 / .12);
+  --wm-good: oklch(0.76 0.16 150);
+  --wm-good-strong: oklch(0.48 0.15 150);
+  --wm-warning: oklch(0.79 0.16 75);
+  --wm-warning-strong: oklch(0.58 0.16 65);
+  --wm-warning-bg: oklch(0.79 0.16 75 / .1);
+  --wm-warning-line: oklch(0.79 0.16 75 / .28);
+  --wm-warning-pale: oklch(0.975 0.025 80);
+  --wm-warning-line-light: oklch(0.82 0.1 75);
+  --wm-danger: oklch(0.72 0.2 25);
+  --wm-danger-strong: oklch(0.56 0.2 25);
+  --wm-danger-bg: oklch(0.65 0.2 25 / .1);
+  --wm-danger-line: oklch(0.72 0.14 25);
+  --wm-danger-pale: oklch(0.975 0.02 25);
+  --wm-photo: oklch(0.9 0.01 250);
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv11", "ss01";
 }
-.welcome-aurora {
-  background:
-    radial-gradient(ellipse 70% 55% at 78% 30%, color-mix(in oklab, var(--welcome-blue) 28%, transparent), transparent 68%),
-    radial-gradient(ellipse 50% 45% at 48% 75%, color-mix(in oklab, var(--welcome-cyan) 13%, transparent), transparent 70%),
-    linear-gradient(145deg, var(--welcome-bg), var(--welcome-bg-soft));
-}
-.welcome-grid::before {
+.welcome-architectural h1,
+.welcome-architectural h2,
+.welcome-architectural h3 { letter-spacing: -0.02em; }
+.welcome-architectural .font-mono { font-family: "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0; }
+.welcome-tech-grid::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: .2;
-  background-image: radial-gradient(circle, color-mix(in oklab, var(--welcome-cyan) 55%, transparent) 1px, transparent 1px);
-  background-size: 46px 46px;
-  mask-image: linear-gradient(to bottom, black, transparent 88%);
-}
-.welcome-glass {
-  border: 1px solid color-mix(in oklab, white 10%, transparent);
-  background: color-mix(in oklab, var(--welcome-panel) 68%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in oklab, white 7%, transparent), 0 28px 70px -36px color-mix(in oklab, var(--welcome-blue) 45%, transparent);
-  backdrop-filter: blur(18px) saturate(125%);
-}
-.welcome-gradient-text {
-  background: linear-gradient(100deg, var(--welcome-blue-bright), var(--welcome-cyan));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.welcome-cta {
-  background:
-    radial-gradient(ellipse 75% 100% at 50% 120%, color-mix(in oklab, var(--welcome-cyan) 20%, transparent), transparent 72%),
-    color-mix(in oklab, var(--welcome-bg-soft) 88%, black);
-  box-shadow: 0 30px 90px -38px color-mix(in oklab, var(--welcome-blue) 62%, transparent), inset 0 1px 0 color-mix(in oklab, white 9%, transparent);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .welcome-aurora { animation: welcome-breathe 12s ease-in-out infinite alternate; }
-}
-@keyframes welcome-breathe {
-  from { background-position: 0 0, 0 0, 0 0; }
-  to { background-position: 2rem -1rem, -1rem 1rem, 0 0; }
-}
-
-/* FixMargin welcome — neo-industrial editorial direction */
-.welcome-industrial {
-  --welcome-bg: oklch(0.965 0.006 95);
-  --welcome-paper: oklch(0.995 0.002 95);
-  --welcome-panel: oklch(0.985 0.004 95);
-  --welcome-ink: oklch(0.145 0.012 255);
-  --welcome-blue: oklch(0.56 0.21 258);
-  --welcome-blue-bright: oklch(0.62 0.2 247);
-  --welcome-cyan: oklch(0.55 0.21 258);
-  font-feature-settings: "ss01", "ss02";
-}
-.welcome-industrial h1,
-.welcome-industrial h2,
-.welcome-industrial h3 { letter-spacing: -0.02em; }
-.welcome-industrial .font-mono-num,
-.welcome-industrial [class*="uppercase"] { font-family: "Space Mono", ui-monospace, monospace; }
-.welcome-industrial .welcome-blueprint {
-  background-color: var(--welcome-bg);
   background-image:
-    linear-gradient(color-mix(in oklab, var(--welcome-ink) 6%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--welcome-ink) 6%, transparent) 1px, transparent 1px);
-  background-size: 32px 32px;
+    linear-gradient(var(--wm-line-dark) 1px, transparent 1px),
+    linear-gradient(90deg, var(--wm-line-dark) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(90deg, transparent, black 35%, black 100%);
+  opacity: .3;
 }
-.welcome-industrial .welcome-blueprint::after {
-  content: "FM / COMMERCIAL CONTROL / 01";
+.welcome-tech-grid::after {
+  content: "FM / COMMERCIAL CONTROL / UK";
   position: absolute;
-  right: 1.5rem;
-  bottom: 1rem;
-  font: 9px "Space Mono", monospace;
+  right: 2rem;
+  bottom: 1.25rem;
+  color: var(--wm-text-on-dark-faint);
+  font: 9px "JetBrains Mono", monospace;
   letter-spacing: .16em;
-  color: color-mix(in oklab, var(--welcome-ink) 35%, transparent);
 }
-.welcome-industrial .welcome-glass {
-  border: 1px solid color-mix(in oklab, var(--welcome-ink) 36%, transparent);
-  background: color-mix(in oklab, var(--welcome-paper) 95%, transparent);
-  box-shadow: 5px 5px 0 color-mix(in oklab, var(--welcome-ink) 92%, transparent);
-  backdrop-filter: none;
-}
-.welcome-industrial .welcome-gradient-text {
-  background: none;
-  color: var(--welcome-blue);
-  -webkit-text-fill-color: currentColor;
-}
-.welcome-industrial .welcome-cta {
-  background: var(--welcome-ink);
-  color: var(--welcome-paper);
-  box-shadow: 10px 10px 0 var(--welcome-blue);
-}
-.welcome-industrial .welcome-cta h2,
-.welcome-industrial .welcome-cta p { color: var(--welcome-paper); }
-.welcome-industrial a,
-.welcome-industrial article,
-.welcome-industrial .welcome-glass { transition-duration: 150ms; }
 @media (prefers-reduced-motion: no-preference) {
-  .welcome-industrial .welcome-glass:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 color-mix(in oklab, var(--welcome-ink) 92%, transparent); }
+  .welcome-architectural a,
+  .welcome-architectural article { transition: color .18s ease, background-color .18s ease, border-color .18s ease, transform .18s ease; }
+  .welcome-architectural article:hover { transform: translateY(-1px); }
 }

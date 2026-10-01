@@ -6,18 +6,14 @@ import {
   CalendarClock,
   Check,
   CheckCircle2,
-  CircleDollarSign,
   ClipboardCheck,
-  Clock3,
-  Download,
   FileCheck2,
-  FileClock,
   FileDiff,
   FileSpreadsheet,
   HardHat,
   Layers3,
-  LockKeyhole,
   PackageCheck,
+  Play,
   ReceiptText,
   ShieldCheck,
   TrendingUp,
@@ -30,20 +26,9 @@ export const Route = createFileRoute("/welcome")({
   head: () => ({
     meta: [
       { title: "FixMargin — Cost control for UK drylining and interiors subcontractors" },
-      {
-        name: "description",
-        content:
-          "Control estimating, procurement, site delivery, variations, invoices and margin in one place for UK interiors subcontractors.",
-      },
-      {
-        property: "og:title",
-        content: "FixMargin — Cost control for UK drylining and interiors subcontractors",
-      },
-      {
-        property: "og:description",
-        content:
-          "Control estimating, procurement, site delivery, variations, invoices and margin in one place for UK interiors subcontractors.",
-      },
+      { name: "description", content: "Control estimating, procurement, site delivery, variations, invoices and margin in one place for UK interiors subcontractors." },
+      { property: "og:title", content: "FixMargin — Cost control for UK drylining and interiors subcontractors" },
+      { property: "og:description", content: "Control estimating, procurement, site delivery, variations, invoices and margin in one place for UK interiors subcontractors." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://quantix-prime-flow.lovable.app/welcome" },
       { name: "twitter:card", content: "summary" },
@@ -51,273 +36,227 @@ export const Route = createFileRoute("/welcome")({
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Space+Mono&display=swap",
-      },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" },
       { rel: "canonical", href: "https://quantix-prime-flow.lovable.app/welcome" },
     ],
   }),
   component: WelcomePage,
 });
 
-const workflow = [
-  { label: "Estimate", detail: "Systems & take-off", state: "complete" },
-  { label: "Procurement", detail: "Quotes & call-offs", state: "complete" },
-  { label: "Site", detail: "Deliveries & reports", state: "warning" },
-  { label: "Commercial", detail: "Variations & invoices", state: "warning" },
-  { label: "Final account", detail: "Applications & retention", state: "live" },
+const lifecycle = [
+  { number: "01", title: "Tender", copy: "Pipeline, scope and follow-up" },
+  { number: "02", title: "Estimate", copy: "Systems, take-off and revisions" },
+  { number: "03", title: "Procure", copy: "Prices, call-offs and approvals" },
+  { number: "04", title: "Deliver", copy: "GRNs, labour and daily reports" },
+  { number: "05", title: "Control", copy: "Variations, invoices and programme" },
+  { number: "06", title: "Close", copy: "Applications, retention and account" },
 ];
 
-const coverage = [
-  { icon: FileDiff, title: "Drawing revisions", detail: "Track C0 onwards and see post-award impact." },
-  { icon: HardHat, title: "Daily site reports", detail: "Labour, progress, delays and photo records." },
-  { icon: CalendarClock, title: "Planner", detail: "Linked tasks, milestones and overdue work." },
-  { icon: FileClock, title: "Variations", detail: "Instructions, values, status and evidence." },
-  { icon: FileCheck2, title: "Payment applications", detail: "Applications, certificates and retention." },
-  { icon: TrendingUp, title: "Profit forecast", detail: "Current cost, exposure and forecast margin." },
-  { icon: ClipboardCheck, title: "Tender handoff", detail: "Carry the awarded baseline into delivery." },
-  { icon: LockKeyhole, title: "Roles & permissions", detail: "Control access by commercial responsibility." },
-  { icon: Download, title: "Practical exports", detail: "CSV, PDF and XLSX where the team needs them." },
+const capabilities = [
+  { icon: FileDiff, title: "Drawing revisions", copy: "Track C0 onwards and identify post-award scope changes." },
+  { icon: ClipboardCheck, title: "Tender & award handoff", copy: "Carry the commercial baseline into the live project." },
+  { icon: Layers3, title: "Manufacturer systems", copy: "Build wall and ceiling quantities from known system specifications." },
+  { icon: FileSpreadsheet, title: "Price-list comparison", copy: "Compare merchant lines on the same BoQ and expose missing prices." },
+  { icon: Truck, title: "Call-offs & deliveries", copy: "Approve orders, record GRNs and retain delivery evidence." },
+  { icon: ReceiptText, title: "Invoice checks", copy: "Match invoice quantity and rate to the order and delivery." },
+  { icon: HardHat, title: "Site reporting", copy: "Capture labour, progress, delay notes and photographs." },
+  { icon: CalendarClock, title: "Planner & progress", copy: "Connect tasks, milestones and progress-delay reporting." },
+  { icon: TrendingUp, title: "Margin forecast", copy: "Read current exposure alongside forecast project margin." },
+  { icon: FileCheck2, title: "Applications & retention", copy: "Track applications, certificates and retained value." },
+  { icon: Users, title: "Roles & audit", copy: "Set responsibility and retain a record of important changes." },
+  { icon: ShieldCheck, title: "Practical exports", copy: "Export operational records in CSV, PDF and XLSX formats." },
 ];
 
 function WelcomePage() {
   return (
-    <div className="welcome-industrial min-h-screen overflow-hidden bg-[var(--welcome-bg)] text-[var(--welcome-ink)] antialiased [font-family:'Space_Grotesk',ui-sans-serif,system-ui,sans-serif]">
-      <header className="sticky top-0 z-50 border-b border-[color:var(--welcome-ink)]/15 bg-[color:var(--welcome-paper)]/95 ">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-7">
-          <Link to="/welcome" aria-label="FixMargin home"><Logo /></Link>
-          <nav className="flex items-center gap-0 sm:gap-2" aria-label="Main">
-            <Link to="/pricing" className="rounded-none px-2 py-2 text-[12px] font-bold text-[color:var(--welcome-ink)]/60 transition-colors hover:text-[var(--welcome-ink)] sm:px-3 sm:text-[13px]">Pricing</Link>
-            <Link to="/login" className="rounded-none px-2 py-2 text-[12px] font-bold text-[color:var(--welcome-ink)]/60 transition-colors hover:text-[var(--welcome-ink)] sm:px-3 sm:text-[13px]">Sign in</Link>
-            <Link to="/signup" className="ml-1 inline-flex items-center rounded-none border border-[color:var(--welcome-ink)]/20 bg-[color:var(--welcome-paper)] px-3 py-2 text-[12px] font-bold text-[var(--welcome-ink)] transition-colors hover:bg-[color:var(--welcome-ink)] hover:text-[var(--welcome-paper)] sm:px-5 sm:text-[13px]">Start free</Link>
+    <div className="welcome-architectural min-h-screen overflow-x-hidden bg-[var(--wm-paper)] text-[var(--wm-ink)] antialiased">
+      <header className="sticky top-0 z-50 border-b border-[var(--wm-line-dark)] bg-[var(--wm-ink)] text-[var(--wm-paper)]">
+        <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12">
+          <Link to="/welcome" aria-label="FixMargin home"><Logo light /></Link>
+          <nav aria-label="Main navigation" className="flex items-center gap-1 sm:gap-3">
+            <Link to="/pricing" className="px-2 py-2 text-xs font-medium text-[var(--wm-text-on-dark-muted)] hover:text-[var(--wm-paper)] sm:px-3">Pricing</Link>
+            <Link to="/login" className="px-2 py-2 text-xs font-medium text-[var(--wm-text-on-dark-muted)] hover:text-[var(--wm-paper)] sm:px-3">Sign in</Link>
+            <Link to="/signup" className="ml-1 inline-flex min-h-9 items-center border border-[var(--wm-paper)] bg-[var(--wm-paper)] px-3 text-xs font-semibold text-[var(--wm-ink)] hover:bg-[var(--wm-blue-soft)] sm:px-5">Start free</Link>
           </nav>
         </div>
+        <nav aria-label="Product overview" className="hidden border-t border-[var(--wm-line-dark)] bg-[var(--wm-dark-soft)] md:block">
+          <div className="mx-auto flex h-11 max-w-[1440px] items-center gap-8 px-8 text-[11px] font-medium text-[var(--wm-text-on-dark-muted)] lg:px-12">
+            <a href="#overview" className="border-b-2 border-[var(--wm-blue)] py-3 text-[var(--wm-paper)]">Overview</a>
+            <a href="#workflow" className="py-3 hover:text-[var(--wm-paper)]">Workflow</a>
+            <a href="#capabilities" className="py-3 hover:text-[var(--wm-paper)]">Capabilities</a>
+            <a href="#demo" className="py-3 hover:text-[var(--wm-paper)]">Sample project</a>
+            <a href="#presentations" className="py-3 hover:text-[var(--wm-paper)]">Presentations</a>
+          </div>
+        </nav>
       </header>
 
       <main>
-        <section className="welcome-blueprint relative text-[var(--welcome-ink)]">
-          <div className="relative z-10 mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center gap-12 px-5 py-16 sm:px-7 lg:grid-cols-12 lg:gap-8 lg:py-20">
-            <div className="min-w-0 lg:col-span-7">
-              <p className="inline-flex items-center gap-2 rounded-none border border-[color:var(--welcome-blue)]/30 bg-[color:var(--welcome-blue)]/10 px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.12em] text-[var(--welcome-cyan)]">
-                <span className="h-2 w-2 rounded-none bg-[var(--welcome-cyan)] shadow-[0_0_12px_var(--welcome-cyan)] motion-safe:animate-pulse" aria-hidden />
-                Commercial control for UK interiors subcontractors
-              </p>
-              <h1 className="mt-7 text-[40px] font-black leading-[1.06] tracking-[-0.02em] sm:text-[52px] lg:text-[64px]">
-                Protect the margin you priced — from <span className="welcome-gradient-text">estimate to final account.</span>
+        <section id="overview" className="welcome-tech-grid relative overflow-hidden bg-[var(--wm-ink)] text-[var(--wm-paper)]">
+          <div className="mx-auto grid min-h-[720px] max-w-[1440px] items-center gap-14 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-24">
+            <div className="relative z-10 lg:col-span-5">
+              <Eyebrow>Commercial control platform</Eyebrow>
+              <h1 className="mt-7 max-w-2xl text-[42px] font-semibold leading-[1.05] sm:text-[58px] lg:text-[68px]">
+                Keep the margin you priced.
               </h1>
-              <p className="mt-7 max-w-xl text-[17px] leading-relaxed text-[color:var(--welcome-ink)]/58">
-                Keep estimating, buying, site records, variations, invoices, programme and profit connected as the job moves.
+              <p className="mt-7 max-w-xl text-base leading-7 text-[var(--wm-text-on-dark-muted)] sm:text-lg">
+                FixMargin connects tender, estimate, procurement, delivery, site records and commercial control for UK drylining and interiors subcontractors.
               </p>
-              <div className="mt-9 flex flex-wrap items-center gap-4">
-                <Link to="/signup" className="inline-flex items-center gap-2 rounded-none bg-[var(--welcome-blue)] px-7 py-3.5 text-[14px] font-bold text-[var(--welcome-ink)] shadow-[0_0_30px_color-mix(in_oklab,var(--welcome-blue)_38%,transparent)] transition-transform hover:-translate-y-0.5">
-                  Start free <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link to="/pricing" className="inline-flex items-center rounded-none border border-[color:var(--welcome-ink)]/20 bg-[color:var(--welcome-paper)] px-7 py-3.5 text-[14px] font-bold text-[var(--welcome-ink)] transition-colors hover:bg-white/10">See pricing</Link>
+              <div className="mt-9 flex flex-wrap gap-3">
+                <Link to="/signup" className="inline-flex min-h-12 items-center gap-2 bg-[var(--wm-blue)] px-6 text-sm font-semibold text-[var(--wm-paper)] hover:bg-[var(--wm-blue-strong)]">Start free <ArrowRight className="h-4 w-4" /></Link>
+                <a href="#demo" className="inline-flex min-h-12 items-center gap-2 border border-[var(--wm-line-dark-strong)] px-6 text-sm font-semibold text-[var(--wm-paper)] hover:border-[var(--wm-paper)]"><Play className="h-4 w-4" /> View sample project</a>
               </div>
-              <p className="mt-4 text-[12.5px] text-[color:var(--welcome-ink)]/40">No card required.</p>
+              <p className="mt-4 font-mono text-[10px] uppercase text-[var(--wm-text-on-dark-faint)]">No card required · UK trade workflows</p>
             </div>
-            <div className="lg:col-span-5 lg:pt-24"><ProjectControlMock /></div>
+            <div className="relative min-w-0 lg:col-span-7">
+              <ProductStage />
+            </div>
           </div>
         </section>
 
-        <section className="border-y border-[color:var(--welcome-ink)]/12 bg-[color:var(--welcome-paper)]" aria-labelledby="connected-control">
-          <div className="mx-auto max-w-7xl px-5 py-16 sm:px-7">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--welcome-cyan)]">One commercial record</p>
-                <h2 id="connected-control" className="mt-2 text-[27px] font-black text-[var(--welcome-ink)] sm:text-[34px]">Every handover stays connected</h2>
+        <section id="workflow" aria-labelledby="workflow-title" className="border-b border-[var(--wm-line)] bg-[var(--wm-paper)]">
+          <div className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-24">
+            <div className="grid gap-8 lg:grid-cols-12">
+              <div className="lg:col-span-4">
+                <Eyebrow dark>One connected commercial record</Eyebrow>
+                <h2 id="workflow-title" className="mt-5 text-3xl font-semibold leading-tight sm:text-4xl">From first tender to final account</h2>
               </div>
-              <p className="max-w-xl text-[14px] leading-relaxed text-[color:var(--welcome-ink)]/45">The estimate becomes the buying baseline. Site records support the commercial position. The forecast reflects what is happening now.</p>
+              <p className="max-w-2xl self-end text-base leading-7 text-[var(--wm-muted)] lg:col-span-6 lg:col-start-7">The estimate becomes the buying baseline. Delivery and site evidence support the commercial position. Programme and cost changes update the forecast.</p>
             </div>
-            <div className="relative mt-10 grid gap-3 md:grid-cols-5">
-              <div className="absolute left-[10%] right-[10%] top-6 hidden h-px bg-gradient-to-r from-transparent via-[var(--welcome-cyan)]/35 to-transparent md:block" aria-hidden />
-              {workflow.map((item, index) => (
-                <div key={item.label} className="welcome-glass relative rounded-none px-4 py-4">
-                  <div className="flex items-center gap-3 md:block">
-                    <span className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-none border text-[11px] font-black ${item.state === "warning" ? "border-amber-500/40 bg-amber-500/10 text-amber-400" : "border-[color:var(--welcome-cyan)]/35 bg-[color:var(--welcome-cyan)]/10 text-[var(--welcome-cyan)]"}`}>
-                      {item.state === "complete" ? <Check className="h-4 w-4" /> : index + 1}
-                    </span>
-                    <div className="md:mt-3">
-                      <p className="text-[12px] font-black text-[color:var(--welcome-ink)]/85">{item.label}</p>
-                      <p className="mt-0.5 text-[10.5px] text-[color:var(--welcome-ink)]/38">{item.detail}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="relative bg-[var(--welcome-bg)]" aria-labelledby="control-workflow">
-          <div className="mx-auto max-w-7xl px-5 py-20 sm:px-7 lg:py-28">
-            <div className="mx-auto max-w-3xl text-center">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--welcome-cyan)]">Across the whole job</p>
-              <h2 id="control-workflow" className="mt-3 text-[29px] font-black text-[var(--welcome-ink)] sm:text-[38px]">Control the work, the evidence and the money</h2>
-              <p className="mt-5 text-[15px] leading-relaxed text-[color:var(--welcome-ink)]/48">FixMargin follows the job beyond pricing. Each team sees the information it needs, while commercial control stays joined up.</p>
-            </div>
-
-            <div className="mt-16 space-y-16 lg:space-y-24">
-              <StoryRow kicker="Estimate & procurement" title="Price what you will build. Buy against the same baseline." copy="Build the take-off from manufacturer systems, compare merchant price lists line by line, then raise call-offs against the awarded quantities." mock={<ProcurementMock />} />
-              <StoryRow reverse kicker="Site delivery control" title="Know what arrived, what did not, and what held the work up." copy="Signed GRNs, daily reports and delay records give the office a current view of delivery and progress — while the evidence is still fresh." mock={<SiteMock />} />
-              <StoryRow kicker="Commercial control" title="Turn site events into a protected commercial position." copy="Track instructions and unsigned work, match invoices to orders and deliveries, manage disputes, applications and retention in one record." mock={<CommercialMock />} />
-              <StoryRow reverse kicker="Programme & margin" title="See delay and cost exposure before the final account." copy="Linked tasks, milestones, overdue actions and live commercial data feed the forecast, so the team can act while there is still time." mock={<ProgrammeMock />} />
-            </div>
-          </div>
-        </section>
-
-        <section className="border-y border-[color:var(--welcome-ink)]/12 bg-[color:var(--welcome-paper)]" aria-labelledby="coverage">
-          <div className="mx-auto max-w-7xl px-5 py-20 sm:px-7 lg:py-24">
-            <div className="max-w-2xl">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--welcome-cyan)]">Operational coverage</p>
-              <h2 id="coverage" className="mt-3 text-[29px] font-black text-[var(--welcome-ink)] sm:text-[38px]">The controls around the core workflow</h2>
-            </div>
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {coverage.map(({ icon: Icon, title, detail }) => (
-                <article key={title} className="welcome-glass group rounded-none p-5 transition-transform hover:-translate-y-0.5">
-                  <div className="flex items-start gap-4">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-none border border-[color:var(--welcome-blue)]/25 bg-[color:var(--welcome-blue)]/10 text-[var(--welcome-cyan)]"><Icon className="h-4 w-4" /></span>
-                    <div><h3 className="text-[14px] font-black text-[color:var(--welcome-ink)]/85">{title}</h3><p className="mt-1.5 text-[12.5px] leading-relaxed text-[color:var(--welcome-ink)]/42">{detail}</p></div>
-                  </div>
+            <div className="mt-14 grid border-x border-t border-[var(--wm-line)] sm:grid-cols-2 lg:grid-cols-6">
+              {lifecycle.map((item) => (
+                <article key={item.number} className="group min-h-48 border-b border-r border-[var(--wm-line)] p-5 last:border-r-0 hover:bg-[var(--wm-panel)]">
+                  <span className="font-mono text-[11px] text-[var(--wm-blue)]">{item.number}</span>
+                  <h3 className="mt-9 text-lg font-semibold">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[var(--wm-muted)]">{item.copy}</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="bg-[var(--welcome-paper)]" aria-labelledby="who">
-          <div className="mx-auto max-w-7xl px-5 py-20 sm:px-7 lg:py-24">
-            <div className="mx-auto max-w-2xl text-center">
-              <h2 id="who" className="text-[29px] font-black text-[var(--welcome-ink)] sm:text-[38px]">Built for the people who carry the margin</h2>
-              <p className="mt-4 text-[15px] text-[color:var(--welcome-ink)]/42">Drylining, ceilings and interiors subcontractors, roughly £2–25M turnover.</p>
+        <section aria-labelledby="platform-title" className="bg-[var(--wm-paper)]">
+          <div className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
+            <div className="max-w-3xl">
+              <Eyebrow dark>Inside FixMargin</Eyebrow>
+              <h2 id="platform-title" className="mt-5 text-3xl font-semibold leading-tight sm:text-5xl">The work, the evidence and the money — in the same view</h2>
+              <p className="mt-6 max-w-2xl text-base leading-7 text-[var(--wm-muted)]">Each stage uses the same project baseline, so changes do not disappear between estimating, buying, site and commercial teams.</p>
             </div>
-            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              <RoleCard role="Managing Director" line="Sees live project health, exposure and forecast margin without waiting for month end." />
-              <RoleCard role="Commercial Director" line="Controls variations, applications, invoice disputes and the route to final account." />
-              <RoleCard role="Estimator / QS" line="Builds a traceable estimate, then follows value and risk as the job moves." />
-              <RoleCard role="Buyer" line="Compares supply, controls call-offs and resolves delivery or invoice differences." />
+            <div className="mt-20 space-y-28 lg:space-y-36">
+              <FeatureStory number="01" eyebrow="Estimate & specification" title="Build from manufacturer systems. Keep revisions traceable." copy="Turn British Gypsum, Knauf and Siniat system requirements into measured quantities. Record drawing revisions and separate post-award change from the C0 baseline." bullets={["System specification and take-off", "Drawing revision impact", "Tender-to-award baseline"]} visual={<EstimateVisual />} />
+              <FeatureStory reverse number="02" eyebrow="Procurement" title="Compare merchant prices on the same BoQ before you buy." copy="Align merchant price lists to the materials you need, expose unpriced lines and pack differences, then raise controlled call-offs against the awarded quantities." bullets={["Side-by-side supplier comparison", "Missing-price and pack-size checks", "Approvals and call-off tracking"]} visual={<ProcurementVisual />} />
+              <FeatureStory number="03" eyebrow="Delivery & site" title="Connect what arrived with what happened on site." copy="Record signed delivery notes, shortfalls, labour, daily progress and delays while the evidence is current and linked to the project." bullets={["GRNs and delivery shortfalls", "Daily reports and site photos", "Labour and delay records"]} visual={<DeliveryVisual />} />
+              <FeatureStory reverse number="04" eyebrow="Commercial control" title="Check every invoice. Protect every instructed change." copy="Match billed quantity and rate to the call-off and delivery. Keep signed and unsigned variations, applications and retention visible in the commercial record." bullets={["Three-way invoice checks", "Variation evidence and status", "Applications, certificates and retention"]} visual={<CommercialVisual />} />
+              <FeatureStory number="05" eyebrow="Programme & forecast" title="See the programme risk beside the margin impact." copy="Linked tasks, milestones, progress reports and overdue actions give commercial teams the context behind the latest forecast." bullets={["Dependencies and milestones", "Progress and delay reporting", "Live forecast margin"]} visual={<ProgrammeVisual />} />
             </div>
           </div>
         </section>
 
-        <section className="border-t border-[color:var(--welcome-ink)]/10 bg-[var(--welcome-bg)]" aria-labelledby="cta">
-          <div className="mx-auto max-w-5xl px-5 py-20 sm:px-7 lg:py-24">
-            <div className="welcome-cta relative overflow-hidden border-2 border-[color:var(--welcome-cyan)]/25 p-10 text-center sm:p-14">
-              <div className="absolute inset-x-[15%] -bottom-24 h-44 bg-[color:var(--welcome-cyan)]/10 blur-3xl" aria-hidden />
-              <div className="relative">
-                <h2 id="cta" className="text-[30px] font-black text-[var(--welcome-ink)] sm:text-[36px]">Keep control from tender to final account</h2>
-                <p className="mx-auto mt-5 max-w-xl text-[16px] leading-relaxed text-[color:var(--welcome-ink)]/55">Set up your workspace and bring estimating, procurement, site and commercial records into one project view.</p>
-                <div className="mt-9 flex flex-wrap justify-center gap-4">
-                  <Link to="/signup" className="inline-flex items-center gap-2 rounded-none bg-[var(--welcome-blue)] px-8 py-3.5 text-[14px] font-black text-[var(--welcome-ink)] shadow-[0_0_30px_color-mix(in_oklab,var(--welcome-blue)_40%,transparent)] transition-transform hover:scale-[1.03]">Start free — no card required <ArrowRight className="h-4 w-4" /></Link>
-                  <Link to="/pricing" className="inline-flex items-center rounded-none border border-[color:var(--welcome-ink)]/20 bg-[color:var(--welcome-paper)] px-8 py-3.5 text-[14px] font-bold text-[var(--welcome-ink)] transition-colors hover:bg-white/10">Compare plans</Link>
-                </div>
+        <section id="demo" aria-labelledby="demo-title" className="bg-[var(--wm-dark-soft)] text-[var(--wm-paper)]">
+          <div className="mx-auto grid max-w-[1440px] gap-12 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-28">
+            <div className="lg:col-span-4">
+              <Eyebrow>Guided sample project</Eyebrow>
+              <h2 id="demo-title" className="mt-5 text-3xl font-semibold leading-tight sm:text-4xl">See the full workflow in Harbour Yard</h2>
+              <p className="mt-6 text-base leading-7 text-[var(--wm-text-on-dark-muted)]">A fictional drylining fit-out shows an estimate, three merchant comparisons, controlled call-offs, a delivery shortfall, an invoice dispute, variations, progress and forecast margin.</p>
+              <Link to="/projects/$projectId" params={{ projectId: "sample-harbour-yard" }} className="mt-8 inline-flex min-h-12 items-center gap-2 bg-[var(--wm-paper)] px-6 text-sm font-semibold text-[var(--wm-ink)] hover:bg-[var(--wm-blue-soft)]">Open sample project <ArrowRight className="h-4 w-4" /></Link>
+              <p className="mt-4 font-mono text-[10px] uppercase text-[var(--wm-text-on-dark-faint)]">Sample data · No emails or live actions</p>
+            </div>
+            <div className="min-w-0 lg:col-span-8"><DemoBoard /></div>
+          </div>
+        </section>
+
+        <section id="capabilities" aria-labelledby="capabilities-title" className="border-b border-[var(--wm-line)] bg-[var(--wm-panel)]">
+          <div className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-24">
+            <div className="grid gap-8 lg:grid-cols-12">
+              <div className="lg:col-span-4"><Eyebrow dark>Capabilities</Eyebrow><h2 id="capabilities-title" className="mt-5 text-3xl font-semibold leading-tight sm:text-4xl">Commercial controls around the whole job</h2></div>
+              <div className="grid border-l border-t border-[var(--wm-line)] sm:grid-cols-2 lg:col-span-8 lg:grid-cols-3">
+                {capabilities.map(({ icon: Icon, title, copy }) => <article key={title} className="min-h-44 border-b border-r border-[var(--wm-line)] bg-[var(--wm-paper)] p-5"><Icon className="h-5 w-5 text-[var(--wm-blue)]" /><h3 className="mt-7 text-sm font-semibold">{title}</h3><p className="mt-2 text-xs leading-5 text-[var(--wm-muted)]">{copy}</p></article>)}
               </div>
             </div>
           </div>
         </section>
+
+        <section id="presentations" aria-labelledby="presentations-title" className="bg-[var(--wm-paper)]">
+          <div className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-24">
+            <Eyebrow dark>Explore FixMargin</Eyebrow>
+            <h2 id="presentations-title" className="mt-5 max-w-3xl text-3xl font-semibold leading-tight sm:text-4xl">Choose the view that matches your responsibility</h2>
+            <div className="mt-12 grid border-l border-t border-[var(--wm-line)] md:grid-cols-3">
+              <PresentationCard tag="Role walkthrough" title="How each team member uses FixMargin" copy="See the working rhythm for the MD, Commercial Director, Estimator/QS and Buyer." to="/how-to" />
+              <PresentationCard tag="Live sample" title="Harbour Yard Offices — Levels 2–3" copy="Explore the fictional project from priced systems through delivery, dispute and forecast." project />
+              <PresentationCard tag="Plans" title="Compare the available workspace plans" copy="Review included controls and choose the plan that suits your team." to="/pricing" />
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="roles-title" className="border-y border-[var(--wm-line)] bg-[var(--wm-panel)]">
+          <div className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12">
+            <div className="grid gap-12 lg:grid-cols-12">
+              <div className="lg:col-span-4"><Eyebrow dark>Who it is for</Eyebrow><h2 id="roles-title" className="mt-5 text-3xl font-semibold leading-tight">Built for the people who carry the margin</h2><p className="mt-5 text-sm leading-6 text-[var(--wm-muted)]">Drylining, ceilings and interiors subcontractors, roughly £2–25M turnover.</p></div>
+              <div className="grid border-l border-t border-[var(--wm-line)] sm:grid-cols-2 lg:col-span-8"><Role title="Managing Director" copy="Project health, exposure and forecast margin without waiting for month end." /><Role title="Commercial Director" copy="Variations, applications, disputes and the route to final account." /><Role title="Estimator / QS" copy="A traceable estimate that carries value and risk into delivery." /><Role title="Buyer" copy="Supplier comparison, call-offs, deliveries and invoice differences." /></div>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="cta-title" className="bg-[var(--wm-blue)] text-[var(--wm-paper)]">
+          <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-8 px-5 py-16 sm:px-8 lg:flex-row lg:items-center lg:px-12">
+            <div><h2 id="cta-title" className="text-3xl font-semibold sm:text-4xl">Start free — no card required</h2><p className="mt-3 text-sm text-[var(--wm-blue-text-muted)]">Keep tender, procurement, site and commercial control connected.</p></div>
+            <div className="flex flex-wrap gap-3"><Link to="/signup" className="inline-flex min-h-12 items-center gap-2 bg-[var(--wm-paper)] px-6 text-sm font-semibold text-[var(--wm-ink)]">Start free <ArrowRight className="h-4 w-4" /></Link><Link to="/pricing" className="inline-flex min-h-12 items-center border border-[var(--wm-paper)] px-6 text-sm font-semibold text-[var(--wm-paper)]">Compare plans</Link></div>
+          </div>
+        </section>
       </main>
 
-      <footer className="border-t border-[color:var(--welcome-ink)]/15 bg-[var(--welcome-bg)]">
-        <div className="mx-auto max-w-7xl px-5 py-12 sm:px-7">
-          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-            <Logo />
-            <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] font-bold text-[color:var(--welcome-ink)]/40" aria-label="Footer">
-              <Link to="/pricing" className="hover:text-[var(--welcome-cyan)]">Pricing</Link><a href="/privacy" className="hover:text-[var(--welcome-cyan)]">Privacy</a><a href="/terms" className="hover:text-[var(--welcome-cyan)]">Terms</a><a href="/cookies" className="hover:text-[var(--welcome-cyan)]">Cookies</a><Link to="/login" className="hover:text-[var(--welcome-cyan)]">Sign in</Link>
-            </nav>
-          </div>
-          <div className="mt-8 border-t border-[color:var(--welcome-ink)]/15 pt-6 text-[12px] leading-relaxed text-[color:var(--welcome-ink)]/35">
-            <p>FixMargin is a trading name of Quantix Prime Ltd. Registered in England and Wales, company number 16680674.</p>
-            <p className="mt-1 text-[color:var(--welcome-ink)]/25">© 2026 Quantix Prime Ltd.</p>
-          </div>
+      <footer className="bg-[var(--wm-ink)] text-[var(--wm-paper)]">
+        <div className="mx-auto max-w-[1440px] px-5 py-12 sm:px-8 lg:px-12">
+          <div className="flex flex-col justify-between gap-7 md:flex-row md:items-center"><Logo light /><nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-3 text-xs text-[var(--wm-text-on-dark-muted)]"><Link to="/pricing">Pricing</Link><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/cookies">Cookies</a><Link to="/login">Sign in</Link></nav></div>
+          <div className="mt-9 border-t border-[var(--wm-line-dark)] pt-6 text-xs leading-6 text-[var(--wm-text-on-dark-faint)]"><p>FixMargin is a trading name of Quantix Prime Ltd. Registered in England and Wales, company number 16680674.</p><p>© 2026 Quantix Prime Ltd.</p></div>
         </div>
       </footer>
     </div>
   );
 }
 
-function SampleLabel() {
-  return <span className="rounded-none border border-[color:var(--welcome-cyan)]/25 bg-[color:var(--welcome-cyan)]/5 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-[var(--welcome-cyan)]">Sample data</span>;
+function Eyebrow({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
+  return <p className={`font-mono text-[10px] font-semibold uppercase tracking-[0.18em] ${dark ? "text-[var(--wm-blue)]" : "text-[var(--wm-blue-bright)]"}`}>{children}</p>;
 }
 
-function ProjectControlMock() {
-  return (
-    <div className="relative min-w-0 lg:justify-self-end">
-      <div className="welcome-glass relative border-2 border-[var(--welcome-ink)] p-4 shadow-[8px_8px_0_var(--welcome-ink)] sm:p-6">
-        <div className="flex items-start justify-between gap-3 border-b border-[color:var(--welcome-ink)]/15 pb-4">
-          <div><p className="text-[10px] font-black uppercase tracking-[0.12em] text-[color:var(--welcome-ink)]/35">Project control</p><p className="mt-1 text-[14px] font-black text-[color:var(--welcome-ink)]/85">Harbour Yard Offices — Levels 2–3</p></div><SampleLabel />
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Metric label="Progress" value="42%" note="8 weeks remain" />
-          <Metric label="Forecast margin" value="18.4%" note="Healthy" positive />
-          <Metric label="Variations" value="2" note="1 unsigned" warning />
-          <Metric label="Open disputes" value="1" note="Meridian invoice" warning />
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1.08fr_.92fr]">
-          <div className="rounded-none border border-[color:var(--welcome-ink)]/15 bg-[color:var(--welcome-paper)] p-4">
-            <div className="flex items-center justify-between"><p className="text-[11.5px] font-black text-[color:var(--welcome-ink)]/72">Live controls</p><span className="text-[10px] text-[color:var(--welcome-ink)]/32">Today</span></div>
-            <div className="mt-3 space-y-2.5">
-              <Signal icon={Truck} label="CO-0002 delivery shortfall" detail="180 of 240 sheets received" tone="warning" />
-              <Signal icon={ReceiptText} label="MER-2048 invoice disputed" detail="Quantity and rate differ" tone="danger" />
-              <Signal icon={FileClock} label="VAR-002 awaiting instruction" detail="Cupboard wall completed on site" tone="warning" />
-            </div>
-          </div>
-          <div className="rounded-none border border-[color:var(--welcome-ink)]/15 bg-[color:var(--welcome-paper)] p-4">
-            <p className="text-[11.5px] font-black text-[color:var(--welcome-ink)]/72">Programme</p>
-            <div className="mt-4 space-y-4">
-              <Progress label="Level 2 partitions" value="74%" />
-              <Progress label="Level 3 partitions" value="28%" />
-            </div>
-            <div className="mt-5 flex items-center gap-2 rounded-none border border-amber-500/20 bg-amber-500/[0.07] px-3 py-2 text-[10.5px] text-amber-300"><AlertTriangle className="h-3.5 w-3.5 shrink-0" />W3 corridors behind — material shortfall</div>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10.5px] text-[color:var(--welcome-ink)]/32"><span>Estimate · Procurement · Site · Commercial · Programme</span><span className="text-[var(--welcome-cyan)]">All connected</span></div>
+function ProductStage() {
+  return <div className="relative mx-auto max-w-3xl pb-10 lg:ml-auto">
+    <div className="border border-[var(--wm-line-dark-strong)] bg-[var(--wm-product)] shadow-[0_32px_80px_var(--wm-shadow)]">
+      <WindowBar label="HARBOUR YARD / PROJECT CONTROL" />
+      <div className="grid gap-px bg-[var(--wm-line-dark)] sm:grid-cols-4"><Metric label="Progress" value="42%" sub="8 weeks remain" /><Metric label="Forecast margin" value="18.4%" sub="Healthy" good /><Metric label="Variations" value="2" sub="1 unsigned" warn /><Metric label="Open disputes" value="1" sub="Meridian invoice" warn /></div>
+      <div className="grid gap-4 p-4 sm:grid-cols-[1.1fr_.9fr] sm:p-5">
+        <Panel title="Live commercial controls"><Signal icon={Truck} title="CO-0002 delivery shortfall" detail="180 of 240 sheets received" /><Signal icon={ReceiptText} title="MER-2048 invoice disputed" detail="Quantity and rate differ" danger /><Signal icon={FileDiff} title="VAR-002 not yet signed" detail="Cupboard wall completed" /></Panel>
+        <Panel title="Programme"><ProgressLine label="Level 2 partitions" value="74%" width="74%" /><ProgressLine label="Level 3 partitions" value="28%" width="28%" /><div className="mt-4 border border-[var(--wm-warning-line)] bg-[var(--wm-warning-bg)] p-3 text-[10px] text-[var(--wm-warning)]"><AlertTriangle className="mr-2 inline h-3 w-3" />W3 corridors behind — material shortfall</div></Panel>
       </div>
-      <div className="absolute -right-5 -top-5 -z-10 h-36 w-36 rounded-none bg-[color:var(--welcome-blue)]/20 blur-3xl" aria-hidden />
     </div>
-  );
+    <div className="absolute -bottom-1 left-4 right-8 border border-[var(--wm-line-dark-strong)] bg-[var(--wm-dark-soft)] p-4 shadow-[0_16px_45px_var(--wm-shadow)] sm:-left-8 sm:right-auto sm:w-64"><div className="flex items-center justify-between"><span className="font-mono text-[9px] uppercase text-[var(--wm-text-on-dark-faint)]">Control status</span><CheckCircle2 className="h-4 w-4 text-[var(--wm-good)]" /></div><p className="mt-2 text-sm font-semibold">All project records connected</p></div>
+  </div>;
 }
 
-function Metric({ label, value, note, positive, warning }: { label: string; value: string; note: string; positive?: boolean; warning?: boolean }) {
-  return <div className="rounded-none border border-[color:var(--welcome-ink)]/15 bg-[color:var(--welcome-paper)] p-3"><p className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-[color:var(--welcome-ink)]/32">{label}</p><p className="font-mono-num mt-2 text-[20px] font-black text-[color:var(--welcome-ink)]/88">{value}</p><p className={`mt-1 text-[9.5px] ${positive ? "text-emerald-300" : warning ? "text-amber-300" : "text-[color:var(--welcome-ink)]/32"}`}>{note}</p></div>;
+function WindowBar({ label }: { label: string }) { return <div className="flex h-10 items-center justify-between border-b border-[var(--wm-line-dark)] bg-[var(--wm-dark-soft)] px-4"><div className="flex gap-1.5"><span className="h-2 w-2 rounded-full bg-[var(--wm-line-dark-strong)]" /><span className="h-2 w-2 rounded-full bg-[var(--wm-line-dark-strong)]" /><span className="h-2 w-2 rounded-full bg-[var(--wm-blue)]" /></div><span className="font-mono text-[8px] tracking-[0.12em] text-[var(--wm-text-on-dark-faint)]">{label}</span><SampleBadge /></div>; }
+function SampleBadge() { return <span className="border border-[var(--wm-blue-line)] bg-[var(--wm-blue-bg)] px-2 py-0.5 font-mono text-[8px] uppercase text-[var(--wm-blue-bright)]">Sample data</span>; }
+function Metric({ label, value, sub, good, warn }: { label: string; value: string; sub: string; good?: boolean; warn?: boolean }) { return <div className="bg-[var(--wm-product)] p-4"><p className="font-mono text-[8px] uppercase text-[var(--wm-text-on-dark-faint)]">{label}</p><p className="mt-3 font-mono text-xl font-semibold">{value}</p><p className={`mt-1 text-[9px] ${good ? "text-[var(--wm-good)]" : warn ? "text-[var(--wm-warning)]" : "text-[var(--wm-text-on-dark-faint)]"}`}>{sub}</p></div>; }
+function Panel({ title, children }: { title: string; children: React.ReactNode }) { return <div className="border border-[var(--wm-line-dark)] bg-[var(--wm-dark-soft)] p-4"><p className="mb-4 text-[11px] font-semibold">{title}</p>{children}</div>; }
+function Signal({ icon: Icon, title, detail, danger }: { icon: typeof Truck; title: string; detail: string; danger?: boolean }) { return <div className="mb-3 flex items-start gap-3 last:mb-0"><span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center ${danger ? "bg-[var(--wm-danger-bg)] text-[var(--wm-danger)]" : "bg-[var(--wm-warning-bg)] text-[var(--wm-warning)]"}`}><Icon className="h-3.5 w-3.5" /></span><div><p className="text-[10px] font-medium">{title}</p><p className="mt-0.5 text-[9px] text-[var(--wm-text-on-dark-faint)]">{detail}</p></div></div>; }
+function ProgressLine({ label, value, width, warning }: { label: string; value: string; width: string; warning?: boolean }) { return <div className="mb-4"><div className="flex justify-between text-[9px]"><span className="text-[var(--wm-text-on-dark-muted)]">{label}</span><span className={warning ? "text-[var(--wm-warning)]" : "text-[var(--wm-paper)]"}>{value}</span></div><div className="mt-2 h-1 bg-[var(--wm-line-dark)]"><div className={`h-full ${warning ? "bg-[var(--wm-warning)]" : "bg-[var(--wm-blue)]"}`} style={{ width }} /></div></div>; }
+
+function FeatureStory({ number, eyebrow, title, copy, bullets, visual, reverse = false }: { number: string; eyebrow: string; title: string; copy: string; bullets: string[]; visual: React.ReactNode; reverse?: boolean }) {
+  return <article className="grid items-center gap-12 lg:grid-cols-12 lg:gap-16"><div className={`lg:col-span-4 ${reverse ? "lg:col-start-9" : ""}`}><span className="font-mono text-xs text-[var(--wm-blue)]">{number}</span><p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--wm-muted)]">{eyebrow}</p><h3 className="mt-4 text-2xl font-semibold leading-tight sm:text-3xl">{title}</h3><p className="mt-5 text-sm leading-7 text-[var(--wm-muted)]">{copy}</p><ul className="mt-7 border-t border-[var(--wm-line)]">{bullets.map((bullet) => <li key={bullet} className="flex items-center gap-3 border-b border-[var(--wm-line)] py-3 text-sm"><Check className="h-4 w-4 text-[var(--wm-blue)]" />{bullet}</li>)}</ul></div><div className={`min-w-0 lg:col-span-7 ${reverse ? "lg:col-start-1 lg:row-start-1" : "lg:col-start-6"}`}>{visual}</div></article>;
 }
 
-function Signal({ icon: Icon, label, detail, tone }: { icon: typeof Truck; label: string; detail: string; tone: "warning" | "danger" }) {
-  return <div className="flex items-start gap-2.5"><span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-none ${tone === "danger" ? "bg-red-500/10 text-red-300" : "bg-amber-500/10 text-amber-300"}`}><Icon className="h-3.5 w-3.5" /></span><div><p className="text-[10.5px] font-bold text-[color:var(--welcome-ink)]/72">{label}</p><p className="text-[9.5px] text-[color:var(--welcome-ink)]/32">{detail}</p></div></div>;
-}
-
-function Progress({ label, value }: { label: string; value: string }) {
-  return <div><div className="flex justify-between text-[10px]"><span className="text-[color:var(--welcome-ink)]/45">{label}</span><span className="font-mono-num font-bold text-[color:var(--welcome-ink)]/70">{value}</span></div><div className="mt-1.5 h-1.5 rounded-none bg-[color:var(--welcome-ink)]/10"><div className="h-full rounded-none bg-[var(--welcome-cyan)] shadow-[0_0_10px_var(--welcome-cyan)]" style={{ width: value }} /></div></div>;
-}
-
-function StoryRow({ kicker, title, copy, mock, reverse }: { kicker: string; title: string; copy: string; mock: React.ReactNode; reverse?: boolean }) {
-  return <article className={`grid items-center gap-10 lg:grid-cols-2 lg:gap-16 ${reverse ? "lg:[&>*:first-child]:order-2" : ""}`}><div><p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-[var(--welcome-cyan)]">{kicker}</p><h3 className="mt-3 max-w-xl text-[24px] font-black leading-tight text-[var(--welcome-ink)] sm:text-[30px]">{title}</h3><p className="mt-5 max-w-xl text-[15px] leading-relaxed text-[color:var(--welcome-ink)]/48">{copy}</p></div><div className="min-w-0">{mock}</div></article>;
-}
-
-function MockFrame({ title, icon: Icon, children }: { title: string; icon: typeof Truck; children: React.ReactNode }) {
-  return <div className="welcome-glass rounded-none p-4 sm:p-5"><div className="rounded-none border border-[color:var(--welcome-ink)]/15 bg-[color:var(--welcome-panel)]/80 p-4 sm:p-5"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2.5"><span className="flex h-8 w-8 items-center justify-center rounded-none bg-[color:var(--welcome-blue)]/12 text-[var(--welcome-cyan)]"><Icon className="h-4 w-4" /></span><p className="text-[12px] font-black text-[color:var(--welcome-ink)]/78">{title}</p></div><SampleLabel /></div>{children}</div></div>;
-}
-
-function ProcurementMock() {
-  return <MockFrame title="Awarded baseline to approved call-off" icon={Layers3}><div className="mt-4 grid gap-3 sm:grid-cols-3"><MiniStage label="System W2" value="780 m²" detail="Take-off ready" done /><MiniStage label="Best mix" value="£34,736.90" detail="3 lists compared" done /><MiniStage label="CO-0003" value="Draft" detail="Awaiting approval" /></div><div className="mt-3 rounded-none border border-[color:var(--welcome-ink)]/12 bg-[color:var(--welcome-paper)] p-3"><div className="flex items-center justify-between gap-3 text-[10.5px]"><span className="text-[color:var(--welcome-ink)]/42">Northway · Gypframe 70 S 50 C stud 4200</span><span className="font-bold text-amber-300">Not priced</span></div><p className="mt-1 text-[9.5px] text-[color:var(--welcome-ink)]/28">Missing line is visible before the call-off is approved.</p></div></MockFrame>;
-}
-
-function SiteMock() {
-  return <MockFrame title="Delivery and daily site record" icon={HardHat}><div className="mt-4 grid gap-3 sm:grid-cols-[1.08fr_.92fr]"><div className="rounded-none border border-amber-500/20 bg-amber-500/[0.06] p-3"><div className="flex justify-between gap-2"><p className="font-mono-num text-[11px] font-bold text-[color:var(--welcome-ink)]/76">CO-0002 · Meridian</p><span className="text-[9px] font-black uppercase text-amber-300">Shortfall</span></div><p className="mt-2 text-[11px] text-[color:var(--welcome-ink)]/44">W3 FireLine 15 — corridors</p><div className="mt-3 grid grid-cols-2 gap-2"><MiniValue label="Ordered" value="240" /><MiniValue label="Delivered" value="180" /></div><p className="mt-2 text-[9.5px] text-[color:var(--welcome-ink)]/30">GRN recorded on site</p></div><div className="rounded-none border border-[color:var(--welcome-ink)]/12 bg-[color:var(--welcome-paper)] p-3"><p className="text-[10.5px] font-bold text-[color:var(--welcome-ink)]/68">Daily report · Dan Mercer</p><p className="mt-2 text-[11px] text-[color:var(--welcome-ink)]/42">Crew 5 · W3 corridors</p><div className="mt-3 flex items-center gap-2 rounded-none bg-amber-500/[0.07] p-2 text-[9.5px] text-amber-300"><Clock3 className="h-3.5 w-3.5" />2-hour access delay</div><p className="mt-2 text-[9.5px] text-[color:var(--welcome-ink)]/28">Hoist booked by M&amp;E</p></div></div></MockFrame>;
-}
-
-function CommercialMock() {
-  return <MockFrame title="Commercial position and evidence" icon={CircleDollarSign}><div className="mt-4 grid gap-3 sm:grid-cols-2"><div className="rounded-none border border-red-500/20 bg-red-500/[0.05] p-3"><div className="flex justify-between gap-2"><p className="font-mono-num text-[11px] font-bold text-[color:var(--welcome-ink)]/76">MER-2048</p><span className="text-[9px] font-black uppercase text-red-300">Dispute open</span></div><CheckLine label="Quantity" detail="240 billed · 180 delivered" flagged /><CheckLine label="Rate" detail="£14.90 billed · £14.10 quoted" flagged /></div><div className="space-y-2"><Variation ref="VAR-001" value="£1,080" status="Signed" /><Variation ref="VAR-002" value="£600" status="Not signed" warning /><div className="rounded-none border border-[color:var(--welcome-ink)]/12 bg-[color:var(--welcome-paper)] px-3 py-2.5"><div className="flex justify-between text-[10.5px]"><span className="text-[color:var(--welcome-ink)]/42">Application 1 certified</span><span className="font-mono-num font-bold text-[color:var(--welcome-ink)]/72">£28,600</span></div><p className="mt-1 text-[9.5px] text-[color:var(--welcome-ink)]/28">Retention 3%</p></div></div></div></MockFrame>;
-}
-
-function ProgrammeMock() {
-  return <MockFrame title="Programme and forecast" icon={BarChart3}><div className="mt-4 grid gap-3 sm:grid-cols-[1.15fr_.85fr]"><div className="rounded-none border border-[color:var(--welcome-ink)]/12 bg-[color:var(--welcome-paper)] p-3"><PlanLine label="W2 · North zone" date="Complete" width="100%" /><PlanLine label="W2 · South zone" date="In progress" width="62%" /><PlanLine label="W3 · Corridors" date="Behind" width="38%" warning /><div className="mt-3 flex items-center gap-2 border-t border-[color:var(--welcome-ink)]/12 pt-3 text-[9.5px] text-[color:var(--welcome-ink)]/34"><PackageCheck className="h-3.5 w-3.5 text-[var(--welcome-cyan)]" />Milestone: Level 2 partitions boarded</div></div><div className="rounded-none border border-[color:var(--welcome-cyan)]/15 bg-[color:var(--welcome-cyan)]/[0.045] p-3"><p className="text-[9.5px] font-bold uppercase tracking-wider text-[color:var(--welcome-ink)]/34">Forecast margin</p><p className="font-mono-num mt-2 text-[28px] font-black text-[var(--welcome-cyan)]">18.4%</p><p className="mt-1 text-[10px] text-emerald-300">Project health · Healthy</p><div className="mt-4 border-t border-[color:var(--welcome-ink)]/12 pt-3"><p className="text-[9.5px] text-[color:var(--welcome-ink)]/30">One amber issue</p><p className="mt-1 text-[10.5px] font-bold text-amber-300">Meridian invoice dispute</p></div></div></div></MockFrame>;
-}
-
-function MiniStage({ label, value, detail, done }: { label: string; value: string; detail: string; done?: boolean }) {
-  return <div className="rounded-none border border-[color:var(--welcome-ink)]/12 bg-[color:var(--welcome-paper)] p-3"><div className="flex items-center justify-between"><p className="text-[9.5px] text-[color:var(--welcome-ink)]/34">{label}</p>{done && <CheckCircle2 className="h-3 w-3 text-emerald-300" />}</div><p className="font-mono-num mt-2 text-[13px] font-black text-[color:var(--welcome-ink)]/76">{value}</p><p className="mt-1 text-[9.5px] text-[color:var(--welcome-ink)]/28">{detail}</p></div>;
-}
-function MiniValue({ label, value }: { label: string; value: string }) { return <div className="rounded-none bg-[color:var(--welcome-paper)] p-2"><p className="text-[8.5px] uppercase text-[color:var(--welcome-ink)]/26">{label}</p><p className="font-mono-num mt-1 text-[13px] font-bold text-[color:var(--welcome-ink)]/72">{value}</p></div>; }
-function CheckLine({ label, detail, flagged }: { label: string; detail: string; flagged?: boolean }) { return <div className="mt-3 flex items-start justify-between gap-2"><div><p className="text-[10px] font-bold text-[color:var(--welcome-ink)]/65">{label}</p><p className="font-mono-num text-[9.5px] text-[color:var(--welcome-ink)]/32">{detail}</p></div><span className={`rounded px-1.5 py-0.5 text-[8px] font-black uppercase ${flagged ? "bg-red-500/10 text-red-300" : "bg-emerald-500/10 text-emerald-300"}`}>{flagged ? "Flagged" : "OK"}</span></div>; }
-function Variation({ ref, value, status, warning }: { ref: string; value: string; status: string; warning?: boolean }) { return <div className="rounded-none border border-[color:var(--welcome-ink)]/12 bg-[color:var(--welcome-paper)] px-3 py-2.5"><div className="flex justify-between gap-2"><span className="font-mono-num text-[10.5px] font-bold text-[color:var(--welcome-ink)]/65">{ref}</span><span className="font-mono-num text-[10.5px] font-bold text-[color:var(--welcome-ink)]/70">{value}</span></div><p className={`mt-1 text-[9.5px] ${warning ? "text-amber-300" : "text-emerald-300"}`}>{status}</p></div>; }
-function PlanLine({ label, date, width, warning }: { label: string; date: string; width: string; warning?: boolean }) { return <div className="mb-3"><div className="flex justify-between gap-2 text-[9.5px]"><span className="font-bold text-[color:var(--welcome-ink)]/55">{label}</span><span className={warning ? "text-amber-300" : "text-[color:var(--welcome-ink)]/30"}>{date}</span></div><div className="mt-1.5 h-1.5 rounded-none bg-white/[0.06]"><div className={`h-full rounded-none ${warning ? "bg-amber-400" : "bg-[var(--welcome-cyan)]"}`} style={{ width }} /></div></div>; }
-function RoleCard({ role, line }: { role: string; line: string }) { return <article className="welcome-glass rounded-none p-6"><Users className="h-4 w-4 text-[var(--welcome-cyan)]" /><h3 className="mt-4 text-[12px] font-black uppercase tracking-[0.08em] text-[color:var(--welcome-ink)]/82">{role}</h3><p className="mt-3 text-[13px] leading-relaxed text-[color:var(--welcome-ink)]/44">{line}</p></article>; }
+function LightFrame({ label, children }: { label: string; children: React.ReactNode }) { return <div className="border border-[var(--wm-line-strong)] bg-[var(--wm-panel)] shadow-[0_24px_60px_var(--wm-light-shadow)]"><div className="flex h-10 items-center justify-between border-b border-[var(--wm-line)] bg-[var(--wm-paper)] px-4"><span className="font-mono text-[9px] text-[var(--wm-muted)]">{label}</span><SampleBadge /></div><div className="p-4 sm:p-6">{children}</div></div>; }
+function EstimateVisual() { return <LightFrame label="SPECIFICATION / DRAWING IMPACT"><div className="grid gap-4 sm:grid-cols-[.8fr_1.2fr]"><div className="border border-[var(--wm-line)] bg-[var(--wm-paper)] p-4"><p className="text-xs font-semibold">Wall systems</p>{[["W1","A206013","150 m²"],["W2","A206228","780 m²"],["W3","A206141","420 m²"]].map(([a,b,c],i)=><div key={a} className={`mt-3 border-l-2 p-3 ${i===1?"border-[var(--wm-blue)] bg-[var(--wm-blue-pale)]":"border-[var(--wm-line)] bg-[var(--wm-panel)]"}`}><div className="flex justify-between"><span className="font-mono text-[10px] font-semibold">{a} · {b}</span><span className="font-mono text-[10px]">{c}</span></div><p className="mt-1 text-[9px] text-[var(--wm-muted)]">Gypframe 70 S 50 C · 600 centres</p></div>)}</div><div className="border border-[var(--wm-line)] bg-[var(--wm-paper)] p-4"><div className="flex items-center justify-between"><p className="text-xs font-semibold">Drawing revisions</p><span className="font-mono text-[9px] text-[var(--wm-blue)]">C0 BASELINE</span></div><div className="mt-6 space-y-0">{[["C0","Award baseline","Accepted"],["C1","Meeting-room partition","Impact found"],["C2","Core wall detail","Review"]].map(([rev,name,status],i)=><div key={rev} className="relative flex gap-4 border-l border-[var(--wm-line-strong)] pb-7 pl-5 last:pb-0"><span className={`absolute -left-1 top-1 h-2 w-2 rounded-full ${i===0?"bg-[var(--wm-good)]":"bg-[var(--wm-blue)]"}`} /><span className="font-mono text-[10px] font-semibold">{rev}</span><div><p className="text-[11px] font-medium">{name}</p><p className="mt-1 text-[9px] text-[var(--wm-muted)]">{status}</p></div></div>)}</div></div></div></LightFrame>; }
+function ProcurementVisual() { return <LightFrame label="COSTED BOQ / SUPPLIER COMPARISON"><div className="overflow-x-auto"><table className="w-full min-w-[560px] border-collapse text-left"><thead><tr className="border-b border-[var(--wm-line-strong)] font-mono text-[8px] uppercase text-[var(--wm-muted)]"><th className="pb-3">Material</th><th className="pb-3">Qty</th><th className="pb-3">Castlegate</th><th className="pb-3">Meridian</th><th className="pb-3">Northway</th></tr></thead><tbody className="text-[10px]"><TableRow item="WallBoard 12.5" qty="284" a="£7.82" b="£7.94" c="£7.88" best="a"/><TableRow item="SoundBloc 12.5" qty="612" a="£13.28" b="£13.12" c="£13.76" best="b"/><TableRow item="70 S 50 C stud 4200" qty="52" a="£8.64" b="£8.51" c="Not priced" alert/><TableRow item="APR 1200 · 50 mm" qty="146" a="£22.08" b="£21.92" c="£21.66" best="c"/></tbody></table></div><div className="mt-5 grid gap-px bg-[var(--wm-line)] sm:grid-cols-4"><LightMetric label="Castlegate" value="£37,347.45"/><LightMetric label="Meridian" value="£37,186.60"/><LightMetric label="Northway" value="£37,354.00" alert/><LightMetric label="Best mix" value="£34,736.90" active/></div></LightFrame>; }
+function TableRow({ item, qty, a, b, c, best, alert }: { item:string; qty:string; a:string; b:string; c:string; best?:string; alert?:boolean }) { return <tr className="border-b border-[var(--wm-line)]"><td className="py-4 font-medium">{item}</td><td className="py-4 font-mono text-[var(--wm-muted)]">{qty}</td>{[["a",a],["b",b],["c",c]].map(([key,val])=><td key={key} className={`py-4 font-mono ${key===best?"font-semibold text-[var(--wm-blue)]":alert&&key==="c"?"text-[var(--wm-warning-strong)]":""}`}>{val}</td>)}</tr>; }
+function LightMetric({ label, value, active, alert }: { label:string; value:string; active?:boolean; alert?:boolean }) { return <div className={`${active?"bg-[var(--wm-ink)] text-[var(--wm-paper)]":"bg-[var(--wm-paper)]"} p-4`}><p className={`font-mono text-[8px] uppercase ${active?"text-[var(--wm-text-on-dark-faint)]":"text-[var(--wm-muted)]"}`}>{label}</p><p className={`mt-2 font-mono text-[12px] font-semibold ${alert?"text-[var(--wm-warning-strong)]":""}`}>{value}</p></div>; }
+function DeliveryVisual() { return <LightFrame label="SITE / DELIVERIES & DAILY REPORTS"><div className="grid gap-4 sm:grid-cols-2"><div className="border border-[var(--wm-warning-line-light)] bg-[var(--wm-warning-pale)] p-5"><div className="flex justify-between"><div><p className="font-mono text-[10px] font-semibold">CO-0002</p><p className="mt-1 text-xs">Meridian · W3 corridors</p></div><span className="font-mono text-[8px] uppercase text-[var(--wm-warning-strong)]">Shortfall</span></div><div className="mt-8 grid grid-cols-2 gap-3"><LightMetric label="Ordered" value="240"/><LightMetric label="Delivered" value="180"/></div><p className="mt-4 text-[10px] text-[var(--wm-muted)]">GRN signed · short delivery recorded</p></div><div className="border border-[var(--wm-line)] bg-[var(--wm-paper)] p-5"><p className="font-mono text-[9px] text-[var(--wm-muted)]">DAILY REPORT · DAN MERCER</p><p className="mt-3 text-sm font-semibold">W3 corridors · crew 5</p><div className="mt-6 border-l-2 border-[var(--wm-warning)] bg-[var(--wm-warning-pale)] p-3"><p className="text-xs font-semibold">2-hour access delay</p><p className="mt-1 text-[10px] text-[var(--wm-muted)]">Hoist booked by M&amp;E</p></div><div className="mt-4 grid grid-cols-3 gap-2"><Photo/><Photo/><Photo/></div></div></div></LightFrame>; }
+function Photo() { return <div className="aspect-[4/3] bg-[var(--wm-photo)]"><HardHat className="mx-auto h-full w-4 text-[var(--wm-muted-light)]" /></div>; }
+function CommercialVisual() { return <LightFrame label="COMMERCIAL / INVOICE & VARIATIONS"><div className="grid gap-4 sm:grid-cols-[1.15fr_.85fr]"><div className="border border-[var(--wm-danger-line)] bg-[var(--wm-danger-pale)] p-5"><div className="flex items-start justify-between"><div><p className="font-mono text-[10px] font-semibold">MER-2048</p><p className="mt-1 text-xs">Invoice against CO-0002</p></div><span className="font-mono text-[8px] uppercase text-[var(--wm-danger-strong)]">Dispute open</span></div><div className="mt-6 space-y-3"><Variance label="Quantity" ordered="180 delivered" billed="240 billed"/><Variance label="Rate" ordered="£14.10 quoted" billed="£14.90 billed"/></div></div><div className="space-y-3"><VariationRow refNo="VAR-001" copy="Meeting-room partition" value="£1,080" signed/><VariationRow refNo="VAR-002" copy="Cupboard wall at core" value="£600"/><div className="border border-[var(--wm-line)] bg-[var(--wm-paper)] p-4"><p className="font-mono text-[8px] uppercase text-[var(--wm-muted)]">Application 1</p><div className="mt-2 flex justify-between"><span className="text-xs">Certified</span><span className="font-mono text-xs font-semibold">£28,600</span></div><p className="mt-2 text-[9px] text-[var(--wm-muted)]">Retention 3%</p></div></div></div></LightFrame>; }
+function Variance({ label, ordered, billed }: { label:string; ordered:string; billed:string }) { return <div className="grid grid-cols-3 items-center gap-2 border-t border-[var(--wm-danger-line)] pt-3 text-[10px]"><span className="font-semibold">{label}</span><span className="text-[var(--wm-muted)]">{ordered}</span><span className="font-mono text-[var(--wm-danger-strong)]">{billed}</span></div>; }
+function VariationRow({ refNo, copy, value, signed }: { refNo:string; copy:string; value:string; signed?:boolean }) { return <div className="border border-[var(--wm-line)] bg-[var(--wm-paper)] p-4"><div className="flex justify-between"><span className="font-mono text-[9px] font-semibold">{refNo}</span><span className="font-mono text-[10px] font-semibold">{value}</span></div><p className="mt-2 text-[10px]">{copy}</p><p className={`mt-2 text-[9px] ${signed?"text-[var(--wm-good-strong)]":"text-[var(--wm-warning-strong)]"}`}>{signed?"Signed":"Not signed"}</p></div>; }
+function ProgrammeVisual() { return <LightFrame label="PROGRAMME / PROGRESS & FORECAST"><div className="grid gap-4 sm:grid-cols-[1.2fr_.8fr]"><div className="border border-[var(--wm-line)] bg-[var(--wm-paper)] p-5"><p className="text-xs font-semibold">Level 2–3 fit-out</p><div className="mt-6"><ProgrammeRow label="W2 · North zone" status="Complete" width="100%"/><ProgrammeRow label="W2 · South zone" status="In progress" width="62%"/><ProgrammeRow label="W3 · Corridors" status="Behind" width="38%" warning/><ProgrammeRow label="W4 · Reception" status="Following W3" width="12%"/></div><div className="mt-5 flex items-center gap-2 border-t border-[var(--wm-line)] pt-4 text-[10px]"><PackageCheck className="h-4 w-4 text-[var(--wm-blue)]"/>Milestone · Level 2 partitions boarded</div></div><div className="bg-[var(--wm-ink)] p-5 text-[var(--wm-paper)]"><p className="font-mono text-[9px] uppercase text-[var(--wm-text-on-dark-faint)]">Forecast margin</p><p className="mt-4 font-mono text-4xl font-semibold text-[var(--wm-blue-bright)]">18.4%</p><p className="mt-2 text-[10px] text-[var(--wm-good)]">Project health · Healthy</p><div className="mt-8 border-t border-[var(--wm-line-dark)] pt-4"><p className="font-mono text-[8px] uppercase text-[var(--wm-text-on-dark-faint)]">Current attention</p><p className="mt-2 text-xs text-[var(--wm-warning)]">Meridian invoice dispute</p></div></div></div></LightFrame>; }
+function ProgrammeRow({ label, status, width, warning }: { label:string; status:string; width:string; warning?:boolean }) { return <div className="mb-5"><div className="flex justify-between gap-3 text-[10px]"><span className="font-medium">{label}</span><span className={warning?"text-[var(--wm-warning-strong)]":"text-[var(--wm-muted)]"}>{status}</span></div><div className="mt-2 h-1.5 bg-[var(--wm-line)]"><div className={`h-full ${warning?"bg-[var(--wm-warning)]":"bg-[var(--wm-blue)]"}`} style={{width}}/></div></div>; }
+function DemoBoard() { return <div className="border border-[var(--wm-line-dark-strong)] bg-[var(--wm-product)]"><WindowBar label="SAMPLE PROJECT / HARBOUR YARD OFFICES"/><div className="grid gap-px bg-[var(--wm-line-dark)] sm:grid-cols-3"><Metric label="Contract value" value="£104,800" sub="Retention 3%"/><Metric label="Progress" value="42%" sub="8 weeks remain"/><Metric label="Forecast margin" value="18.4%" sub="Healthy" good/></div><div className="grid gap-px bg-[var(--wm-line-dark)] md:grid-cols-3"><DemoColumn title="Procurement"><DemoLine text="3 merchant lists compared" status="Complete"/><DemoLine text="CO-0003 awaiting approval" status="Draft"/></DemoColumn><DemoColumn title="Site"><DemoLine text="CO-0002 short delivery" status="Attention" warn/><DemoLine text="5 daily reports" status="Current"/></DemoColumn><DemoColumn title="Commercial"><DemoLine text="VAR-001 signed" status="£1,080"/><DemoLine text="MER-2048 disputed" status="Open" warn/></DemoColumn></div></div>; }
+function DemoColumn({ title, children }: { title:string; children:React.ReactNode }) { return <div className="bg-[var(--wm-dark-soft)] p-5"><p className="mb-5 text-xs font-semibold">{title}</p>{children}</div>; }
+function DemoLine({ text, status, warn }: { text:string; status:string; warn?:boolean }) { return <div className="mb-3 border-t border-[var(--wm-line-dark)] pt-3 last:mb-0"><p className="text-[10px]">{text}</p><p className={`mt-1 font-mono text-[8px] ${warn?"text-[var(--wm-warning)]":"text-[var(--wm-blue-bright)]"}`}>{status}</p></div>; }
+function PresentationCard({ tag, title, copy, to, project }: { tag:string; title:string; copy:string; to?:"/how-to"|"/pricing"; project?:boolean }) { const content=<><p className="font-mono text-[9px] uppercase text-[var(--wm-blue)]">{tag}</p><h3 className="mt-8 max-w-sm text-xl font-semibold">{title}</h3><p className="mt-4 max-w-sm text-sm leading-6 text-[var(--wm-muted)]">{copy}</p><span className="mt-10 inline-flex items-center gap-2 text-sm font-semibold text-[var(--wm-blue)]">Explore <ArrowRight className="h-4 w-4"/></span></>; return project?<Link to="/projects/$projectId" params={{projectId:"sample-harbour-yard"}} className="min-h-72 border-b border-r border-[var(--wm-line)] p-7 hover:bg-[var(--wm-panel)]">{content}</Link>:<Link to={to ?? "/welcome"} className="min-h-72 border-b border-r border-[var(--wm-line)] p-7 hover:bg-[var(--wm-panel)]">{content}</Link>; }
+function Role({ title, copy }: { title:string; copy:string }) { return <article className="min-h-44 border-b border-r border-[var(--wm-line)] bg-[var(--wm-paper)] p-6"><h3 className="text-sm font-semibold">{title}</h3><p className="mt-4 text-xs leading-5 text-[var(--wm-muted)]">{copy}</p></article>; }
