@@ -6,6 +6,7 @@ import {
   CalendarClock,
   Check,
   FileDiff,
+  FileText,
   FileSpreadsheet,
   GitBranch,
   Pause,
@@ -345,35 +346,129 @@ function Showcase() {
 /* ---------- roles ---------- */
 
 const ROLES = [
-  { id: "md", label: "Managing Director", points: ["Live margin forecast on every job", "Portfolio view without chasing spreadsheets", "Team roles and permissions you control"] },
-  { id: "cd", label: "Commercial Director", points: ["Variations signed or flagged", "Applications, notices and retention tracked", "Invoice disputes with the evidence attached"] },
-  { id: "qs", label: "Estimator / QS", points: ["System build-ups from manufacturer specs", "Drawing revisions compared against tender", "Costed BoQ against every merchant list"] },
-  { id: "buyer", label: "Buyer", points: ["Suggested call-offs from the programme", "Deliveries checked against orders", "Invoices matched before payment"] },
+  {
+    id: "md", label: "Managing Director", eyebrow: "Portfolio control", summary: "See commercial health across every live job without opening separate spreadsheets.",
+    points: ["Live margin forecast on every job", "Portfolio exceptions and overdue actions", "PDF management reports ready to share"],
+    stats: [["Contract value", "£104,800"], ["Forecast margin", "18.4%"], ["Progress", "42%"]],
+    activity: [["Harbour Yard", "Healthy", "good"], ["Applications", "£28,600 certified", "good"], ["Open dispute", "1 needs review", "warn"]],
+  },
+  {
+    id: "cd", label: "Commercial Director", eyebrow: "Commercial control", summary: "Keep entitlement, payment dates and evidence visible from one commercial workspace.",
+    points: ["Variations signed or flagged", "Applications, notices and retention tracked", "Invoice disputes with evidence attached"],
+    stats: [["Signed variations", "£1,080"], ["Unsigned", "£600"], ["Retention", "3%"]],
+    activity: [["VAR-001", "Signed", "good"], ["VAR-002", "Awaiting signature", "warn"], ["MER-2048", "Dispute drafted", "bad"]],
+  },
+  {
+    id: "qs", label: "Estimator / QS", eyebrow: "Estimate to account", summary: "Carry measured quantities and drawing changes through buying, valuation and final account.",
+    points: ["Manufacturer system build-ups", "Drawing revisions compared with tender", "Costed BoQ and PDF reports"],
+    stats: [["Wall systems", "5"], ["Drawing revision", "C2"], ["Best mix", "£34,736.90"]],
+    activity: [["A-201 rev C2", "+18 m² W2", "warn"], ["Castlegate", "List compared", "good"], ["C stud 4200", "Price missing", "bad"]],
+  },
+  {
+    id: "buyer", label: "Buyer", eyebrow: "Procurement desk", summary: "Buy against the programme and reconcile what was ordered, delivered and invoiced.",
+    points: ["Suggested call-offs from the programme", "Supplier lists compared line by line", "Invoices matched before payment"],
+    stats: [["Call-offs", "3"], ["Due this week", "2"], ["Shortfall", "60 sheets"]],
+    activity: [["CO-0001", "Delivered", "good"], ["CO-0002", "Short delivery", "bad"], ["CO-0003", "Draft", "warn"]],
+  },
+  {
+    id: "manager", label: "Site Manager", eyebrow: "Site overview", summary: "Connect the live programme with labour, deliveries, delays and work completed on site.",
+    points: ["Planner progress and blockers", "Daily reports, labour and photos", "Delivery shortfalls and site issues"],
+    stats: [["Progress", "42%"], ["Operatives", "8"], ["Blockers", "1"]],
+    activity: [["W2 South L2", "62% complete", "good"], ["W3 corridors", "Material blocker", "bad"], ["Hoist delay", "2 hours logged", "warn"]],
+  },
+  {
+    id: "supervisor", label: "Site Supervisor", eyebrow: "Today's workface", summary: "Run the shift from assigned areas, record progress and leave a clear evidence trail.",
+    points: ["Tasks and priorities for the day", "Crew and progress capture", "Issues raised with photos and notes"],
+    stats: [["Tasks today", "4"], ["Crew", "6 + 2"], ["Reports", "1 due"]],
+    activity: [["W2 South L2", "Continue boarding", "good"], ["W3 corridors", "Awaiting material", "bad"], ["Daily report", "Ready to submit", "warn"]],
+  },
+  {
+    id: "operative", label: "Operative", eyebrow: "My work", summary: "See only the work assigned to you and submit simple, structured site updates.",
+    points: ["Assigned tasks and locations", "Simple progress and issue forms", "No access to sensitive commercial figures"],
+    stats: [["Assigned", "2 tasks"], ["Completed", "1"], ["Next area", "L2 South"]],
+    activity: [["Board W2 partitions", "In progress", "good"], ["Upload site photo", "Required", "warn"], ["Commercial data", "Restricted", "neutral"]],
+  },
 ];
+
+function RoleVisual({ selected }: { selected: (typeof ROLES)[number] }) {
+  return (
+    <div className="th-card min-w-0 overflow-hidden">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--th-line)] px-5 py-4 sm:px-6">
+        <div>
+          <p className="th-mono text-[10px] uppercase tracking-wider text-[var(--th-accent)]">{selected.eyebrow}</p>
+          <h3 className="mt-1 text-lg font-medium">{selected.label} workspace</h3>
+        </div>
+        <div className="flex items-center gap-2 rounded-full border border-[var(--th-line)] px-3 py-1.5 text-xs text-[var(--th-muted)]">
+          <ShieldCheck className="h-3.5 w-3.5 text-[var(--th-accent)]" /> Permission-aware view
+        </div>
+      </div>
+      <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[1.15fr_.85fr]">
+        <div className="min-w-0">
+          <div className="grid grid-cols-3 gap-2.5">
+            {selected.stats.map(([label, value], i) => (
+              <div key={label} className="rounded-xl bg-[var(--th-panel-2)] p-3">
+                <p className="truncate text-[10px] text-[var(--th-dim)] sm:text-[11px]">{label}</p>
+                <p className="th-mono mt-1 truncate text-xs sm:text-sm">{value}</p>
+                <div className="mt-2 h-0.5 overflow-hidden rounded bg-[var(--th-line)]">
+                  <div className="th-progress h-full bg-[var(--th-accent)]" style={{ animationDuration: `${650 + i * 180}ms`, width: `${82 - i * 17}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 rounded-xl border border-[var(--th-line)] px-4">
+            {selected.activity.map(([label, value, tone], i) => {
+              const colour = tone === "good" ? "var(--th-good)" : tone === "bad" ? "var(--th-bad)" : tone === "warn" ? "var(--th-warn)" : "var(--th-dim)";
+              return (
+                <div key={label} className="th-enter flex items-center justify-between gap-3 border-b border-[var(--th-line)] py-3 text-xs last:border-0" style={{ animationDelay: `${i * 90}ms` }}>
+                  <span className="flex min-w-0 items-center gap-2"><span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: colour }} /><span className="truncate">{label}</span></span>
+                  <span className="th-mono shrink-0 text-right text-[10px] text-[var(--th-muted)] sm:text-xs">{value}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="flex flex-col justify-between rounded-xl bg-[var(--th-panel-2)] p-4">
+          <div>
+            <p className="text-xs uppercase tracking-wider text-[var(--th-dim)]">What this role sees</p>
+            <p className="mt-3 text-sm leading-relaxed text-[var(--th-muted)]">{selected.summary}</p>
+          </div>
+          <div className="mt-6 flex items-center justify-between border-t border-[var(--th-line)] pt-4 text-xs">
+            <span className="flex items-center gap-2 text-[var(--th-muted)]"><FileText className="h-4 w-4 text-[var(--th-accent)]" /> PDF & CSV exports</span>
+            <span className="th-mono text-[var(--th-accent)]">LIVE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Roles() {
   const [role, setRole] = useState(0);
+  const selected = ROLES[role];
   return (
     <div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-2">
         {ROLES.map((r, i) => (
           <button
             key={r.id}
             type="button"
             onClick={() => setRole(i)}
-            className={`rounded-full px-5 py-2.5 text-sm transition-colors ${i === role ? "bg-[var(--th-text)] text-[var(--th-bg)]" : "bg-[var(--th-panel)] text-[var(--th-muted)] hover:text-[var(--th-text)]"}`}
+            className={`shrink-0 rounded-full px-5 py-2.5 text-sm transition-colors ${i === role ? "bg-[var(--th-accent)] text-[var(--th-bg)]" : "bg-[var(--th-panel)] text-[var(--th-muted)] hover:text-[var(--th-text)]"}`}
           >
             {r.label}
           </button>
         ))}
       </div>
-      <div key={role} className="th-enter th-card mt-5 grid gap-4 p-6 sm:grid-cols-3 sm:p-8">
-        {ROLES[role].points.map((p) => (
+      <div key={`copy-${role}`} className="th-enter mt-6 grid gap-4 sm:grid-cols-3">
+        {selected.points.map((p) => (
           <div key={p} className="flex gap-3">
             <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--th-accent)]" />
             <span className="text-[15px] leading-relaxed">{p}</span>
           </div>
         ))}
+      </div>
+      <div key={`visual-${role}`} className="th-enter mt-6">
+        <RoleVisual selected={selected} />
       </div>
     </div>
   );
@@ -385,7 +480,7 @@ const BENTO = [
   { icon: CalendarClock, title: "MS Project import & sync", copy: "Bring the main contractor's programme in and keep it aligned." },
   { icon: Users, title: "Four roles, clear permissions", copy: "Admin, Pro Control, Pro and Operative — with an audit log." },
   { icon: ShieldCheck, title: "Payment notices", copy: "Applications, payment and pay less notice dates tracked per cycle." },
-  { icon: FileSpreadsheet, title: "CSV and PDF export", copy: "Your data leaves when you want it to. No lock-in." },
+  { icon: FileSpreadsheet, title: "CSV and PDF exports", copy: "Export drawing registers, progress reports and project data when you need them." },
   { icon: FileDiff, title: "Tender pipeline", copy: "Follow-ups, award handoff and a locked commercial baseline." },
   { icon: Truck, title: "Supplier register", copy: "Your merchants, your price lists, nothing invented." },
 ];
@@ -430,7 +525,7 @@ function WelcomePage() {
               <a href="#workflow" className="rounded-full bg-[var(--th-panel-2)] px-6 py-3 text-[var(--th-text)] hover:bg-[var(--th-panel)]">See how it works</a>
             </div>
             <ul className="mt-9 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[var(--th-dim)]">
-              {["No card required", "Built around UK trade practice", "CSV export"].map((t) => (
+              {["No card required", "Built around UK trade practice", "CSV & PDF exports"].map((t) => (
                 <li key={t} className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-[var(--th-accent)]" />{t}</li>
               ))}
             </ul>
