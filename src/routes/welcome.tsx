@@ -476,7 +476,7 @@ function TakeoffMock() {
       <ul className="space-y-2">
         {lines.map((l) => (
           <li key={l} className="flex items-start gap-2 text-[12.5px] text-white/55">
-            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#2563EB]" aria-hidden />
+            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--welcome-cyan)]" aria-hidden />
             {l}
           </li>
         ))}
