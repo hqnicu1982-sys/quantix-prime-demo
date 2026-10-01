@@ -1,17 +1,13 @@
-# Interactive calculator in the welcome presentation
+# Fill the eight-stage workflow frame
 
 ## Goal
-Turn the System Calculator preview into a working configurator that recalculates quantities and estimated costs immediately.
+Use the full height created by the eight workflow choices instead of leaving empty space beside the stage list.
 
-## Interaction
-- Select stud size: 50, 70, 92 or 146 mm.
-- Select board type and choose one or two layers per side.
-- Select no insulation, Isover APR or Rockwool RW3.
-- Keep the Harbour Yard W2 dimensions visible and recalculate area, boards, studs, tracks, insulation, jointing, materials, labour and total cost on every selection.
-- Animate changed figures and progress bars while preserving the existing presentation style and mobile layout.
-
-## Scope
-Only the `/welcome` presentation is changed. The production calculator, pricing engine and project data remain untouched.
+## Changes
+- Give the active presentation area a stable full-height layout aligned with the eight-item navigation.
+- Expand each stage with relevant Harbour Yard sample details, summaries or status rows already represented in the product.
+- Keep dense information scannable on desktop and naturally stacked on mobile.
+- Preserve autoplay, manual selection and pause behaviour.
 
 ## Validation
-Test multiple configurations on desktop and mobile, confirm figures change, and check overflow, console errors and build status.
+Check all eight stages, desktop/mobile overflow, autoplay, console errors and build status.
