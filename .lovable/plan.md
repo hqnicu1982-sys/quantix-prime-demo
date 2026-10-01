@@ -5,7 +5,7 @@ Use the full height created by the eight workflow choices instead of leaving emp
 
 ## Changes
 - Give the active presentation area a stable full-height layout aligned with the eight-item navigation.
-- Expand each stage with relevant Harbour Yard sample details, summaries or status rows already represented in the product.
+- Expand each stage with additional Harbour Yard sample details, operational statuses, linked records and evidence already represented in the product; do not simply enlarge existing content.
 - Keep dense information scannable on desktop and naturally stacked on mobile.
 - Preserve autoplay, manual selection and pause behaviour.
 
