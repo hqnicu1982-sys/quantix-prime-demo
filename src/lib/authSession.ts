@@ -10,6 +10,7 @@ import { setCurrentUserId } from "./currentUser";
 
 const SESSION_KEY = "qp-auth-session-v1";
 const REGISTRY_KEY = "qp-auth-registry-v1";
+const DEMO_SESSION_KEY = "qp-public-demo-session-v1";
 const EVT = "qp-auth-change";
 
 type Session = { userId: string; email: string; signedInAt: string };
@@ -56,9 +57,21 @@ export async function signIn(email: string, password: string): Promise<TeamMembe
   if (!member) throw new Error("User no longer exists");
   const session: Session = { userId: member.id, email: key, signedInAt: new Date().toISOString() };
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  localStorage.removeItem(DEMO_SESSION_KEY);
   setCurrentUserId(member.id);
   window.dispatchEvent(new Event(EVT));
   return member;
+}
+
+export async function signInToPublicDemo(): Promise<TeamMember> {
+  const member = await signIn("na@fixmargin.dev", "demo");
+  localStorage.setItem(DEMO_SESSION_KEY, "1");
+  window.dispatchEvent(new Event(EVT));
+  return member;
+}
+
+export function isPublicDemoSession(): boolean {
+  return typeof window !== "undefined" && localStorage.getItem(DEMO_SESSION_KEY) === "1";
 }
 
 export async function signUp(name: string, email: string, password: string): Promise<TeamMember> {
@@ -87,6 +100,7 @@ export async function signUp(name: string, email: string, password: string): Pro
   writeRegistry(reg);
   const session: Session = { userId: id, email: key, signedInAt: new Date().toISOString() };
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  localStorage.removeItem(DEMO_SESSION_KEY);
   setCurrentUserId(id);
   window.dispatchEvent(new Event(EVT));
   return member;
@@ -95,6 +109,7 @@ export async function signUp(name: string, email: string, password: string): Pro
 export function signOut() {
   if (typeof window === "undefined") return;
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(DEMO_SESSION_KEY);
   window.dispatchEvent(new Event(EVT));
 }
 
@@ -113,6 +128,21 @@ export function useSession(): Session | null {
   return s;
 }
 
+export function usePublicDemoSession(): boolean {
+  const [isDemo, setIsDemo] = useState(false);
+  useEffect(() => {
+    const refresh = () => setIsDemo(isPublicDemoSession());
+    refresh();
+    window.addEventListener(EVT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(EVT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, []);
+  return isDemo;
+}
+
 // Returns true once we've read auth state from storage on the client.
 // Use this to gate redirects so we don't bounce signed-in users to /login
 // during the first render where useState still holds the SSR-safe `null`.
@@ -122,7 +152,7 @@ export function useSessionReady(): boolean {
   return ready;
 }
 
-export const PUBLIC_PATHS = ["/login", "/signup", "/how-to", "/welcome"];
+export const PUBLIC_PATHS = ["/login", "/signup", "/how-to", "/welcome", "/demo"];
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));

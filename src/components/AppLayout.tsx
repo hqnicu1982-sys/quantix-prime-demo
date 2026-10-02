@@ -23,7 +23,7 @@ import { can, type Capability } from "@/lib/permissions";
 import { useCan } from "@/lib/permissions";
 import { useAssignments } from "@/lib/labour";
 import { useRecentProjects } from "@/lib/recentProjects";
-import { useSession, useSessionReady, isPublicPath } from "@/lib/authSession";
+import { useSession, useSessionReady, usePublicDemoSession, isPublicPath } from "@/lib/authSession";
 
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string; mobile?: boolean; params?: Record<string, string>; requires?: Capability };
 type NavGroup = { label: string; items: NavItem[] };
@@ -341,6 +341,7 @@ function LayoutInner() {
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const session = useSession();
+  const publicDemoSession = usePublicDemoSession();
   const authReady = useSessionReady();
   const location = useLocation();
   const navigate = useNavigate();
@@ -372,7 +373,7 @@ function LayoutInner() {
   };
 
   // Public pages (/login, /signup, /welcome) render without the app chrome.
-  if (location.pathname === "/welcome") {
+  if (location.pathname === "/welcome" || location.pathname === "/demo") {
     return <Outlet />;
   }
   if (!session && isPublicPath(location.pathname) &&
@@ -475,6 +476,13 @@ function LayoutInner() {
           </div>
         </header>
 
+        {publicDemoSession && (
+          <div className="border-b border-[var(--accent-500)]/25 bg-[var(--accent-500)]/10 px-5 py-2 text-center text-[12.5px] text-[var(--ink-700)] sm:px-7">
+            You're exploring a demo with sample data
+            <span aria-hidden="true"> · </span>
+            <Link to="/signup" className="font-semibold text-[var(--accent-500)] hover:underline">Start free</Link>
+          </div>
+        )}
         <main className="mx-auto max-w-[1400px] px-5 pb-24 pt-7 sm:px-7 lg:pb-10">
           <Outlet />
         </main>
@@ -534,7 +542,7 @@ export function AppLayout() {
   const location = useLocation();
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
-  if (location.pathname === "/welcome") return <Outlet />;
+  if (location.pathname === "/welcome" || location.pathname === "/demo") return <Outlet />;
   if (!mounted) {
     return (
       <div className="min-h-screen bg-[var(--background)] text-foreground" suppressHydrationWarning>
