@@ -86,15 +86,15 @@ function Reveal({ children, className = "", as = "div" }: { children: ReactNode;
 
 function AnimatedMoney({ pounds, delay = 0 }: { pounds: number; delay?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
+  const finalText = `£${pounds.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    const finalText = `£${pounds.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      node.textContent = finalText;
       return;
     }
+    node.textContent = "£0.00";
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry?.isIntersecting) return;
       observer.disconnect();
@@ -115,7 +115,7 @@ function AnimatedMoney({ pounds, delay = 0 }: { pounds: number; delay?: number }
     return () => observer.disconnect();
   }, [delay, pounds]);
 
-  return <span ref={ref}>£0.00</span>;
+  return <span ref={ref}>{finalText}</span>;
 }
 
 function Header() {
@@ -132,7 +132,7 @@ function Header() {
           <a href="#roles">Roles</a>
           {enabledResources.length > 0 && (
             <div className="wm-resource-menu">
-              <button type="button" className="wm-nav-resource">Resources <ChevronDown aria-hidden /></button>
+              <button type="button" className="wm-nav-resource" aria-expanded="false" aria-haspopup="true">Resources <ChevronDown aria-hidden /></button>
               <div className="wm-resource-popover">
                 {enabledResources.map((item) => <a key={item.label} href={item.href}>{item.label}</a>)}
               </div>
@@ -217,7 +217,7 @@ function BuildMock() {
       <div className="wm-phone">
         <strong>Daily site report</strong>
         {["Crew on site", "Progress by area", "Photos", "Delays & issues"].map((field, index) => <span key={field} style={{ "--item-delay": `${250 + index * 150}ms` } as React.CSSProperties}>{field}</span>)}
-        <button type="button" tabIndex={-1}>Sign & save PDF</button>
+        <span className="wm-phone-action">Sign & save PDF</span>
       </div>
     </div>
   );
@@ -312,7 +312,7 @@ function WelcomePage() {
     <div className="welcome-cover">
       <Header />
       <main>
-        <Reveal as="section" className="wm-wrap wm-hero">
+        <section className="wm-wrap wm-hero">
           <p>For UK drylining, ceilings and interiors subcontractors</p>
           <h1>Estimate it, buy it, build it, get paid for it. <span>Keep the margin you priced.</span></h1>
           <p className="wm-hero-copy">One job file for the whole contract: 3,054 manufacturer systems to costed BoQ, merchant prices, call-offs, programme, site reports, invoice checks and variations.</p>
@@ -320,7 +320,7 @@ function WelcomePage() {
             <Button asChild className="wm-button wm-button-primary wm-button-large"><Link to="/signup">Start free</Link></Button>
             <Button asChild variant="outline" className="wm-button wm-button-outline wm-button-large"><Link to="/login">Explore the demo</Link></Button>
           </div>
-        </Reveal>
+        </section>
         <PhaseStrip />
         <Reveal as="section" className="wm-wrap wm-product-intro"><h2 id="product">Every step works off the BoQ you priced, so nothing gets re-keyed and nothing slips between office and site.</h2></Reveal>
         <div className="wm-wrap wm-features">

@@ -531,8 +531,10 @@ export function AppLayout() {
   // depend on localStorage, which only exists on the client. Rendering a
   // matching shell on the server and switching to the real UI after mount
   // keeps React's hydration check happy without sacrificing SSR for routing.
+  const location = useLocation();
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
+  if (location.pathname === "/welcome") return <Outlet />;
   if (!mounted) {
     return (
       <div className="min-h-screen bg-[var(--background)] text-foreground" suppressHydrationWarning>
