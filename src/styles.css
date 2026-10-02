@@ -397,79 +397,6 @@
   }
 }
 
-/* FixMargin public welcome — architectural technical editorial */
-.welcome-architectural {
-  --wm-paper: oklch(0.992 0.002 250);
-  --wm-panel: oklch(0.965 0.006 250);
-  --wm-ink: oklch(0.135 0.012 255);
-  --wm-dark-soft: oklch(0.18 0.014 255);
-  --wm-product: oklch(0.155 0.016 255);
-  --wm-blue: oklch(0.57 0.21 258);
-  --wm-blue-strong: oklch(0.51 0.22 258);
-  --wm-blue-bright: oklch(0.72 0.16 248);
-  --wm-blue-soft: oklch(0.93 0.04 255);
-  --wm-blue-pale: oklch(0.97 0.025 255);
-  --wm-blue-bg: oklch(0.57 0.21 258 / .12);
-  --wm-blue-line: oklch(0.72 0.16 248 / .45);
-  --wm-blue-text-muted: oklch(0.93 0.035 255);
-  --wm-muted: oklch(0.47 0.018 255);
-  --wm-muted-light: oklch(0.72 0.012 255);
-  --wm-line: oklch(0.88 0.008 250);
-  --wm-line-strong: oklch(0.76 0.012 250);
-  --wm-line-dark: oklch(1 0 0 / .1);
-  --wm-line-dark-strong: oklch(1 0 0 / .22);
-  --wm-text-on-dark-muted: oklch(0.78 0.012 250);
-  --wm-text-on-dark-faint: oklch(0.62 0.012 250);
-  --wm-shadow: oklch(0.04 0.01 255 / .55);
-  --wm-light-shadow: oklch(0.18 0.02 255 / .12);
-  --wm-good: oklch(0.76 0.16 150);
-  --wm-good-strong: oklch(0.48 0.15 150);
-  --wm-warning: oklch(0.79 0.16 75);
-  --wm-warning-strong: oklch(0.58 0.16 65);
-  --wm-warning-bg: oklch(0.79 0.16 75 / .1);
-  --wm-warning-line: oklch(0.79 0.16 75 / .28);
-  --wm-warning-pale: oklch(0.975 0.025 80);
-  --wm-warning-line-light: oklch(0.82 0.1 75);
-  --wm-danger: oklch(0.72 0.2 25);
-  --wm-danger-strong: oklch(0.56 0.2 25);
-  --wm-danger-bg: oklch(0.65 0.2 25 / .1);
-  --wm-danger-line: oklch(0.72 0.14 25);
-  --wm-danger-pale: oklch(0.975 0.02 25);
-  --wm-photo: oklch(0.9 0.01 250);
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
-  font-feature-settings: "cv11", "ss01";
-}
-.welcome-architectural h1,
-.welcome-architectural h2,
-.welcome-architectural h3 { letter-spacing: -0.02em; }
-.welcome-architectural .font-mono { font-family: "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0; }
-.welcome-tech-grid::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(var(--wm-line-dark) 1px, transparent 1px),
-    linear-gradient(90deg, var(--wm-line-dark) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: linear-gradient(90deg, transparent, black 35%, black 100%);
-  opacity: .3;
-}
-.welcome-tech-grid::after {
-  content: "FM / COMMERCIAL CONTROL / UK";
-  position: absolute;
-  right: 2rem;
-  bottom: 1.25rem;
-  color: var(--wm-text-on-dark-faint);
-  font: 9px "JetBrains Mono", monospace;
-  letter-spacing: .16em;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .welcome-architectural a,
-  .welcome-architectural article { transition: color .18s ease, background-color .18s ease, border-color .18s ease, transform .18s ease; }
-  .welcome-architectural article:hover { transform: translateY(-1px); }
-}
-
 /* ===== /welcome — approved FixMargin public cover ===== */
 .welcome-cover {
   --wm-ground: #F1EFE9; --wm-card: #FFFFFF; --wm-ink: #16181B; --wm-body: #3E4146; --wm-muted: #5A5D62;
@@ -556,7 +483,7 @@
 .wm-gantt-build { left: 0; width: 55%; background: var(--wm-build-bar); }.wm-gantt-buy { left: 35%; width: 20%; background: var(--wm-buy-bar); }.wm-gantt-warn { left: 60%; width: 30%; background: var(--wm-warning-bar); }
 .wm-readiness { display: flex; justify-content: space-between; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--wm-inner); }.wm-readiness span:last-child { color: var(--wm-warning-text); }
 .wm-phone { display: flex; flex-direction: column; gap: 10px; border-radius: 26px; background: var(--wm-invert); color: var(--wm-invert-text); padding: 18px 14px; font-size: 12px; }
-.wm-phone strong { font-size: 13px; }.wm-phone > span { border-radius: 8px; background: var(--wm-phone-field); padding: 8px; }.wm-phone button { border: 0; border-radius: 8px; background: var(--wm-build-bar); color: var(--wm-invert-text); padding: 9px; font: 600 12px "Geist", sans-serif; }
+.wm-phone strong { font-size: 13px; }.wm-phone > span:not(.wm-phone-action) { border-radius: 8px; background: var(--wm-phone-field); padding: 8px; }.wm-phone-action { border-radius: 8px; background: var(--wm-build-bar); color: var(--wm-invert-text); padding: 9px; text-align: center; font: 600 12px "Geist", sans-serif; }
 .wm-match-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }.wm-match-grid > div { display: flex; flex-direction: column; gap: 4px; border-radius: 8px; background: var(--wm-ground); padding: 12px 6px; }.wm-match-grid span { color: var(--wm-muted); font-size: 12px; }.wm-match-grid i { color: var(--wm-build-text); font-style: normal; }
 .wm-match-grid .mismatch { background: var(--wm-paid-tint); }.wm-match-grid .mismatch span, .wm-match-grid .mismatch strong { color: var(--wm-paid-text); }
 .wm-dispute { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; border: 1px solid color-mix(in srgb, var(--wm-paid-bar) 45%, var(--wm-border)); border-radius: 8px; padding: 11px 12px; }.wm-dispute span:last-child { color: var(--wm-paid-text); font-size: 12px; }
@@ -582,10 +509,11 @@
     --wm-invert: #EDEBE6; --wm-invert-text: #121315; --wm-phone-field: #D9D6CF; --wm-cta-muted: #4A4D52;
   }
   .wm-button-primary { color: #1C1E22 !important; }
-  .wm-phone button { color: #121315; }
+  .wm-phone-action { color: #121315; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .wm-hero { animation: wm-hero-in .45s ease both; }
   .wm-reveal { opacity: 0; transform: translateY(22px); transition: opacity .65s ease, transform .65s ease; }
   .wm-reveal.is-visible { opacity: 1; transform: none; }
   .wm-phase { opacity: 0; transform: translateX(-14px); }.wm-phase-wrap.is-visible .wm-phase { animation: wm-phase-in .5s ease forwards; animation-delay: var(--phase-delay); }
@@ -593,12 +521,12 @@
   .wm-feature-estimate .wm-check { opacity: 0; }.wm-feature-estimate.is-visible .wm-check { animation: wm-item-in .35s ease forwards; animation-delay: var(--item-delay); }
   .wm-feature-buy .wm-status { opacity: 0; transform: translateY(5px); }.wm-feature-buy.is-visible .wm-status { animation: wm-item-in .35s ease forwards; animation-delay: 1.15s; }.wm-feature-buy.is-visible .wm-calloff + .wm-calloff .wm-status { animation-delay: 1.32s; }
   .wm-gantt { transform: scaleX(0); }.wm-feature-build.is-visible .wm-gantt { animation: wm-line-in .7s ease forwards; }.wm-feature-build.is-visible .wm-gantt-buy { animation-delay: .16s; }.wm-feature-build.is-visible .wm-gantt-warn { animation-delay: .32s; }
-  .wm-phone > span { opacity: 0; transform: translateY(5px); }.wm-feature-build.is-visible .wm-phone > span { animation: wm-item-in .35s ease forwards; animation-delay: var(--item-delay); }
-  .wm-feature-build.is-visible .wm-phone button { animation: wm-pulse .5s ease 1.05s 1; }
+  .wm-phone > span:not(.wm-phone-action) { opacity: 0; transform: translateY(5px); }.wm-feature-build.is-visible .wm-phone > span:not(.wm-phone-action) { animation: wm-item-in .35s ease forwards; animation-delay: var(--item-delay); }
+  .wm-feature-build.is-visible .wm-phone-action { animation: wm-pulse .5s ease 1.05s 1; }
   .wm-match-grid i, .wm-match-grid .mismatch strong { opacity: 0; }.wm-feature-paid.is-visible .wm-match-grid > div:first-child i { animation: wm-item-in .25s ease .2s forwards; }.wm-feature-paid.is-visible .wm-match-grid > div:nth-child(2) i { animation: wm-item-in .25s ease .4s forwards; }.wm-feature-paid.is-visible .wm-match-grid .mismatch strong { animation: wm-item-in .3s ease .65s forwards; }
   .wm-dispute { opacity: 0; transform: translateX(-15px); }.wm-feature-paid.is-visible .wm-dispute { animation: wm-dispute-in .45s ease .9s forwards; }
 }
-@keyframes wm-phase-in { to { opacity: 1; transform: none; } } @keyframes wm-line-in { to { transform: scaleX(1); } } @keyframes wm-item-in { to { opacity: 1; transform: none; } } @keyframes wm-dispute-in { to { opacity: 1; transform: none; } } @keyframes wm-pulse { 50% { transform: scale(1.035); } }
+@keyframes wm-hero-in { from { opacity: .7; transform: translateY(6px); } to { opacity: 1; transform: none; } } @keyframes wm-phase-in { to { opacity: 1; transform: none; } } @keyframes wm-line-in { to { transform: scaleX(1); } } @keyframes wm-item-in { to { opacity: 1; transform: none; } } @keyframes wm-dispute-in { to { opacity: 1; transform: none; } } @keyframes wm-pulse { 50% { transform: scale(1.035); } }
 
 @media (max-width: 900px) {
   .wm-desktop-nav { display: none; }.wm-mobile-actions { display: flex; align-items: center; gap: 8px; }.wm-menu-button { color: var(--wm-ink); }
