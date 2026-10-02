@@ -318,7 +318,7 @@ function WelcomePage() {
           <p className="wm-hero-copy">One job file for the whole contract: 3,054 manufacturer systems to costed BoQ, merchant prices, call-offs, programme, site reports, invoice checks and variations.</p>
           <div className="wm-actions">
             <Button asChild className="wm-button wm-button-primary wm-button-large"><Link to="/signup">Start free</Link></Button>
-            <Button asChild variant="outline" className="wm-button wm-button-outline wm-button-large"><Link to="/demo">Explore the demo</Link></Button>
+            <Button asChild variant="outline" className="wm-button wm-button-outline wm-button-large"><Link to="/demo">Explore demo</Link></Button>
           </div>
         </section>
         <PhaseStrip />
@@ -340,7 +340,7 @@ function WelcomePage() {
         <Reveal as="section" className="wm-wrap wm-final-wrap">
           <div className="wm-final-cta">
             <div><h2>Price it once. Keep it.</h2><p>Walk through the demo project on your own, or start free and open the same sample in your account.</p></div>
-            <div className="wm-actions"><Button asChild className="wm-button wm-button-inverted wm-button-large"><Link to="/signup">Start free</Link></Button><Button asChild variant="outline" className="wm-button wm-button-inverted-outline wm-button-large"><Link to="/demo">Explore the demo</Link></Button></div>
+            <div className="wm-actions"><Button asChild className="wm-button wm-button-inverted wm-button-large"><Link to="/signup">Start free</Link></Button><Button asChild variant="outline" className="wm-button wm-button-inverted-outline wm-button-large"><Link to="/demo">Explore demo</Link></Button></div>
           </div>
         </Reveal>
       </main>
